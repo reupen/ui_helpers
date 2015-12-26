@@ -153,51 +153,51 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\ui_helpers\List View\list_view.h" />
-    <ClInclude Include="..\ui_helpers\OLE\DataObj.h" />
-    <ClInclude Include="..\ui_helpers\OLE\Enumfe.h" />
-    <ClInclude Include="..\ui_helpers\fcl.h" />
-    <ClInclude Include="..\ui_helpers\gdi.h" />
-    <ClInclude Include="..\ui_helpers\libpng.h" />
-    <ClInclude Include="..\ui_helpers\menu.h" />
-    <ClInclude Include="..\ui_helpers\message_hook.h" />
-    <ClInclude Include="..\ui_helpers\message_window.h" />
-    <ClInclude Include="..\ui_helpers\solid_fill.h" />
-    <ClInclude Include="..\ui_helpers\stdafx.h" />
-    <ClInclude Include="..\ui_helpers\text_drawing.h" />
-    <ClInclude Include="..\ui_helpers\trackbar.h" />
-    <ClInclude Include="..\ui_helpers\uxtheme.h" />
-    <ClInclude Include="..\ui_helpers\win32_helpers.h" />
+    <ClInclude Include="List View\list_view.h" />
+    <ClInclude Include="OLE\DataObj.h" />
+    <ClInclude Include="OLE\Enumfe.h" />
+    <ClInclude Include="fcl.h" />
+    <ClInclude Include="gdi.h" />
+    <ClInclude Include="libpng.h" />
+    <ClInclude Include="menu.h" />
+    <ClInclude Include="message_hook.h" />
+    <ClInclude Include="message_window.h" />
+    <ClInclude Include="solid_fill.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="text_drawing.h" />
+    <ClInclude Include="trackbar.h" />
+    <ClInclude Include="uxtheme.h" />
+    <ClInclude Include="win32_helpers.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\ui_helpers\List View\list_view_columns.cpp" />
-    <ClCompile Include="..\ui_helpers\List View\list_view_header.cpp" />
-    <ClCompile Include="..\ui_helpers\List View\list_view_hittest.cpp" />
-    <ClCompile Include="..\ui_helpers\List View\list_view_inline_edit.cpp" />
-    <ClCompile Include="..\ui_helpers\List View\list_view_item_state.cpp" />
-    <ClCompile Include="..\ui_helpers\List View\list_view_items.cpp" />
-    <ClCompile Include="..\ui_helpers\List View\list_view_keyboard.cpp" />
-    <ClCompile Include="..\ui_helpers\List View\list_view_misc.cpp" />
-    <ClCompile Include="..\ui_helpers\List View\list_view_msgproc.cpp" />
-    <ClCompile Include="..\ui_helpers\List View\list_view_renderer.cpp" />
-    <ClCompile Include="..\ui_helpers\List View\list_view_scroll.cpp" />
-    <ClCompile Include="..\ui_helpers\List View\list_view_search.cpp" />
-    <ClCompile Include="..\ui_helpers\List View\list_view_tooltip.cpp" />
-    <ClCompile Include="..\ui_helpers\OLE\DataObj.Cpp" />
-    <ClCompile Include="..\ui_helpers\OLE\Enumfe.Cpp" />
-    <ClCompile Include="..\ui_helpers\libpng.cpp" />
-    <ClCompile Include="..\ui_helpers\message_hook.cpp" />
-    <ClCompile Include="..\ui_helpers\solid_fill.cpp" />
-    <ClCompile Include="..\ui_helpers\stdafx.cpp">
+    <ClCompile Include="List View\list_view_columns.cpp" />
+    <ClCompile Include="List View\list_view_header.cpp" />
+    <ClCompile Include="List View\list_view_hittest.cpp" />
+    <ClCompile Include="List View\list_view_inline_edit.cpp" />
+    <ClCompile Include="List View\list_view_item_state.cpp" />
+    <ClCompile Include="List View\list_view_items.cpp" />
+    <ClCompile Include="List View\list_view_keyboard.cpp" />
+    <ClCompile Include="List View\list_view_misc.cpp" />
+    <ClCompile Include="List View\list_view_msgproc.cpp" />
+    <ClCompile Include="List View\list_view_renderer.cpp" />
+    <ClCompile Include="List View\list_view_scroll.cpp" />
+    <ClCompile Include="List View\list_view_search.cpp" />
+    <ClCompile Include="List View\list_view_tooltip.cpp" />
+    <ClCompile Include="OLE\DataObj.Cpp" />
+    <ClCompile Include="OLE\Enumfe.Cpp" />
+    <ClCompile Include="libpng.cpp" />
+    <ClCompile Include="message_hook.cpp" />
+    <ClCompile Include="solid_fill.cpp" />
+    <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release (Dynamic Link)|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release64|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\ui_helpers\text_drawing.cpp" />
-    <ClCompile Include="..\ui_helpers\trackbar.cpp" />
-    <ClCompile Include="..\ui_helpers\uxtheme.cpp" />
-    <ClCompile Include="..\ui_helpers\win32_helpers.cpp" />
+    <ClCompile Include="text_drawing.cpp" />
+    <ClCompile Include="trackbar.cpp" />
+    <ClCompile Include="uxtheme.cpp" />
+    <ClCompile Include="win32_helpers.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="columns_ui-sdk.vcxproj">
