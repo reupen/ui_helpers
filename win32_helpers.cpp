@@ -243,6 +243,21 @@ namespace win32_helpers
 		
 		return FALSE;
 	}
+
+	SIZE get_system_dpi()
+	{
+		HDC dc = GetDC(0);
+		SIZE ret = { GetDeviceCaps(dc, LOGPIXELSX), GetDeviceCaps(dc, LOGPIXELSY) };
+		ReleaseDC(0, dc);
+		return ret;
+	}
+
+	SIZE get_system_dpi_cached()
+	{
+		static const SIZE size = get_system_dpi();
+		return size;
+	}
+
 	HRESULT get_comctl32_version(DLLVERSIONINFO2 & p_dvi, pfc::string_base * p_path_out)
 	{
 		static bool have_version = false;

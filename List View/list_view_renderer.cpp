@@ -40,7 +40,6 @@ void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
 	RECT rc_items;
 	get_items_rect(&rc_items);
 
-	RECT rc_dummy;
 	if (rc_update.bottom<=rc_update.top || rc_update.bottom < rc_items.top)
 		return;
 

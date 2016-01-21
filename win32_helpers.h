@@ -162,6 +162,12 @@ namespace win32_helpers
 	void rebar_show_all_bands(HWND wnd);
 
 	BOOL set_process_dpi_aware();
+
+	// This is cached as system-DPI changes take effect at next log on. 
+	// Per monitor-DPI changes can occur more frequently for per monitor-DPI aware applications.
+	// At present, though, per-monitor DPI support is not declared by the foobar2000.exe manifest.
+	// See https://msdn.microsoft.com/en-gb/library/windows/desktop/dn469266%28v=vs.85%29.aspx
+	SIZE get_system_dpi_cached();
 }
 
 class disable_redrawing_t
