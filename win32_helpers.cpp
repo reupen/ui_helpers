@@ -541,6 +541,7 @@ namespace mmh { namespace ole {
 			if (pData)
 			{
 				p_out = *static_cast<T*>(pData);
+				GlobalUnlock(pData);
 				ReleaseStgMedium(&stgm);
 			}
 		}
