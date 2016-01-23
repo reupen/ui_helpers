@@ -3,11 +3,12 @@
 LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 {
 #if 0
-	static UINT MSG_DI_GETDRAGIMAGE = RegisterWindowMessage(DI_GETDRAGIMAGE);
+	static const UINT MSG_DI_GETDRAGIMAGE = RegisterWindowMessage(DI_GETDRAGIMAGE);
 	
-	if (0 && msg && msg == MSG_DI_GETDRAGIMAGE)
+	if (msg && msg == MSG_DI_GETDRAGIMAGE)
 	{
 		LPSHDRAGIMAGE lpsdi = (LPSHDRAGIMAGE)lp;
+		console::formatter() << "cx: " << lpsdi->sizeDragImage.cx << " cy: " << lpsdi->sizeDragImage.cy;
 
 		t_size selection_count = 0, count = get_item_count();
 		bit_array_bittable mask(count);
@@ -32,7 +33,7 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 			rc.top = 0;
 			rc.bottom = m_item_height * selection_count;
 			//console::formatter() << m_item_height;
-			rc.right = min (RECT_CX(rc), 256);
+			rc.right = RECT_CX(rc);
 			rc.left = 0;
 
 			//POINT pt = {0};
@@ -74,7 +75,7 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 			lpsdi->ptOffset.x = RECT_CX(rc)/2;
 			lpsdi->ptOffset.y = RECT_CY(rc) - m_item_height/3;
 			lpsdi->hbmpDragImage = bm_mem;
-			lpsdi->crColorKey = 0x00ffff;
+			lpsdi->crColorKey = 0x0;
 
 			return TRUE;
 
@@ -510,10 +511,10 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 				bool b_enter_drag = false;
 
 				if (!m_dragging_rmb && (wp & MK_LBUTTON)
-					&& (abs (m_dragging_initial_point.x - pt.x) > cx_drag || abs (m_dragging_initial_point.y - pt.y) > cy_drag))
+					&& ((unsigned)abs (m_dragging_initial_point.x - pt.x) > cx_drag || (unsigned)abs (m_dragging_initial_point.y - pt.y) > cy_drag))
 					b_enter_drag = true;
 				if (m_dragging_rmb && (wp & MK_RBUTTON)
-					&& (abs (m_dragging_rmb_initial_point.x - pt.x) > cx_drag || abs (m_dragging_rmb_initial_point.y - pt.y) > cy_drag))
+					&& ((unsigned)abs (m_dragging_rmb_initial_point.x - pt.x) > cx_drag || (unsigned)abs (m_dragging_rmb_initial_point.y - pt.y) > cy_drag))
 					b_enter_drag = true;
 				
 				if (b_enter_drag)
