@@ -41,15 +41,7 @@ bool g_test_os_version(DWORD major, DWORD minor)
 
 bool is_vista_or_newer()
 {
-	static OSVERSIONINFO ov;
-	static bool blah = false;
-
-	if (!blah)
-	{
-		ov.dwOSVersionInfoSize = sizeof(ov);
-		GetVersionEx(&ov);
-	}
-	return (ov.dwMajorVersion >= 6);
+	return g_test_os_version(6, 0);
 }
 
 void g_set_listview_window_explorer_theme(HWND wnd)
@@ -364,7 +356,7 @@ namespace win32_helpers
 		if (tip)
 		{
 			nid.uFlags |= NIF_TIP;
-			_tcsncpy(nid.szTip,pfc::stringcvt::string_os_from_utf8(tip),tabsize(nid.szTip)-1);
+			_tcsncpy_s(nid.szTip, pfc::stringcvt::string_os_from_utf8(tip), tabsize(nid.szTip)-1);
 		}
 
 		return run_action(action,&nid);
@@ -391,15 +383,15 @@ namespace win32_helpers
 		if (tip)
 		{
 			nid.uFlags |= NIF_TIP;
-			_tcsncpy(nid.szTip,pfc::stringcvt::string_os_from_utf8(tip),tabsize(nid.szTip)-1);
+			_tcsncpy_s(nid.szTip, pfc::stringcvt::string_os_from_utf8(tip), tabsize(nid.szTip)-1);
 		}
 
 		nid.dwInfoFlags = NIIF_INFO | NIIF_NOSOUND;
 		//if (balloon_title || balloon_msg)
 		{
 			nid.uFlags |= NIF_INFO;
-			if (balloon_title) _tcsncpy(nid.szInfoTitle,pfc::stringcvt::string_os_from_utf8(balloon_title),tabsize(nid.szInfoTitle)-1);
-			if (balloon_msg) _tcsncpy(nid.szInfo,pfc::stringcvt::string_os_from_utf8(balloon_msg),tabsize(nid.szInfo)-1);	
+			if (balloon_title) _tcsncpy_s(nid.szInfoTitle, pfc::stringcvt::string_os_from_utf8(balloon_title), tabsize(nid.szInfoTitle)-1);
+			if (balloon_msg) _tcsncpy_s(nid.szInfo, pfc::stringcvt::string_os_from_utf8(balloon_msg), tabsize(nid.szInfo)-1);
 		}
 		return run_action(action,reinterpret_cast<NOTIFYICONDATA*>(&nid));
 
@@ -556,6 +548,14 @@ namespace mmh { namespace ole {
 			return SetBlob(pdtobj, ClipboardFormatDropDescription(), &dd, sizeof(dd));
 		}
 		return E_NOTIMPL;
+	}
+
+	HRESULT DoDragDrop(HWND wnd, WPARAM initialKeyState, IDataObject *pDataObject, DWORD dwEffect, DWORD *pdwEffect)
+	{
+		mmh::comptr_t<IDropSource> pDropSource;
+		if (!is_vista_or_newer())
+			pDropSource = new mmh::ole::IDropSource_Generic(wnd, pDataObject, initialKeyState, true);
+		return SHDoDragDrop(wnd, pDataObject, pDropSource, dwEffect, pdwEffect);
 	}
 
 	HRESULT STDMETHODCALLTYPE IDropSource_Generic::QueryInterface(REFIID iid,void ** ppvObject)
