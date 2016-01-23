@@ -507,8 +507,59 @@ namespace mmh { namespace ole {
 
 	CLIPFORMAT ClipboardFormatDropDescription()
 	{
-		static CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(CFSTR_DROPDESCRIPTION);
+		static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(CFSTR_DROPDESCRIPTION);
 		return cfRet;
+	}
+
+	CLIPFORMAT DragWindowFormat()
+	{
+		static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"DragWindow");
+		return cfRet;
+	}
+
+	CLIPFORMAT IsShowingLayeredFormat()
+	{
+		static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsShowingLayered");
+		return cfRet;
+	}
+
+	template<typename T>
+	HRESULT GetDataObjectDataSimple(IDataObject *pDataObj, CLIPFORMAT cf, T & p_out)
+	{
+		HRESULT hr;
+
+		FORMATETC fe = { 0 };
+		fe.cfFormat = cf;
+		fe.dwAspect = DVASPECT_CONTENT;
+		fe.lindex = -1;
+		fe.tymed = TYMED_HGLOBAL;
+
+		STGMEDIUM stgm = { 0 };
+		if (SUCCEEDED(hr = pDataObj->GetData(&fe, &stgm)))
+		{
+			void * pData = GlobalLock(stgm.hGlobal);
+			if (pData)
+			{
+				p_out = *static_cast<T*>(pData);
+				ReleaseStgMedium(&stgm);
+			}
+		}
+		return hr;
+	}
+
+	HRESULT GetDragWindow(IDataObject *pDataObj, HWND & p_wnd)
+	{
+		HRESULT hr;
+		DWORD dw;
+		if (SUCCEEDED(hr = GetDataObjectDataSimple(pDataObj, DragWindowFormat(), dw)))
+			p_wnd = (HWND)ULongToHandle(dw);
+
+		return hr;
+	}
+
+	HRESULT GetIsShowingLayered(IDataObject *pDataObj, BOOL & p_out)
+	{
+		return GetDataObjectDataSimple(pDataObj, IsShowingLayeredFormat(), p_out);
 	}
 
 	HRESULT SetBlob(IDataObject *pdtobj, CLIPFORMAT cf, const void *pvBlob, UINT cbBlob)
@@ -579,9 +630,13 @@ namespace mmh { namespace ole {
 
 	HRESULT STDMETHODCALLTYPE IDropSource_Generic::QueryContinueDrag(BOOL fEscapePressed,DWORD grfKeyState)
 	{
-		if (fEscapePressed || ((m_initial_key_state & MK_LBUTTON) && (grfKeyState&MK_RBUTTON)) ) {return DRAGDROP_S_CANCEL;}
-		else if ( ((m_initial_key_state & MK_LBUTTON) && !(grfKeyState&MK_LBUTTON ))
-			|| ((m_initial_key_state & MK_RBUTTON) && !(grfKeyState&MK_RBUTTON )))
+		if (fEscapePressed || ((m_initial_key_state & MK_LBUTTON) && (grfKeyState & MK_RBUTTON)) ) {
+			return DRAGDROP_S_CANCEL;
+		}
+		else if ( 
+			((m_initial_key_state & MK_LBUTTON) && !(grfKeyState & MK_LBUTTON ))
+			|| ((m_initial_key_state & MK_RBUTTON) && !(grfKeyState & MK_RBUTTON ))
+			)
 		{
 			return DRAGDROP_S_DROP;
 		}
@@ -590,14 +645,22 @@ namespace mmh { namespace ole {
 
 	HRESULT STDMETHODCALLTYPE IDropSource_Generic::GiveFeedback(DWORD dwEffect)
 	{
-		return DRAGDROP_S_USEDEFAULTCURSORS;
+		HWND wnd_drag = NULL;
+		BOOL isShowingLayered = FALSE;
+		GetIsShowingLayered(m_DataObject, isShowingLayered);
+
+		if (SUCCEEDED(GetDragWindow(m_DataObject, wnd_drag)) && wnd_drag)
+			PostMessage(wnd_drag, DDWM_UPDATEWINDOW, NULL, NULL);
+
+		return isShowingLayered ? S_OK : DRAGDROP_S_USEDEFAULTCURSORS;
 	}
 
 //#define FOOBAR2000_NOT_BROKE
 
 	IDropSource_Generic::IDropSource_Generic(HWND wnd, IDataObject * pDataObj, DWORD initial_key_state, bool b_allowdropdescriptiontext)
-		: refcount(0), m_initial_key_state(initial_key_state) 
+		: refcount(0), m_initial_key_state(initial_key_state), m_DataObject(pDataObj)
 	{
+		HRESULT hr;
 		if (b_allowdropdescriptiontext)
 		{
 			if (SUCCEEDED(m_DragSourceHelper.instantiate(CLSID_DragDropHelper, NULL, CLSCTX_INPROC_SERVER)))
@@ -605,7 +668,7 @@ namespace mmh { namespace ole {
 				mmh::comptr_t<IDragSourceHelper2> pDragSourceHelper2 = m_DragSourceHelper;
 				if (pDragSourceHelper2.is_valid())
 				{
-					pDragSourceHelper2->SetFlags(DSH_ALLOWDROPDESCRIPTIONTEXT);
+					hr = pDragSourceHelper2->SetFlags(DSH_ALLOWDROPDESCRIPTIONTEXT);
 				}
 	#if 0
 				HDC dc = CreateCompatibleDC(NULL);
@@ -624,7 +687,7 @@ namespace mmh { namespace ole {
 				shdi.sizeDragImage.cy = 50;
 				HRESULT hr = m_DragSourceHelper->InitializeFromBitmap(&shdi, pDataObj);
 	#else
-				m_DragSourceHelper->InitializeFromWindow(wnd, NULL, pDataObj);
+				hr = m_DragSourceHelper->InitializeFromWindow(wnd, NULL, pDataObj);
 	#endif
 			}
 		}

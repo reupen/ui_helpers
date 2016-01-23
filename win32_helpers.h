@@ -203,6 +203,8 @@ namespace ui_helpers
 void innerWMPaintModernBackground (HWND wnd, HWND wnd_button);
 }
 
+#define DDWM_UPDATEWINDOW (WM_USER+3)
+
 namespace mmh { 
 namespace ole {
 
@@ -219,11 +221,12 @@ public:
 	ULONG STDMETHODCALLTYPE Release();
 	HRESULT STDMETHODCALLTYPE QueryContinueDrag(BOOL fEscapePressed,DWORD grfKeyState);
 	HRESULT STDMETHODCALLTYPE GiveFeedback(DWORD dwEffect);
-	IDropSource_Generic(HWND wnd, IDataObject * pDataObj, DWORD initial_key_state, bool b_allowdropdescriptiontext = false); //careful, some fb2k versions have broken IDataObject
+	IDropSource_Generic(HWND wnd, IDataObject * pDataObj, DWORD initial_key_state, bool b_allowdropdescriptiontext = true); //careful, some fb2k versions have broken IDataObject
 private:
 	long refcount;
 	DWORD m_initial_key_state;
 	mmh::comptr_t<IDragSourceHelper> m_DragSourceHelper;
+	mmh::comptr_t<IDataObject> m_DataObject;
 };
 
 }
