@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "..\stdafx.h"
 
 bool t_list_view::is_search_box_open() {return m_search_editbox != NULL;}
 void t_list_view::focus_search_box() {if (m_search_editbox) SetFocus(m_search_editbox);}

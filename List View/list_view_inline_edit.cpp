@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "..\stdafx.h"
 
 void t_list_view::activate_inline_editing(t_size column_start)
 {

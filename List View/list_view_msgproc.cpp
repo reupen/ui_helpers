@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "..\stdafx.h"
 
 LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 {
@@ -34,6 +34,7 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 			rc.bottom = m_item_height * selection_count;
 			//console::formatter() << m_item_height;
 			rc.right = RECT_CX(rc);
+			// rc.right = min(rc.right, 128);
 			rc.left = 0;
 
 			//POINT pt = {0};
@@ -45,6 +46,7 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 			if (m_lf_items_valid) lf = m_lf_items;
 			else
 				GetObject(m_font, sizeof(lf), &lf);
+			lf.lfWeight = FW_BOLD;
 			lf.lfQuality = NONANTIALIASED_QUALITY;
 			HFONT fnt = CreateFontIndirect(&lf);
 
@@ -58,7 +60,7 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 				RECT rc_item = rc; 
 				rc_item.top = i*m_item_height;
 				rc_item.bottom = (i+1)*m_item_height;
-				render_item(dc_mem, indices[i], 0, true, true, false, false, &rc_item);
+				render_item(dc_mem, indices[i], 0, true, false, false, false, &rc_item);
 			}
 			//FillRect(dc_mem, &rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(RGB(255,0,0))));
 			SelectFont(dc_mem, font_old);

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "..\stdafx.h"
 
 bool t_list_view::on_wm_keydown(WPARAM wp, LPARAM lp, LRESULT & ret, bool & b_processed)
 {

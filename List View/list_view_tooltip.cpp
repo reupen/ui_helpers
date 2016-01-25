@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "..\stdafx.h"
 
 void t_list_view::set_show_tooltips (bool b_val) 
 {

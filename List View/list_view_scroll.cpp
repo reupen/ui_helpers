@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "..\stdafx.h"
 
 void t_list_view::ensure_visible(t_size index)
 {
