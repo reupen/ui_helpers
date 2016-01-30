@@ -2,86 +2,37 @@
 
 LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 {
-#if 0
+#if 1
 	static const UINT MSG_DI_GETDRAGIMAGE = RegisterWindowMessage(DI_GETDRAGIMAGE);
 	
 	if (msg && msg == MSG_DI_GETDRAGIMAGE)
 	{
 		LPSHDRAGIMAGE lpsdi = (LPSHDRAGIMAGE)lp;
-		console::formatter() << "cx: " << lpsdi->sizeDragImage.cx << " cy: " << lpsdi->sizeDragImage.cy;
+		auto dpi = win32_helpers::get_system_dpi_cached();
 
-		t_size selection_count = 0, count = get_item_count();
-		bit_array_bittable mask(count);
-		get_selection_state(mask);
-		pfc::list_t<t_size> indices;
-		for (t_size i = 0; i<count; i++)
-		{
-			if (mask[i]) 
-			{
-				indices.add_item(i);
-				if (++selection_count == 10) break;
-			}
-		}
-		if (selection_count)
-		{
-			RECT rc_client;
-			get_items_rect(&rc_client);
+		HDC dc = GetDC(wnd);
+		HDC dc_mem = CreateCompatibleDC(dc); 
+		HBITMAP bm_mem = CreateCompatibleBitmap(dc, dpi.cx, dpi.cy); // Not deleted - the shell takes ownership.
+		HBITMAP bm_old = SelectBitmap(dc_mem, bm_mem);
 
-			HDC dc = GetDC(wnd);
+		RECT rc = { 0, 0, dpi.cx, dpi.cy };
 
-			RECT rc = rc_client;
-			rc.top = 0;
-			rc.bottom = m_item_height * selection_count;
-			//console::formatter() << m_item_height;
-			rc.right = RECT_CX(rc);
-			// rc.right = min(rc.right, 128);
-			rc.left = 0;
+		pfc::string8 drag_text;
+		format_drag_text(get_selection_count(), drag_text);
+		render_drag_image(dc_mem, rc, drag_text);
 
-			//POINT pt = {0};
-			//GetMessagePos(&pt);
-			//ScreenToClient(wnd, &pt);
-			//pt.x += m_horizontal_scroll_position;
+		SelectObject(dc_mem, bm_old);
+		DeleteDC(dc_mem);
+		ReleaseDC(wnd, dc);
 
-			LOGFONT lf;
-			if (m_lf_items_valid) lf = m_lf_items;
-			else
-				GetObject(m_font, sizeof(lf), &lf);
-			lf.lfWeight = FW_BOLD;
-			lf.lfQuality = NONANTIALIASED_QUALITY;
-			HFONT fnt = CreateFontIndirect(&lf);
+		lpsdi->sizeDragImage.cx = dpi.cx;
+		lpsdi->sizeDragImage.cy = dpi.cy;
+		lpsdi->ptOffset.x = dpi.cx/2;
+		lpsdi->ptOffset.y = dpi.cy - dpi.cy/10;
+		lpsdi->hbmpDragImage = bm_mem;
+		lpsdi->crColorKey = RGB(0, 0, 0);
 
-			HDC dc_mem = CreateCompatibleDC(dc);
-			HBITMAP bm_mem = CreateCompatibleBitmap(dc, RECT_CX(rc), RECT_CY(rc));
-
-			HBITMAP bm_old = SelectBitmap(dc_mem, bm_mem);
-			HFONT font_old = SelectFont(dc_mem, fnt);
-			for (t_size i = 0; i<selection_count; i++)
-			{
-				RECT rc_item = rc; 
-				rc_item.top = i*m_item_height;
-				rc_item.bottom = (i+1)*m_item_height;
-				render_item(dc_mem, indices[i], 0, true, false, false, false, &rc_item);
-			}
-			//FillRect(dc_mem, &rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(RGB(255,0,0))));
-			SelectFont(dc_mem, font_old);
-			SelectObject(dc_mem, bm_old);
-			//DeleteObject(bm_mem);
-			DeleteFont(fnt);
-			DeleteDC(dc_mem);
-			ReleaseDC(wnd, dc);
-
-
-
-			lpsdi->sizeDragImage.cx = RECT_CX(rc);
-			lpsdi->sizeDragImage.cy = RECT_CY(rc);
-			lpsdi->ptOffset.x = RECT_CX(rc)/2;
-			lpsdi->ptOffset.y = RECT_CY(rc) - m_item_height/3;
-			lpsdi->hbmpDragImage = bm_mem;
-			lpsdi->crColorKey = 0x0;
-
-			return TRUE;
-
-		}
+		return TRUE;
 	}
 #endif
 
@@ -90,6 +41,7 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 	case WM_CREATE:
 		{
 			m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, L"ListView") : NULL;
+			m_dd_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, VSCLASS_DRAGDROP) : NULL;
 			SetWindowTheme(wnd, L"Explorer", NULL);
 		}
 		notify_on_initialisation();
@@ -114,6 +66,8 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 		{
 			if (m_theme) CloseThemeData(m_theme);
 			m_theme = NULL;
+			if (m_dd_theme) CloseThemeData(m_dd_theme);
+			m_dd_theme = NULL;
 		}
 		m_font.release();
 		notify_on_destroy();

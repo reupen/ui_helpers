@@ -126,7 +126,7 @@ protected:
 
 public:
 	t_list_view() 
-		: m_theme(NULL), m_selecting(false), m_selecting_start(pfc_infinite), m_scroll_position(0), m_group_count(0), m_item_height(1),
+		: m_theme(NULL), m_dd_theme(NULL), m_selecting(false), m_selecting_start(pfc_infinite), m_scroll_position(0), m_group_count(0), m_item_height(1),
 		m_selecting_move(false), m_selecting_moved(false), m_dragging_rmb(false), m_shift_start(pfc_infinite), m_wnd_header(NULL), m_timer_scroll_up(false),
 		m_timer_scroll_down(false), m_lbutton_down_ctrl(false),m_insert_mark_index(pfc_infinite) , m_shown(false), m_focus_index(pfc_infinite),
 		m_autosize(false), m_wnd_inline_edit(NULL), m_proc_inline_edit(NULL), m_inline_edit_save(false), m_inline_edit_saving(false),
@@ -694,11 +694,17 @@ protected:
 	void render_group_default(const colour_data_t & p_data, HDC dc, const char * text, t_size indentation, t_size level, const RECT & rc);
 	void render_item_default(const colour_data_t & p_data, HDC dc, t_size index, t_size indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT * rc);
 	void render_background_default(const colour_data_t & p_data, HDC dc, const RECT * rc);
+	void render_drag_image_default(const colour_data_t & p_data, HDC dc, const RECT & rc, const char * text);
 
 	virtual void render_group_info(HDC dc, t_size index, t_size group_count, const RECT & rc) {};
 	virtual void render_group(HDC dc, t_size index, t_size group, const char * text, t_size indentation, t_size level, const RECT & rc);
 	virtual void render_item(HDC dc, t_size index, t_size indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT * rc);
 	virtual void render_background(HDC dc, const RECT * rc);
+	virtual void render_drag_image(HDC dc, const RECT & rc, const char * text);
+
+	virtual void format_drag_text(t_size selection_count, pfc::string8 & p_out);
+	virtual const char * get_drag_unit_singular() { return "item"; }
+	virtual const char * get_drag_unit_plural() { return "items"; }
 
 	HTHEME get_theme() {return m_theme;}
 
@@ -715,6 +721,7 @@ protected:
 	virtual void notify_on_search_box_contents_change(const char * p_str) {};
 	virtual void notify_on_search_box_close() {};
 
+	static void g_cui_colour_data_to_list_view(const GUID & appearance_client_guid, t_list_view & p_list_view, t_list_view::colour_data_t & p_out);
 public:
 	void create_timer_scroll_up();
 	void create_timer_scroll_down();
@@ -775,6 +782,8 @@ private:
 	gdi_object_t<HFONT>::ptr_t m_font, m_font_header, m_group_font;
 
 	HTHEME m_theme;
+	HTHEME m_dd_theme;
+
 	HWND m_wnd_header;
 	HWND m_wnd_inline_edit;
 	WNDPROC m_proc_inline_edit, m_proc_original_inline_edit;

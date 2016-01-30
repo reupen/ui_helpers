@@ -85,5 +85,8 @@
     <ClCompile Include="trackbar.cpp" />
     <ClCompile Include="uxtheme.cpp" />
     <ClCompile Include="win32_helpers.cpp" />
+    <ClCompile Include="List View\list_view_drag_image.cpp">
+      <Filter>List View</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -523,6 +523,18 @@ namespace mmh { namespace ole {
 		return cfRet;
 	}
 
+	CLIPFORMAT IsShowingTextFormat()
+	{
+		static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsShowingText");
+		return cfRet;
+	}
+
+	CLIPFORMAT IsComputingImageFormat()
+	{
+		static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsComutingImage");
+		return cfRet;
+	}
+
 	CLIPFORMAT UsingDefaultDragImageFormat()
 	{
 		static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"UsingDefaultDragImage");
@@ -612,13 +624,23 @@ namespace mmh { namespace ole {
 	{
 		return SetBlob(pdtobj, UsingDefaultDragImageFormat(), &value, sizeof(value));
 	}
-	
+
+	HRESULT SetIsShowingText(IDataObject *pdtobj, BOOL value)
+	{
+		return SetBlob(pdtobj, IsShowingTextFormat(), &value, sizeof(value));
+	}
+
+	HRESULT SetIsComputingImage(IDataObject *pdtobj, BOOL value)
+	{
+		return SetBlob(pdtobj, IsComputingImageFormat(), &value, sizeof(value));
+	}
+
 
 	HRESULT DoDragDrop(HWND wnd, WPARAM initialKeyState, IDataObject *pDataObject, DWORD dwEffect, DWORD *pdwEffect)
 	{
 		mmh::comptr_t<IDropSource> pDropSource;
-		if (!is_vista_or_newer())
-			pDropSource = new mmh::ole::IDropSource_Generic(wnd, pDataObject, initialKeyState, true);
+		//if (!is_vista_or_newer())
+		pDropSource = new mmh::ole::IDropSource_Generic(wnd, pDataObject, initialKeyState, true);
 		return SHDoDragDrop(wnd, pDataObject, pDropSource, dwEffect, pdwEffect);
 	}
 
@@ -683,25 +705,7 @@ namespace mmh { namespace ole {
 				{
 					hr = pDragSourceHelper2->SetFlags(DSH_ALLOWDROPDESCRIPTIONTEXT);
 				}
-	#if 0
-				HDC dc = CreateCompatibleDC(NULL);
-				HBITMAP bm = CreateCompatibleBitmap(NULL, 50, 50);
-				HBITMAP bm_old = SelectBitmap(dc, bm);
-				RECT rc = {0, 0, 50, 50};
-				FillRect(dc, &rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(RGB(255,0,0))));
-				SelectBitmap(dc, bm_old);
-				DeleteDC(dc);
-				SHDRAGIMAGE shdi;
-				shdi.crColorKey = 0;
-				shdi.hbmpDragImage = bm;
-				shdi.ptOffset.x = 0;
-				shdi.ptOffset.y = 0;
-				shdi.sizeDragImage.cx = 50;
-				shdi.sizeDragImage.cy = 50;
-				HRESULT hr = m_DragSourceHelper->InitializeFromBitmap(&shdi, pDataObj);
-	#else
 				hr = m_DragSourceHelper->InitializeFromWindow(wnd, NULL, pDataObj);
-	#endif
 			}
 		}
 //#endif
