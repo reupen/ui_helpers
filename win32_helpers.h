@@ -211,6 +211,7 @@ namespace ole {
 CLIPFORMAT ClipboardFormatDropDescription();
 HRESULT SetBlob(IDataObject *pdtobj, CLIPFORMAT cf, const void *pvBlob, UINT cbBlob);
 HRESULT SetDropDescription(IDataObject *pdtobj, DROPIMAGETYPE dit, const char * msg, const char * insert);
+HRESULT SetUsingDefaultDragImage(IDataObject *pdtobj, BOOL value = TRUE);
 HRESULT DoDragDrop(HWND wnd, WPARAM initialKeyState, IDataObject *pDataObject, DWORD dwEffect, DWORD *pdwEffect);
 
 class IDropSource_Generic : public IDropSource

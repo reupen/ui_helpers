@@ -523,6 +523,12 @@ namespace mmh { namespace ole {
 		return cfRet;
 	}
 
+	CLIPFORMAT UsingDefaultDragImageFormat()
+	{
+		static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"UsingDefaultDragImage");
+		return cfRet;
+	}
+
 	template<typename T>
 	HRESULT GetDataObjectDataSimple(IDataObject *pDataObj, CLIPFORMAT cf, T & p_out)
 	{
@@ -601,6 +607,12 @@ namespace mmh { namespace ole {
 		}
 		return E_NOTIMPL;
 	}
+
+	HRESULT SetUsingDefaultDragImage(IDataObject *pdtobj, BOOL value)
+	{
+		return SetBlob(pdtobj, UsingDefaultDragImageFormat(), &value, sizeof(value));
+	}
+	
 
 	HRESULT DoDragDrop(HWND wnd, WPARAM initialKeyState, IDataObject *pDataObject, DWORD dwEffect, DWORD *pdwEffect)
 	{
