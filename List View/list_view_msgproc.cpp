@@ -18,8 +18,8 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 		RECT rc = { 0, 0, dpi.cx, dpi.cy };
 
 		pfc::string8 drag_text;
-		format_drag_text(get_selection_count(), drag_text);
-		render_drag_image(dc_mem, rc, drag_text);
+		auto show_text = format_drag_text(get_drag_item_count(), drag_text);
+		render_drag_image(dc_mem, rc, show_text, drag_text);
 
 		SelectObject(dc_mem, bm_old);
 		DeleteDC(dc_mem);
@@ -30,7 +30,7 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 		lpsdi->ptOffset.x = dpi.cx/2;
 		lpsdi->ptOffset.y = dpi.cy - dpi.cy/10;
 		lpsdi->hbmpDragImage = bm_mem;
-		lpsdi->crColorKey = RGB(0, 0, 0);
+		lpsdi->crColorKey = 0xffffffff;
 
 		return TRUE;
 	}

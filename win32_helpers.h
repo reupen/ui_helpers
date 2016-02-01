@@ -78,7 +78,8 @@ public:
 
 	handle_container_t() {t_release::set_invalid(m_handle);};
 	handle_container_t(t_handle value) : m_handle(value) {};
-	handle_container_t(t_self & value) {set(value.detach());}
+	handle_container_t(t_self && value) {set(value.detach());}
+	handle_container_t(const t_self & value) = delete;
 
 	~handle_container_t() {release();}
 private:
@@ -110,6 +111,23 @@ public:
 	};
 	typedef handle_container_t<t_gdi_type, gdi_release_t> ptr_t;
 };
+
+class icon_release_t {
+public:
+	static void release(HICON handle)
+	{
+		DestroyIcon(handle);
+	};
+	static bool is_valid(HICON handle)
+	{
+		return handle != NULL;
+	};
+	static void set_invalid(HICON & handle)
+	{
+		handle = NULL;
+	};
+};
+using icon_ptr = handle_container_t<HICON, icon_release_t>;
 
 namespace win32_helpers
 {

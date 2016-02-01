@@ -1,7 +1,6 @@
 #include "..\stdafx.h"
 
-
-void t_list_view::render_drag_image_default(const colour_data_t & p_data, HDC dc, const RECT & rc, const char * text)
+void t_list_view::render_drag_image_default(const colour_data_t & p_data, HDC dc, const RECT & rc, bool draw_text, const char * text)
 {
 	// Draw background
 	{
@@ -24,7 +23,10 @@ void t_list_view::render_drag_image_default(const colour_data_t & p_data, HDC dc
 		}
 	}
 
+	render_drag_image_icon(dc, rc);
+
 	// Draw label
+	if (draw_text)
 	{
 		int theme_state = 0;
 		bool b_themed = m_dd_theme && p_data.m_themed && IsThemePartDefined(m_dd_theme, DD_TEXTBG, theme_state);
@@ -66,7 +68,7 @@ void t_list_view::render_drag_image_default(const colour_data_t & p_data, HDC dc
 	}
 
 }
-void t_list_view::render_drag_image(HDC dc, const RECT & rc, const char * text)
+void t_list_view::render_drag_image(HDC dc, const RECT & rc, bool show_text, const char * text)
 {
 	colour_data_t p_data;
 	render_get_colour_data(p_data);
@@ -82,15 +84,20 @@ void t_list_view::render_drag_image(HDC dc, const RECT & rc, const char * text)
 
 	HFONT font_old = SelectFont(dc, fnt);
 
-	render_drag_image_default(p_data, dc, rc, text);
+	render_drag_image_default(p_data, dc, rc, show_text, text);
 
 	SelectFont(dc, font_old);
 	DeleteFont(fnt);
 
 }
 
-void t_list_view::format_drag_text(t_size selection_count, pfc::string8 & p_out)
+bool t_list_view::format_drag_text(t_size selection_count, pfc::string8 & p_out)
 {
-	p_out.reset();
-	p_out << mmh::format_integer(selection_count) << " " << (selection_count == 1 ? get_drag_unit_singular() : get_drag_unit_plural());
+	auto show_text = selection_count > 1;
+	if (show_text)
+	{
+		p_out.reset();
+		p_out << mmh::format_integer(selection_count) << " " << get_drag_unit_plural();
+	}
+	return show_text;
 }

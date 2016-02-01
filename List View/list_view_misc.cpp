@@ -469,19 +469,3 @@ void t_list_view::on_search_string_change(WCHAR c)
 	}
 }
 
-void t_list_view::g_cui_colour_data_to_list_view(const GUID & appearance_client_guid, t_list_view & p_list_view, t_list_view::colour_data_t & p_out)
-{
-	cui::colours::helper p_helper(appearance_client_guid);
-	p_out.m_themed = p_helper.get_themed();
-	p_out.m_use_custom_active_item_frame = p_helper.get_bool(cui::colours::bool_use_custom_active_item_frame);
-	p_out.m_text = p_helper.get_colour(cui::colours::colour_text);
-	p_out.m_selection_text = p_helper.get_colour(cui::colours::colour_selection_text);
-	p_out.m_background = p_helper.get_colour(cui::colours::colour_background);
-	p_out.m_selection_background = p_helper.get_colour(cui::colours::colour_selection_background);
-	p_out.m_inactive_selection_text = p_helper.get_colour(cui::colours::colour_inactive_selection_text);
-	p_out.m_inactive_selection_background = p_helper.get_colour(cui::colours::colour_inactive_selection_background);
-	p_out.m_active_item_frame = p_helper.get_colour(cui::colours::colour_active_item_frame);
-	if (!p_out.m_themed || !p_list_view.get_group_text_colour_default(p_out.m_group_text))
-		p_out.m_group_text = p_out.m_text;
-	p_out.m_group_background = p_out.m_background;
-}
