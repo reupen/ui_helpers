@@ -17,10 +17,6 @@ void t_list_view::render_drag_image_default(const colour_data_t & p_data, HDC dc
 				DrawThemeBackground(m_dd_theme, dc, DD_IMAGEBG, theme_state, &rc, NULL);
 			}
 		}
-		else
-		{
-			FillRect(dc, &rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(p_data.m_selection_background)));
-		}
 	}
 
 	render_drag_image_icon(dc, rc);
@@ -62,6 +58,19 @@ void t_list_view::render_drag_image_default(const colour_data_t & p_data, HDC dc
 		}
 		else
 		{
+			SIZE sz = { 0 };
+			ui_helpers::get_text_size(dc, text, strlen(text), sz);
+			auto dpi = win32_helpers::get_system_dpi_cached();
+			auto padding_cy = MulDiv(sz.cy, dpi.cy, 96*14);
+			auto padding_cx = MulDiv(sz.cy, dpi.cx, 96*4);
+
+			RECT rc_background = {
+				RECT_CX(rc) / 2 - sz.cx / 2 - padding_cx,
+				RECT_CY(rc) / 2 - sz.cy / 2 - padding_cy,
+				RECT_CX(rc) / 2 + sz.cx - sz.cx / 2 + padding_cx,
+				RECT_CY(rc) / 2 + sz.cy - sz.cy / 2 + padding_cy
+			};
+			FillRect(dc, &rc_background, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(p_data.m_selection_background)));
 			ui_helpers::text_out_colours_tab(dc, text, pfc_infinite, 0, 0, &rc, true, p_data.m_selection_text, false, false, false, ui_helpers::ALIGN_CENTRE);
 		}
 

@@ -71,6 +71,12 @@ public:
 		get_output_size(sz);
 		return sz.cx;
 	}
+	long get_font_height(HDC dc)
+	{
+		long height = 0;
+		ScriptCacheGetHeight(dc, &m_scache, &height);
+		return height;
+	}
 	void get_character_logical_widths(int * p_array_out)
 	{
 //		profiler(get_character_logical_widths);
@@ -94,6 +100,7 @@ private:
 	{
 		{
 //			profiler(initialise_a);
+			m_scache = nullptr;
 			m_ssa = NULL;
 			m_string_length = NULL;
 			memset(&m_sc, 0, sizeof(m_sc));
@@ -118,11 +125,16 @@ private:
 			ScriptStringFree(&m_ssa);
 			m_ssa = NULL;
 		}
+		if (m_scache)
+		{
+			ScriptFreeCache(&m_scache);
+		}
 	}
 
 	SCRIPT_STRING_ANALYSIS m_ssa;
 	SCRIPT_CONTROL m_sc;
 	SCRIPT_STATE m_ss;
+	SCRIPT_CACHE m_scache;
 	size_t m_string_length;
 
 	static SCRIPT_DIGITSUBSTITUTE m_sdg;
