@@ -91,44 +91,79 @@ LRESULT t_list_view::on_inline_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM l
 					bool back = (GetKeyState(VK_SHIFT) & KF_UP) != 0;
 					if (back)
 					{
-						unsigned column = m_inline_edit_column;
-						unsigned playlist_index = m_inline_edit_indices[0];
+						t_size column = m_inline_edit_column;
+						t_size row = m_inline_edit_indices[0];
 						t_size playlist_count = m_items.get_count();
 						pfc::string8_fast_aggressive temp;
 						bool found = false;
-						do
+
+						if (indices_count == 1)
 						{
-							while (column > 0 && !(found = notify_before_create_inline_edit(indices_count>1 ? static_cast<pfc::list_base_const_t<t_size>&>(pfc::list_t<t_size>(m_inline_edit_indices)) : static_cast<pfc::list_base_const_t<t_size>&>(pfc::list_single_ref_t<t_size>(playlist_index)),--column, false)))
+							do
+							{
+								pfc::list_single_ref_t<t_size> indices(row);
+								while (column > 0 && !(found = notify_before_create_inline_edit(indices, --column, false)))
+								{
+								}
+								if (!found)
+									column = count;
+							} while (!found && row > 0 && --row >= 0);
+
+							if (found)
+							{
+								pfc::list_single_ref_t<t_size> indices(row);
+								create_inline_edit(indices, column);
+							}
+						} else {
+							while (column > 0 && !(found = notify_before_create_inline_edit(m_inline_edit_indices, --column, false)))
 							{
 							}
-						}
-						while(!found && indices_count == 1 && playlist_index > 0 && (column = count) && (playlist_index-- >= 0));
 
-						if (found)
-						{
-							create_inline_edit( indices_count>1 ? static_cast<pfc::list_base_const_t<t_size>&>(pfc::list_t<t_size>(m_inline_edit_indices)) : static_cast<pfc::list_base_const_t<t_size>&>(pfc::list_single_ref_t<t_size>(playlist_index)), column);
+							if (found)
+							{
+								create_inline_edit(m_inline_edit_indices, column);
+							}
 						}
 					}
 					else
 					{
-						unsigned column = m_inline_edit_column+1;
-						unsigned playlist_index = m_inline_edit_indices[0];
-						t_size playlist_count = m_items.get_count();
+						t_size column = m_inline_edit_column+1;
+						t_size row = m_inline_edit_indices[0];
+						t_size row_count = m_items.get_count();
 						pfc::string8_fast_aggressive temp;
 						bool found = false;
-						do
+
+						if (indices_count == 1)
 						{
-							while (column < count && !(found = notify_before_create_inline_edit(indices_count>1 ? static_cast<pfc::list_base_const_t<t_size>&>(pfc::list_t<t_size>(m_inline_edit_indices)) : static_cast<pfc::list_base_const_t<t_size>&>(pfc::list_single_ref_t<t_size>(playlist_index)), column, false)))
+							do
+							{
+								pfc::list_single_ref_t<t_size> indices(row);
+								while (column < count && !(found = notify_before_create_inline_edit(indices, column, false)))
+								{
+									column++;
+								}
+								if (!found)
+									column = 0;
+							} while (!found && ++row < row);
+
+							if (found)
+							{
+								pfc::list_single_ref_t<t_size> indices(row);
+								create_inline_edit(indices, column);
+							}
+
+						} else {
+							while (column < count && !(found = notify_before_create_inline_edit(m_inline_edit_indices, column, false)))
 							{
 								column++;
 							}
-						}
-						while(!found && indices_count == 1 && ++playlist_index < playlist_count && !(column = 0));
 
-						if (found)
-						{
-							create_inline_edit( indices_count>1 ? static_cast<pfc::list_base_const_t<t_size>&>(pfc::list_t<t_size>(m_inline_edit_indices)) : static_cast<pfc::list_base_const_t<t_size>&>(pfc::list_single_ref_t<t_size>(playlist_index)), column);
+							if (found)
+							{
+								create_inline_edit(m_inline_edit_indices, column);
+							}
 						}
+
 					}
 				}
 			}

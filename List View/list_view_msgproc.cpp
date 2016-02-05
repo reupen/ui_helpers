@@ -229,9 +229,12 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 					}
 					else
 					{
-						set_selection_state(m_alternate_selection ? (bit_array&)br : (bit_array&)bit_array_true(), m_alternate_selection && !get_item_selected(focus) ? (bit_array&)bit_array_not(br) : (bit_array&)br, true, false);
-						//set_selection_state(bit_array_true(),
-						//	br, true, false);
+						if (m_alternate_selection && !get_item_selected(focus))
+							set_selection_state(br, bit_array_not(br), true, false);
+						else if (m_alternate_selection)
+							set_selection_state(br, br, true, false);
+						else
+							set_selection_state(bit_array_true(), br, true, false);
 					}
 					set_focus_item(hit_result.index, true, false);
 					UpdateWindow(get_wnd());

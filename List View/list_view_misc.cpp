@@ -218,7 +218,12 @@ void t_list_view::process_keydown(int offset, bool alt_down, bool repeat)
 		{
 			t_size start = m_alternate_selection ? focus : m_shift_start;
 			bit_array_range array_select(min(start, t_size(focus+offset)), abs(int(start - (focus+offset)))+1);
-			set_selection_state(m_alternate_selection ? (bit_array&)array_select : (bit_array&)bit_array_true(), m_alternate_selection && !focus_sel ? (bit_array&)bit_array_not(array_select) : (bit_array&)array_select, true, false);
+			if (m_alternate_selection && !focus_sel)
+				set_selection_state(array_select, bit_array_not(array_select), true, false);
+			else if (m_alternate_selection)
+				set_selection_state(array_select, array_select, true, false);
+			else
+				set_selection_state(bit_array_true(), array_select, true, false);
 			set_focus_item(focus+offset, true, false);
 			UpdateWindow(get_wnd());
 		}
