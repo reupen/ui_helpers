@@ -718,8 +718,7 @@ namespace mmh { namespace ole {
 				{
 					hr = pDragSourceHelper2->SetFlags(DSH_ALLOWDROPDESCRIPTIONTEXT);
 				}
-				POINT pt = { 0, 0 };
-				hr = m_DragSourceHelper->InitializeFromWindow(wnd, &pt, pDataObj);
+				hr = m_DragSourceHelper->InitializeFromWindow(wnd, NULL, pDataObj);
 			}
 		}
 //#endif
