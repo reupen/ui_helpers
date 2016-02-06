@@ -232,7 +232,7 @@ HRESULT SetDropDescription(IDataObject *pdtobj, DROPIMAGETYPE dit, const char * 
 HRESULT SetUsingDefaultDragImage(IDataObject *pdtobj, BOOL value = TRUE);
 HRESULT SetIsShowingText(IDataObject *pdtobj, BOOL value = TRUE);
 HRESULT SetIsComputingImage(IDataObject *pdtobj, BOOL value = TRUE);
-HRESULT DoDragDrop(HWND wnd, WPARAM initialKeyState, IDataObject *pDataObject, DWORD dwEffect, DWORD *pdwEffect);
+HRESULT DoDragDrop(HWND wnd, WPARAM initialKeyState, IDataObject *pDataObject, DWORD permittedEffects, DWORD preferredEffect, DWORD *pdwEffect);
 
 class IDropSource_Generic : public IDropSource
 {

@@ -541,6 +541,12 @@ namespace mmh { namespace ole {
 		return cfRet;
 	}
 
+	CLIPFORMAT PreferredDropEffectFormat()
+	{
+		static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT);
+		return cfRet;
+	}
+
 	template<typename T>
 	HRESULT GetDataObjectDataSimple(IDataObject *pDataObj, CLIPFORMAT cf, T & p_out)
 	{
@@ -635,9 +641,16 @@ namespace mmh { namespace ole {
 		return SetBlob(pdtobj, IsComputingImageFormat(), &value, sizeof(value));
 	}
 
-
-	HRESULT DoDragDrop(HWND wnd, WPARAM initialKeyState, IDataObject *pDataObject, DWORD dwEffect, DWORD *pdwEffect)
+	HRESULT SetPreferredDropEffect(IDataObject *pdtobj, DWORD effect)
 	{
+		return SetBlob(pdtobj, PreferredDropEffectFormat(), &effect, sizeof(effect));
+	}
+
+	HRESULT DoDragDrop(HWND wnd, WPARAM initialKeyState, IDataObject *pDataObject, DWORD dwEffect, DWORD preferredEffect, DWORD *pdwEffect)
+	{
+		if (preferredEffect)
+			SetPreferredDropEffect(pDataObject, preferredEffect);
+
 		mmh::comptr_t<IDropSource> pDropSource;
 		//if (!is_vista_or_newer())
 		pDropSource = new mmh::ole::IDropSource_Generic(wnd, pDataObject, initialKeyState, true);
@@ -705,7 +718,8 @@ namespace mmh { namespace ole {
 				{
 					hr = pDragSourceHelper2->SetFlags(DSH_ALLOWDROPDESCRIPTIONTEXT);
 				}
-				hr = m_DragSourceHelper->InitializeFromWindow(wnd, NULL, pDataObj);
+				POINT pt = { 0, 0 };
+				hr = m_DragSourceHelper->InitializeFromWindow(wnd, &pt, pDataObj);
 			}
 		}
 //#endif

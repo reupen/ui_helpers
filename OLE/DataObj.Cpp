@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "..\stdafx.h"
 
 /**************************************************************************
 THIS CODE AND INFORMATION IS PROVIDED 'AS IS' WITHOUT WARRANTY OF
@@ -265,7 +265,6 @@ STDMETHODIMP CDataObject::SetData(LPFORMATETC pFE , LPSTGMEDIUM pSM, BOOL fRelea
 {
 	if (pFE->ptd != NULL) return DV_E_DVTARGETDEVICE;
 
-	HRESULT hr;
 	t_size index = 0;
 	if (FAILED(_FindFormatEtc(pFE, index, false)))
 	{

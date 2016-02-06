@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "..\stdafx.h"
 
 /**************************************************************************
    THIS CODE AND INFORMATION IS PROVIDED 'AS IS' WITHOUT WARRANTY OF
