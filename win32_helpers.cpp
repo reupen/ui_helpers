@@ -529,6 +529,12 @@ namespace mmh { namespace ole {
 		return cfRet;
 	}
 
+	CLIPFORMAT DisableDragTextFormat()
+	{
+		static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"DisableDragText");
+		return cfRet;
+	}
+
 	CLIPFORMAT IsComputingImageFormat()
 	{
 		static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsComutingImage");
@@ -566,8 +572,8 @@ namespace mmh { namespace ole {
 			{
 				p_out = *static_cast<T*>(pData);
 				GlobalUnlock(pData);
-				ReleaseStgMedium(&stgm);
 			}
+			ReleaseStgMedium(&stgm);
 		}
 		return hr;
 	}
@@ -613,15 +619,30 @@ namespace mmh { namespace ole {
 		}
 		return hr;
 	}
+
 	HRESULT SetDropDescription(IDataObject *pdtobj, DROPIMAGETYPE dit, const char * msg, const char * insert)
 	{
 		if (osversion::is_windows_vista_or_newer())
 		{
-			DROPDESCRIPTION dd;
-			dd.type = dit;
-			wcscpy_s(dd.szMessage, pfc::stringcvt::string_os_from_utf8(msg).get_ptr());
-			wcscpy_s(dd.szInsert, pfc::stringcvt::string_os_from_utf8(insert).get_ptr());
-			return SetBlob(pdtobj, ClipboardFormatDropDescription(), &dd, sizeof(dd));
+			DROPDESCRIPTION dd_prev;
+			memset(&dd_prev, 0, sizeof(dd_prev));
+
+			bool dd_prev_valid = (SUCCEEDED(GetDataObjectDataSimple(pdtobj, ClipboardFormatDropDescription(), dd_prev)));
+
+			pfc::stringcvt::string_os_from_utf8 wmsg(msg);
+			pfc::stringcvt::string_os_from_utf8 winsert(insert);
+
+			// Only set the drop description if it has actually changed (otherwise things get a bit crazy near the edge of the screen).
+			if (!dd_prev_valid || dd_prev.type != dit || wcscmp(dd_prev.szInsert, winsert) || wcscmp(dd_prev.szMessage, wmsg))
+			{
+				DROPDESCRIPTION dd;
+				dd.type = dit;
+				wcscpy_s(dd.szMessage, wmsg.get_ptr());
+				wcscpy_s(dd.szInsert, winsert.get_ptr());
+				return SetBlob(pdtobj, ClipboardFormatDropDescription(), &dd, sizeof(dd));
+			}
+			else
+				return S_OK;
 		}
 		return E_NOTIMPL;
 	}
@@ -634,6 +655,11 @@ namespace mmh { namespace ole {
 	HRESULT SetIsShowingText(IDataObject *pdtobj, BOOL value)
 	{
 		return SetBlob(pdtobj, IsShowingTextFormat(), &value, sizeof(value));
+	}
+
+	HRESULT SetDisableDragText(IDataObject *pdtobj, BOOL value)
+	{
+		return SetBlob(pdtobj, DisableDragTextFormat(), &value, sizeof(value));
 	}
 
 	HRESULT SetIsComputingImage(IDataObject *pdtobj, BOOL value)
@@ -700,13 +726,36 @@ namespace mmh { namespace ole {
 		if (SUCCEEDED(GetDragWindow(m_DataObject, wnd_drag)) && wnd_drag)
 			PostMessage(wnd_drag, DDWM_UPDATEWINDOW, NULL, NULL);
 
+		if (isShowingLayered)
+		{
+			if (!m_prev_is_showing_layered)
+			{
+				auto cursor = LoadCursor(NULL, IDC_ARROW);
+				SetCursor(cursor);
+			}
+			if (wnd_drag)
+			{
+				WPARAM wp = 1;
+				if (dwEffect & DROPEFFECT_COPY)
+					wp = 3;
+				else if (dwEffect & DROPEFFECT_MOVE)
+					wp = 2;
+				else if (dwEffect & DROPEFFECT_LINK)
+					wp = 4;
+
+				PostMessage(wnd_drag, WM_USER + 2, wp, NULL);
+			}
+		}
+
+		m_prev_is_showing_layered = isShowingLayered != 0;
+
 		return isShowingLayered ? S_OK : DRAGDROP_S_USEDEFAULTCURSORS;
 	}
 
 //#define FOOBAR2000_NOT_BROKE
 
 	IDropSource_Generic::IDropSource_Generic(HWND wnd, IDataObject * pDataObj, DWORD initial_key_state, bool b_allowdropdescriptiontext)
-		: refcount(0), m_initial_key_state(initial_key_state), m_DataObject(pDataObj)
+		: refcount(0), m_initial_key_state(initial_key_state), m_DataObject(pDataObj), m_prev_is_showing_layered(false)
 	{
 		HRESULT hr;
 		if (b_allowdropdescriptiontext)

@@ -231,6 +231,7 @@ HRESULT SetBlob(IDataObject *pdtobj, CLIPFORMAT cf, const void *pvBlob, UINT cbB
 HRESULT SetDropDescription(IDataObject *pdtobj, DROPIMAGETYPE dit, const char * msg, const char * insert);
 HRESULT SetUsingDefaultDragImage(IDataObject *pdtobj, BOOL value = TRUE);
 HRESULT SetIsShowingText(IDataObject *pdtobj, BOOL value = TRUE);
+HRESULT SetDisableDragText(IDataObject *pdtobj, BOOL value);
 HRESULT SetIsComputingImage(IDataObject *pdtobj, BOOL value = TRUE);
 HRESULT DoDragDrop(HWND wnd, WPARAM initialKeyState, IDataObject *pDataObject, DWORD permittedEffects, DWORD preferredEffect, DWORD *pdwEffect);
 
@@ -246,6 +247,7 @@ public:
 private:
 	long refcount;
 	DWORD m_initial_key_state;
+	bool m_prev_is_showing_layered;
 	mmh::comptr_t<IDragSourceHelper> m_DragSourceHelper;
 	mmh::comptr_t<IDataObject> m_DataObject;
 };
