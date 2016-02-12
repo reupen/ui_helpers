@@ -13,6 +13,21 @@ public:
 	};
 	enum {TIMER_SCROLL_UP = 1001,TIMER_SCROLL_DOWN = 1002,TIMER_END_SEARCH,EDIT_TIMER_ID,TIMER_BASE};
 	enum {MSG_KILL_INLINE_EDIT = WM_USER + 3};
+	struct colour_data_t {
+		bool m_themed;
+		bool m_use_custom_active_item_frame;
+		COLORREF
+			m_text,
+			m_selection_text,
+			m_inactive_selection_text,
+			m_background,
+			m_selection_background,
+			m_inactive_selection_background,
+			m_active_item_frame,
+			m_group_background,
+			m_group_text;
+
+	};
 	class t_column
 	{
 	public:
@@ -132,7 +147,7 @@ public:
 		m_autosize(false), m_wnd_inline_edit(NULL), m_proc_inline_edit(NULL), m_inline_edit_save(false), m_inline_edit_saving(false),
 		m_inline_edit_column(pfc_infinite), m_timer_inline_edit(false), m_selecting_start_column(pfc_infinite), m_inline_edit_prevent(false),
 		m_initialised(false), m_always_show_focus(false), m_prevent_wm_char_processing(false), m_timer_search(false), m_show_header(true),
-		m_show_tooltips(true), m_limit_tooltips_to_clipped_items(true), m_wnd_tooltip(NULL), m_rc_tooltip(win32::rect_null),
+		m_show_tooltips(true), m_limit_tooltips_to_clipped_items(true), m_wnd_tooltip(NULL), m_rc_tooltip(uih::rect_null),
 		m_tooltip_last_index(-1), m_tooltip_last_column(-1), m_ignore_column_size_change_notification(false), m_vertical_item_padding(4),
 		m_lf_items_valid(false), m_lf_header_valid(false), m_sorting_enabled(false), m_sort_column_index(pfc_infinite), m_sort_direction(false),
 		m_show_sort_indicators(true), m_edge_style(edge_grey), m_sizing(false), m_single_selection(false),m_alternate_selection(false),
@@ -668,22 +683,6 @@ protected:
 	bool get_show_group_info_area() {return m_group_count?m_show_group_info_area:false;}
 	t_size get_total_indentation() {return get_item_indentation() + get_group_info_area_total_width();}
 
-	struct colour_data_t
-	{
-		bool m_themed;
-		bool m_use_custom_active_item_frame;
-		COLORREF
-			m_text,
-			m_selection_text,
-			m_inactive_selection_text,
-			m_background,
-			m_selection_background,
-			m_inactive_selection_background,
-			m_active_item_frame, 
-			m_group_background,
-			m_group_text;
-
-	};
 	virtual void render_get_colour_data(colour_data_t & p_out);
 
 	void render_group_line_default(const colour_data_t & p_data, HDC dc, const RECT * rc);

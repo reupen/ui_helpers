@@ -22,17 +22,18 @@
 
 #include "../columns_ui-sdk/ui_extension.h"
 
+#include "handle.h"
 #include "win32_helpers.h"
+#include "ole.h"
 
-//#include "uxtheme.h"
 #include "message_hook.h"
 #include "trackbar.h"
 #include "solid_fill.h"
 
-#include "libpng.h"
 #include "gdi.h"
 #include "text_drawing.h"
 #include "List View\list_view.h"
+#include "drag_image.h"
 #include "message_window.h"
 #include "menu.h"
 

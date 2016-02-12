@@ -22,7 +22,7 @@ BOOL track_bar::create_tooltip(const TCHAR * text, POINT pt)
 	destroy_tooltip();
 
 	DLLVERSIONINFO2 dvi;
-	bool b_comctl_6 = SUCCEEDED(win32_helpers::get_comctl32_version(dvi)) && dvi.info1.dwMajorVersion >= 6;
+	bool b_comctl_6 = SUCCEEDED(uih::GetComCtl32Version(dvi)) && dvi.info1.dwMajorVersion >= 6;
 
 	m_wnd_tooltip = CreateWindowEx(WS_EX_TOPMOST|(b_comctl_6?WS_EX_TRANSPARENT:0), TOOLTIPS_CLASS, NULL, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
 		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, get_wnd(), 0, core_api::get_my_instance(), NULL);
@@ -362,7 +362,7 @@ HTHEME track_bar::get_theme_handle() const
 
 bool track_bar::on_hooked_message(message_hook_manager::t_message_hook_type p_type, int code, WPARAM wp, LPARAM lp)
 {
-	win32_keyboard_lparam & lpkeyb = get_keyboard_lparam(lp);
+	auto lpkeyb = uih::GetKeyboardLParam(lp);
 	if (wp == VK_ESCAPE && !lpkeyb.transition_code && !lpkeyb.previous_key_state)
 	{
 		destroy_tooltip();

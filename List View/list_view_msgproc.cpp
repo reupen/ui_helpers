@@ -8,7 +8,7 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 	if (msg && msg == MSG_DI_GETDRAGIMAGE)
 	{
 		LPSHDRAGIMAGE lpsdi = (LPSHDRAGIMAGE)lp;
-		auto dpi = win32_helpers::get_system_dpi_cached();
+		auto dpi = uih::GetSystemDpiCached();
 
 		HDC dc = GetDC(wnd);
 		HDC dc_mem = CreateCompatibleDC(dc); 
