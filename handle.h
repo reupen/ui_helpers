@@ -26,7 +26,8 @@ public:
 	{
 		return set(value);
 	}
-	t_self & operator = (t_self & value)
+	t_self & operator = (const t_self & value) = delete;
+	t_self & operator = (t_self && value)
 	{
 		set(value.detach());
 		return *this;

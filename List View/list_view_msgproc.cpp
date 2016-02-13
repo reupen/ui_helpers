@@ -8,31 +8,8 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 	if (msg && msg == MSG_DI_GETDRAGIMAGE)
 	{
 		LPSHDRAGIMAGE lpsdi = (LPSHDRAGIMAGE)lp;
-		auto dpi = uih::GetSystemDpiCached();
 
-		HDC dc = GetDC(wnd);
-		HDC dc_mem = CreateCompatibleDC(dc); 
-		HBITMAP bm_mem = CreateCompatibleBitmap(dc, dpi.cx, dpi.cy); // Not deleted - the shell takes ownership.
-		HBITMAP bm_old = SelectBitmap(dc_mem, bm_mem);
-
-		RECT rc = { 0, 0, dpi.cx, dpi.cy };
-
-		pfc::string8 drag_text;
-		auto show_text = format_drag_text(get_drag_item_count(), drag_text);
-		render_drag_image(dc_mem, rc, show_text, drag_text);
-
-		SelectObject(dc_mem, bm_old);
-		DeleteDC(dc_mem);
-		ReleaseDC(wnd, dc);
-
-		lpsdi->sizeDragImage.cx = dpi.cx;
-		lpsdi->sizeDragImage.cy = dpi.cy;
-		lpsdi->ptOffset.x = dpi.cx/2;
-		lpsdi->ptOffset.y = dpi.cy - dpi.cy/10;
-		lpsdi->hbmpDragImage = bm_mem;
-		lpsdi->crColorKey = 0xffffffff;
-
-		return TRUE;
+		return render_drag_image(lpsdi);
 	}
 #endif
 
@@ -103,7 +80,9 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 	case WM_THEMECHANGED:
 		{
 			if (m_theme) CloseThemeData(m_theme);
-			m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, L"ListView") : 0;
+			m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, L"ListView") : NULL;
+			if (m_dd_theme) CloseThemeData(m_dd_theme);
+			m_dd_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, VSCLASS_DRAGDROP) : NULL;
 		}
 		break;
 	case WM_TIMECHANGE:

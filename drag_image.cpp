@@ -1,14 +1,14 @@
 #include "stdafx.h"
 
 namespace uih {
-	void DrawDragImageBackground(HWND wnd, HTHEME theme, HDC dc, const RECT & rc, const t_list_view::colour_data_t & colour_data)
+	void DrawDragImageBackground(HWND wnd, bool isThemed, HTHEME theme, HDC dc, const RECT & rc)
 	{
 		int themeState = 0;
 
-		bool isThemed = theme && colour_data.m_themed && IsThemePartDefined(theme, DD_IMAGEBG, themeState);
+		bool useTheming = theme && isThemed && IsThemePartDefined(theme, DD_IMAGEBG, themeState);
 
 		COLORREF cr_text = NULL;
-		if (isThemed)
+		if (useTheming)
 		{
 			{
 				if (IsThemeBackgroundPartiallyTransparent(theme, DD_IMAGEBG, themeState))
@@ -17,14 +17,13 @@ namespace uih {
 			}
 		}
 	}
-	void DrawDragImageLabel(HWND wnd, HTHEME theme, HDC dc, const RECT & rc, const t_list_view::colour_data_t & colour_data, const char * text)
+	void DrawDragImageLabel(HWND wnd, bool isThemed, HTHEME theme, HDC dc, const RECT & rc, COLORREF selectionBackgroundColour, COLORREF selectionTextColour, const char * text)
 	{
-		
 		int theme_state = 0;
-		bool b_themed = theme && colour_data.m_themed && IsThemePartDefined(theme, DD_TEXTBG, theme_state);
+		bool useTheming = theme && isThemed && IsThemePartDefined(theme, DD_TEXTBG, theme_state);
 
 		COLORREF cr_text = NULL;
-		if (b_themed)
+		if (useTheming)
 		{
 			pfc::stringcvt::string_os_from_utf8 wtext(text);
 			DWORD text_flags = DT_SINGLELINE;
@@ -66,13 +65,60 @@ namespace uih {
 				RECT_CX(rc) / 2 + sz.cx - sz.cx / 2 + padding_cx,
 				RECT_CY(rc) / 2 + sz.cy - sz.cy / 2 + padding_cy
 			};
-			FillRect(dc, &rc_background, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(colour_data.m_selection_background)));
-			ui_helpers::text_out_colours_tab(dc, text, pfc_infinite, 0, 0, &rc, true, colour_data.m_selection_text, false, false, false, ui_helpers::ALIGN_CENTRE);
+			FillRect(dc, &rc_background, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(selectionBackgroundColour)));
+			ui_helpers::text_out_colours_tab(dc, text, pfc_infinite, 0, 0, &rc, true, selectionTextColour, false, false, false, ui_helpers::ALIGN_CENTRE);
 		}
 	}
 	void DrawDragImageIcon(HDC dc, const RECT & rc, HICON icon)
 	{
 		// We may want to use better scaling.
 		DrawIconEx(dc, 0, 0, icon, RECT_CX(rc), RECT_CY(rc), NULL, NULL, DI_NORMAL);
+	}
+	BOOL CreateDragImage(HWND wnd, bool isThemed, HTHEME theme, COLORREF selectionBackgroundColour, COLORREF selectionTextColour,
+		HICON icon, const LPLOGFONT font, bool showText, const char * text, LPSHDRAGIMAGE lpsdi)
+	{
+		auto dpi = uih::GetSystemDpiCached();
+
+		HDC dc = GetDC(wnd);
+		HDC dc_mem = CreateCompatibleDC(dc);
+		HBITMAP bm_mem = CreateCompatibleBitmap(dc, dpi.cx, dpi.cy); // Not deleted - the shell takes ownership.
+		HBITMAP bm_old = SelectBitmap(dc_mem, bm_mem);
+
+		RECT rc = { 0, 0, dpi.cx, dpi.cy };
+
+		pfc::string8 drag_text;
+
+		LOGFONT lf = *font;
+
+		lf.lfWeight = FW_BOLD;
+		//lf.lfQuality = NONANTIALIASED_QUALITY;
+		HFONT fnt = CreateFontIndirect(&lf);
+
+		HFONT font_old = SelectFont(dc_mem, fnt);
+
+		uih::DrawDragImageBackground(wnd, isThemed, theme, dc_mem, rc);
+
+		if (icon)
+			uih::DrawDragImageIcon(dc_mem, rc, icon);
+
+		// Draw label
+		if (showText)
+			uih::DrawDragImageLabel(wnd, isThemed, theme, dc_mem, rc, selectionBackgroundColour, selectionTextColour, text);
+
+		SelectFont(dc_mem, font_old);
+		DeleteFont(fnt);
+
+		SelectObject(dc_mem, bm_old);
+		DeleteDC(dc_mem);
+		ReleaseDC(wnd, dc);
+
+		lpsdi->sizeDragImage.cx = dpi.cx;
+		lpsdi->sizeDragImage.cy = dpi.cy;
+		lpsdi->ptOffset.x = dpi.cx / 2;
+		lpsdi->ptOffset.y = dpi.cy - dpi.cy / 10;
+		lpsdi->hbmpDragImage = bm_mem;
+		lpsdi->crColorKey = 0xffffffff;
+
+		return TRUE;
 	}
 }

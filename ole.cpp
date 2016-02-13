@@ -170,14 +170,14 @@ namespace mmh {
 			return SetBlob(pdtobj, PreferredDropEffectFormat(), &effect, sizeof(effect));
 		}
 
-		HRESULT DoDragDrop(HWND wnd, WPARAM initialKeyState, IDataObject *pDataObject, DWORD dwEffect, DWORD preferredEffect, DWORD *pdwEffect)
+		HRESULT DoDragDrop(HWND wnd, WPARAM initialKeyState, IDataObject *pDataObject, DWORD dwEffect, DWORD preferredEffect, DWORD *pdwEffect, SHDRAGIMAGE * lpsdi)
 		{
 			if (preferredEffect)
 				SetPreferredDropEffect(pDataObject, preferredEffect);
 
 			mmh::comptr_t<IDropSource> pDropSource;
 			//if (!IsVistaOrNewer())
-			pDropSource = new mmh::ole::IDropSource_Generic(wnd, pDataObject, initialKeyState, true);
+			pDropSource = new mmh::ole::IDropSource_Generic(wnd, pDataObject, initialKeyState, true, lpsdi);
 			return SHDoDragDrop(wnd, pDataObject, pDropSource, dwEffect, pdwEffect);
 		}
 
@@ -251,7 +251,7 @@ namespace mmh {
 			return isShowingLayered ? S_OK : DRAGDROP_S_USEDEFAULTCURSORS;
 		}
 
-		IDropSource_Generic::IDropSource_Generic(HWND wnd, IDataObject * pDataObj, DWORD initial_key_state, bool b_allowdropdescriptiontext)
+		IDropSource_Generic::IDropSource_Generic(HWND wnd, IDataObject * pDataObj, DWORD initial_key_state, bool b_allowdropdescriptiontext, SHDRAGIMAGE * lpsdi)
 			: refcount(0), m_initial_key_state(initial_key_state), m_DataObject(pDataObj), m_prev_is_showing_layered(false)
 		{
 			HRESULT hr;
@@ -264,7 +264,17 @@ namespace mmh {
 					{
 						hr = pDragSourceHelper2->SetFlags(DSH_ALLOWDROPDESCRIPTIONTEXT);
 					}
-					hr = m_DragSourceHelper->InitializeFromWindow(wnd, NULL, pDataObj);
+					if (lpsdi)
+					{
+						hr = m_DragSourceHelper->InitializeFromBitmap(lpsdi, pDataObj);
+						if (FAILED(hr) && lpsdi->hbmpDragImage)
+						{
+							DeleteObject(lpsdi->hbmpDragImage);
+							lpsdi->hbmpDragImage = NULL;
+						}
+					}
+					else
+						hr = m_DragSourceHelper->InitializeFromWindow(wnd, NULL, pDataObj);
 				}
 			}
 		};

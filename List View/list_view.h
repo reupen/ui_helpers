@@ -693,14 +693,13 @@ protected:
 	void render_group_default(const colour_data_t & p_data, HDC dc, const char * text, t_size indentation, t_size level, const RECT & rc);
 	void render_item_default(const colour_data_t & p_data, HDC dc, t_size index, t_size indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT * rc);
 	void render_background_default(const colour_data_t & p_data, HDC dc, const RECT * rc);
-	void render_drag_image_default(const colour_data_t & p_data, HDC dc, const RECT & rc, bool draw_text, const char * text);
 
 	virtual void render_group_info(HDC dc, t_size index, t_size group_count, const RECT & rc) {};
 	virtual void render_group(HDC dc, t_size index, t_size group, const char * text, t_size indentation, t_size level, const RECT & rc);
 	virtual void render_item(HDC dc, t_size index, t_size indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT * rc);
 	virtual void render_background(HDC dc, const RECT * rc);
-	virtual void render_drag_image(HDC dc, const RECT & rc, bool draw_text, const char * text);
-	virtual void render_drag_image_icon(HDC dc, const RECT & rc) {};
+	virtual bool render_drag_image(LPSHDRAGIMAGE lpsdi);
+	virtual icon_ptr get_drag_image_icon() { return nullptr; }
 
 	virtual t_size get_drag_item_count() /*const*/ { return get_selection_count(); };
 	virtual bool format_drag_text(t_size selection_count, pfc::string8 & p_out);
