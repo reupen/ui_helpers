@@ -260,7 +260,7 @@ BOOL uGetTextExtentExPoint_helper::run(HDC dc, const char * text, int length, in
 		text_w.convert(src, length);
 #if 1
 		ScriptString_instance p_ScriptString;
-		p_ScriptString.analyse(dc, text_w.get_ptr(), text_w.length(), max_width, true);
+		p_ScriptString.analyse(dc, text_w.get_ptr(), text_w.length(), max_width, max_chars != nullptr);
 
 		{
 			int _max_chars = p_ScriptString.get_output_character_count();
