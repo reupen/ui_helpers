@@ -37,6 +37,7 @@
 #include "message_window.h"
 #include "menu.h"
 
+#include "config_var.h"
 #include "fcl.h"
 
 #include "OLE\DataObj.h"

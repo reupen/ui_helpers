@@ -31,6 +31,7 @@
     <ClInclude Include="ole.h" />
     <ClInclude Include="drag_image.h" />
     <ClInclude Include="handle.h" />
+    <ClInclude Include="config_var.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="List View\list_view_columns.cpp">

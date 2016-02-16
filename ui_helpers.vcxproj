@@ -149,6 +149,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="config_var.h" />
     <ClInclude Include="drag_image.h" />
     <ClInclude Include="handle.h" />
     <ClInclude Include="List View\list_view.h" />
@@ -278,6 +279,5 @@
     <ClCompile Include="win32_helpers.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets" />
 </Project>
