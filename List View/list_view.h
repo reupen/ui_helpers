@@ -322,15 +322,16 @@ public:
 	struct t_hit_test_result
 	{
 		t_size index;
+		t_size insertion_index;
 		t_size group_level;
 		t_size column;
 		//t_size index_visible;
 		//t_size index_partially_obscured;
 		t_hit_test_value result;
-		t_hit_test_result() : result(hit_test_nowhere), index(NULL), group_level(NULL), column(NULL)
+		t_hit_test_result() : result(hit_test_nowhere), index(NULL), insertion_index(NULL), group_level(NULL), column(NULL)
 		{};
 	};
-	void hit_test_ex(POINT pt_client, t_hit_test_result & result, bool drag_drop = false);
+	void hit_test_ex(POINT pt_client, t_hit_test_result & result);
 	void update_scroll_info(bool b_update = true, bool b_vertical = true, bool b_horizontal = true);
 	void _update_scroll_info_vertical();
 	void _update_scroll_info_horizontal();
