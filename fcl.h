@@ -190,7 +190,9 @@ namespace fcl
 		}
 		void skip (t_size delta)
 		{
-			if (m_input->skip(delta, m_abort) != delta)
+			auto read = m_input->skip(delta, m_abort);
+			m_position += read;
+			if (read != delta)
 				throw exception_io_data_truncation();
 		}
 		reader(stream_reader * p_input, t_size size, abort_callback & p_abort)
