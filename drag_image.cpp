@@ -1,8 +1,8 @@
 #include "stdafx.h"
 
 namespace uih {
-	// Not used – the shell draws the background for us
-	void DrawDragImageBackground(HWND wnd, bool isThemed, HTHEME theme, HDC dc, const RECT & rc)
+	// Only used in non-themed mode – if theming is active, the shell draws the background for us
+	void DrawDragImageBackground(HWND wnd, bool isThemed, HTHEME theme, HDC dc, COLORREF selectionBackgroundColour, const RECT & rc)
 	{
 		int themeState = 0;
 
@@ -17,27 +17,39 @@ namespace uih {
 				DrawThemeBackground(theme, dc, DD_IMAGEBG, themeState, &rc, nullptr);
 			}
 		}
+		else
+		{
+			FillRect(dc, &rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(selectionBackgroundColour)));
+		}
 	}
-	void DrawDragImageLabel(HWND wnd, bool isThemed, HTHEME theme, HDC dc, const RECT & rc, COLORREF selectionBackgroundColour, COLORREF selectionTextColour, const char * text)
+	void DrawDragImageLabel(HWND wnd, bool isThemed, HTHEME theme, HDC dc, const RECT & rc, COLORREF selectionTextColour, const char * text)
 	{
 		int theme_state = 0;
 		bool useTheming = theme && isThemed && IsThemePartDefined(theme, DD_TEXTBG, theme_state);
+		pfc::stringcvt::string_os_from_utf8 wtext(text);
+		DWORD text_flags = DT_CENTER | DT_WORDBREAK;
+		RECT rc_text = { 0 };
 
 		COLORREF cr_text = NULL;
 		if (useTheming)
 		{
-			pfc::stringcvt::string_os_from_utf8 wtext(text);
-			DWORD text_flags = DT_CENTER | DT_WORDBREAK;
-			RECT rc_text = { 0 };
 			GetThemeTextExtent(theme, dc, DD_TEXTBG, theme_state, wtext, -1, text_flags, &rc, &rc_text);
+		}
+		else 
+		{
+			rc_text = rc;
+			DrawText(dc, wtext, -1, &rc_text, text_flags | DT_CALCRECT);
+		}
 
-			auto x_offset = (RECT_CX(rc) - RECT_CX(rc_text)) / 2;
-			auto y_offset = (RECT_CY(rc) - RECT_CY(rc_text)) / 2;
-			rc_text.left += x_offset;
-			rc_text.right += x_offset;
-			rc_text.top += y_offset;
-			rc_text.bottom += y_offset;
+		auto x_offset = (RECT_CX(rc) - RECT_CX(rc_text)) / 2;
+		auto y_offset = (RECT_CY(rc) - RECT_CY(rc_text)) / 2;
+		rc_text.left += x_offset;
+		rc_text.right += x_offset;
+		rc_text.top += y_offset;
+		rc_text.bottom += y_offset;
 
+		if (useTheming)
+		{
 			MARGINS margins = { 0 };
 			GetThemeMargins(theme, dc, DD_TEXTBG, theme_state, TMT_CONTENTMARGINS, &rc_text, &margins);
 
@@ -54,20 +66,13 @@ namespace uih {
 		}
 		else
 		{
-			SIZE sz = { 0 };
-			ui_helpers::get_text_size(dc, text, strlen(text), sz);
-			auto dpi = uih::GetSystemDpiCached();
-			auto padding_cy = MulDiv(sz.cy, dpi.cy, 96 * 14);
-			auto padding_cx = MulDiv(sz.cy, dpi.cx, 96 * 4);
-
-			RECT rc_background = {
-				RECT_CX(rc) / 2 - sz.cx / 2 - padding_cx,
-				RECT_CY(rc) / 2 - sz.cy / 2 - padding_cy,
-				RECT_CX(rc) / 2 + sz.cx - sz.cx / 2 + padding_cx,
-				RECT_CY(rc) / 2 + sz.cy - sz.cy / 2 + padding_cy
-			};
-			FillRect(dc, &rc_background, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(selectionBackgroundColour)));
-			ui_helpers::text_out_colours_tab(dc, text, pfc_infinite, 0, 0, &rc, true, selectionTextColour, false, false, false, ui_helpers::ALIGN_CENTRE);
+			auto previousColour = GetTextColor(dc);
+			auto previousBackgroundMode = GetBkMode(dc);
+			SetTextColor(dc, selectionTextColour);
+			SetBkMode(dc, TRANSPARENT);
+			DrawText(dc, wtext, -1, &rc_text, text_flags);
+			SetTextColor(dc, previousColour);
+			SetBkMode(dc, previousBackgroundMode);
 		}
 	}
 	void DrawDragImageIcon(HDC dc, const RECT & rc, HICON icon)
@@ -118,12 +123,17 @@ namespace uih {
 
 		HFONT font_old = SelectFont(dc_mem, fnt);
 
+		if (!isThemed || !theme)
+		{
+			DrawDragImageBackground(wnd, isThemed, theme, dc_mem, selectionBackgroundColour, rc);
+		}
+
 		if (icon)
 			uih::DrawDragImageIcon(dc_mem, rc, icon);
 
 		// Draw label
 		if (showText)
-			uih::DrawDragImageLabel(wnd, isThemed, theme, dc_mem, rc, selectionBackgroundColour, selectionTextColour, text);
+			uih::DrawDragImageLabel(wnd, isThemed, theme, dc_mem, rc, selectionTextColour, text);
 
 		SelectFont(dc_mem, font_old);
 		DeleteFont(fnt);

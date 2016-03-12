@@ -220,7 +220,8 @@ namespace mmh {
 		{
 			HWND wnd_drag = NULL;
 			BOOL isShowingLayered = FALSE;
-			GetIsShowingLayered(m_DataObject, isShowingLayered);
+			if (IsThemeActive())
+				GetIsShowingLayered(m_DataObject, isShowingLayered);
 
 			if (SUCCEEDED(GetDragWindow(m_DataObject, wnd_drag)) && wnd_drag)
 				PostMessage(wnd_drag, DDWM_UPDATEWINDOW, NULL, NULL);
@@ -255,6 +256,7 @@ namespace mmh {
 			: refcount(0), m_initial_key_state(initial_key_state), m_DataObject(pDataObj), m_prev_is_showing_layered(false)
 		{
 			HRESULT hr;
+
 			if (b_allowdropdescriptiontext)
 			{
 				if (SUCCEEDED(m_DragSourceHelper.instantiate(CLSID_DragDropHelper, NULL, CLSCTX_INPROC_SERVER)))
@@ -275,7 +277,7 @@ namespace mmh {
 					}
 					else
 						hr = m_DragSourceHelper->InitializeFromWindow(wnd, NULL, pDataObj);
-					if (SUCCEEDED(hr))
+					if (IsThemeActive() && IsAppThemed())
 					{
 						SetUsingDefaultDragImage(pDataObj);
 					}
