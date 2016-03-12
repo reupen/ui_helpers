@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 namespace uih {
+	// Not used – the shell draws the background for us
 	void DrawDragImageBackground(HWND wnd, bool isThemed, HTHEME theme, HDC dc, const RECT & rc)
 	{
 		int themeState = 0;
@@ -26,9 +27,9 @@ namespace uih {
 		if (useTheming)
 		{
 			pfc::stringcvt::string_os_from_utf8 wtext(text);
-			DWORD text_flags = DT_SINGLELINE;
+			DWORD text_flags = DT_CENTER | DT_WORDBREAK;
 			RECT rc_text = { 0 };
-			GetThemeTextExtent(theme, dc, DD_TEXTBG, theme_state, wtext, -1, text_flags | DT_CALCRECT, NULL, &rc_text);
+			GetThemeTextExtent(theme, dc, DD_TEXTBG, theme_state, wtext, -1, text_flags, &rc, &rc_text);
 
 			auto x_offset = (RECT_CX(rc) - RECT_CX(rc_text)) / 2;
 			auto y_offset = (RECT_CY(rc) - RECT_CY(rc_text)) / 2;
@@ -74,17 +75,38 @@ namespace uih {
 		// We may want to use better scaling.
 		DrawIconEx(dc, 0, 0, icon, RECT_CX(rc), RECT_CY(rc), NULL, NULL, DI_NORMAL);
 	}
+	SIZE GetDragImageContentSize(HDC dc, bool isThemed, HTHEME theme)
+	{
+		auto sz = uih::GetSystemDpiCached();
+		auto margins = MARGINS{ 0 };
+		auto themeState = 0;
+		auto hr = HRESULT{ S_OK };
+
+		auto useTheming = theme && isThemed && IsThemePartDefined(theme, DD_IMAGEBG, themeState);
+		if (useTheming) {
+			hr = GetThemePartSize(theme, dc, DD_IMAGEBG, themeState, nullptr, TS_DRAW, &sz);
+			if (SUCCEEDED(hr)) {
+				hr = GetThemeMargins(theme, dc, DD_IMAGEBG, themeState, TMT_CONTENTMARGINS, nullptr, &margins);
+			}
+			if (SUCCEEDED(hr)) {
+				sz.cx -= margins.cxLeftWidth + margins.cxRightWidth;
+				sz.cy -= margins.cyBottomHeight + margins.cyTopHeight;
+			}
+		}
+
+		return sz;
+	}
 	BOOL CreateDragImage(HWND wnd, bool isThemed, HTHEME theme, COLORREF selectionBackgroundColour, COLORREF selectionTextColour,
 		HICON icon, const LPLOGFONT font, bool showText, const char * text, LPSHDRAGIMAGE lpsdi)
 	{
-		auto dpi = uih::GetSystemDpiCached();
-
 		HDC dc = GetDC(wnd);
 		HDC dc_mem = CreateCompatibleDC(dc);
-		HBITMAP bm_mem = CreateCompatibleBitmap(dc, dpi.cx, dpi.cy); // Not deleted - the shell takes ownership.
-		HBITMAP bm_old = SelectBitmap(dc_mem, bm_mem);
 
-		RECT rc = { 0, 0, dpi.cx, dpi.cy };
+		SIZE size = GetDragImageContentSize(dc, isThemed, theme);
+		RECT rc = { 0, 0, size.cx, size.cy };
+
+		HBITMAP bm_mem = CreateCompatibleBitmap(dc, size.cx, size.cy); // Not deleted - the shell takes ownership.
+		HBITMAP bm_old = SelectBitmap(dc_mem, bm_mem);
 
 		pfc::string8 drag_text;
 
@@ -95,8 +117,6 @@ namespace uih {
 		HFONT fnt = CreateFontIndirect(&lf);
 
 		HFONT font_old = SelectFont(dc_mem, fnt);
-
-		uih::DrawDragImageBackground(wnd, isThemed, theme, dc_mem, rc);
 
 		if (icon)
 			uih::DrawDragImageIcon(dc_mem, rc, icon);
@@ -112,10 +132,10 @@ namespace uih {
 		DeleteDC(dc_mem);
 		ReleaseDC(wnd, dc);
 
-		lpsdi->sizeDragImage.cx = dpi.cx;
-		lpsdi->sizeDragImage.cy = dpi.cy;
-		lpsdi->ptOffset.x = dpi.cx / 2;
-		lpsdi->ptOffset.y = dpi.cy - dpi.cy / 10;
+		lpsdi->sizeDragImage.cx = size.cx;
+		lpsdi->sizeDragImage.cy = size.cy;
+		lpsdi->ptOffset.x = size.cx / 2;
+		lpsdi->ptOffset.y = size.cy - size.cy / 10;
 		lpsdi->hbmpDragImage = bm_mem;
 		lpsdi->crColorKey = 0xffffffff;
 

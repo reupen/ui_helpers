@@ -703,8 +703,10 @@ protected:
 	virtual icon_ptr get_drag_image_icon() { return nullptr; }
 
 	virtual t_size get_drag_item_count() /*const*/ { return get_selection_count(); };
+	virtual bool should_show_drag_text(t_size selection_count) { return selection_count > 1; }
 	virtual bool format_drag_text(t_size selection_count, pfc::string8 & p_out);
 
+	virtual const char * get_drag_unit_singular() const { return "item"; }
 	virtual const char * get_drag_unit_plural() const { return "items"; }
 
 	HTHEME get_theme() {return m_theme;}

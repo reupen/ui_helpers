@@ -275,6 +275,10 @@ namespace mmh {
 					}
 					else
 						hr = m_DragSourceHelper->InitializeFromWindow(wnd, NULL, pDataObj);
+					if (SUCCEEDED(hr))
+					{
+						SetUsingDefaultDragImage(pDataObj);
+					}
 				}
 			}
 		};

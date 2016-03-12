@@ -15,16 +15,16 @@ bool t_list_view::render_drag_image(LPSHDRAGIMAGE lpsdi)
 	else
 		GetObject(m_font, sizeof(lf), &lf);
 
-	return uih::CreateDragImage(get_wnd(), p_data.m_themed, m_dd_theme, p_data.m_selection_background, p_data.m_selection_text, icon, &lf, show_text, drag_text, lpsdi) != 0;
+	return uih::CreateDragImage(get_wnd(), true, m_dd_theme, p_data.m_selection_background, p_data.m_selection_text, icon, &lf, show_text, drag_text, lpsdi) != 0;
 }
 
 bool t_list_view::format_drag_text(t_size selection_count, pfc::string8 & p_out)
 {
-	auto show_text = selection_count > 1;
+	auto show_text = should_show_drag_text(selection_count);
 	if (show_text)
 	{
 		p_out.reset();
-		p_out << mmh::format_integer(selection_count) << " " << get_drag_unit_plural();
+		p_out << mmh::format_integer(selection_count) << " " << (selection_count != 1 ? get_drag_unit_plural() : get_drag_unit_singular());
 	}
 	return show_text;
 }
