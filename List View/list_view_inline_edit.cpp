@@ -144,7 +144,7 @@ LRESULT t_list_view::on_inline_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM l
 								}
 								if (!found)
 									column = 0;
-							} while (!found && ++row < row);
+							} while (!found && ++row < row_count);
 
 							if (found)
 							{
@@ -392,8 +392,9 @@ void t_list_view::create_inline_edit(const pfc::list_base_const_t<t_size> & indi
 	SendMessage(m_wnd_inline_edit, EM_SETSEL, 0, -1);
 	SetFocus(m_wnd_inline_edit);
 
-	m_inline_edit_indices.remove_all();
-	m_inline_edit_indices.add_items(indices);
+	
+	if (&indices != &m_inline_edit_indices)
+		m_inline_edit_indices = indices;
 	m_inline_edit_column = column;
 }
 
