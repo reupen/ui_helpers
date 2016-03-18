@@ -1,6 +1,6 @@
 #include "..\stdafx.h"
 
-void t_list_view::hit_test_ex(POINT pt_client, t_list_view::t_hit_test_result & result, bool b_drag_drop)
+void t_list_view::hit_test_ex(POINT pt_client, t_list_view::t_hit_test_result & result)
 {
 	result.column = pfc_infinite;
 	t_ssize x_left_items=-m_horizontal_scroll_position+get_total_indentation();
@@ -17,6 +17,7 @@ void t_list_view::hit_test_ex(POINT pt_client, t_list_view::t_hit_test_result & 
 	if (pt_client.y < rc.top)
 	{
 		result.index = get_next_item(m_scroll_position);
+		result.insertion_index = result.index;
 		//result.index_partially_obscured = get_previous_item(m_scroll_position);
 		result.result = hit_test_above;
 		return;
@@ -24,6 +25,7 @@ void t_list_view::hit_test_ex(POINT pt_client, t_list_view::t_hit_test_result & 
 	if (pt_client.y > rc.bottom)
 	{
 		result.index = get_last_viewable_item();
+		result.insertion_index = result.index;
 		//result.index_partially_obscured = get_last_item(m_scroll_position);
 		result.result = hit_test_below;
 		return;
@@ -38,6 +40,7 @@ void t_list_view::hit_test_ex(POINT pt_client, t_list_view::t_hit_test_result & 
 			&& pt_client.y + m_scroll_position < end)
 		{
 			result.index = i;
+			result.insertion_index = result.index;
 			result.result =  hit_test_on;
 			if (pt_client.x < x_left_items)
 				result.result = hit_test_left_of_item;
@@ -48,14 +51,11 @@ void t_list_view::hit_test_ex(POINT pt_client, t_list_view::t_hit_test_result & 
 			else if (end - m_scroll_position > rc.bottom)
 				result.result =  hit_test_obscured_below;
 
-			if (b_drag_drop && result.result == hit_test_on)
+			if (result.result == hit_test_on)
 			{
 				if (get_item_height(i) >= 2 && (pt_client.y + m_scroll_position) >= (start + get_item_height(i)/2))
 				{
-					if (i+1 < count)
-						result.index++;
-					else
-						result.result = hit_test_below_items;
+					result.insertion_index++;
 				}
 			}
 			return;
@@ -66,6 +66,7 @@ void t_list_view::hit_test_ex(POINT pt_client, t_list_view::t_hit_test_result & 
 			{
 				result.result = hit_test_on_group;
 				result.index = i;//get_next_item(pt_client.y - header_height + m_scroll_position);
+				result.insertion_index = result.index;
 				result.group_level = m_group_count ? (m_group_count - (get_item_position(result.index)-(pt_client.y - header_height + m_scroll_position) -1 )/m_group_height - 1) : 0;
 				if (pt_client.x < 0)
 					result.result = hit_test_left_of_group;
@@ -81,6 +82,7 @@ void t_list_view::hit_test_ex(POINT pt_client, t_list_view::t_hit_test_result & 
 			{
 				result.result = hit_test_on_group;
 				result.index = i+1;
+				result.insertion_index = result.index;
 				result.group_level = m_group_count ? (m_group_count - (get_item_position(result.index)-(pt_client.y - header_height + m_scroll_position) - 1)/m_group_height - 1) : 0;
 				if (pt_client.x < 0)
 					result.result = hit_test_left_of_group;
@@ -90,6 +92,7 @@ void t_list_view::hit_test_ex(POINT pt_client, t_list_view::t_hit_test_result & 
 			else// if (i+1 == count)
 			{
 				result.index = i;
+				result.insertion_index = i + 1;
 				result.result = hit_test_below_items;
 			}
 			//else

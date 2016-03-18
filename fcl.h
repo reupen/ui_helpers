@@ -1,39 +1,5 @@
 #pragma once
 
-template <typename t_type>
-class config_item_t
-{
-	cfg_int_t<t_type> m_value;
-public:
-
-	void reset(){set(get_default_value());}
-	void set (t_type p_val){m_value = p_val; on_change();}
-	t_type get () const {return m_value;};
-
-	virtual t_type get_default_value ()=0;
-	virtual void on_change()=0;
-	virtual const GUID & get_guid()=0;
-	config_item_t(const GUID & p_guid, t_type p_value) : m_value(p_guid,p_value)
-	{};
-};
-
-template<>
-class config_item_t<pfc::string8>
-{
-	cfg_string m_value;
-public:
-
-	void reset(){set(get_default_value());}
-	void set (const char * p_val){m_value = p_val; on_change();}
-	const char * get () const {return m_value;};
-
-	virtual const char * get_default_value ()=0;
-	virtual void on_change()=0;
-	virtual const GUID & get_guid()=0;
-	config_item_t(const GUID & p_guid, const char * p_value) : m_value(p_guid, p_value)
-	{};
-};
-
 namespace fcl
 {
 	class writer
@@ -207,7 +173,7 @@ namespace fcl
 			pfc::assert_raw_type<t_item>();
 			bool temp;
 			m_input->read_lendian_t(temp, m_abort);
-			t_item = temp;
+			p_out = temp;
 			m_position += sizeof (bool);
 		};
 		template <typename t_int_type>
@@ -224,7 +190,9 @@ namespace fcl
 		}
 		void skip (t_size delta)
 		{
-			if (m_input->skip(delta, m_abort) != delta)
+			auto read = m_input->skip(delta, m_abort);
+			m_position += read;
+			if (read != delta)
 				throw exception_io_data_truncation();
 		}
 		reader(stream_reader * p_input, t_size size, abort_callback & p_abort)

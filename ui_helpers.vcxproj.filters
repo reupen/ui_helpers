@@ -4,7 +4,7 @@
     <Filter Include="List View">
       <UniqueIdentifier>{849e6bdd-edd2-4504-ada7-02bb241d39ec}</UniqueIdentifier>
     </Filter>
-    <Filter Include="OLE">
+    <Filter Include="Data Object">
       <UniqueIdentifier>{29b3132f-c094-4c8d-a22c-92ca8ed4b40f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -13,14 +13,13 @@
       <Filter>List View</Filter>
     </ClInclude>
     <ClInclude Include="OLE\DataObj.h">
-      <Filter>OLE</Filter>
+      <Filter>Data Object</Filter>
     </ClInclude>
     <ClInclude Include="OLE\Enumfe.h">
-      <Filter>OLE</Filter>
+      <Filter>Data Object</Filter>
     </ClInclude>
     <ClInclude Include="fcl.h" />
     <ClInclude Include="gdi.h" />
-    <ClInclude Include="libpng.h" />
     <ClInclude Include="menu.h" />
     <ClInclude Include="message_hook.h" />
     <ClInclude Include="message_window.h" />
@@ -28,8 +27,11 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="text_drawing.h" />
     <ClInclude Include="trackbar.h" />
-    <ClInclude Include="uxtheme.h" />
     <ClInclude Include="win32_helpers.h" />
+    <ClInclude Include="ole.h" />
+    <ClInclude Include="drag_image.h" />
+    <ClInclude Include="handle.h" />
+    <ClInclude Include="config_var.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="List View\list_view_columns.cpp">
@@ -72,21 +74,21 @@
       <Filter>List View</Filter>
     </ClCompile>
     <ClCompile Include="OLE\DataObj.Cpp">
-      <Filter>OLE</Filter>
+      <Filter>Data Object</Filter>
     </ClCompile>
     <ClCompile Include="OLE\Enumfe.Cpp">
-      <Filter>OLE</Filter>
+      <Filter>Data Object</Filter>
     </ClCompile>
-    <ClCompile Include="libpng.cpp" />
     <ClCompile Include="message_hook.cpp" />
     <ClCompile Include="solid_fill.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="text_drawing.cpp" />
     <ClCompile Include="trackbar.cpp" />
-    <ClCompile Include="uxtheme.cpp" />
     <ClCompile Include="win32_helpers.cpp" />
     <ClCompile Include="List View\list_view_drag_image.cpp">
       <Filter>List View</Filter>
     </ClCompile>
+    <ClCompile Include="ole.cpp" />
+    <ClCompile Include="drag_image.cpp" />
   </ItemGroup>
 </Project>

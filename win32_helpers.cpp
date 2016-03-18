@@ -1,77 +1,70 @@
 #include "stdafx.h"
 
-class param_utf16_from_utf8 : public pfc::stringcvt::string_wide_from_utf8
-{
+class param_utf16_from_utf8 : public pfc::stringcvt::string_wide_from_utf8 {
 	bool is_null;
 	WORD low_word;
 public:
-	param_utf16_from_utf8(const char * p) : 
-	  is_null(p==0), 
-		  low_word( HIWORD((DWORD)p)==0 ? LOWORD((DWORD)p) : 0),
-		  pfc::stringcvt::string_wide_from_utf8( p && HIWORD((DWORD)p)!=0 ?p:"") 
-	  {}
-	  inline operator const WCHAR *()
-	  {
-		  return get_ptr();
-	  }
-	  const WCHAR * get_ptr()
-	  {
-		  return low_word ? (const WCHAR*)(DWORD)low_word : is_null ? 0 : pfc::stringcvt::string_wide_from_utf8::get_ptr();
-	  }
+	param_utf16_from_utf8(const char * p) :
+		is_null(p == 0),
+		low_word(HIWORD((DWORD)p) == 0 ? LOWORD((DWORD)p) : 0),
+		pfc::stringcvt::string_wide_from_utf8(p && HIWORD((DWORD)p) != 0 ? p : "")
+	{}
+	inline operator const WCHAR *()
+	{
+		return get_ptr();
+	}
+	const WCHAR * get_ptr()
+	{
+		return low_word ? (const WCHAR*)(DWORD)low_word : is_null ? 0 : pfc::stringcvt::string_wide_from_utf8::get_ptr();
+	}
 
 };
 
-namespace win32 {
-	const RECT rect_null = {0,0,0,0};
-}
+namespace uih {
+	const RECT rect_null = { 0,0,0,0 };
 
-
-bool g_test_os_version(DWORD major, DWORD minor)
-{
-	static OSVERSIONINFO ov;
-	static bool blah = false;
-
-	if (!blah)
+	bool TestOsVersion(DWORD major, DWORD minor)
 	{
-		ov.dwOSVersionInfoSize = sizeof(ov);
-		GetVersionEx(&ov);
+		static OSVERSIONINFO ov;
+		static bool blah = false;
+
+		if (!blah)
+		{
+			ov.dwOSVersionInfoSize = sizeof(ov);
+			GetVersionEx(&ov);
+		}
+		return ov.dwMajorVersion >= major && ov.dwMinorVersion >= minor;
 	}
-	return ov.dwMajorVersion >= major && ov.dwMinorVersion >= minor;
-}
 
-bool is_vista_or_newer()
-{
-	return g_test_os_version(6, 0);
-}
-
-void g_set_listview_window_explorer_theme(HWND wnd)
-{
-	if (g_test_os_version(6,0))
+	bool IsVistaOrNewer()
 	{
-		ListView_SetExtendedListViewStyleEx(wnd, 0x00010000|LVS_EX_FULLROWSELECT, 0x00010000|LVS_EX_FULLROWSELECT);
-		if (g_test_os_version(6,1))
+		return TestOsVersion(6, 0);
+	}
+
+	void SetListViewWindowExplorerTheme(HWND wnd)
+	{
+		if (TestOsVersion(6, 0))
 		{
-			SetWindowTheme(wnd, L"ItemsView", NULL);
-			//SetWindowTheme(ListView_GetHeader (wnd), L"ItemsView", NULL);
-		}
-		else
-		{
-			SetWindowTheme(wnd, L"Explorer", NULL);
+			ListView_SetExtendedListViewStyleEx(wnd, 0x00010000 | LVS_EX_FULLROWSELECT, 0x00010000 | LVS_EX_FULLROWSELECT);
+			if (TestOsVersion(6, 1))
+			{
+				SetWindowTheme(wnd, L"ItemsView", NULL);
+				//SetWindowTheme(ListView_GetHeader (wnd), L"ItemsView", NULL);
+			}
+			else
+			{
+				SetWindowTheme(wnd, L"Explorer", NULL);
+			}
 		}
 	}
-}
 
-bool g_keyboard_cues_enabled()
-{
-	BOOL a = true;
-	SystemParametersInfo(SPI_GETKEYBOARDCUES, 0, &a, 0);
-	return a != 0;
-}
+	bool GetKeyboardCuesEnabled()
+	{
+		BOOL a = true;
+		SystemParametersInfo(SPI_GETKEYBOARDCUES, 0, &a, 0);
+		return a != 0;
+	}
 
-/*void g_show_keyboard_cues(HWND wnd, bool b_focus, bool b_accel)
-{
-SendMessage(wnd, WM_CHANGEUISTATE, MAKEWPARAM(UIS_
-}*/
 
 #define TVS_EX_UNKNOWN               0x0001 //
 #define TVS_EX_MULTISELECT          0x0002
@@ -85,124 +78,122 @@ SendMessage(wnd, WM_CHANGEUISTATE, MAKEWPARAM(UIS_
 #define TVS_EX_DIMMEDCHECKBOXES     0x0200
 #define TVS_EX_DRAWIMAGEASYNC       0x0400 //
 
-void g_set_treeview_window_explorer_theme(HWND wnd, bool b_reduce_indent)
-{
-	if (is_vista_or_newer())
+	void SetTreeViewWindowExplorerTheme(HWND wnd, bool b_reduce_indent)
 	{
-		UINT_PTR stylesex = /*TVS_EX_FADEINOUTEXPANDOS|*/TVS_EX_DOUBLEBUFFER|TVS_EX_AUTOHSCROLL;
-		UINT_PTR styles = NULL;//TVS_TRACKSELECT;
+		if (IsVistaOrNewer())
+		{
+			UINT_PTR stylesex = /*TVS_EX_FADEINOUTEXPANDOS|*/TVS_EX_DOUBLEBUFFER | TVS_EX_AUTOHSCROLL;
+			UINT_PTR styles = NULL;//TVS_TRACKSELECT;
 
-		SendMessage(wnd, TV_FIRST + 44, stylesex, stylesex);
-		SetWindowTheme(wnd, L"Explorer", NULL);
-		SetWindowLongPtr(wnd, GWL_STYLE, (GetWindowLongPtr(wnd, GWL_STYLE) & ~(TVS_HASLINES/*|TVS_NOHSCROLL*/))|styles);
-		if (b_reduce_indent)
-			TreeView_SetIndent(wnd, 0xa);
+			SendMessage(wnd, TV_FIRST + 44, stylesex, stylesex);
+			SetWindowTheme(wnd, L"Explorer", NULL);
+			SetWindowLongPtr(wnd, GWL_STYLE, (GetWindowLongPtr(wnd, GWL_STYLE) & ~(TVS_HASLINES/*|TVS_NOHSCROLL*/)) | styles);
+			if (b_reduce_indent)
+				TreeView_SetIndent(wnd, 0xa);
+		}
+
 	}
 
-}
-
-void g_remove_treeview_window_explorer_theme(HWND wnd)
-{
-	if (is_vista_or_newer())
+	void RemoveTreeViewWindowExplorerTheme(HWND wnd)
 	{
-		UINT_PTR stylesex = /*TVS_EX_FADEINOUTEXPANDOS|*/TVS_EX_DOUBLEBUFFER;
-		UINT_PTR styles = NULL;//TVS_TRACKSELECT;
+		if (IsVistaOrNewer())
+		{
+			UINT_PTR stylesex = /*TVS_EX_FADEINOUTEXPANDOS|*/TVS_EX_DOUBLEBUFFER;
+			UINT_PTR styles = NULL;//TVS_TRACKSELECT;
 
-		SendMessage(wnd, TV_FIRST + 44, stylesex, NULL);
-		SetWindowTheme(wnd, L"", NULL);
-		SetWindowLongPtr(wnd, GWL_STYLE, (GetWindowLongPtr(wnd, GWL_STYLE)|TVS_HASLINES));
+			SendMessage(wnd, TV_FIRST + 44, stylesex, NULL);
+			SetWindowTheme(wnd, L"", NULL);
+			SetWindowLongPtr(wnd, GWL_STYLE, (GetWindowLongPtr(wnd, GWL_STYLE) | TVS_HASLINES));
+		}
+
 	}
 
-}
-
-int ListView_InsertColumnText(HWND wnd_lv, UINT index, const TCHAR * text, int cx)
-{
-	LVCOLUMN lvc;
-	memset(&lvc, 0, sizeof(LVCOLUMN));
-	lvc.mask = LVCF_TEXT|LVCF_WIDTH;
-
-	lvc.pszText = const_cast<TCHAR*>(text);
-	lvc.cx = cx;
-	return ListView_InsertColumn(wnd_lv, index, &lvc);
-}
-
-LRESULT ListView_InsertItemText(HWND wnd_lv, UINT item, UINT subitem, const TCHAR * text, bool b_set, LPARAM lp, int image_index)
-{
-	LVITEM lvi;
-	memset(&lvi, 0, sizeof(LVITEM));
-	lvi.mask=LVIF_TEXT| (b_set?0:LVIF_PARAM);
-	lvi.iItem = item;
-	lvi.iSubItem = subitem;
-	lvi.pszText = const_cast<TCHAR*>(text);
-	lvi.lParam = lp;
-	if (image_index != I_IMAGENONE )
+	int ListView_InsertColumnText(HWND wnd_lv, UINT index, const TCHAR * text, int cx)
 	{
-		lvi.mask |= LVIF_IMAGE;
-		lvi.iImage = image_index;
+		LVCOLUMN lvc;
+		memset(&lvc, 0, sizeof(LVCOLUMN));
+		lvc.mask = LVCF_TEXT | LVCF_WIDTH;
+
+		lvc.pszText = const_cast<TCHAR*>(text);
+		lvc.cx = cx;
+		return ListView_InsertColumn(wnd_lv, index, &lvc);
 	}
-	return b_set ? ListView_SetItem(wnd_lv, &lvi) : ListView_InsertItem(wnd_lv, &lvi);
-}
 
-LRESULT ListView_InsertItemText(HWND wnd_lv, UINT item, UINT subitem, const char * text, bool b_set, LPARAM lp, int image_index)
-{
-	pfc::stringcvt::string_os_from_utf8 wide(text);
-	return ListView_InsertItemText(wnd_lv, item, subitem, const_cast<TCHAR*>(wide.get_ptr()), b_set, lp, image_index);
-}
-HTREEITEM uTreeView_InsertItemSimple(HWND wnd_tree, const char * sz_text, LPARAM data, DWORD state, HTREEITEM ti_parent, HTREEITEM ti_after, bool b_image, UINT image, UINT integral_height)
-{
-	return uTreeView_InsertItemSimple(wnd_tree, pfc::stringcvt::string_os_from_utf8(sz_text), data, state, ti_parent, ti_after, b_image, image, integral_height);
-}
+	LRESULT ListView_InsertItemText(HWND wnd_lv, UINT item, UINT subitem, const TCHAR * text, bool b_set, LPARAM lp, int image_index)
+	{
+		LVITEM lvi;
+		memset(&lvi, 0, sizeof(LVITEM));
+		lvi.mask = LVIF_TEXT | (b_set ? 0 : LVIF_PARAM);
+		lvi.iItem = item;
+		lvi.iSubItem = subitem;
+		lvi.pszText = const_cast<TCHAR*>(text);
+		lvi.lParam = lp;
+		if (image_index != I_IMAGENONE)
+		{
+			lvi.mask |= LVIF_IMAGE;
+			lvi.iImage = image_index;
+		}
+		return b_set ? ListView_SetItem(wnd_lv, &lvi) : ListView_InsertItem(wnd_lv, &lvi);
+	}
 
-HTREEITEM uTreeView_InsertItemSimple(HWND wnd_tree, const WCHAR * sz_text, LPARAM data, DWORD state, HTREEITEM ti_parent, HTREEITEM ti_after, bool b_image, UINT image, UINT integral_height)
-{
-	TVINSERTSTRUCT is;
-	memset(&is,0,sizeof(is));
-	is.hParent = ti_parent;
-	is.hInsertAfter = ti_after;
-	is.item.mask = TVIF_TEXT|TVIF_PARAM|TVIF_STATE|(b_image?TVIF_IMAGE|TVIF_SELECTEDIMAGE:NULL)|(integral_height>1?TVIF_INTEGRAL:NULL);
-	is.item.pszText = const_cast<WCHAR*>(sz_text);
-	is.item.state = state;
-	is.item.stateMask = state;
-	is.item.lParam = data;
-	is.item.iImage = image;
-	is.item.iSelectedImage = image;
-	is.itemex.iIntegral = integral_height;
-	return TreeView_InsertItem(wnd_tree,&is);
-}
+	LRESULT ListView_InsertItemText(HWND wnd_lv, UINT item, UINT subitem, const char * text, bool b_set, LPARAM lp, int image_index)
+	{
+		pfc::stringcvt::string_os_from_utf8 wide(text);
+		return ListView_InsertItemText(wnd_lv, item, subitem, const_cast<TCHAR*>(wide.get_ptr()), b_set, lp, image_index);
+	}
+	HTREEITEM TreeView_InsertItemSimple(HWND wnd_tree, const char * sz_text, LPARAM data, DWORD state, HTREEITEM ti_parent, HTREEITEM ti_after, bool b_image, UINT image, UINT integral_height)
+	{
+		return TreeView_InsertItemSimple(wnd_tree, pfc::stringcvt::string_os_from_utf8(sz_text), data, state, ti_parent, ti_after, b_image, image, integral_height);
+	}
 
-t_size uTreeView_GetChildIndex(HWND wnd_tv, HTREEITEM ti)
-{
-	HTREEITEM item = ti;
-	unsigned n=0;
-	while (item = TreeView_GetPrevSibling(wnd_tv, item))
-		n++;
-	return n;
-}
+	HTREEITEM TreeView_InsertItemSimple(HWND wnd_tree, const WCHAR * sz_text, LPARAM data, DWORD state, HTREEITEM ti_parent, HTREEITEM ti_after, bool b_image, UINT image, UINT integral_height)
+	{
+		TVINSERTSTRUCT is;
+		memset(&is, 0, sizeof(is));
+		is.hParent = ti_parent;
+		is.hInsertAfter = ti_after;
+		is.item.mask = TVIF_TEXT | TVIF_PARAM | TVIF_STATE | (b_image ? TVIF_IMAGE | TVIF_SELECTEDIMAGE : NULL) | (integral_height > 1 ? TVIF_INTEGRAL : NULL);
+		is.item.pszText = const_cast<WCHAR*>(sz_text);
+		is.item.state = state;
+		is.item.stateMask = state;
+		is.item.lParam = data;
+		is.item.iImage = image;
+		is.item.iSelectedImage = image;
+		is.itemex.iIntegral = integral_height;
+		return TreeView_InsertItem(wnd_tree, &is);
+	}
 
-namespace win32_helpers
-{
+	t_size TreeView_GetChildIndex(HWND wnd_tv, HTREEITEM ti)
+	{
+		HTREEITEM item = ti;
+		unsigned n = 0;
+		while (item = TreeView_GetPrevSibling(wnd_tv, item))
+			n++;
+		return n;
+	}
+
 	BOOL
 		FileTimeToLocalFileTime2(
-		__in  CONST FILETIME *lpFileTime,
-		__out LPFILETIME lpLocalFileTime
-		)
+			__in  CONST FILETIME *lpFileTime,
+			__out LPFILETIME lpLocalFileTime
+			)
 	{
 		SYSTEMTIME stUTC, stLocal;
-		memset(&stUTC, 0,sizeof(stUTC));
-		memset(&stLocal, 0,sizeof(stLocal));
+		memset(&stUTC, 0, sizeof(stUTC));
+		memset(&stLocal, 0, sizeof(stLocal));
 
 		FileTimeToSystemTime(lpFileTime, &stUTC);
 		SystemTimeToTzSpecificLocalTime(NULL, &stUTC, &stLocal);
 		return SystemTimeToFileTime(&stLocal, lpLocalFileTime);
 	}
-	FILETIME filetimestamp_to_FileTime(t_filetimestamp time) 
+	FILETIME filetimestamp_to_FileTime(t_filetimestamp time)
 	{
 		FILETIME ret;
 		ret.dwLowDateTime = (DWORD)(time & 0xFFFFFFFF);
-		ret.dwHighDateTime= (DWORD)(time >> 32);
+		ret.dwHighDateTime = (DWORD)(time >> 32);
 		return ret;
 	}
-	void format_date(t_filetimestamp time, std::basic_string<TCHAR> & str, bool b_convert_to_local)
+	void FormatDate(t_filetimestamp time, std::basic_string<TCHAR> & str, bool b_convert_to_local)
 	{
 		FILETIME ft1 = filetimestamp_to_FileTime(time), ft2 = ft1;
 		if (b_convert_to_local)
@@ -221,18 +212,21 @@ namespace win32_helpers
 		str += _T(" ");
 		str += buf2.get_ptr();
 	}
-	BOOL set_process_dpi_aware() {
+	BOOL SetProcessDpiAware()
+	{
 		typedef BOOL(WINAPI* SETPROCESSDPIAWAREPROC)();
 		HINSTANCE hinstDll = LoadLibrary(_T("user32.dll"));
 
-		if (hinstDll) {
+		if (hinstDll)
+		{
 			SETPROCESSDPIAWAREPROC pSetProcessDPIAware = (SETPROCESSDPIAWAREPROC)GetProcAddress(hinstDll, "SetProcessDPIAware");
-			
-			if (pSetProcessDPIAware) {
+
+			if (pSetProcessDPIAware)
+			{
 				return pSetProcessDPIAware();
 			}
 		}
-		
+
 		return FALSE;
 	}
 
@@ -244,13 +238,13 @@ namespace win32_helpers
 		return ret;
 	}
 
-	SIZE get_system_dpi_cached()
+	SIZE GetSystemDpiCached()
 	{
 		static const SIZE size = get_system_dpi();
 		return size;
 	}
 
-	HRESULT get_comctl32_version(DLLVERSIONINFO2 & p_dvi, pfc::string_base * p_path_out)
+	HRESULT GetComCtl32Version(DLLVERSIONINFO2 & p_dvi, pfc::string_base * p_path_out)
 	{
 		static bool have_version = false;
 		static HRESULT rv = E_FAIL;
@@ -261,7 +255,7 @@ namespace win32_helpers
 		{
 			HINSTANCE hinstDll = LoadLibrary(_T("comctl32.dll"));
 
-			if(hinstDll)
+			if (hinstDll)
 			{
 				if (p_path_out)
 					uGetModuleFileName(hinstDll, *p_path_out);
@@ -295,8 +289,8 @@ namespace win32_helpers
 		return rv;
 	}
 
-	BOOL ShellNotifyIconSimple(DWORD dwMessage,HWND wnd,UINT id,UINT callbackmsg,HICON icon,
-		const char * tip,const char * balloon_title,const char * balloon_msg)
+	BOOL ShellNotifyIconSimple(DWORD dwMessage, HWND wnd, UINT id, UINT callbackmsg, HICON icon,
+		const char * tip, const char * balloon_title, const char * balloon_msg)
 	{
 		//param_utf16_from_utf8 wtip(tip), wbtitle(balloon_title), wbmsg(balloon_msg);
 		NOTIFYICONDATA nid;
@@ -307,7 +301,7 @@ namespace win32_helpers
 		nid.uID = id;
 		nid.uCallbackMessage = callbackmsg;
 		nid.hIcon = icon;
-		nid.uFlags = NIF_ICON|NIF_TIP|NIF_MESSAGE|(balloon_msg?NIF_INFO:NULL);
+		nid.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE | (balloon_msg ? NIF_INFO : NULL);
 		if (tip)
 			wcscpy_s(nid.szTip, pfc::stringcvt::string_wide_from_utf8(tip).get_ptr());
 		if (balloon_title)
@@ -322,21 +316,21 @@ namespace win32_helpers
 
 	}
 
-		BOOL run_action(DWORD action,NOTIFYICONDATA * data)
+	BOOL run_action(DWORD action, NOTIFYICONDATA * data)
 	{
-		if (Shell_NotifyIcon(action,data)) return TRUE;
-		if (action==NIM_MODIFY)
+		if (Shell_NotifyIcon(action, data)) return TRUE;
+		if (action == NIM_MODIFY)
 		{
-			if (Shell_NotifyIcon(NIM_ADD,data)) return TRUE;
+			if (Shell_NotifyIcon(NIM_ADD, data)) return TRUE;
 		}
 		return FALSE;
 	}
 
 
-	BOOL uShellNotifyIcon(DWORD action,HWND wnd,UINT id,UINT version,UINT callbackmsg,HICON icon,const char * tip)
+	BOOL ShellNotifyIcon(DWORD action, HWND wnd, UINT id, UINT version, UINT callbackmsg, HICON icon, const char * tip)
 	{
 		NOTIFYICONDATA nid;
-		memset(&nid,0,sizeof(nid));
+		memset(&nid, 0, sizeof(nid));
 		nid.cbSize = NOTIFYICONDATA_V2_SIZE;
 		nid.hWnd = wnd;
 		nid.uID = id;
@@ -352,21 +346,21 @@ namespace win32_helpers
 		{
 			nid.uFlags |= NIF_ICON;
 			nid.hIcon = icon;
-		}			
+		}
 		if (tip)
 		{
 			nid.uFlags |= NIF_TIP;
-			_tcsncpy_s(nid.szTip, pfc::stringcvt::string_os_from_utf8(tip), tabsize(nid.szTip)-1);
+			_tcsncpy_s(nid.szTip, pfc::stringcvt::string_os_from_utf8(tip), tabsize(nid.szTip) - 1);
 		}
 
-		return run_action(action,&nid);
+		return run_action(action, &nid);
 	}
 
-	BOOL uShellNotifyIconEx(DWORD action,HWND wnd,UINT id,UINT callbackmsg,HICON icon,const char * tip,const char * balloon_title,const char * balloon_msg)
+	BOOL ShellNotifyIconEx(DWORD action, HWND wnd, UINT id, UINT callbackmsg, HICON icon, const char * tip, const char * balloon_title, const char * balloon_msg)
 	{
 
 		NOTIFYICONDATA nid;
-		memset(&nid,0,sizeof(nid));
+		memset(&nid, 0, sizeof(nid));
 		nid.cbSize = NOTIFYICONDATA_V2_SIZE;
 		nid.hWnd = wnd;
 		nid.uID = id;
@@ -379,21 +373,21 @@ namespace win32_helpers
 		{
 			nid.uFlags |= NIF_ICON;
 			nid.hIcon = icon;
-		}			
+		}
 		if (tip)
 		{
 			nid.uFlags |= NIF_TIP;
-			_tcsncpy_s(nid.szTip, pfc::stringcvt::string_os_from_utf8(tip), tabsize(nid.szTip)-1);
+			_tcsncpy_s(nid.szTip, pfc::stringcvt::string_os_from_utf8(tip), tabsize(nid.szTip) - 1);
 		}
 
 		nid.dwInfoFlags = NIIF_INFO | NIIF_NOSOUND;
 		//if (balloon_title || balloon_msg)
 		{
 			nid.uFlags |= NIF_INFO;
-			if (balloon_title) _tcsncpy_s(nid.szInfoTitle, pfc::stringcvt::string_os_from_utf8(balloon_title), tabsize(nid.szInfoTitle)-1);
-			if (balloon_msg) _tcsncpy_s(nid.szInfo, pfc::stringcvt::string_os_from_utf8(balloon_msg), tabsize(nid.szInfo)-1);
+			if (balloon_title) _tcsncpy_s(nid.szInfoTitle, pfc::stringcvt::string_os_from_utf8(balloon_title), tabsize(nid.szInfoTitle) - 1);
+			if (balloon_msg) _tcsncpy_s(nid.szInfo, pfc::stringcvt::string_os_from_utf8(balloon_msg), tabsize(nid.szInfo) - 1);
 		}
-		return run_action(action,reinterpret_cast<NOTIFYICONDATA*>(&nid));
+		return run_action(action, reinterpret_cast<NOTIFYICONDATA*>(&nid));
 
 
 	}
@@ -430,7 +424,7 @@ namespace win32_helpers
 		}
 	}
 
-	int combobox_find_item_by_data(HWND wnd, t_size id)
+	int ComboBox_FindItemByData(HWND wnd, t_size id)
 	{
 		t_size i, count = ComboBox_GetCount(wnd);
 		for (i = 0; i < count; i++)
@@ -439,7 +433,7 @@ namespace win32_helpers
 		return -1;
 	}
 
-	int rebar_id_to_idx(HWND wnd, unsigned id)
+	int Rebar_FindItemById(HWND wnd, unsigned id)
 	{
 		/* Avoid RB_IDTOINDEX for backwards compatibility */
 		REBARBANDINFO  rbbi;
@@ -457,7 +451,7 @@ namespace win32_helpers
 		return -1;
 	}
 
-	void rebar_show_all_bands(HWND wnd)
+	void Rebar_ShowAllBands(HWND wnd)
 	{
 		UINT count = uSendMessage(wnd, RB_GETBANDCOUNT, 0, 0);
 		unsigned n;
@@ -467,248 +461,33 @@ namespace win32_helpers
 		}
 	}
 
+	void HandleModernBackgroundPaint(HWND wnd, HWND wnd_button)
+	{
+		PAINTSTRUCT ps;
+		HDC dc = BeginPaint(wnd, &ps);
+		if (dc)
+		{
+			RECT rc_client, rc_button;
+			GetClientRect(wnd, &rc_client);
+			RECT rc_fill = rc_client;
+			if (wnd_button)
+			{
+				GetWindowRect(wnd_button, &rc_button);
+				rc_fill.bottom -= RECT_CY(rc_button) + 11;
+				rc_fill.bottom -= 11;
+			}
+			FillRect(dc, &rc_fill, GetSysColorBrush(COLOR_WINDOW));
+			if (wnd_button)
+			{
+				rc_fill.top = rc_fill.bottom;
+				rc_fill.bottom += 1;
+				FillRect(dc, &rc_fill, GetSysColorBrush(COLOR_3DLIGHT));
+			}
+			rc_fill.top = rc_fill.bottom;
+			rc_fill.bottom = rc_client.bottom;
+			FillRect(dc, &rc_fill, GetSysColorBrush(COLOR_3DFACE));
+			EndPaint(wnd, &ps);
+		}
+	}
 
 }
-
-namespace ui_helpers
-{
-	void innerWMPaintModernBackground (HWND wnd, HWND wnd_button) 
-	{ 
-		PAINTSTRUCT ps; 
-		HDC dc = BeginPaint(wnd, &ps); 
-		if (dc) 
-		{ 
-			RECT rc_client, rc_button; 
-			GetClientRect(wnd, &rc_client); 
-			RECT rc_fill = rc_client; 
-			if (wnd_button) 
-			{ 
-				GetWindowRect(wnd_button, &rc_button); 
-				rc_fill.bottom -= RECT_CY(rc_button)+11; 
-				rc_fill.bottom -= 11; 
-			} 
-			FillRect(dc, &rc_fill, GetSysColorBrush(COLOR_WINDOW)); 
-			if (wnd_button) 
-			{ 
-				rc_fill.top=rc_fill.bottom; 
-				rc_fill.bottom+=1; 
-				FillRect(dc, &rc_fill, GetSysColorBrush(COLOR_3DLIGHT)); 
-			} 
-			rc_fill.top = rc_fill.bottom; 
-			rc_fill.bottom = rc_client.bottom; 
-			FillRect(dc, &rc_fill, GetSysColorBrush(COLOR_3DFACE)); 
-			EndPaint(wnd, &ps); 
-		} 
-	} 
-
-}
-
-namespace mmh { namespace ole {
-
-	CLIPFORMAT ClipboardFormatDropDescription()
-	{
-		static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(CFSTR_DROPDESCRIPTION);
-		return cfRet;
-	}
-
-	CLIPFORMAT DragWindowFormat()
-	{
-		static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"DragWindow");
-		return cfRet;
-	}
-
-	CLIPFORMAT IsShowingLayeredFormat()
-	{
-		static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsShowingLayered");
-		return cfRet;
-	}
-
-	CLIPFORMAT IsShowingTextFormat()
-	{
-		static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsShowingText");
-		return cfRet;
-	}
-
-	CLIPFORMAT IsComputingImageFormat()
-	{
-		static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsComutingImage");
-		return cfRet;
-	}
-
-	CLIPFORMAT UsingDefaultDragImageFormat()
-	{
-		static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"UsingDefaultDragImage");
-		return cfRet;
-	}
-
-	template<typename T>
-	HRESULT GetDataObjectDataSimple(IDataObject *pDataObj, CLIPFORMAT cf, T & p_out)
-	{
-		HRESULT hr;
-
-		FORMATETC fe = { 0 };
-		fe.cfFormat = cf;
-		fe.dwAspect = DVASPECT_CONTENT;
-		fe.lindex = -1;
-		fe.tymed = TYMED_HGLOBAL;
-
-		STGMEDIUM stgm = { 0 };
-		if (SUCCEEDED(hr = pDataObj->GetData(&fe, &stgm)))
-		{
-			void * pData = GlobalLock(stgm.hGlobal);
-			if (pData)
-			{
-				p_out = *static_cast<T*>(pData);
-				GlobalUnlock(pData);
-				ReleaseStgMedium(&stgm);
-			}
-		}
-		return hr;
-	}
-
-	HRESULT GetDragWindow(IDataObject *pDataObj, HWND & p_wnd)
-	{
-		HRESULT hr;
-		DWORD dw;
-		if (SUCCEEDED(hr = GetDataObjectDataSimple(pDataObj, DragWindowFormat(), dw)))
-			p_wnd = (HWND)ULongToHandle(dw);
-
-		return hr;
-	}
-
-	HRESULT GetIsShowingLayered(IDataObject *pDataObj, BOOL & p_out)
-	{
-		return GetDataObjectDataSimple(pDataObj, IsShowingLayeredFormat(), p_out);
-	}
-
-	HRESULT SetBlob(IDataObject *pdtobj, CLIPFORMAT cf, const void *pvBlob, UINT cbBlob)
-	{
-		HRESULT hr = E_OUTOFMEMORY;
-		void *pv = GlobalAlloc(GPTR, cbBlob);
-		if (pv)
-		{
-			CopyMemory(pv, pvBlob, cbBlob);
-
-			FORMATETC fmte = {cf, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL};
-
-			// The STGMEDIUM structure is used to define how to handle a global memory transfer. 
-			// This structure includes a flag, tymed, which indicates the medium 
-			// to be used, and a union comprising pointers and a handle for getting whichever 
-			// medium is specified in tymed.
-			STGMEDIUM medium = {0};
-			medium.tymed = TYMED_HGLOBAL;
-			medium.hGlobal = pv;
-
-			hr = pdtobj->SetData(&fmte, &medium, TRUE);
-			if (FAILED(hr))
-			{
-				GlobalFree(pv);
-			}
-		}
-		return hr;
-	}
-	HRESULT SetDropDescription(IDataObject *pdtobj, DROPIMAGETYPE dit, const char * msg, const char * insert)
-	{
-		if (osversion::is_windows_vista_or_newer())
-		{
-			DROPDESCRIPTION dd;
-			dd.type = dit;
-			wcscpy_s(dd.szMessage, pfc::stringcvt::string_os_from_utf8(msg).get_ptr());
-			wcscpy_s(dd.szInsert, pfc::stringcvt::string_os_from_utf8(insert).get_ptr());
-			return SetBlob(pdtobj, ClipboardFormatDropDescription(), &dd, sizeof(dd));
-		}
-		return E_NOTIMPL;
-	}
-
-	HRESULT SetUsingDefaultDragImage(IDataObject *pdtobj, BOOL value)
-	{
-		return SetBlob(pdtobj, UsingDefaultDragImageFormat(), &value, sizeof(value));
-	}
-
-	HRESULT SetIsShowingText(IDataObject *pdtobj, BOOL value)
-	{
-		return SetBlob(pdtobj, IsShowingTextFormat(), &value, sizeof(value));
-	}
-
-	HRESULT SetIsComputingImage(IDataObject *pdtobj, BOOL value)
-	{
-		return SetBlob(pdtobj, IsComputingImageFormat(), &value, sizeof(value));
-	}
-
-
-	HRESULT DoDragDrop(HWND wnd, WPARAM initialKeyState, IDataObject *pDataObject, DWORD dwEffect, DWORD *pdwEffect)
-	{
-		mmh::comptr_t<IDropSource> pDropSource;
-		//if (!is_vista_or_newer())
-		pDropSource = new mmh::ole::IDropSource_Generic(wnd, pDataObject, initialKeyState, true);
-		return SHDoDragDrop(wnd, pDataObject, pDropSource, dwEffect, pdwEffect);
-	}
-
-	HRESULT STDMETHODCALLTYPE IDropSource_Generic::QueryInterface(REFIID iid,void ** ppvObject)
-	{
-		if (ppvObject == NULL) return E_INVALIDARG;
-		*ppvObject = NULL;
-		if (iid == IID_IUnknown) {AddRef();*ppvObject = (IUnknown*)this;return S_OK;}
-		else if (iid == IID_IDropSource) {AddRef();*ppvObject = (IDropSource*)this;return S_OK;}
-		else return E_NOINTERFACE;
-	}
-	ULONG STDMETHODCALLTYPE IDropSource_Generic::AddRef() {return InterlockedIncrement(&refcount);}
-	ULONG STDMETHODCALLTYPE IDropSource_Generic::Release()
-	{
-		LONG rv = InterlockedDecrement(&refcount);
-		if (!rv)
-		{
-			delete this;
-		}
-		return rv;
-	}
-
-	HRESULT STDMETHODCALLTYPE IDropSource_Generic::QueryContinueDrag(BOOL fEscapePressed,DWORD grfKeyState)
-	{
-		if (fEscapePressed || ((m_initial_key_state & MK_LBUTTON) && (grfKeyState & MK_RBUTTON)) ) {
-			return DRAGDROP_S_CANCEL;
-		}
-		else if ( 
-			((m_initial_key_state & MK_LBUTTON) && !(grfKeyState & MK_LBUTTON ))
-			|| ((m_initial_key_state & MK_RBUTTON) && !(grfKeyState & MK_RBUTTON ))
-			)
-		{
-			return DRAGDROP_S_DROP;
-		}
-		else return S_OK;
-	}
-
-	HRESULT STDMETHODCALLTYPE IDropSource_Generic::GiveFeedback(DWORD dwEffect)
-	{
-		HWND wnd_drag = NULL;
-		BOOL isShowingLayered = FALSE;
-		GetIsShowingLayered(m_DataObject, isShowingLayered);
-
-		if (SUCCEEDED(GetDragWindow(m_DataObject, wnd_drag)) && wnd_drag)
-			PostMessage(wnd_drag, DDWM_UPDATEWINDOW, NULL, NULL);
-
-		return isShowingLayered ? S_OK : DRAGDROP_S_USEDEFAULTCURSORS;
-	}
-
-//#define FOOBAR2000_NOT_BROKE
-
-	IDropSource_Generic::IDropSource_Generic(HWND wnd, IDataObject * pDataObj, DWORD initial_key_state, bool b_allowdropdescriptiontext)
-		: refcount(0), m_initial_key_state(initial_key_state), m_DataObject(pDataObj)
-	{
-		HRESULT hr;
-		if (b_allowdropdescriptiontext)
-		{
-			if (SUCCEEDED(m_DragSourceHelper.instantiate(CLSID_DragDropHelper, NULL, CLSCTX_INPROC_SERVER)))
-			{
-				mmh::comptr_t<IDragSourceHelper2> pDragSourceHelper2 = m_DragSourceHelper;
-				if (pDragSourceHelper2.is_valid())
-				{
-					hr = pDragSourceHelper2->SetFlags(DSH_ALLOWDROPDESCRIPTIONTEXT);
-				}
-				hr = m_DragSourceHelper->InitializeFromWindow(wnd, NULL, pDataObj);
-			}
-		}
-//#endif
-	};
-
-}}

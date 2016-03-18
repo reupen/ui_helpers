@@ -29,23 +29,23 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -84,7 +84,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalOptions>/Zc:threadSafeInit-  /Zc:rvalueCast </AdditionalOptions>
+      <AdditionalOptions>/Zc:threadSafeInit- </AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_WIN32_WINNT=0x600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
@@ -99,7 +99,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalOptions>/Zc:threadSafeInit-  /Zc:rvalueCast </AdditionalOptions>
+      <AdditionalOptions>/Zc:threadSafeInit- </AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_WIN32_WINNT=0x600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
@@ -126,7 +126,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
-      <AdditionalOptions>/Zc:threadSafeInit- %(AdditionalOptions) /Zc:rvalueCast </AdditionalOptions>
+      <AdditionalOptions>/Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
   </ItemDefinitionGroup>
@@ -144,17 +144,20 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
-      <AdditionalOptions>/Zc:threadSafeInit- %(AdditionalOptions) /Zc:rvalueCast </AdditionalOptions>
+      <AdditionalOptions>/Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="config_var.h" />
+    <ClInclude Include="drag_image.h" />
+    <ClInclude Include="handle.h" />
     <ClInclude Include="List View\list_view.h" />
+    <ClInclude Include="ole.h" />
     <ClInclude Include="OLE\DataObj.h" />
     <ClInclude Include="OLE\Enumfe.h" />
     <ClInclude Include="fcl.h" />
     <ClInclude Include="gdi.h" />
-    <ClInclude Include="libpng.h" />
     <ClInclude Include="menu.h" />
     <ClInclude Include="message_hook.h" />
     <ClInclude Include="message_window.h" />
@@ -162,10 +165,10 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="text_drawing.h" />
     <ClInclude Include="trackbar.h" />
-    <ClInclude Include="uxtheme.h" />
     <ClInclude Include="win32_helpers.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="drag_image.cpp" />
     <ClCompile Include="List View\list_view_columns.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>
@@ -250,19 +253,19 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="ole.cpp" />
     <ClCompile Include="OLE\DataObj.Cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="OLE\Enumfe.Cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="libpng.cpp" />
     <ClCompile Include="message_hook.cpp" />
     <ClCompile Include="solid_fill.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -273,10 +276,8 @@
     </ClCompile>
     <ClCompile Include="text_drawing.cpp" />
     <ClCompile Include="trackbar.cpp" />
-    <ClCompile Include="uxtheme.cpp" />
     <ClCompile Include="win32_helpers.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets" />
 </Project>
