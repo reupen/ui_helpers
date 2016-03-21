@@ -21,7 +21,7 @@ namespace uih {
 		LPARAM transition_code : 1;
 	};
 
-	inline KeyboardLParam& GetKeyboardLParam(LPARAM lp)
+	inline KeyboardLParam& GetKeyboardLParam(LPARAM& lp)
 	{
 		return reinterpret_cast<KeyboardLParam&>(lp);
 	}
