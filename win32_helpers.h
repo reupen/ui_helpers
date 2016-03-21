@@ -21,7 +21,7 @@ namespace uih {
 		LPARAM transition_code : 1;
 	};
 
-	inline KeyboardLParam GetKeyboardLParam(LPARAM lp)
+	inline KeyboardLParam& GetKeyboardLParam(LPARAM lp)
 	{
 		return reinterpret_cast<KeyboardLParam&>(lp);
 	}
@@ -68,6 +68,8 @@ namespace uih {
 	// At present, though, per-monitor DPI support is not declared by the foobar2000.exe manifest.
 	// See https://msdn.microsoft.com/en-gb/library/windows/desktop/dn469266%28v=vs.85%29.aspx
 	SIZE GetSystemDpiCached();
+
+	int ScaleDpiValue(int value, unsigned original_dpi = USER_DEFAULT_SCREEN_DPI);
 
 	void HandleModernBackgroundPaint(HWND wnd, HWND wnd_button);
 }

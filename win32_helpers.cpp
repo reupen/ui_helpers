@@ -244,6 +244,11 @@ namespace uih {
 		return size;
 	}
 
+	int ScaleDpiValue(int value, unsigned original_dpi)
+	{
+		return MulDiv(value, GetSystemDpiCached().cx, original_dpi);
+	}
+
 	HRESULT GetComCtl32Version(DLLVERSIONINFO2 & p_dvi, pfc::string_base * p_path_out)
 	{
 		static bool have_version = false;
