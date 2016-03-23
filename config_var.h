@@ -35,8 +35,20 @@ namespace uih {
 	template <typename TInteger>
 	class IntegerAndDpi {
 	public:
+		using Type = IntegerAndDpi<TInteger>;
+
 		TInteger value;
 		uint32_t dpi;
+
+		operator TInteger () const { return getScaledValue(); }
+		Type & operator = (TInteger value) { set(value);  return *this; }
+
+		void set(TInteger _value, uint32_t _dpi = GetSystemDpiCached().cx)
+		{
+			value = _value;
+			dpi = _dpi;
+		}
+		TInteger getScaledValue() const { return uih::ScaleDpiValue(value, dpi); };
 
 		IntegerAndDpi(TInteger _value = NULL, uint32_t _dpi = USER_DEFAULT_SCREEN_DPI) : value(_value), dpi(_dpi) {};
 	};
@@ -52,8 +64,7 @@ namespace uih {
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/dn280510%28v=vs.85%29.aspx
 		void set(TInteger value, uint32_t dpi = GetSystemDpiCached().cx)
 		{
-			m_Value.value = value;
-			m_Value.dpi = dpi;
+			m_Value.set(value, dpi);
 			on_change();
 		}
 		void set(IntegerAndDpi<TInteger> value)
@@ -64,10 +75,10 @@ namespace uih {
 		Type & operator = (TInteger value) { set(value);  return *this; }
 		Type & operator = (IntegerAndDpi<TInteger> value) { set(value);  return *this; }
 
-		operator TInteger () const { return getScaledValue(); }
+		operator TInteger () const { return m_Value.getScaledValue(); }
 		const ValueType & getRawValue() const { return m_Value; };
 
-		TInteger getScaledValue() const { return MulDiv(m_Value.value, GetSystemDpiCached().cx, m_Value.dpi); };
+		TInteger getScaledValue() const { return m_Value.getScaledValue(); };
 
 		virtual void on_change() {};
 		ConfigIntegerDpiAware(const GUID & guid, TInteger value) : cfg_var(guid), m_Value(ValueType(value))
