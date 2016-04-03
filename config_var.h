@@ -32,6 +32,36 @@ public:
 };
 
 namespace uih {
+	template <typename ValueType, typename ImplType = cfg_int_t<ValueType>>
+	class ConfigItem {
+	public:
+		using Type = ConfigItem<ValueType, ImplType>;
+
+		void reset() { set(m_DefaultValue); }
+		void set(ValueType newValue) { m_Value = newValue; on_change(); }
+		ValueType get() const { return m_Value; };
+		ValueType getDefaultValue() const { return m_DefaultValue; }
+
+		operator const ValueType & () const { return m_Value; }
+		Type & operator = (const ValueType & newValue) { set(newValue); return *this; }
+
+		ConfigItem(const GUID & guid, ValueType defaultValue) 
+			: m_Value(guid, defaultValue), m_DefaultValue(defaultValue)
+		{}
+
+		virtual ~ConfigItem() {}
+
+	protected:
+		virtual void on_change() {}
+	private:
+		ImplType m_Value;
+		ValueType m_DefaultValue;
+	};
+
+	using ConfigUint32 = ConfigItem<uint32_t>;
+	using ConfigInt32 = ConfigItem<int32_t>;
+	using ConfigBool = ConfigItem<bool>;
+
 	template <typename TInteger>
 	class IntegerAndDpi {
 	public:
