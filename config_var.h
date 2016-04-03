@@ -42,7 +42,7 @@ namespace uih {
 		ValueType get() const { return m_Value; };
 		ValueType getDefaultValue() const { return m_DefaultValue; }
 
-		operator const ValueType & () const { return m_Value; }
+		operator ValueType () const { return m_Value; }
 		Type & operator = (const ValueType & newValue) { set(newValue); return *this; }
 
 		ConfigItem(const GUID & guid, ValueType defaultValue) 
