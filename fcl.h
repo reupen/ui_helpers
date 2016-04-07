@@ -146,6 +146,15 @@ namespace fcl
 			p_out.set(temp);
 			m_position += sizeof (t_int_type);
 		};
+		template <typename t_int_type>
+		void read_item_config(uih::ConfigItem<t_int_type> & p_out)
+		{
+			pfc::assert_raw_type<t_int_type>();
+			t_int_type temp;
+			m_input->read_lendian_t(temp, m_abort);
+			p_out = temp;
+			m_position += sizeof(t_int_type);
+		};
 		template<>
 		void read_item(cfg_struct_t<LOGFONT> & cfg_out)
 		{
