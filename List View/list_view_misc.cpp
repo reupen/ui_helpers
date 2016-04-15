@@ -294,6 +294,43 @@ void t_list_view::invalidate_items(t_size index, t_size count, bool b_update_dis
 	}
 #endif
 }
+
+void t_list_view::invalidate_items(const bit_array& mask, bool b_update_display)
+{
+	t_size i, start, count = get_item_count();
+	for (i = 0; i < count; i++) {
+		start = i;
+		while (i < count && mask[i]) {
+			i++;
+		}
+		if (i > start) {
+			invalidate_items(start, i - start, b_update_display);
+		}
+	}
+}
+
+void t_list_view::invalidate_item_group_info_area(t_size index, bool b_update_display)
+{
+	t_size count = 0;
+	get_item_group(index, m_group_count ? m_group_count - 1 : 0, index, count);
+	{
+		RECT rc_client;
+		get_items_rect(&rc_client);
+		t_size groups = get_item_display_group_count(index);
+		t_size item_y = get_item_position(index);
+		t_size items_cy = count * m_item_height, group_area_cy = get_group_info_area_height();
+		if (get_show_group_info_area() && items_cy < group_area_cy)
+			items_cy = group_area_cy;
+
+		RECT rc_invalidate = { 0, item_y - m_scroll_position + rc_client.top - groups * m_item_height, RECT_CX(rc_client), item_y + group_area_cy - m_scroll_position + rc_client.top };
+		if (IntersectRect(&rc_invalidate, &rc_client, &rc_invalidate)) {
+			RedrawWindow(get_wnd(), &rc_invalidate, NULL, RDW_INVALIDATE | (b_update_display ? RDW_UPDATENOW : 0));
+		}
+	}
+}
+
+
+
 void t_list_view::get_item_group(t_size index, t_size level, t_size & index_start, t_size & count)
 {
 	if (m_group_count == 0)
@@ -474,3 +511,91 @@ void t_list_view::on_search_string_change(WCHAR c)
 	}
 }
 
+void t_list_view::set_vertical_item_padding(int val)
+{
+	m_vertical_item_padding = val;
+	if (m_initialised) {
+		m_item_height = get_default_item_height();
+		m_group_height = get_default_group_height();
+		refresh_item_positions();
+		//invalidate_all(false);
+		//update_scroll_info();
+		//UpdateWindow(get_wnd());
+	}
+}
+
+void t_list_view::set_font(const LPLOGFONT lplf)
+{
+	m_lf_items = *lplf;
+	m_lf_items_valid = true;
+	if (m_initialised) {
+		exit_inline_edit();
+		destroy_tooltip();
+		m_font = CreateFontIndirect(lplf);
+		m_item_height = get_default_item_height();
+		//invalidate_all(false);
+		//update_scroll_info();
+		//UpdateWindow(get_wnd());
+		if (m_group_count)
+			update_header();
+		refresh_item_positions();
+	}
+}
+
+void t_list_view::set_group_font(const LPLOGFONT lplf)
+{
+	m_lf_group_header = *lplf;
+	m_lf_group_header_valid = true;
+	if (m_initialised) {
+		exit_inline_edit();
+		destroy_tooltip();
+		m_group_font = CreateFontIndirect(lplf);
+		m_group_height = get_default_group_height();
+		refresh_item_positions();
+	}
+}
+
+void t_list_view::set_header_font(const LPLOGFONT lplf)
+{
+	m_lf_header = *lplf;
+	m_lf_header_valid = true;
+	if (m_initialised && m_wnd_header) {
+		SendMessage(m_wnd_header, WM_SETFONT, NULL, MAKELPARAM(FALSE, 0));
+		m_font_header = CreateFontIndirect(lplf);
+		//RedrawWindow(m_wnd_header, NULL, NULL, RDW_INVALIDATE|RDW_ERASE);
+		SendMessage(m_wnd_header, WM_SETFONT, (WPARAM)m_font_header.get(), MAKELPARAM(TRUE, 0));
+		on_size();
+	}
+}
+
+void t_list_view::set_sorting_enabled(bool b_val)
+{
+	m_sorting_enabled = b_val;
+	if (m_initialised && m_wnd_header) {
+		SetWindowLong(m_wnd_header, GWL_STYLE,
+			(GetWindowLongPtr(m_wnd_header, GWL_STYLE) & ~HDS_BUTTONS) | (b_val ? HDS_BUTTONS : 0)
+		);
+	}
+}
+
+void t_list_view::set_show_sort_indicators(bool b_val)
+{
+	m_show_sort_indicators = b_val;
+	if (m_initialised && m_wnd_header) {
+		set_sort_column(m_sort_column_index, m_sort_direction);
+	}
+}
+
+void t_list_view::set_edge_style(t_size b_val)
+{
+	m_edge_style = (edge_style_t)b_val;
+	if (get_wnd()) {
+		SetWindowLongPtr(get_wnd(), GWL_EXSTYLE,
+			(GetWindowLongPtr(get_wnd(), GWL_EXSTYLE) & ~(WS_EX_STATICEDGE | WS_EX_CLIENTEDGE))
+			| (m_edge_style == edge_sunken ? WS_EX_CLIENTEDGE : (m_edge_style == edge_grey ? WS_EX_STATICEDGE : NULL)));
+		SetWindowLongPtr(get_wnd(), GWL_STYLE,
+			(GetWindowLongPtr(get_wnd(), GWL_STYLE) & ~(WS_BORDER))
+			| (m_edge_style == edge_solid ? WS_BORDER : NULL));
+		SetWindowPos(get_wnd(), 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
+	}
+}

@@ -48,6 +48,16 @@ void t_list_view::set_show_header (bool b_val)
 	}
 }
 
+void t_list_view::reposition_header()
+{
+	RECT rc;
+	GetClientRect(get_wnd(), &rc);
+	int cx = RECT_CX(rc);
+	RECT rc_header;
+	get_header_rect(&rc_header);
+	SetWindowPos(m_wnd_header, NULL, -m_horizontal_scroll_position, 0, cx + m_horizontal_scroll_position, RECT_CY(rc_header), SWP_NOZORDER);
+}
+
 void t_list_view::build_header()
 {
 	if (m_wnd_header)
