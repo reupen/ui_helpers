@@ -49,7 +49,7 @@ public:
 			: m_title(title), m_size(cx), m_display_size(cx), m_autosize_weight(p_autosize_weight),
 			  m_alignment(alignment) {};
 
-		t_column() : m_size(0), m_alignment(ui_helpers::ALIGN_LEFT), m_autosize_weight(1), m_display_size(0) {};
+		t_column() : m_size(0), m_display_size(0), m_autosize_weight(1), m_alignment(ui_helpers::ALIGN_LEFT) {};
 	};
 
 	typedef pfc::list_t<pfc::string8_fast_aggressive, pfc::alloc_fast_aggressive> t_string_list_fast;
@@ -141,27 +141,27 @@ protected:
 				m_subitems.add_items(p_text);
 				m_groups.set_count(group_count);
 			};*/
-		t_item() : /*m_position(0), */m_selected(false) , m_display_index(0), m_display_position(0), m_line_count(1) { };
+		t_item() : /*m_position(0), */m_line_count(1) , m_display_index(0), m_display_position(0), m_selected(false) { };
 
 	private:
 	};
 
 public:
 	t_list_view()
-		: m_theme(NULL), m_dd_theme(NULL), m_selecting(false), m_selecting_start(pfc_infinite), m_scroll_position(0), m_group_count(0), m_item_height(1),
-		  m_selecting_move(false), m_selecting_moved(false), m_dragging_rmb(false), m_shift_start(pfc_infinite), m_wnd_header(NULL), m_timer_scroll_up(false),
-		  m_timer_scroll_down(false), m_lbutton_down_ctrl(false), m_insert_mark_index(pfc_infinite) , m_shown(false), m_focus_index(pfc_infinite),
-		  m_autosize(false), m_wnd_inline_edit(NULL), m_proc_inline_edit(NULL), m_inline_edit_save(false), m_inline_edit_saving(false),
-		  m_inline_edit_column(pfc_infinite), m_timer_inline_edit(false), m_selecting_start_column(pfc_infinite), m_inline_edit_prevent(false),
-		  m_initialised(false), m_always_show_focus(false), m_prevent_wm_char_processing(false), m_timer_search(false), m_show_header(true),
-		  m_show_tooltips(true), m_limit_tooltips_to_clipped_items(true), m_wnd_tooltip(NULL), m_rc_tooltip(uih::rect_null),
-		  m_tooltip_last_index(-1), m_tooltip_last_column(-1), m_ignore_column_size_change_notification(false), m_vertical_item_padding(4),
-		  m_lf_items_valid(false), m_lf_header_valid(false), m_sorting_enabled(false), m_sort_column_index(pfc_infinite), m_sort_direction(false),
-		  m_show_sort_indicators(true), m_edge_style(edge_grey), m_sizing(false), m_single_selection(false), m_alternate_selection(false),
-		  m_show_group_info_area(false), m_group_info_area_width(0), m_group_info_area_height(0), m_have_indent_column(false),
-		  m_search_editbox(NULL), m_proc_search_edit(NULL), m_search_box_hot(false), m_lf_group_header_valid(NULL), m_group_height(1),
-		  m_allow_header_rearrange(false), m_highlight_item_index(pfc_infinite), m_highlight_selected_item_index(pfc_infinite),
-		  m_group_level_indentation_enabled(true), m_proc_original_inline_edit(NULL), m_inline_edit_prevent_kill(false), m_variable_height_items(false)
+		: m_theme(NULL), m_dd_theme(NULL), m_wnd_header(NULL), m_wnd_inline_edit(NULL), m_proc_inline_edit(NULL), m_proc_original_inline_edit(NULL), m_inline_edit_save(false),
+		  m_inline_edit_saving(false), m_timer_inline_edit(false), m_inline_edit_prevent(false), m_inline_edit_prevent_kill(false), m_inline_edit_column(pfc_infinite), m_lf_items_valid(false),
+		  m_lf_header_valid(false), m_lf_group_header_valid(NULL), m_selecting(false) , m_selecting_move(false), m_selecting_moved(false),
+		  m_dragging_rmb(false), m_selecting_start(pfc_infinite), m_selecting_start_column(pfc_infinite), m_scroll_position(0), m_horizontal_scroll_position(0), m_group_count(0),
+		  m_item_height(1), m_group_height(1), m_shift_start(pfc_infinite), m_timer_scroll_up(false),
+		  m_timer_scroll_down(false), m_lbutton_down_ctrl(false), m_insert_mark_index(pfc_infinite), m_highlight_item_index(pfc_infinite), m_highlight_selected_item_index(pfc_infinite),
+		  m_shown(false), m_focus_index(pfc_infinite), m_autosize(false), m_initialised(false),
+		  m_always_show_focus(false), m_show_header(true), m_ignore_column_size_change_notification(false), m_vertical_item_padding(4),
+		  m_variable_height_items(false), m_prevent_wm_char_processing(false), m_timer_search(false), m_show_tooltips(true), m_limit_tooltips_to_clipped_items(true),
+		  m_wnd_tooltip(NULL), m_rc_tooltip(uih::rect_null), m_tooltip_last_index(-1), m_tooltip_last_column(-1), m_sorting_enabled(false),
+		  m_show_sort_indicators(true), m_sort_column_index(pfc_infinite), m_sort_direction(false), m_edge_style(edge_grey),
+		  m_sizing(false), m_single_selection(false), m_alternate_selection(false), m_allow_header_rearrange(false), m_group_info_area_width(0),
+		  m_group_info_area_height(0), m_show_group_info_area(false), m_have_indent_column(false),
+		  m_search_editbox(NULL), m_proc_search_edit(NULL), m_search_box_hot(false), m_group_level_indentation_enabled(true)
 	//, m_search_box_theme(NULL)
 	{
 		m_dragging_initial_point.x = 0;
@@ -173,7 +173,6 @@ public:
 	unsigned calculate_header_height();
 	void set_columns(const pfc::list_base_const_t<t_column>& columns);
 	void set_column_widths(const pfc::list_base_const_t<t_size>& widths);
-	void add_item(const t_string_list_const_fast& text, const t_string_list_const_fast& p_groups, t_size size);
 	void set_group_count(t_size count, bool b_update_columns = true);
 
 	t_size get_group_count() const
@@ -270,7 +269,7 @@ public:
 		//t_size index_partially_obscured;
 		t_hit_test_value result;
 
-		t_hit_test_result() : result(hit_test_nowhere), index(NULL), insertion_index(NULL), group_level(NULL), column(NULL) {};
+		t_hit_test_result() : index(NULL), insertion_index(NULL), group_level(NULL), column(NULL), result(hit_test_nowhere) {};
 	};
 
 	void hit_test_ex(POINT pt_client, t_hit_test_result& result);

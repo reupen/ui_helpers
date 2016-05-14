@@ -9,12 +9,12 @@ class message_window_t : public ui_helpers::container_window_autorelease_t
 {
 public:
 	message_window_t()
-		: m_wnd_edit(NULL), m_flags(NULL), m_wnd_button(NULL),m_wnd_static(NULL) {};
+		: m_wnd_edit(NULL), m_wnd_button(NULL), m_wnd_static(NULL),m_flags(NULL) {};
 	class callback_t : public main_thread_callback
 	{
 	public:
 		callback_t(HWND wnd, const char * p_title, const char * p_text, INT oem_icon = OIC_INFORMATION)
-			: m_wnd(wnd),m_title(p_title),m_text(p_text), m_oem_icon(oem_icon)
+			: m_title(p_title),m_text(p_text),m_wnd(wnd), m_oem_icon(oem_icon)
 		{};
 	private:
 		virtual void callback_run()

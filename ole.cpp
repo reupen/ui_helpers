@@ -253,7 +253,7 @@ namespace mmh {
 		}
 
 		IDropSource_Generic::IDropSource_Generic(HWND wnd, IDataObject * pDataObj, DWORD initial_key_state, bool b_allowdropdescriptiontext, SHDRAGIMAGE * lpsdi)
-			: refcount(0), m_initial_key_state(initial_key_state), m_DataObject(pDataObj), m_prev_is_showing_layered(false)
+			: refcount(0), m_initial_key_state(initial_key_state), m_prev_is_showing_layered(false), m_DataObject(pDataObj)
 		{
 			HRESULT hr;
 

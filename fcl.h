@@ -86,7 +86,7 @@ namespace fcl
 			m_output->write(&lf.lfItalic,8 + sizeof(lf.lfFaceName),m_abort);
 		}
 		writer(stream_writer * p_out, abort_callback & p_abort)
-			: m_abort(p_abort), m_output(p_out)
+			: m_output(p_out), m_abort(p_abort)
 		{} ;
 	private:
 		stream_writer * m_output;
@@ -205,10 +205,10 @@ namespace fcl
 				throw exception_io_data_truncation();
 		}
 		reader(stream_reader * p_input, t_size size, abort_callback & p_abort)
-			: m_abort(p_abort), m_input(p_input), m_position(0), m_size(size)
+			: m_size(size), m_position(0), m_input(p_input), m_abort(p_abort)
 		{} ;
 		reader(reader & p_reader, t_size size, abort_callback & p_abort)
-			: m_abort(p_abort), m_input(p_reader.m_input), m_position(0), m_size(size)
+			: m_size(size), m_position(0), m_input(p_reader.m_input), m_abort(p_abort)
 		{
 			p_reader.m_position += size;
 		};

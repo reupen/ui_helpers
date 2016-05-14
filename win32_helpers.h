@@ -90,7 +90,7 @@ public:
 		}
 	}
 	DisableRedrawing(HWND wnd, bool b_disable_invalidate = false, bool b_disable_update = false)
-		: m_wnd(wnd), m_active(false), m_disable_invalidate(b_disable_invalidate), m_disable_update(b_disable_update)
+		: m_active(false), m_disable_invalidate(b_disable_invalidate), m_disable_update(b_disable_update), m_wnd(wnd)
 	{
 		if (IsWindowVisible(m_wnd))
 		{

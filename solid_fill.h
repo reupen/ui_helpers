@@ -95,7 +95,7 @@ public:
 	}
 
 	window_fill()
-		: m_fill_colour(NULL), m_mode(mode_solid_fill), m_theme(NULL), m_theme_state(NULL), m_theme_part(NULL), m_theme_prop(NULL),
+		: m_mode(mode_solid_fill), m_fill_colour(NULL), m_theme(NULL), m_theme_part(NULL), m_theme_state(NULL), m_theme_prop(NULL),
 		m_theme_colour_index(NULL)
 	{};
 
