@@ -26,9 +26,6 @@ namespace uih {
 		return reinterpret_cast<KeyboardLParam&>(lp);
 	}
 
-	bool TestOsVersion(DWORD major, DWORD minor);
-	bool IsVistaOrNewer();
-
 	void SetListViewWindowExplorerTheme(HWND wnd);
 	void SetTreeViewWindowExplorerTheme(HWND wnd, bool b_reduce_indent = false);
 	void RemoveTreeViewWindowExplorerTheme(HWND wnd);

@@ -23,30 +23,12 @@ public:
 namespace uih {
 	const RECT rect_null = { 0,0,0,0 };
 
-	bool TestOsVersion(DWORD major, DWORD minor)
-	{
-		static OSVERSIONINFO ov;
-		static bool blah = false;
-
-		if (!blah)
-		{
-			ov.dwOSVersionInfoSize = sizeof(ov);
-			GetVersionEx(&ov);
-		}
-		return ov.dwMajorVersion >= major && ov.dwMinorVersion >= minor;
-	}
-
-	bool IsVistaOrNewer()
-	{
-		return TestOsVersion(6, 0);
-	}
-
 	void SetListViewWindowExplorerTheme(HWND wnd)
 	{
-		if (TestOsVersion(6, 0))
+		if (mmh::osversion::is_windows_vista_or_newer())
 		{
 			ListView_SetExtendedListViewStyleEx(wnd, 0x00010000 | LVS_EX_FULLROWSELECT, 0x00010000 | LVS_EX_FULLROWSELECT);
-			if (TestOsVersion(6, 1))
+			if (mmh::osversion::is_windows_7_or_newer())
 			{
 				SetWindowTheme(wnd, L"ItemsView", NULL);
 				//SetWindowTheme(ListView_GetHeader (wnd), L"ItemsView", NULL);
@@ -80,7 +62,7 @@ namespace uih {
 
 	void SetTreeViewWindowExplorerTheme(HWND wnd, bool b_reduce_indent)
 	{
-		if (IsVistaOrNewer())
+		if (mmh::osversion::is_windows_vista_or_newer())
 		{
 			UINT_PTR stylesex = /*TVS_EX_FADEINOUTEXPANDOS|*/TVS_EX_DOUBLEBUFFER | TVS_EX_AUTOHSCROLL;
 			UINT_PTR styles = NULL;//TVS_TRACKSELECT;
@@ -96,7 +78,7 @@ namespace uih {
 
 	void RemoveTreeViewWindowExplorerTheme(HWND wnd)
 	{
-		if (IsVistaOrNewer())
+		if (mmh::osversion::is_windows_vista_or_newer())
 		{
 			UINT_PTR stylesex = /*TVS_EX_FADEINOUTEXPANDOS|*/TVS_EX_DOUBLEBUFFER;
 			UINT_PTR styles = NULL;//TVS_TRACKSELECT;
