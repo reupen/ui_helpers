@@ -27,7 +27,7 @@ public:
 	};
 	static void g_run(HWND wnd_parent, const char * p_title, const char * p_text, INT icon = OIC_INFORMATION)
 	{
-		message_window_t * p_test = new message_window_t;
+		auto  p_test = new message_window_t;
 		RECT rc;
 		GetWindowRect(wnd_parent, &rc);
 		int cx = 400;
