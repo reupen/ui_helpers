@@ -17,7 +17,7 @@ public:
 			: m_title(p_title),m_text(p_text),m_wnd(wnd), m_oem_icon(oem_icon)
 		{};
 	private:
-		virtual void callback_run()
+		void callback_run() override
 		{
 			g_run(m_wnd ? m_wnd : core_api::get_main_window(), m_title, m_text, m_oem_icon);
 		}
@@ -75,9 +75,9 @@ public:
 	}
 private:
 #if 1
-	virtual t_uint32 get_styles() const {return style_popup_default;}
-	virtual t_uint32 get_ex_styles() const {return ex_style_popup_default;}
-	virtual const GUID & get_class_guid() 
+	t_uint32 get_styles() const override {return style_popup_default;}
+	t_uint32 get_ex_styles() const override {return ex_style_popup_default;}
+	const GUID & get_class_guid() override 
 	{
 		// {679AB57E-F613-4109-95D2-8C06D7D1DEBB}
 		static const GUID g_guid = 
@@ -117,7 +117,7 @@ private:
 		SendMessage(m_wnd_static, STM_SETIMAGE, IMAGE_ICON, LPARAM(icon));
 		
 	}
-	virtual LRESULT on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
+	LRESULT on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp) override
 	{
 		switch (msg)
 		{

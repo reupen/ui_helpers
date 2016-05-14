@@ -114,12 +114,12 @@ namespace uih {
 		ConfigIntegerDpiAware(const GUID & guid, TInteger value) : cfg_var(guid), m_Value(ValueType(value))
 		{};
 	protected:
-		void get_data_raw(stream_writer * p_stream, abort_callback & p_abort)
+		void get_data_raw(stream_writer * p_stream, abort_callback & p_abort) override
 		{
 			p_stream->write_lendian_t(m_Value.value, p_abort);
 			p_stream->write_lendian_t(m_Value.dpi, p_abort);
 		}
-		void set_data_raw(stream_reader * p_stream, t_size p_sizehint, abort_callback & p_abort)
+		void set_data_raw(stream_reader * p_stream, t_size p_sizehint, abort_callback & p_abort) override
 		{
 			p_stream->read_lendian_t(m_Value.value, p_abort);
 			// Allow migration from older config variables

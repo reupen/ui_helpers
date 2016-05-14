@@ -16,11 +16,11 @@ namespace mmh {
 
 		class IDropSource_Generic : public IDropSource {
 		public:
-			HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, void ** ppvObject);
-			ULONG STDMETHODCALLTYPE AddRef();
-			ULONG STDMETHODCALLTYPE Release();
-			HRESULT STDMETHODCALLTYPE QueryContinueDrag(BOOL fEscapePressed, DWORD grfKeyState);
-			HRESULT STDMETHODCALLTYPE GiveFeedback(DWORD dwEffect);
+			HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, void ** ppvObject) override;
+			ULONG STDMETHODCALLTYPE AddRef() override;
+			ULONG STDMETHODCALLTYPE Release() override;
+			HRESULT STDMETHODCALLTYPE QueryContinueDrag(BOOL fEscapePressed, DWORD grfKeyState) override;
+			HRESULT STDMETHODCALLTYPE GiveFeedback(DWORD dwEffect) override;
 			IDropSource_Generic(HWND wnd, IDataObject * pDataObj, DWORD initial_key_state, bool b_allowdropdescriptiontext = true, SHDRAGIMAGE * lpsdi = nullptr); //careful, some fb2k versions have broken IDataObject
 		private:
 			long refcount;

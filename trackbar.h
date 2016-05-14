@@ -72,9 +72,9 @@ class track_bar : public ui_helpers::container_window, message_hook_manager::mes
 	*
 	* \return					Message-specific value
 	*/
-	virtual LRESULT on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp);
+	LRESULT on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp) override;
 
-	virtual bool on_hooked_message(message_hook_manager::t_message_hook_type p_type, int code, WPARAM wp, LPARAM lp);
+	bool on_hooked_message(message_hook_manager::t_message_hook_type p_type, int code, WPARAM wp, LPARAM lp) override;
 
 public:
 	/**
@@ -453,7 +453,7 @@ private:
 		{};
 	} m_last_mousemove;
 
-	virtual class_data & get_class_data()const ;
+	class_data & get_class_data()const override ;
 
 	/**
 	* Pointer to host interface.
@@ -469,11 +469,11 @@ private:
 class track_bar_impl : public track_bar
 {
 protected:
-	virtual void get_thumb_rect(unsigned pos, unsigned range, RECT * rc) const;
-	virtual void get_channel_rect(RECT * rc) const;
-	virtual void draw_thumb (HDC dc, const RECT * rc) const;
-	virtual void draw_channel (HDC dc, const RECT * rc) const;
-	virtual void draw_background (HDC dc, const RECT * rc) const;
+	void get_thumb_rect(unsigned pos, unsigned range, RECT * rc) const override;
+	void get_channel_rect(RECT * rc) const override;
+	void draw_thumb (HDC dc, const RECT * rc) const override;
+	void draw_channel (HDC dc, const RECT * rc) const override;
+	void draw_background (HDC dc, const RECT * rc) const override;
 
 	/**
 	* Used internally by the standard track bar implementation.\n

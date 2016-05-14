@@ -20,11 +20,11 @@ private:
 	{
 		RedrawWindow(get_wnd(), 0, 0, RDW_INVALIDATE|RDW_UPDATENOW);
 	}
-	virtual class_data & get_class_data()const 
+	class_data & get_class_data()const override 
 	{
 		__implement_get_class_data_ex(_T("columns_ui_solid_fill"), _T(""), false, 0, WS_CHILD|WS_CLIPCHILDREN, WS_EX_CONTROLPARENT|WS_EX_STATICEDGE, 0);
 	}
-	virtual LRESULT on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
+	LRESULT on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp) override
 	{
 		switch (msg)
 		{
@@ -105,11 +105,11 @@ private:
 		RedrawWindow(get_wnd(), 0, 0, RDW_INVALIDATE|RDW_UPDATENOW);
 		//RedrawWindow(get_wnd(), 0, 0, RDW_INVALIDATE|RDW_ERASE);
 	}
-	virtual class_data & get_class_data()const 
+	class_data & get_class_data()const override 
 	{
 		__implement_get_class_data_ex(_T("columns_ui_fill"), _T(""), false, 0, WS_CHILD|WS_CLIPCHILDREN|WS_VISIBLE, WS_EX_CONTROLPARENT|WS_EX_STATICEDGE, 0);
 	}
-	virtual LRESULT on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
+	LRESULT on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp) override
 	{
 		switch (msg)
 		{
@@ -205,11 +205,11 @@ private:
 	{
 		RedrawWindow(get_wnd(), 0, 0, RDW_INVALIDATE|RDW_UPDATENOW);
 	}
-	virtual class_data & get_class_data()const 
+	class_data & get_class_data()const override 
 	{
 		__implement_get_class_data_ex(_T("columns_ui_transparent_fill"), _T(""), false, 0, WS_POPUP|WS_CLIPSIBLINGS| WS_CLIPCHILDREN, /*WS_EX_TOPMOST|*/WS_EX_LAYERED, 0);
 	}
-	LRESULT on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp);
+	LRESULT on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp) override;
 
 	COLORREF m_fill_colour;
 };
