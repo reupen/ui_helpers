@@ -23,7 +23,7 @@ namespace mmh
 				if (m_handle)
 				{
 					DestroyMenu(m_handle);
-					m_handle = NULL;
+					m_handle = nullptr;
 				}
 			}
 
@@ -31,7 +31,7 @@ namespace mmh
 			{
 				return GetMenuItemCount(m_handle);
 			}
-			HMENU detach() { HMENU ret = m_handle; m_handle = NULL; return ret; }
+			HMENU detach() { HMENU ret = m_handle; m_handle = nullptr; return ret; }
 			void insert_command(size_t index, const wchar_t * text, size_t id, size_t flags = NULL)
 			{
 				MENUITEMINFO mii;
@@ -84,7 +84,7 @@ namespace mmh
 			}
 			size_t run(HWND wnd, const POINT & pt)
 			{
-				return TrackPopupMenu(m_handle,TPM_RIGHTBUTTON|TPM_NONOTIFY|TPM_RETURNCMD,pt.x,pt.y,0,wnd,0);
+				return TrackPopupMenu(m_handle,TPM_RIGHTBUTTON|TPM_NONOTIFY|TPM_RETURNCMD,pt.x,pt.y,0,wnd,nullptr);
 			}
 		private:
 			HMENU m_handle;

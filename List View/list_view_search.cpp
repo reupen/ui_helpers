@@ -1,6 +1,6 @@
 #include "..\stdafx.h"
 
-bool t_list_view::is_search_box_open() {return m_search_editbox != NULL;}
+bool t_list_view::is_search_box_open() {return m_search_editbox != nullptr;}
 void t_list_view::focus_search_box() {if (m_search_editbox) SetFocus(m_search_editbox);}
 
 void t_list_view::show_search_box(const char * label, bool b_focus)
@@ -9,7 +9,7 @@ void t_list_view::show_search_box(const char * label, bool b_focus)
 	{
 		m_search_editbox = CreateWindowEx(WS_EX_CLIENTEDGE, WC_EDIT, L"" /*pfc::stringcvt::string_os_from_utf8("").get_ptr()*/, WS_CHILD|WS_CLIPSIBLINGS|ES_LEFT|
 			WS_VISIBLE|WS_CLIPCHILDREN|ES_AUTOHSCROLL|WS_TABSTOP, 0, 
-			0, 0, 0, get_wnd(), HMENU(668), core_api::get_my_instance(), 0);
+			0, 0, 0, get_wnd(), HMENU(668), core_api::get_my_instance(), nullptr);
 
 		m_search_label = label;
 
@@ -17,7 +17,7 @@ void t_list_view::show_search_box(const char * label, bool b_focus)
 		m_proc_search_edit = (WNDPROC)SetWindowLongPtr(m_search_editbox,GWL_WNDPROC,(LPARAM)(g_on_search_edit_message));
 		//SetWindowPos(m_wnd_inline_edit,HWND_TOP,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);
 		SendMessage(m_search_editbox, WM_SETFONT, (WPARAM)m_font.get(), MAKELONG(TRUE,0));
-		SetWindowTheme(m_search_editbox, L"SearchBoxEdit", NULL);
+		SetWindowTheme(m_search_editbox, L"SearchBoxEdit", nullptr);
 		
 		//m_search_box_theme = OpenThemeData(m_search_editbox, L"Edit");
 	/*	COLORREF cr = NULL;
@@ -62,7 +62,7 @@ void t_list_view::close_search_box(bool b_notify)
 	if (m_search_editbox)
 	{
 		DestroyWindow(m_search_editbox);
-		m_search_editbox = NULL;
+		m_search_editbox = nullptr;
 	}
 	/*if (m_search_box_theme)
 	{
@@ -189,6 +189,6 @@ void t_list_view::__search_box_update_hot_status(const POINT & pt)
 			SetCapture(m_search_editbox);
 		else if (GetCapture() == m_search_editbox)
 			ReleaseCapture();
-		RedrawWindow(m_search_editbox, NULL, NULL, RDW_INVALIDATE|RDW_ERASE|RDW_UPDATENOW|RDW_ERASENOW);
+		RedrawWindow(m_search_editbox, nullptr, nullptr, RDW_INVALIDATE|RDW_ERASE|RDW_UPDATENOW|RDW_ERASENOW);
 	}
 }

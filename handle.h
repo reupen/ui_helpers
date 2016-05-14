@@ -66,12 +66,12 @@ public:
 		template<typename t_gdi_type>
 		static bool is_valid(t_gdi_type handle)
 		{
-			return handle != NULL;
+			return handle != nullptr;
 		};
 		template<typename t_gdi_type>
 		static void set_invalid(t_gdi_type & handle)
 		{
-			handle = NULL;
+			handle = nullptr;
 		};
 	};
 	typedef handle_container_t<t_gdi_type, gdi_release_t> ptr_t;
@@ -85,11 +85,11 @@ public:
 	};
 	static bool is_valid(HICON handle)
 	{
-		return handle != NULL;
+		return handle != nullptr;
 	};
 	static void set_invalid(HICON & handle)
 	{
-		handle = NULL;
+		handle = nullptr;
 	};
 };
 using icon_ptr = handle_container_t<HICON, icon_release_t>;

@@ -184,7 +184,7 @@ void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
 	}
 	void t_list_view::render_group_line_default(const colour_data_t & p_data, HDC dc, const RECT * rc)
 	{
-		if (m_theme && IsThemePartDefined(m_theme, LVP_GROUPHEADERLINE, NULL) && SUCCEEDED(DrawThemeBackground(m_theme, dc, LVP_GROUPHEADERLINE, LVGH_OPEN, rc, NULL)))
+		if (m_theme && IsThemePartDefined(m_theme, LVP_GROUPHEADERLINE, NULL) && SUCCEEDED(DrawThemeBackground(m_theme, dc, LVP_GROUPHEADERLINE, LVGH_OPEN, rc, nullptr)))
 		{
 		}
 		else
@@ -192,7 +192,7 @@ void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
 			COLORREF cr = p_data.m_group_text;//get_group_text_colour_default();
 			gdi_object_t<HPEN>::ptr_t pen = CreatePen(PS_SOLID, 1, cr);
 			HPEN pen_old = SelectPen(dc, pen);
-			MoveToEx(dc, rc->left, rc->top, NULL);
+			MoveToEx(dc, rc->left, rc->top, nullptr);
 			LineTo(dc, rc->right, rc->top);
 			SelectPen(dc, pen_old);
 		}
@@ -222,7 +222,7 @@ void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
 		unsigned text_width = NULL;
 
 		render_group_background_default(p_data, dc, &rc);
-		ui_helpers::text_out_colours_tab(dc, text, strlen(text), 2 + indentation*level, 2, &rc, false, cr, false, false, true, ui_helpers::ALIGN_LEFT, NULL, true, true, &text_width);
+		ui_helpers::text_out_colours_tab(dc, text, strlen(text), 2 + indentation*level, 2, &rc, false, cr, false, false, true, ui_helpers::ALIGN_LEFT, nullptr, true, true, &text_width);
 
 		t_size cx = text_width;
 
@@ -252,7 +252,7 @@ void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
 			{
 				if (IsThemeBackgroundPartiallyTransparent(m_theme, LVP_LISTITEM, theme_state))
 					DrawThemeParentBackground(get_wnd(), dc, rc);
-				DrawThemeBackground(m_theme, dc, LVP_LISTITEM, theme_state, rc, NULL);
+				DrawThemeBackground(m_theme, dc, LVP_LISTITEM, theme_state, rc, nullptr);
 			}
 		}
 		else

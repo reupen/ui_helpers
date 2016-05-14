@@ -9,7 +9,7 @@ class message_window_t : public ui_helpers::container_window_autorelease_t
 {
 public:
 	message_window_t()
-		: m_wnd_edit(NULL), m_wnd_button(NULL), m_wnd_static(NULL) {};
+		: m_wnd_edit(nullptr), m_wnd_button(nullptr), m_wnd_static(nullptr) {};
 	class callback_t : public main_thread_callback
 	{
 	public:
@@ -33,13 +33,13 @@ public:
 		int cx = 400;
 		int cy = 150;
 		HWND wnd;
-		if ((wnd = p_test->create(wnd_parent,0,ui_helpers::window_position_t((rc.left+(RECT_CX(rc)-cx)/2), (rc.top+(RECT_CY(rc)-cy)/2), cx, cy))))
+		if ((wnd = p_test->create(wnd_parent,nullptr,ui_helpers::window_position_t((rc.left+(RECT_CX(rc)-cx)/2), (rc.top+(RECT_CY(rc)-cy)/2), cx, cy))))
 		{
 			p_test->initialise(p_title, p_text, icon);
 			cy = min (p_test->calc_height(), max (RECT_CY(rc),150));;
 			int y = (rc.top+(RECT_CY(rc)-cy)/2);
 			if (y < rc.top) y = rc.top;			
-			SetWindowPos(wnd, NULL, (rc.left+(RECT_CX(rc)-cx)/2), y, cx, cy, SWP_NOZORDER);
+			SetWindowPos(wnd, nullptr, (rc.left+(RECT_CX(rc)-cx)/2), y, cx, cy, SWP_NOZORDER);
 			ShowWindow(wnd, SW_SHOWNORMAL);
 		}
 		else
@@ -52,7 +52,7 @@ public:
 	}
 	static void g_run_threadsafe(const char * p_title, const char * p_text, INT oem_icon = OIC_INFORMATION)
 	{
-		service_ptr_t<main_thread_callback> cb = new service_impl_t<callback_t>((HWND)NULL, p_title, p_text, oem_icon);
+		service_ptr_t<main_thread_callback> cb = new service_impl_t<callback_t>((HWND)nullptr, p_title, p_text, oem_icon);
 		static_api_ptr_t<main_thread_callback_manager>()->add_callback(cb);
 	}
 	int calc_height()
@@ -113,7 +113,7 @@ private:
 		}
 		
 		uSetWindowText(m_wnd_edit, buffer);
-		HICON icon = (HICON)LoadImage(NULL, MAKEINTRESOURCE(oem_icon), IMAGE_ICON, 0,0, LR_DEFAULTSIZE|LR_SHARED);
+		HICON icon = (HICON)LoadImage(nullptr, MAKEINTRESOURCE(oem_icon), IMAGE_ICON, 0,0, LR_DEFAULTSIZE|LR_SHARED);
 		SendMessage(m_wnd_static, STM_SETIMAGE, IMAGE_ICON, LPARAM(icon));
 		
 	}
@@ -126,17 +126,17 @@ private:
 			break;
 		case WM_SIZE:
 			{
-				RedrawWindow(wnd, 0, 0, RDW_INVALIDATE);
+				RedrawWindow(wnd, nullptr, nullptr, RDW_INVALIDATE);
 				RECT rc, rcicon;
 				GetWindowRect(m_wnd_button, &rc);
 				GetWindowRect(m_wnd_static, &rcicon);
 				int cy_button = RECT_CY(rc);
 				HDWP dwp = BeginDeferWindowPos(3);
-				dwp = DeferWindowPos(dwp, m_wnd_edit, NULL, 11+11+7+RECT_CX(rcicon), 11, LOWORD(lp)-11*4-7-RECT_CX(rcicon), HIWORD(lp)-11*2-cy_button-11-11, SWP_NOZORDER);
-				dwp = DeferWindowPos(dwp, m_wnd_button, NULL, LOWORD(lp)-11-73-11, HIWORD(lp)-11-cy_button, 73, cy_button, SWP_NOZORDER);
-				dwp = DeferWindowPos(dwp, m_wnd_static, NULL, 11+11, 11, RECT_CX(rcicon), RECT_CY(rcicon), SWP_NOZORDER);
+				dwp = DeferWindowPos(dwp, m_wnd_edit, nullptr, 11+11+7+RECT_CX(rcicon), 11, LOWORD(lp)-11*4-7-RECT_CX(rcicon), HIWORD(lp)-11*2-cy_button-11-11, SWP_NOZORDER);
+				dwp = DeferWindowPos(dwp, m_wnd_button, nullptr, LOWORD(lp)-11-73-11, HIWORD(lp)-11-cy_button, 73, cy_button, SWP_NOZORDER);
+				dwp = DeferWindowPos(dwp, m_wnd_static, nullptr, 11+11, 11, RECT_CX(rcicon), RECT_CY(rcicon), SWP_NOZORDER);
 				EndDeferWindowPos(dwp);
-				RedrawWindow(wnd, 0, 0, RDW_UPDATENOW);
+				RedrawWindow(wnd, nullptr, nullptr, RDW_UPDATENOW);
 			}
 			return 0;
 		case WM_GETMINMAXINFO:
@@ -160,12 +160,12 @@ private:
 				}
 				RECT rc;
 				GetClientRect(wnd, &rc);
-				m_wnd_edit = CreateWindowEx(0, WC_EDIT, L"", WS_CHILD|WS_VISIBLE|WS_GROUP|ES_READONLY|ES_CENTER|ES_MULTILINE|ES_AUTOVSCROLL, 11, 11, RECT_CX(rc)-11-11, RECT_CY(rc)-11-11, wnd, (HMENU)1001, core_api::get_my_instance(), NULL);
+				m_wnd_edit = CreateWindowEx(0, WC_EDIT, L"", WS_CHILD|WS_VISIBLE|WS_GROUP|ES_READONLY|ES_CENTER|ES_MULTILINE|ES_AUTOVSCROLL, 11, 11, RECT_CX(rc)-11-11, RECT_CY(rc)-11-11, wnd, (HMENU)1001, core_api::get_my_instance(), nullptr);
 				SendMessage(m_wnd_edit, WM_SETFONT, (WPARAM)m_font.get(), MAKELPARAM(FALSE,0));
 				int cy_button = uGetFontHeight(m_font)+10;
-				m_wnd_button = CreateWindowEx(0, WC_BUTTON, L"Close", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_DEFPUSHBUTTON|WS_GROUP, RECT_CX(rc)-11*2-73, RECT_CY(rc)-11-cy_button, 73, cy_button, wnd, (HMENU)IDCANCEL, core_api::get_my_instance(), NULL);
+				m_wnd_button = CreateWindowEx(0, WC_BUTTON, L"Close", WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_DEFPUSHBUTTON|WS_GROUP, RECT_CX(rc)-11*2-73, RECT_CY(rc)-11-cy_button, 73, cy_button, wnd, (HMENU)IDCANCEL, core_api::get_my_instance(), nullptr);
 				SendMessage(m_wnd_button, WM_SETFONT, (WPARAM)m_font.get(), MAKELPARAM(FALSE,0));
-				m_wnd_static = CreateWindowEx(0, WC_STATIC, L"", WS_CHILD|WS_VISIBLE|WS_GROUP|SS_ICON, 0, 0, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), wnd, (HMENU)1002, core_api::get_my_instance(), 0);
+				m_wnd_static = CreateWindowEx(0, WC_STATIC, L"", WS_CHILD|WS_VISIBLE|WS_GROUP|SS_ICON, 0, 0, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), wnd, (HMENU)1002, core_api::get_my_instance(), nullptr);
 			}
 			return 0;
 		case WM_SHOWWINDOW:

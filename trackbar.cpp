@@ -24,8 +24,8 @@ BOOL track_bar::create_tooltip(const TCHAR * text, POINT pt)
 	DLLVERSIONINFO2 dvi;
 	bool b_comctl_6 = SUCCEEDED(uih::GetComCtl32Version(dvi)) && dvi.info1.dwMajorVersion >= 6;
 
-	m_wnd_tooltip = CreateWindowEx(WS_EX_TOPMOST|(b_comctl_6?WS_EX_TRANSPARENT:0), TOOLTIPS_CLASS, NULL, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
-		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, get_wnd(), 0, core_api::get_my_instance(), NULL);
+	m_wnd_tooltip = CreateWindowEx(WS_EX_TOPMOST|(b_comctl_6?WS_EX_TRANSPARENT:0), TOOLTIPS_CLASS, nullptr, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, get_wnd(), nullptr, core_api::get_my_instance(), nullptr);
 
 	SetWindowPos(m_wnd_tooltip, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
@@ -49,7 +49,7 @@ BOOL track_bar::create_tooltip(const TCHAR * text, POINT pt)
 
 void track_bar::destroy_tooltip()
 {
-	if (m_wnd_tooltip) {DestroyWindow(m_wnd_tooltip); m_wnd_tooltip=0;}
+	if (m_wnd_tooltip) {DestroyWindow(m_wnd_tooltip); m_wnd_tooltip=nullptr;}
 }
 
 
@@ -104,7 +104,7 @@ void track_bar::set_position_internal(unsigned pos)
 	DeleteObject(rgn_old);
 	m_display_position = pos;
 	//InvalidateRgn(m_wnd, rgn_new, TRUE);
-	RedrawWindow(get_wnd(), 0, rgn_new, RDW_INVALIDATE|RDW_ERASE|RDW_UPDATENOW|RDW_ERASENOW);
+	RedrawWindow(get_wnd(), nullptr, rgn_new, RDW_INVALIDATE|RDW_ERASE|RDW_UPDATENOW|RDW_ERASENOW);
 	DeleteObject(rgn_new);
 }
 
@@ -131,7 +131,7 @@ void track_bar::set_range(unsigned range)
 	CombineRgn(rgn_new, rgn_old, rgn_new, RGN_OR);
 	DeleteObject(rgn_old);
 	m_range = range;
-	RedrawWindow(get_wnd(), 0, rgn_new, RDW_INVALIDATE|RDW_ERASE|RDW_UPDATENOW|RDW_ERASENOW);
+	RedrawWindow(get_wnd(), nullptr, rgn_new, RDW_INVALIDATE|RDW_ERASE|RDW_UPDATENOW|RDW_ERASENOW);
 	DeleteObject(rgn_new);
 }
 unsigned track_bar::get_range() const
@@ -263,7 +263,7 @@ void track_bar::update_hot_status(POINT pt)
 			SetCapture(get_wnd());
 		else if (GetCapture() == get_wnd() && !m_dragging)
 			ReleaseCapture();
-		RedrawWindow(get_wnd(), &rc, 0, RDW_INVALIDATE|/*RDW_ERASE|*/RDW_UPDATENOW/*|RDW_ERASENOW*/);
+		RedrawWindow(get_wnd(), &rc, nullptr, RDW_INVALIDATE|/*RDW_ERASE|*/RDW_UPDATENOW/*|RDW_ERASENOW*/);
 	}
 }
 
@@ -275,14 +275,14 @@ void track_bar_impl::draw_background (HDC dc, const RECT * rc) const
 	OffsetWindowOrgEx(dc, pt.x, pt.y, &pt_old);
 	if (SendMessage(wnd_parent, WM_ERASEBKGND,(WPARAM)dc, 0) == FALSE)
 		SendMessage(wnd_parent, WM_PRINTCLIENT,(WPARAM)dc, PRF_ERASEBKGND);
-	SetWindowOrgEx(dc, pt_old.x, pt_old.y, 0);
+	SetWindowOrgEx(dc, pt_old.x, pt_old.y, nullptr);
 }
 
 void track_bar_impl::draw_thumb (HDC dc, const RECT * rc) const
 {
 	if (get_theme_handle())
 	{
-		DrawThemeBackground(get_theme_handle(), dc, get_orientation() ? TKP_THUMBVERT : TKP_THUMB, get_enabled() ? (get_tracking() ? TUS_PRESSED : (get_hot() ? TUS_HOT : TUS_NORMAL)) : TUS_DISABLED, rc, 0);
+		DrawThemeBackground(get_theme_handle(), dc, get_orientation() ? TKP_THUMBVERT : TKP_THUMB, get_enabled() ? (get_tracking() ? TUS_PRESSED : (get_hot() ? TUS_HOT : TUS_NORMAL)) : TUS_DISABLED, rc, nullptr);
 	}
 	else
 	{
@@ -293,25 +293,25 @@ void track_bar_impl::draw_thumb (HDC dc, const RECT * rc) const
 
 		HPEN pn_old = SelectPen(dc, pn_highlight);
 
-		MoveToEx(dc, rc->left, rc->top, 0);
+		MoveToEx(dc, rc->left, rc->top, nullptr);
 		LineTo(dc, rc->right-1, rc->top);
 		SelectPen(dc, pn_dkshadow);
 		LineTo(dc, rc->right-1, rc->bottom-1);
 		SelectPen(dc, pn_highlight);
-		MoveToEx(dc, rc->left, rc->top, 0);
+		MoveToEx(dc, rc->left, rc->top, nullptr);
 		LineTo(dc, rc->left, rc->bottom-1);
 		SelectPen(dc, pn_dkshadow);
 		LineTo(dc, rc->right, rc->bottom-1);
 
 		SelectPen(dc, pn_light);
-		MoveToEx(dc, rc->left+1, rc->top+1, 0);
+		MoveToEx(dc, rc->left+1, rc->top+1, nullptr);
 		LineTo(dc, rc->right-2, rc->top+1);
-		MoveToEx(dc, rc->left+1, rc->top+1, 0);
+		MoveToEx(dc, rc->left+1, rc->top+1, nullptr);
 		LineTo(dc, rc->left+1, rc->bottom-2);
 
 		SelectPen(dc, pn_shadow);
 		LineTo(dc, rc->right-1, rc->bottom-2);
-		MoveToEx(dc, rc->right-2, rc->top+1, 0);
+		MoveToEx(dc, rc->right-2, rc->top+1, nullptr);
 		LineTo(dc, rc->right-2, rc->bottom-2);
 
 		SelectPen(dc, pn_old);
@@ -346,7 +346,7 @@ void track_bar_impl::draw_channel (HDC dc, const RECT * rc) const
 {
 	if (get_theme_handle())
 	{
-		DrawThemeBackground(get_theme_handle(), dc, get_orientation() ? TKP_TRACKVERT : TKP_TRACK, TUTS_NORMAL, rc, 0);
+		DrawThemeBackground(get_theme_handle(), dc, get_orientation() ? TKP_TRACKVERT : TKP_TRACK, TUTS_NORMAL, rc, nullptr);
 	}
 	else
 	{
@@ -430,7 +430,7 @@ LRESULT track_bar::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 				if (m_theme)
 				{
 					CloseThemeData(m_theme);
-					m_theme=0;
+					m_theme=nullptr;
 				}
 				if (IsThemeActive() && IsAppThemed())
 					m_theme = OpenThemeData(wnd, L"Trackbar");
@@ -446,14 +446,14 @@ LRESULT track_bar::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 			}
 			{
 				if (m_theme) CloseThemeData(m_theme);
-				m_theme=0;
+				m_theme=nullptr;
 			}
 		}
 		break;
 	case WM_NCDESTROY:
 		break;
 	case WM_SIZE:
-		RedrawWindow(wnd, 0, 0, RDW_INVALIDATE|RDW_ERASE);
+		RedrawWindow(wnd, nullptr, nullptr, RDW_INVALIDATE|RDW_ERASE);
 		break;
 	case WM_MOUSEMOVE:
 		{
@@ -671,7 +671,7 @@ LRESULT track_bar::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 		break;
 #endif
 	case WM_MOVE:
-		RedrawWindow(wnd, NULL, NULL, RDW_ERASE|RDW_INVALIDATE);
+		RedrawWindow(wnd, nullptr, nullptr, RDW_ERASE|RDW_INVALIDATE);
 		break;
 	case WM_ERASEBKGND:
 		return FALSE;

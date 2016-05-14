@@ -13,11 +13,11 @@ namespace ui_helpers
 			m_bm_mem = CreateCompatibleBitmap(m_dc, RECT_CX(m_rc), RECT_CY(m_rc));
 			m_bm_old = SelectBitmap(m_dc_mem, m_bm_mem);
 
-			OffsetWindowOrgEx(m_dc_mem, m_rc.left, m_rc.top, NULL);
+			OffsetWindowOrgEx(m_dc_mem, m_rc.left, m_rc.top, nullptr);
 		}
 		~MemoryDC()
 		{
-			OffsetWindowOrgEx(m_dc_mem, -m_rc.left, -m_rc.top, NULL);
+			OffsetWindowOrgEx(m_dc_mem, -m_rc.left, -m_rc.top, nullptr);
 			BitBlt(m_dc,	m_rc.left, m_rc.top, RECT_CX(m_rc), RECT_CY(m_rc),
 				m_dc_mem, 0, 0, SRCCOPY);
 
@@ -66,7 +66,7 @@ namespace ui_helpers
 			if (m_active)
 			{
 				SendMessage(m_wnd, WM_SETREDRAW, TRUE, NULL);
-				RedrawWindow(m_wnd, 0, 0, RDW_INVALIDATE|RDW_UPDATENOW|RDW_ALLCHILDREN|RDW_FRAME|RDW_ERASE);
+				RedrawWindow(m_wnd, nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW|RDW_ALLCHILDREN|RDW_FRAME|RDW_ERASE);
 			}
 		}
 	private:

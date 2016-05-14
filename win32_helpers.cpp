@@ -6,7 +6,7 @@ class param_utf16_from_utf8 : public pfc::stringcvt::string_wide_from_utf8 {
 public:
 	param_utf16_from_utf8(const char * p) :
 		pfc::stringcvt::string_wide_from_utf8(p && HIWORD((DWORD)p) != 0 ? p : ""),
-		is_null(p == 0),
+		is_null(p == nullptr),
 		low_word(HIWORD((DWORD)p) == 0 ? LOWORD((DWORD)p) : 0)
 	{}
 	inline operator const WCHAR *()
@@ -15,7 +15,7 @@ public:
 	}
 	const WCHAR * get_ptr()
 	{
-		return low_word ? (const WCHAR*)(DWORD)low_word : is_null ? 0 : pfc::stringcvt::string_wide_from_utf8::get_ptr();
+		return low_word ? (const WCHAR*)(DWORD)low_word : is_null ? nullptr : pfc::stringcvt::string_wide_from_utf8::get_ptr();
 	}
 
 };
@@ -30,12 +30,12 @@ namespace uih {
 			ListView_SetExtendedListViewStyleEx(wnd, 0x00010000 | LVS_EX_FULLROWSELECT, 0x00010000 | LVS_EX_FULLROWSELECT);
 			if (mmh::osversion::is_windows_7_or_newer())
 			{
-				SetWindowTheme(wnd, L"ItemsView", NULL);
+				SetWindowTheme(wnd, L"ItemsView", nullptr);
 				//SetWindowTheme(ListView_GetHeader (wnd), L"ItemsView", NULL);
 			}
 			else
 			{
-				SetWindowTheme(wnd, L"Explorer", NULL);
+				SetWindowTheme(wnd, L"Explorer", nullptr);
 			}
 		}
 	}
@@ -68,7 +68,7 @@ namespace uih {
 			UINT_PTR styles = NULL;//TVS_TRACKSELECT;
 
 			SendMessage(wnd, TV_FIRST + 44, stylesex, stylesex);
-			SetWindowTheme(wnd, L"Explorer", NULL);
+			SetWindowTheme(wnd, L"Explorer", nullptr);
 			SetWindowLongPtr(wnd, GWL_STYLE, (GetWindowLongPtr(wnd, GWL_STYLE) & ~(TVS_HASLINES/*|TVS_NOHSCROLL*/)) | styles);
 			if (b_reduce_indent)
 				TreeView_SetIndent(wnd, 0xa);
@@ -84,7 +84,7 @@ namespace uih {
 			UINT_PTR styles = NULL;//TVS_TRACKSELECT;
 
 			SendMessage(wnd, TV_FIRST + 44, stylesex, NULL);
-			SetWindowTheme(wnd, L"", NULL);
+			SetWindowTheme(wnd, L"", nullptr);
 			SetWindowLongPtr(wnd, GWL_STYLE, (GetWindowLongPtr(wnd, GWL_STYLE) | TVS_HASLINES));
 		}
 
@@ -165,7 +165,7 @@ namespace uih {
 		memset(&stLocal, 0, sizeof(stLocal));
 
 		FileTimeToSystemTime(lpFileTime, &stUTC);
-		SystemTimeToTzSpecificLocalTime(NULL, &stUTC, &stLocal);
+		SystemTimeToTzSpecificLocalTime(nullptr, &stUTC, &stLocal);
 		return SystemTimeToFileTime(&stLocal, lpLocalFileTime);
 	}
 	FILETIME filetimestamp_to_FileTime(t_filetimestamp time)
@@ -182,13 +182,13 @@ namespace uih {
 			FileTimeToLocalFileTime2(&ft1, &ft2);
 		SYSTEMTIME st;
 		FileTimeToSystemTime(&ft2, &st);
-		int size = GetDateFormat(LOCALE_USER_DEFAULT, 0, &st, NULL, NULL, NULL);
-		int size2 = GetTimeFormat(LOCALE_USER_DEFAULT, 0, &st, NULL, NULL, NULL);
+		int size = GetDateFormat(LOCALE_USER_DEFAULT, 0, &st, nullptr, nullptr, NULL);
+		int size2 = GetTimeFormat(LOCALE_USER_DEFAULT, 0, &st, nullptr, nullptr, NULL);
 		pfc::array_t<TCHAR> buf, buf2;
 		buf.set_size(size);
 		buf2.set_size(size2);
-		GetDateFormat(LOCALE_USER_DEFAULT, 0, &st, NULL, buf.get_ptr(), size);
-		GetTimeFormat(LOCALE_USER_DEFAULT, 0, &st, NULL, buf2.get_ptr(), size2);
+		GetDateFormat(LOCALE_USER_DEFAULT, 0, &st, nullptr, buf.get_ptr(), size);
+		GetTimeFormat(LOCALE_USER_DEFAULT, 0, &st, nullptr, buf2.get_ptr(), size2);
 		str = _T("");
 		str += buf.get_ptr();
 		str += _T(" ");
@@ -214,9 +214,9 @@ namespace uih {
 
 	SIZE get_system_dpi()
 	{
-		HDC dc = GetDC(0);
+		HDC dc = GetDC(nullptr);
 		SIZE ret = { GetDeviceCaps(dc, LOGPIXELSX), GetDeviceCaps(dc, LOGPIXELSY) };
-		ReleaseDC(0, dc);
+		ReleaseDC(nullptr, dc);
 		return ret;
 	}
 

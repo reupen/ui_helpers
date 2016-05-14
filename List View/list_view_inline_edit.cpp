@@ -303,7 +303,7 @@ void t_list_view::create_inline_edit(const pfc::list_base_const_t<t_size> & indi
 		//NEW
 		m_inline_edit_prevent_kill = true;
 		DestroyWindow(m_wnd_inline_edit);
-		m_wnd_inline_edit=0;
+		m_wnd_inline_edit=nullptr;
 		m_inline_edit_autocomplete.release();
 		m_inline_edit_prevent_kill = false;
 		//END NEW
@@ -331,7 +331,7 @@ void t_list_view::create_inline_edit(const pfc::list_base_const_t<t_size> & indi
 			ES_AUTOHSCROLL|ES_MULTILINE|ES_AUTOVSCROLL|WS_BORDER|WS_CLIPCHILDREN|((flags & inline_edit_uppercase) ? ES_UPPERCASE : 0), x, 
 			y,
 			cx, cy, get_wnd(), HMENU(667),
-			core_api::get_my_instance(), 0);
+			core_api::get_my_instance(), nullptr);
 
 		m_proc_original_inline_edit = (WNDPROC)GetWindowLongPtr(m_wnd_inline_edit,GWLP_WNDPROC);
 
@@ -340,7 +340,7 @@ void t_list_view::create_inline_edit(const pfc::list_base_const_t<t_size> & indi
 			if (SUCCEEDED(m_inline_edit_autocomplete.instantiate(CLSID_AutoComplete)))
 			{
 				if (pAutoCompleteEntries.is_valid())
-					m_inline_edit_autocomplete->Init(m_wnd_inline_edit, pAutoCompleteEntries, NULL, NULL);
+					m_inline_edit_autocomplete->Init(m_wnd_inline_edit, pAutoCompleteEntries, nullptr, nullptr);
 
 				mmh::comptr_t<IAutoComplete2> pA2 = m_inline_edit_autocomplete;
 				mmh::comptr_t<IAutoCompleteDropDown> pAutoCompleteDropDown = m_inline_edit_autocomplete;
@@ -420,7 +420,7 @@ void t_list_view::exit_inline_edit()
 	if (m_wnd_inline_edit) 
 	{
 		DestroyWindow(m_wnd_inline_edit);
-		m_wnd_inline_edit=0;
+		m_wnd_inline_edit=nullptr;
 	}
 
 	if (m_timer_inline_edit)

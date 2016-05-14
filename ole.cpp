@@ -99,7 +99,7 @@ namespace mmh {
 			{
 				CopyMemory(pv, pvBlob, cbBlob);
 
-				FORMATETC fmte = { cf, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+				FORMATETC fmte = { cf, nullptr, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
 
 				// The STGMEDIUM structure is used to define how to handle a global memory transfer. 
 				// This structure includes a flag, tymed, which indicates the medium 
@@ -183,8 +183,8 @@ namespace mmh {
 
 		HRESULT STDMETHODCALLTYPE IDropSource_Generic::QueryInterface(REFIID iid, void ** ppvObject)
 		{
-			if (ppvObject == NULL) return E_INVALIDARG;
-			*ppvObject = NULL;
+			if (ppvObject == nullptr) return E_INVALIDARG;
+			*ppvObject = nullptr;
 			if (iid == IID_IUnknown) { AddRef(); *ppvObject = (IUnknown*)this; return S_OK; }
 			else if (iid == IID_IDropSource) { AddRef(); *ppvObject = (IDropSource*)this; return S_OK; }
 			else return E_NOINTERFACE;
@@ -218,7 +218,7 @@ namespace mmh {
 
 		HRESULT STDMETHODCALLTYPE IDropSource_Generic::GiveFeedback(DWORD dwEffect)
 		{
-			HWND wnd_drag = NULL;
+			HWND wnd_drag = nullptr;
 			BOOL isShowingLayered = FALSE;
 			if (IsThemeActive())
 				GetIsShowingLayered(m_DataObject, isShowingLayered);
@@ -230,7 +230,7 @@ namespace mmh {
 			{
 				if (!m_prev_is_showing_layered)
 				{
-					auto cursor = LoadCursor(NULL, IDC_ARROW);
+					auto cursor = LoadCursor(nullptr, IDC_ARROW);
 					SetCursor(cursor);
 				}
 				if (wnd_drag)
@@ -259,7 +259,7 @@ namespace mmh {
 
 			if (b_allowdropdescriptiontext)
 			{
-				if (SUCCEEDED(m_DragSourceHelper.instantiate(CLSID_DragDropHelper, NULL, CLSCTX_INPROC_SERVER)))
+				if (SUCCEEDED(m_DragSourceHelper.instantiate(CLSID_DragDropHelper, nullptr, CLSCTX_INPROC_SERVER)))
 				{
 					mmh::comptr_t<IDragSourceHelper2> pDragSourceHelper2 = m_DragSourceHelper;
 					if (pDragSourceHelper2.is_valid())
@@ -272,11 +272,11 @@ namespace mmh {
 						if (FAILED(hr) && lpsdi->hbmpDragImage)
 						{
 							DeleteObject(lpsdi->hbmpDragImage);
-							lpsdi->hbmpDragImage = NULL;
+							lpsdi->hbmpDragImage = nullptr;
 						}
 					}
 					else
-						hr = m_DragSourceHelper->InitializeFromWindow(wnd, NULL, pDataObj);
+						hr = m_DragSourceHelper->InitializeFromWindow(wnd, nullptr, pDataObj);
 					if (IsThemeActive() && IsAppThemed())
 					{
 						SetUsingDefaultDragImage(pDataObj);

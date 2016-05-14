@@ -59,7 +59,7 @@ namespace uih {
 
 			if (IsThemeBackgroundPartiallyTransparent(theme, DD_TEXTBG, 0))
 				DrawThemeParentBackground(wnd, dc, &background_rect);
-			DrawThemeBackground(theme, dc, DD_TEXTBG, theme_state, &background_rect, NULL);
+			DrawThemeBackground(theme, dc, DD_TEXTBG, theme_state, &background_rect, nullptr);
 			DrawThemeText(theme, dc, DD_TEXTBG, theme_state, wtext, -1, text_flags, 0, &rc_text);
 		}
 		else
@@ -76,7 +76,7 @@ namespace uih {
 	void DrawDragImageIcon(HDC dc, const RECT & rc, HICON icon)
 	{
 		// We may want to use better scaling.
-		DrawIconEx(dc, 0, 0, icon, RECT_CX(rc), RECT_CY(rc), NULL, NULL, DI_NORMAL);
+		DrawIconEx(dc, 0, 0, icon, RECT_CX(rc), RECT_CY(rc), NULL, nullptr, DI_NORMAL);
 	}
 	SIZE GetDragImageContentSize(HDC dc, bool isThemed, HTHEME theme)
 	{

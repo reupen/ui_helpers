@@ -61,8 +61,8 @@ void t_list_view::scroll(bool b_sb, int val, bool b_horizontal)
 			int dx = 0;
 			int dy = 0;
 			(b_horizontal ? dx : dy) = (original_scroll_position - p_scroll_position);
-			ScrollWindowEx(get_wnd(), dx, dy, &playlist, &playlist, 0, 0, SW_INVALIDATE);
-			RedrawWindow(get_wnd(),0,0,RDW_UPDATENOW);
+			ScrollWindowEx(get_wnd(), dx, dy, &playlist, &playlist, nullptr, nullptr, SW_INVALIDATE);
+			RedrawWindow(get_wnd(),nullptr,nullptr,RDW_UPDATENOW);
 			if (b_horizontal)
 				reposition_header();
 		}
@@ -154,7 +154,7 @@ void t_list_view::create_timer_scroll_up()
 {
 	if (!m_timer_scroll_up)
 	{
-		SetTimer(get_wnd(), TIMER_SCROLL_UP, 10, NULL);
+		SetTimer(get_wnd(), TIMER_SCROLL_UP, 10, nullptr);
 		m_timer_scroll_up = true;
 	}
 }
@@ -162,7 +162,7 @@ void t_list_view::create_timer_scroll_down()
 {
 	if (!m_timer_scroll_down)
 	{
-		SetTimer(get_wnd(), TIMER_SCROLL_DOWN, 10, NULL);
+		SetTimer(get_wnd(), TIMER_SCROLL_DOWN, 10, nullptr);
 		m_timer_scroll_down = true;
 	}
 }

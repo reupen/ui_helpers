@@ -59,7 +59,7 @@ void t_list_view::set_sort_column (t_size index, bool b_direction)
 	m_sort_column_index = index;
 	m_sort_direction = b_direction;
 
-	RedrawWindow(m_wnd_header, NULL, NULL, RDW_UPDATENOW|RDW_INVALIDATE);
+	RedrawWindow(m_wnd_header, nullptr, nullptr, RDW_UPDATENOW|RDW_INVALIDATE);
 }
 
 void t_list_view::set_autosize (bool b_val) 
@@ -110,13 +110,13 @@ void t_list_view::on_size(int cxd, int cyd, bool b_update, bool b_update_scroll)
 
 		if (m_search_editbox)
 		{
-			SetWindowPos(m_search_editbox, NULL, 0, 0, cx, new_search_height, SWP_NOZORDER);
+			SetWindowPos(m_search_editbox, nullptr, 0, 0, cx, new_search_height, SWP_NOZORDER);
 		}
 
 		t_size new_header_height = calculate_header_height();
 		if (new_header_height != RECT_CY(rc_header) && m_wnd_header)
 			//Update height because affects scroll info
-			SetWindowPos(m_wnd_header, NULL, -m_horizontal_scroll_position, new_search_height, cx+m_horizontal_scroll_position, new_header_height, SWP_NOZORDER);
+			SetWindowPos(m_wnd_header, nullptr, -m_horizontal_scroll_position, new_search_height, cx+m_horizontal_scroll_position, new_header_height, SWP_NOZORDER);
 
 		if (b_update_scroll)
 			update_scroll_info(false);
@@ -132,15 +132,15 @@ void t_list_view::on_size(int cxd, int cyd, bool b_update, bool b_update_scroll)
 
 		//Reposition again due to potential vertical scrollbar changes
 		if (m_wnd_header)
-			SetWindowPos(m_wnd_header, NULL, -m_horizontal_scroll_position, new_search_height, cx+m_horizontal_scroll_position, new_header_height, SWP_NOZORDER);
+			SetWindowPos(m_wnd_header, nullptr, -m_horizontal_scroll_position, new_search_height, cx+m_horizontal_scroll_position, new_header_height, SWP_NOZORDER);
 		
 		if (m_search_editbox)
 		{
-			SetWindowPos(m_search_editbox, NULL, 0, 0, cx, new_search_height, SWP_NOZORDER);
+			SetWindowPos(m_search_editbox, nullptr, 0, 0, cx, new_search_height, SWP_NOZORDER);
 		}
 
 		if (new_header_height != RECT_CY(rc_header))
-			RedrawWindow(m_wnd_header, NULL, NULL, RDW_INVALIDATE|RDW_UPDATENOW);
+			RedrawWindow(m_wnd_header, nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
 		if (m_autosize || new_header_height != RECT_CY(rc_header) || get_search_box_height() != old_search_height)
 			invalidate_all(false);
 		if (b_update)
@@ -259,7 +259,7 @@ void t_list_view::invalidate_all(bool b_update, bool b_children)
 {
 	RECT rc;
 	get_items_rect(&rc);
-	RedrawWindow(get_wnd(), b_children || true ? NULL : &rc, NULL, RDW_INVALIDATE|(b_update?RDW_UPDATENOW:0)|(b_children?RDW_ALLCHILDREN:0));
+	RedrawWindow(get_wnd(), b_children || true ? nullptr : &rc, nullptr, RDW_INVALIDATE|(b_update?RDW_UPDATENOW:0)|(b_children?RDW_ALLCHILDREN:0));
 }
 
 void t_list_view::update_items(t_size index, t_size count, bool b_update_display)
@@ -289,7 +289,7 @@ void t_list_view::invalidate_items(t_size index, t_size count, bool b_update_dis
 		RECT rc_invalidate = {0, get_item_position(index) - m_scroll_position+rc_client.top - groups*m_group_height, RECT_CX(rc_client), get_item_position(index+count-1) - m_scroll_position + get_item_height(index+count-1) + rc_client.top};
 		if (IntersectRect(&rc_invalidate, &rc_client, &rc_invalidate))
 		{
-			RedrawWindow(get_wnd(), &rc_invalidate, NULL, RDW_INVALIDATE|(b_update_display?RDW_UPDATENOW:0));
+			RedrawWindow(get_wnd(), &rc_invalidate, nullptr, RDW_INVALIDATE|(b_update_display?RDW_UPDATENOW:0));
 		}
 	}
 #endif
@@ -324,7 +324,7 @@ void t_list_view::invalidate_item_group_info_area(t_size index, bool b_update_di
 
 		RECT rc_invalidate = { 0, item_y - m_scroll_position + rc_client.top - groups * m_item_height, RECT_CX(rc_client), item_y + group_area_cy - m_scroll_position + rc_client.top };
 		if (IntersectRect(&rc_invalidate, &rc_client, &rc_invalidate)) {
-			RedrawWindow(get_wnd(), &rc_invalidate, NULL, RDW_INVALIDATE | (b_update_display ? RDW_UPDATENOW : 0));
+			RedrawWindow(get_wnd(), &rc_invalidate, nullptr, RDW_INVALIDATE | (b_update_display ? RDW_UPDATENOW : 0));
 		}
 	}
 }
@@ -432,7 +432,7 @@ void t_list_view::create_timer_search()
 	destroy_timer_search();
 	if (!m_timer_search)
 	{
-		SetTimer(get_wnd(), TIMER_END_SEARCH, 1000, NULL);
+		SetTimer(get_wnd(), TIMER_END_SEARCH, 1000, nullptr);
 		m_timer_search = true;
 	}
 }
@@ -596,6 +596,6 @@ void t_list_view::set_edge_style(t_size b_val)
 		SetWindowLongPtr(get_wnd(), GWL_STYLE,
 			(GetWindowLongPtr(get_wnd(), GWL_STYLE) & ~(WS_BORDER))
 			| (m_edge_style == edge_solid ? WS_BORDER : NULL));
-		SetWindowPos(get_wnd(), 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
+		SetWindowPos(get_wnd(), nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
 	}
 }

@@ -18,7 +18,7 @@ public:
 private:
 	void redraw()
 	{
-		RedrawWindow(get_wnd(), 0, 0, RDW_INVALIDATE|RDW_UPDATENOW);
+		RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
 	}
 	class_data & get_class_data()const override 
 	{
@@ -71,10 +71,10 @@ public:
 		m_theme_class = pclass;
 		if (m_theme)
 			CloseThemeData(m_theme);
-		m_theme=NULL;
+		m_theme=nullptr;
 		if (get_wnd())
 		{
-			m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(get_wnd(), m_theme_class) : NULL;
+			m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(get_wnd(), m_theme_class) : nullptr;
 			redraw();
 		}
 	}
@@ -86,23 +86,23 @@ public:
 		m_theme_colour_index = index;
 		if (m_theme)
 			CloseThemeData(m_theme);
-		m_theme=NULL;
+		m_theme=nullptr;
 		if (get_wnd())
 		{
-			m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(get_wnd(), m_theme_class) : NULL;
+			m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(get_wnd(), m_theme_class) : nullptr;
 			redraw();
 		}
 	}
 
 	window_fill()
-		: m_mode(mode_solid_fill), m_fill_colour(NULL), m_theme(NULL), m_theme_part(NULL), m_theme_state(NULL),
+		: m_mode(mode_solid_fill), m_fill_colour(NULL), m_theme(nullptr), m_theme_part(NULL), m_theme_state(NULL),
 		m_theme_colour_index(NULL)
 	{};
 
 private:
 	void redraw()
 	{
-		RedrawWindow(get_wnd(), 0, 0, RDW_INVALIDATE|RDW_UPDATENOW);
+		RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
 		//RedrawWindow(get_wnd(), 0, 0, RDW_INVALIDATE|RDW_ERASE);
 	}
 	class_data & get_class_data()const override 
@@ -116,22 +116,22 @@ private:
 		case WM_CREATE:
 			{
 				if (m_mode == mode_theme_fill || m_mode == mode_theme_solid_fill)
-					m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, m_theme_class) : NULL;
-				SetWindowTheme(wnd, L"Explorer", NULL);
+					m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, m_theme_class) : nullptr;
+				SetWindowTheme(wnd, L"Explorer", nullptr);
 			}
 			break;
 		case WM_DESTROY:
 			{
 				if (m_theme) CloseThemeData(m_theme);
-				m_theme = NULL;
+				m_theme = nullptr;
 			}
 			break;
 		case WM_THEMECHANGED:
 			{
 				if (m_theme) CloseThemeData(m_theme);
-				m_theme=NULL;
+				m_theme=nullptr;
 				if (m_mode == mode_theme_fill || m_mode == mode_theme_solid_fill)
-					m_theme = (IsThemeActive() && IsAppThemed()) ? OpenThemeData(wnd, m_theme_class) : 0;
+					m_theme = (IsThemeActive() && IsAppThemed()) ? OpenThemeData(wnd, m_theme_class) : nullptr;
 				redraw();
 			}
 			break;
@@ -155,7 +155,7 @@ private:
 			{
 				if (IsThemeBackgroundPartiallyTransparent(m_theme, m_theme_part, m_theme_state))
 					DrawThemeParentBackground(wnd, dc, &rc);
-				if (FAILED(DrawThemeBackground(m_theme, dc, m_theme_part, m_theme_state, &rc, NULL)))
+				if (FAILED(DrawThemeBackground(m_theme, dc, m_theme_part, m_theme_state, &rc, nullptr)))
 				{
 					p_brush = CreateSolidBrush(m_fill_colour);
 					FillRect(dc, &ps.rcPaint, p_brush);
@@ -203,7 +203,7 @@ public:
 private:
 	void redraw()
 	{
-		RedrawWindow(get_wnd(), 0, 0, RDW_INVALIDATE|RDW_UPDATENOW);
+		RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
 	}
 	class_data & get_class_data()const override 
 	{

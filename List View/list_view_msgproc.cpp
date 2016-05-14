@@ -17,9 +17,9 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 	{
 	case WM_CREATE:
 		{
-			m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, L"ListView") : NULL;
-			m_dd_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, VSCLASS_DRAGDROP) : NULL;
-			SetWindowTheme(wnd, L"Explorer", NULL);
+			m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, L"ListView") : nullptr;
+			m_dd_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, VSCLASS_DRAGDROP) : nullptr;
+			SetWindowTheme(wnd, L"Explorer", nullptr);
 		}
 		notify_on_initialisation();
 		m_font = m_lf_items_valid ? CreateFontIndirect(&m_lf_items) : uCreateIconFont();
@@ -42,9 +42,9 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 		destroy_header();
 		{
 			if (m_theme) CloseThemeData(m_theme);
-			m_theme = NULL;
+			m_theme = nullptr;
 			if (m_dd_theme) CloseThemeData(m_dd_theme);
-			m_dd_theme = NULL;
+			m_dd_theme = nullptr;
 		}
 		m_font.release();
 		notify_on_destroy();
@@ -80,9 +80,9 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 	case WM_THEMECHANGED:
 		{
 			if (m_theme) CloseThemeData(m_theme);
-			m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, L"ListView") : NULL;
+			m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, L"ListView") : nullptr;
 			if (m_dd_theme) CloseThemeData(m_dd_theme);
-			m_dd_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, VSCLASS_DRAGDROP) : NULL;
+			m_dd_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, VSCLASS_DRAGDROP) : nullptr;
 		}
 		break;
 	case WM_TIMECHANGE:
@@ -136,10 +136,10 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 			//if (!bm_mem) console::formatter() << "ONIJoj";
 			HBITMAP bm_old = SelectBitmap(dc_mem, bm_mem);
 			HFONT font_old = SelectFont(dc_mem, m_font);
-			OffsetWindowOrgEx(dc_mem, rc.left, rc.top, NULL);
+			OffsetWindowOrgEx(dc_mem, rc.left, rc.top, nullptr);
 			//int item_height = get_default_item_height();
 			render_items(dc_mem, rc, RECT_CX(rc_client));
-			OffsetWindowOrgEx(dc_mem, -rc.left, -rc.top, NULL);
+			OffsetWindowOrgEx(dc_mem, -rc.left, -rc.top, nullptr);
 			BitBlt(dc,	rc.left, rc.top, RECT_CX(rc), RECT_CY(rc),
 				dc_mem, 0, 0, SRCCOPY);
 
@@ -151,7 +151,7 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 		}
 		return 0;
 	case WM_UPDATEUISTATE:
-		RedrawWindow(wnd, NULL, NULL, RDW_INVALIDATE);
+		RedrawWindow(wnd, nullptr, nullptr, RDW_INVALIDATE);
 		break;
 	case WM_SETFOCUS:
 		invalidate_all();
@@ -276,7 +276,7 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 								m_inline_edit_column = m_selecting_start_column;
 								if (m_inline_edit_column >= 0)
 								{
-									m_timer_inline_edit = (SetTimer(wnd, EDIT_TIMER_ID, GetDoubleClickTime(), 0) != 0);
+									m_timer_inline_edit = (SetTimer(wnd, EDIT_TIMER_ID, GetDoubleClickTime(), nullptr) != 0);
 								}
 							}
 						}
@@ -737,14 +737,14 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 				break;
 			case EN_KILLFOCUS:
 				{
-					RedrawWindow(HWND(lp), NULL, NULL, RDW_INVALIDATE|RDW_ERASE|RDW_ERASENOW|RDW_UPDATENOW);
+					RedrawWindow(HWND(lp), nullptr, nullptr, RDW_INVALIDATE|RDW_ERASE|RDW_ERASENOW|RDW_UPDATENOW);
 					HWND wnd_focus = GetFocus();
 					if (!HWND(wnd_focus) || (HWND(wnd_focus) != wnd && !IsChild(wnd, wnd_focus)))
 						notify_on_kill_focus(wnd_focus);
 				}
 				break;
 			case EN_SETFOCUS:
-				RedrawWindow(HWND(lp), NULL, NULL, RDW_INVALIDATE|RDW_ERASE|RDW_ERASENOW|RDW_UPDATENOW);
+				RedrawWindow(HWND(lp), nullptr, nullptr, RDW_INVALIDATE|RDW_ERASE|RDW_ERASENOW|RDW_UPDATENOW);
 				break;
 			};
 			break;
@@ -788,7 +788,7 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 
 					SendMessage(m_wnd_tooltip, TTM_ADJUSTRECT, TRUE, (LPARAM)&rc);
 
-					SetWindowPos(m_wnd_tooltip, NULL, rc.left, rc.top, RECT_CX(rc), RECT_CY(rc), SWP_NOZORDER|SWP_NOACTIVATE);
+					SetWindowPos(m_wnd_tooltip, nullptr, rc.left, rc.top, RECT_CX(rc), RECT_CY(rc), SWP_NOZORDER|SWP_NOACTIVATE);
 					return TRUE;
 				}
 			}

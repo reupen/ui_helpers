@@ -32,7 +32,7 @@ namespace uih {
 	bool GetKeyboardCuesEnabled();
 
 	void FormatDate(t_filetimestamp time, std::basic_string<TCHAR> & str, bool b_convert_to_local = false);
-	HRESULT GetComCtl32Version(DLLVERSIONINFO2 & p_dvi, pfc::string_base * p_path_out = NULL);
+	HRESULT GetComCtl32Version(DLLVERSIONINFO2 & p_dvi, pfc::string_base * p_path_out = nullptr);
 
 	int ListView_InsertColumnText(HWND wnd_lv, UINT index, const TCHAR * text, int cx);
 	LRESULT ListView_InsertItemText(HWND wnd_lv, UINT item, UINT subitem, const TCHAR * text, bool b_set = false, LPARAM lp = 0, int image_index = I_IMAGENONE);
@@ -44,7 +44,7 @@ namespace uih {
 	t_size TreeView_GetChildIndex(HWND wnd_tv, HTREEITEM ti);
 
 	BOOL ShellNotifyIconSimple(DWORD dwMessage, HWND wnd, UINT id, UINT callbackmsg, HICON icon,
-		const char * tip, const char * balloon_title = NULL, const char * balloon_msg = NULL);
+		const char * tip, const char * balloon_title = nullptr, const char * balloon_msg = nullptr);
 
 	BOOL ShellNotifyIcon(DWORD action, HWND wnd, UINT id, UINT version, UINT callbackmsg, HICON icon, const char * tip);
 	BOOL ShellNotifyIconEx(DWORD action, HWND wnd, UINT id, UINT callbackmsg, HICON icon, const char * tip, const char * balloon_title, const char * balloon_msg);
@@ -82,7 +82,7 @@ public:
 		{
 			SendMessage(m_wnd, WM_SETREDRAW, TRUE, 0);
 			if (!m_disable_invalidate ||!m_disable_update)
-				RedrawWindow(m_wnd, 0, 0, (m_disable_invalidate?NULL:RDW_INVALIDATE)|(m_disable_update?NULL:RDW_UPDATENOW));
+				RedrawWindow(m_wnd, nullptr, nullptr, (m_disable_invalidate?NULL:RDW_INVALIDATE)|(m_disable_update?NULL:RDW_UPDATENOW));
 			m_active=false;
 		}
 	}

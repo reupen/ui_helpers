@@ -40,7 +40,7 @@ public:
 		}
 		m_string_length = p_str_len;
 		if (m_string_length)
-			ScriptStringAnalyse(dc, p_str, p_str_len, NULL, -1, SSA_FALLBACK|SSA_GLYPHS|SSA_LINK|(b_clip ? SSA_CLIP : NULL), max_cx, &m_sc, &m_ss, NULL, NULL, NULL, &m_ssa);
+			ScriptStringAnalyse(dc, p_str, p_str_len, NULL, -1, SSA_FALLBACK|SSA_GLYPHS|SSA_LINK|(b_clip ? SSA_CLIP : NULL), max_cx, &m_sc, &m_ss, nullptr, nullptr, nullptr, &m_ssa);
 	}
 	void analyse(HDC dc, const char * p_str, size_t p_str_len, int max_cx, bool b_clip)
 	{
@@ -55,13 +55,13 @@ public:
 	}
 	int get_output_character_count() 
 	{
-		const int * len = m_ssa ? ScriptString_pcOutChars(m_ssa) : NULL; //b_clip = true only
+		const int * len = m_ssa ? ScriptString_pcOutChars(m_ssa) : nullptr; //b_clip = true only
 		return len ? *len : m_string_length;
 	}
 	void get_output_size(SIZE & p_sz)
 	{
 //		profiler(get_output_size);
-		const SIZE * sz = m_ssa ? ScriptString_pSize(m_ssa) : NULL;
+		const SIZE * sz = m_ssa ? ScriptString_pSize(m_ssa) : nullptr;
 		if (sz) p_sz = *sz;
 		else {p_sz.cx = (p_sz.cy = 0);}
 	}
@@ -101,7 +101,7 @@ private:
 		{
 //			profiler(initialise_a);
 			m_scache = nullptr;
-			m_ssa = NULL;
+			m_ssa = nullptr;
 			m_string_length = NULL;
 			memset(&m_sc, 0, sizeof(m_sc));
 			memset(&m_ss, 0, sizeof(m_ss));
@@ -123,7 +123,7 @@ private:
 		if (m_ssa)
 		{
 			ScriptStringFree(&m_ssa);
-			m_ssa = NULL;
+			m_ssa = nullptr;
 		}
 		if (m_scache)
 		{
@@ -165,8 +165,8 @@ int get_text_width(HDC dc,const char * src,int len);
 int get_text_width_color(HDC dc,const char * src,int len, bool b_ignore_tabs = false);
 int get_text_width_color_legacy(HDC dc,const char * src,int len, bool b_ignore_tabs = false);
 unsigned get_trunc_len(const char * src, unsigned len);
-BOOL text_out_colours_ellipsis(HDC dc,const char * src,int len,int x_offset,int pos_y,const RECT * base_clip,bool selected,bool show_ellipsis,DWORD default_color,alignment align, unsigned * p_width = NULL, bool b_set_default_colours = true, unsigned * p_position = NULL);
-BOOL text_out_colours_tab(HDC dc,const char * display,int display_len,int left_offset,int border,const RECT * base_clip,bool selected,DWORD default_color,bool columns,bool tab,bool show_ellipsis,alignment align, unsigned * p_width = NULL, bool b_set_default_colours = true, bool b_vertical_align_centre = true, unsigned * p_position = NULL);
+BOOL text_out_colours_ellipsis(HDC dc,const char * src,int len,int x_offset,int pos_y,const RECT * base_clip,bool selected,bool show_ellipsis,DWORD default_color,alignment align, unsigned * p_width = nullptr, bool b_set_default_colours = true, unsigned * p_position = nullptr);
+BOOL text_out_colours_tab(HDC dc,const char * display,int display_len,int left_offset,int border,const RECT * base_clip,bool selected,DWORD default_color,bool columns,bool tab,bool show_ellipsis,alignment align, unsigned * p_width = nullptr, bool b_set_default_colours = true, bool b_vertical_align_centre = true, unsigned * p_position = nullptr);
 };
 
 #endif

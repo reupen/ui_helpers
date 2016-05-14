@@ -63,7 +63,7 @@ void t_list_view::set_column_widths(const pfc::list_base_const_t<t_size> & width
 		SendMessage(m_wnd_header, WM_SETREDRAW, TRUE, NULL);
 	invalidate_all(false);
 	on_size();
-	RedrawWindow(get_wnd(), 0,0,RDW_ALLCHILDREN|RDW_UPDATENOW);
+	RedrawWindow(get_wnd(), nullptr,nullptr,RDW_ALLCHILDREN|RDW_UPDATENOW);
 }
 
 void t_list_view::get_column_sizes (pfc::list_t<t_column> & p_out)

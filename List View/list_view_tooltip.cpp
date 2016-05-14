@@ -16,8 +16,8 @@ void t_list_view::create_tooltip(/*t_size index, t_size column, */const char * s
 
 	bool b_comctl_6 = true;
 
-	m_wnd_tooltip = CreateWindowEx(b_comctl_6?WS_EX_TRANSPARENT:0, TOOLTIPS_CLASS, NULL, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP | TTS_NOPREFIX ,		
-		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, get_wnd(), 0, core_api::get_my_instance(), NULL);
+	m_wnd_tooltip = CreateWindowEx(b_comctl_6?WS_EX_TRANSPARENT:0, TOOLTIPS_CLASS, nullptr, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP | TTS_NOPREFIX ,		
+		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, get_wnd(), nullptr, core_api::get_my_instance(), nullptr);
 
 	SendMessage(m_wnd_tooltip, WM_SETFONT, (WPARAM)m_font.get(), MAKELPARAM(FALSE,0));
 
@@ -42,7 +42,7 @@ void t_list_view::destroy_tooltip()
 	if (m_wnd_tooltip)
 	{
 		DestroyWindow(m_wnd_tooltip);
-		m_wnd_tooltip = NULL;
+		m_wnd_tooltip = nullptr;
 	}
 	m_tooltip_last_index = -1;
 	m_tooltip_last_column = -1;

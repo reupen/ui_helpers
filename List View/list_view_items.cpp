@@ -29,7 +29,7 @@ void t_list_view::insert_items(t_size index_start, t_size count, const t_item_in
 		//profiler(pvt_render);
 	update_scroll_info();
 	if (b_update_display)
-		RedrawWindow(get_wnd(), NULL, NULL, RDW_INVALIDATE|RDW_UPDATENOW);
+		RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
 }
 void t_list_view::replace_items(t_size index_start, const pfc::list_base_const_t<t_item_insert> & items, bool b_update_display)
 {
@@ -37,7 +37,7 @@ void t_list_view::replace_items(t_size index_start, const pfc::list_base_const_t
 	__calculate_item_positions(index_start);
 	update_scroll_info();
 	if (b_update_display)
-		RedrawWindow(get_wnd(), NULL, NULL, RDW_INVALIDATE|RDW_UPDATENOW);
+		RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
 }
 void t_list_view::remove_items(const bit_array & p_mask, bool b_update_display)
 {
@@ -52,7 +52,7 @@ void t_list_view::remove_items(const bit_array & p_mask, bool b_update_display)
 	__calculate_item_positions();
 	update_scroll_info();
 	if (b_update_display)
-		RedrawWindow(get_wnd(), NULL, NULL, RDW_INVALIDATE|RDW_UPDATENOW);
+		RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
 }
 
 /*void t_list_view::insert_item(t_size index, const t_list_view::t_string_list_const_fast & text, const t_list_view::t_string_list_const_fast & p_groups, t_size size)
@@ -563,7 +563,7 @@ void t_list_view::remove_item(t_size index)
 	__remove_item(index);
 	__calculate_item_positions();
 	update_scroll_info();
-	RedrawWindow(get_wnd(), NULL, NULL, RDW_INVALIDATE|RDW_UPDATENOW);
+	RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
 }
 void t_list_view::__remove_item(t_size index)
 {

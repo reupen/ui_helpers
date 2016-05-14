@@ -8,7 +8,7 @@ namespace message_hook_manager
 		pfc::ptr_list_t<message_hook> m_hooks;
 		HHOOK m_hook;
 		hook_list() 
-			: m_hook(NULL)
+			: m_hook(nullptr)
 		{};
 	};
 
@@ -35,7 +35,7 @@ namespace message_hook_manager
 				}
 			}
 		}
-		return b_call_next ? CallNextHookEx(NULL, code, wp, lp) : p_type != type_get_message ? TRUE : 0;
+		return b_call_next ? CallNextHookEx(nullptr, code, wp, lp) : p_type != type_get_message ? TRUE : 0;
 	}
 
 	LRESULT CALLBACK g_keyboard_proc(int code, WPARAM wp, LPARAM lp)
@@ -70,7 +70,7 @@ namespace message_hook_manager
 	{
 		if (g_hooks[p_type].m_hooks.add_item(p_hook) == 0)
 		{
-			g_hooks[p_type].m_hook = SetWindowsHookEx(g_hook_ids[p_type], g_hook_procs[p_type], p_type != type_mouse_low_level ? NULL : core_api::get_my_instance(), p_type != type_mouse_low_level ? GetCurrentThreadId() : NULL);
+			g_hooks[p_type].m_hook = SetWindowsHookEx(g_hook_ids[p_type], g_hook_procs[p_type], p_type != type_mouse_low_level ? nullptr : core_api::get_my_instance(), p_type != type_mouse_low_level ? GetCurrentThreadId() : NULL);
 		}
 	}
 	void deregister_hook(t_message_hook_type p_type, message_hook * p_hook)
@@ -79,7 +79,7 @@ namespace message_hook_manager
 		if (g_hooks[p_type].m_hooks.get_count() == 0)
 		{
 			UnhookWindowsHookEx(g_hooks[p_type].m_hook);
-			g_hooks[p_type].m_hook = NULL;
+			g_hooks[p_type].m_hook = nullptr;
 		}
 	}
 

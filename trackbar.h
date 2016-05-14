@@ -304,10 +304,10 @@ public:
 	* Default constructor for track_bar class
 	*/
 	track_bar()
-		: m_theme(0), m_position(0), m_range(0), m_thumb_hot(0), m_dragging(false), 
+		: m_theme(nullptr), m_position(0), m_range(0), m_thumb_hot(0), m_dragging(false), 
 		m_vertical(false), m_reversed(false), m_auto_focus(false), m_hook_registered(false),
-		m_step(1), m_display_position(0), m_show_tooltips(false), m_wnd_prev(0),
-		m_wnd_tooltip(0), m_host(0)
+		m_step(1), m_display_position(0), m_show_tooltips(false), m_wnd_prev(nullptr),
+		m_wnd_tooltip(nullptr), m_host(nullptr)
 	{};
 protected:
 	/**
