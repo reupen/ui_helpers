@@ -9,7 +9,7 @@ class message_window_t : public ui_helpers::container_window_autorelease_t
 {
 public:
 	message_window_t()
-		: m_wnd_edit(NULL), m_wnd_button(NULL), m_wnd_static(NULL),m_flags(NULL) {};
+		: m_wnd_edit(NULL), m_wnd_button(NULL), m_wnd_static(NULL) {};
 	class callback_t : public main_thread_callback
 	{
 	public:
@@ -19,7 +19,7 @@ public:
 	private:
 		virtual void callback_run()
 		{
-			g_run(core_api::get_main_window(), m_title, m_text, m_oem_icon);
+			g_run(m_wnd ? m_wnd : core_api::get_main_window(), m_title, m_text, m_oem_icon);
 		}
 		pfc::string8 m_title, m_text;
 		HWND m_wnd;
@@ -33,7 +33,7 @@ public:
 		int cx = 400;
 		int cy = 150;
 		HWND wnd;
-		if (wnd = p_test->create(wnd_parent,0,ui_helpers::window_position_t((rc.left+(RECT_CX(rc)-cx)/2), (rc.top+(RECT_CY(rc)-cy)/2), cx, cy)))
+		if ((wnd = p_test->create(wnd_parent,0,ui_helpers::window_position_t((rc.left+(RECT_CX(rc)-cx)/2), (rc.top+(RECT_CY(rc)-cy)/2), cx, cy))))
 		{
 			p_test->initialise(p_title, p_text, icon);
 			cy = min (p_test->calc_height(), max (RECT_CY(rc),150));;
@@ -252,7 +252,6 @@ private:
 	//HWND m_wnd_caption;
 	HWND m_wnd_edit, m_wnd_button, m_wnd_static;
 	gdi_object_t<HFONT>::ptr_t m_font;
-	t_size m_flags;
 };
 
 

@@ -95,7 +95,7 @@ public:
 	}
 
 	window_fill()
-		: m_mode(mode_solid_fill), m_fill_colour(NULL), m_theme(NULL), m_theme_part(NULL), m_theme_state(NULL), m_theme_prop(NULL),
+		: m_mode(mode_solid_fill), m_fill_colour(NULL), m_theme(NULL), m_theme_part(NULL), m_theme_state(NULL),
 		m_theme_colour_index(NULL)
 	{};
 
@@ -183,7 +183,7 @@ private:
 	pfc::string_simple_t<WCHAR> m_theme_class;
 	COLORREF m_fill_colour;
 	HTHEME m_theme;
-	int m_theme_part, m_theme_state, m_theme_prop, m_theme_colour_index;
+	int m_theme_part, m_theme_state, m_theme_colour_index;
 };
 
 class window_transparent_fill : public ui_helpers::container_window

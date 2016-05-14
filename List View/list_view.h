@@ -71,7 +71,7 @@ public:
 	};
 
 private:
-	t_list_view::class_data& t_list_view::get_class_data() const
+	class_data& get_class_data() const
 	{
 		__implement_get_class_data_ex(_T("NGLV"), _T(""), false, 0, WS_CHILD | WS_CLIPSIBLINGS| WS_CLIPCHILDREN | WS_TABSTOP | WS_BORDER, NULL, CS_DBLCLKS|CS_HREDRAW);
 	}

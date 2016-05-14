@@ -90,5 +90,6 @@
     </ClCompile>
     <ClCompile Include="ole.cpp" />
     <ClCompile Include="drag_image.cpp" />
+    <ClCompile Include="fcl.cpp" />
   </ItemGroup>
 </Project>

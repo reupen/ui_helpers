@@ -8,7 +8,6 @@ namespace uih {
 
 		bool useTheming = theme && isThemed && IsThemePartDefined(theme, DD_IMAGEBG, themeState);
 
-		COLORREF cr_text = NULL;
 		if (useTheming)
 		{
 			{
@@ -30,7 +29,6 @@ namespace uih {
 		DWORD text_flags = DT_CENTER | DT_WORDBREAK;
 		RECT rc_text = { 0 };
 
-		COLORREF cr_text = NULL;
 		if (useTheming)
 		{
 			GetThemeTextExtent(theme, dc, DD_TEXTBG, theme_state, wtext, -1, text_flags, &rc, &rc_text);
