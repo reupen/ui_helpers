@@ -160,7 +160,7 @@ namespace fcl {
 
 		void skip(t_size delta)
 		{
-			auto read = m_input->skip(delta, m_abort);
+			auto read = static_cast<size_t>(m_input->skip(delta, m_abort));
 			m_position += read;
 			if (read != delta)
 				throw exception_io_data_truncation();

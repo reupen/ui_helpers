@@ -566,10 +566,10 @@ BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width,
 
 			COLORREF cr_current = b_set_default_colours ? default_color : GetTextColor(dc);
 
-			while ((p_current - p_start) < wLen)
+			while (size_t(p_current - p_start) < wLen)
 			{
 				p_block_start = p_current;
-				while ( (p_current - p_start) < wLen && p_current[0] != 3 )
+				while (size_t(p_current - p_start) < wLen && p_current[0] != 3 )
 				{
 					p_current++;
 				}
@@ -584,9 +584,9 @@ BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width,
 					src_s.append_fromptr(p_block_start, p_current-p_block_start);
 					b_lastColourUsed = true;
 				}
-				else if ((p_current - p_start) >= wLen)
+				else if (size_t(p_current - p_start) >= wLen)
 					break; 
-				if ((p_current - p_start) + 1 < wLen) //need another at least char for valid colour code operation
+				if (size_t(p_current - p_start) + 1 < wLen) //need another at least char for valid colour code operation
 				{
 					if (p_current[0] == 3)
 					{
@@ -605,13 +605,13 @@ BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width,
 						{
 							p_current++;
 							new_colour = strtoul_t(p_current,min(6,wLen-(p_current-p_start)), 0x10);
-							while((p_current-p_start)<wLen && p_current[0]!=3 && p_current[0]!='|')
+							while(size_t(p_current-p_start)<wLen && p_current[0]!=3 && p_current[0]!='|')
 							{
 								p_current++;
 							}
-							if ((p_current-p_start)<wLen && p_current[0]=='|')
+							if (size_t(p_current-p_start)<wLen && p_current[0]=='|')
 							{
-								if ((p_current-p_start)+1<wLen)
+								if (size_t(p_current-p_start)+1<wLen)
 								{
 									p_current++;
 									new_colour_selected = strtoul_t(p_current,min(6,wLen-(p_current-p_start)), 0x10);
@@ -620,7 +620,7 @@ BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width,
 								else
 									break; //unexpected eos, malformed string
 
-								while((p_current-p_start)<wLen && p_current[0]!=3) p_current++;
+								while(size_t(p_current-p_start)<wLen && p_current[0]!=3) p_current++;
 							}
 							p_current++;
 						}
