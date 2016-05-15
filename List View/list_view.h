@@ -148,7 +148,7 @@ protected:
 
 public:
 	t_list_view()
-		: m_theme(NULL), m_dd_theme(NULL), m_wnd_header(NULL), m_wnd_inline_edit(NULL), m_proc_inline_edit(NULL), m_proc_original_inline_edit(NULL), m_inline_edit_save(false),
+		: m_theme(nullptr), m_dd_theme(nullptr), m_wnd_header(nullptr), m_wnd_inline_edit(nullptr), m_proc_inline_edit(nullptr), m_proc_original_inline_edit(nullptr), m_inline_edit_save(false),
 		  m_inline_edit_saving(false), m_timer_inline_edit(false), m_inline_edit_prevent(false), m_inline_edit_prevent_kill(false), m_inline_edit_column(pfc_infinite), m_lf_items_valid(false),
 		  m_lf_header_valid(false), m_lf_group_header_valid(NULL), m_selecting(false) , m_selecting_move(false), m_selecting_moved(false),
 		  m_dragging_rmb(false), m_selecting_start(pfc_infinite), m_selecting_start_column(pfc_infinite), m_scroll_position(0), m_horizontal_scroll_position(0), m_group_count(0),
@@ -157,11 +157,11 @@ public:
 		  m_shown(false), m_focus_index(pfc_infinite), m_autosize(false), m_initialised(false),
 		  m_always_show_focus(false), m_show_header(true), m_ignore_column_size_change_notification(false), m_vertical_item_padding(4),
 		  m_variable_height_items(false), m_prevent_wm_char_processing(false), m_timer_search(false), m_show_tooltips(true), m_limit_tooltips_to_clipped_items(true),
-		  m_wnd_tooltip(NULL), m_rc_tooltip(uih::rect_null), m_tooltip_last_index(-1), m_tooltip_last_column(-1), m_sorting_enabled(false),
+		  m_wnd_tooltip(nullptr), m_rc_tooltip(uih::rect_null), m_tooltip_last_index(-1), m_tooltip_last_column(-1), m_sorting_enabled(false),
 		  m_show_sort_indicators(true), m_sort_column_index(pfc_infinite), m_sort_direction(false), m_edge_style(edge_grey),
 		  m_sizing(false), m_single_selection(false), m_alternate_selection(false), m_allow_header_rearrange(false), m_group_info_area_width(0),
 		  m_group_info_area_height(0), m_show_group_info_area(false), m_have_indent_column(false),
-		  m_search_editbox(NULL), m_proc_search_edit(NULL), m_search_box_hot(false), m_group_level_indentation_enabled(true)
+		  m_search_editbox(nullptr), m_proc_search_edit(nullptr), m_search_box_hot(false), m_group_level_indentation_enabled(true)
 	//, m_search_box_theme(NULL)
 	{
 		m_dragging_initial_point.x = 0;
@@ -407,7 +407,7 @@ public:
 		__calculate_item_positions();
 		update_scroll_info();
 		if (b_update_display)
-			RedrawWindow(get_wnd(), NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+			RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
 	}
 
 	enum notification_source_t {
@@ -609,7 +609,7 @@ protected:
 	virtual t_size storage_get_focus_item();
 	virtual void storage_set_focus_item(t_size index);
 	virtual void storage_get_selection_state(bit_array_var& out);
-	virtual bool storage_set_selection_state(const bit_array& p_affected, const bit_array& p_status, bit_array_var* p_changed = NULL); //return: hint if sel didnt change
+	virtual bool storage_set_selection_state(const bit_array& p_affected, const bit_array& p_status, bit_array_var* p_changed = nullptr); //return: hint if sel didnt change
 	virtual bool storage_get_item_selected(t_size index);
 	virtual t_size storage_get_selection_count(t_size max);
 
