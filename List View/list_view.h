@@ -71,7 +71,7 @@ public:
 	};
 
 private:
-	class_data& get_class_data() const
+	class_data& get_class_data() const override
 	{
 		__implement_get_class_data_ex(_T("NGLV"), _T(""), false, 0, WS_CHILD | WS_CLIPSIBLINGS| WS_CLIPCHILDREN | WS_TABSTOP | WS_BORDER, NULL, CS_DBLCLKS|CS_HREDRAW);
 	}
@@ -821,7 +821,7 @@ private:
 	bool on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret);
 	bool on_wm_keydown(WPARAM wp, LPARAM lp, LRESULT& ret, bool& b_processed);
 
-	LRESULT on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
+	LRESULT on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) override;
 
 	void render_items(HDC dc, const RECT& rc_update, t_size cx);
 	void __insert_items_v2(t_size index_start, const pfc::list_base_const_t<t_item_insert>& items);
