@@ -316,6 +316,9 @@ public:
 	void update_items(t_size index, t_size count, bool b_update_display = true);
 	void update_all_items(bool b_update_display = true);
 
+	// Current implementation clears sub-items.
+	void reorder_items_partial(size_t base, const size_t * order, size_t count, bool update_display = true);
+
 	t_size get_previous_item(t_size y, bool b_include_headers = false);
 	t_size get_next_item(t_size y, bool b_include_headers = false);
 	t_size get_last_viewable_item();

@@ -270,6 +270,14 @@ void t_list_view::update_items(t_size index, t_size count, bool b_update_display
 	invalidate_items(index, count, b_update_display);
 }
 
+void t_list_view::reorder_items_partial(size_t base, const size_t * order, size_t count, bool update_display)
+{
+	m_items.reorder_partial(base, order, count);
+	auto item_insert = t_item_insert();
+	auto insert_item = pfc::list_single_ref_t<t_item_insert>(item_insert);
+	replace_items(base, insert_item, update_display);
+}
+
 void t_list_view::update_all_items(bool b_update_display)
 {
 	update_items(0, m_items.get_count(), b_update_display);
@@ -286,7 +294,12 @@ void t_list_view::invalidate_items(t_size index, t_size count, bool b_update_dis
 		RECT rc_client;
 		get_items_rect(&rc_client);
 		t_size groups = get_item_display_group_count(index);
-		RECT rc_invalidate = {0, get_item_position(index) - m_scroll_position+rc_client.top - groups*m_group_height, RECT_CX(rc_client), get_item_position(index+count-1) - m_scroll_position + get_item_height(index+count-1) + rc_client.top};
+		RECT rc_invalidate = {
+			0, 
+			get_item_position(index) - m_scroll_position+rc_client.top - groups*m_group_height, 
+			RECT_CX(rc_client), 
+			get_item_position(index+count-1) - m_scroll_position + get_item_height(index+count-1) + rc_client.top
+		};
 		if (IntersectRect(&rc_invalidate, &rc_client, &rc_invalidate))
 		{
 			RedrawWindow(get_wnd(), &rc_invalidate, nullptr, RDW_INVALIDATE|(b_update_display?RDW_UPDATENOW:0));
@@ -322,7 +335,13 @@ void t_list_view::invalidate_item_group_info_area(t_size index, bool b_update_di
 		if (get_show_group_info_area() && items_cy < group_area_cy)
 			items_cy = group_area_cy;
 
-		RECT rc_invalidate = { 0, item_y - m_scroll_position + rc_client.top - groups * m_item_height, RECT_CX(rc_client), item_y + group_area_cy - m_scroll_position + rc_client.top };
+		RECT rc_invalidate = {
+			0,
+			item_y - m_scroll_position + rc_client.top - groups * m_item_height, 
+			RECT_CX(rc_client), 
+			item_y + group_area_cy - m_scroll_position + rc_client.top 
+		};
+
 		if (IntersectRect(&rc_invalidate, &rc_client, &rc_invalidate)) {
 			RedrawWindow(get_wnd(), &rc_invalidate, nullptr, RDW_INVALIDATE | (b_update_display ? RDW_UPDATENOW : 0));
 		}
