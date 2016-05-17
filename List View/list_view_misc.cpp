@@ -270,12 +270,20 @@ void t_list_view::update_items(t_size index, t_size count, bool b_update_display
 	invalidate_items(index, count, b_update_display);
 }
 
-void t_list_view::reorder_items_partial(size_t base, const size_t * order, size_t count, bool update_display)
+void t_list_view::reorder_items_partial(size_t base, const size_t * order, size_t count, bool update_focus_item, bool update_display)
 {
 	m_items.reorder_partial(base, order, count);
 	auto item_insert = t_item_insert();
 	auto insert_item = pfc::list_single_ref_t<t_item_insert>(item_insert);
 	replace_items(base, insert_item, update_display);
+
+	if (update_focus_item) {
+		auto focus_item = storage_get_focus_item();
+		if (focus_item >= base && focus_item < base + count) {
+			focus_item = base + order[focus_item - base];
+			storage_set_focus_item(focus_item);
+		}
+	}
 }
 
 void t_list_view::update_all_items(bool b_update_display)
