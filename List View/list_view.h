@@ -460,6 +460,9 @@ public:
 			set_sort_column(index, b_descending);
 	}
 
+	size_t get_sort_column() const { return m_sort_column_index; }
+	bool get_sort_direction() const { return m_sort_direction; }
+
 	void update_item_data(t_size index)
 	{
 		notify_update_item_data(index);

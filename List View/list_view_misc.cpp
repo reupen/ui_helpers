@@ -35,29 +35,29 @@ bool t_list_view::copy_selected_items_as_text(t_size default_single_item_column)
 
 void t_list_view::set_sort_column (t_size index, bool b_direction)
 {
-	t_size headerIndex = index;
-	if (m_have_indent_column && index != pfc_infinite)
-		headerIndex++;
-	HDITEM hdi; 
-	memset(&hdi, 0, sizeof(HDITEM));
-
-	hdi.mask = HDI_FORMAT;
-
-	{
-		int n,t=m_columns.get_count(),i=0;
-		for(n = 0; n<t; n++)
-		{
-			Header_GetItem(m_wnd_header, n, &hdi);
-			hdi.fmt &= ~(HDF_SORTUP|HDF_SORTDOWN);
-			if (m_show_sort_indicators && n==headerIndex)
-				hdi.fmt |= (b_direction ? HDF_SORTDOWN : HDF_SORTUP);
-			Header_SetItem(m_wnd_header, n, &hdi);
-		}
-	}
-
-
 	m_sort_column_index = index;
 	m_sort_direction = b_direction;
+
+	if (m_initialised && m_wnd_header) {
+		t_size headerIndex = index;
+		if (m_have_indent_column && index != pfc_infinite)
+			headerIndex++;
+		HDITEM hdi;
+		memset(&hdi, 0, sizeof(HDITEM));
+
+		hdi.mask = HDI_FORMAT;
+
+		{
+			int n, t = m_columns.get_count(), i = 0;
+			for (n = 0; n < t; n++) {
+				Header_GetItem(m_wnd_header, n, &hdi);
+				hdi.fmt &= ~(HDF_SORTUP | HDF_SORTDOWN);
+				if (m_show_sort_indicators && n == headerIndex)
+					hdi.fmt |= (b_direction ? HDF_SORTDOWN : HDF_SORTUP);
+				Header_SetItem(m_wnd_header, n, &hdi);
+			}
+		}
+	}
 
 	RedrawWindow(m_wnd_header, nullptr, nullptr, RDW_UPDATENOW|RDW_INVALIDATE);
 }
