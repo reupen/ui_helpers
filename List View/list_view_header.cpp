@@ -104,6 +104,10 @@ void t_list_view::build_header()
 
 				hdi.cxy = m_columns[n].m_display_size;
 
+				if (m_sort_column_index == n && m_show_sort_indicators) {
+					hdi.fmt |= (m_sort_direction ? HDF_SORTDOWN : HDF_SORTUP);
+				}
+
 				uHeader_InsertItem(m_wnd_header, i++, &hdi); 
 			}
 		}
