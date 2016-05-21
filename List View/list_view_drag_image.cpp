@@ -1,4 +1,4 @@
-#include "..\stdafx.h"
+#include "../stdafx.h"
 
 bool t_list_view::render_drag_image(LPSHDRAGIMAGE lpsdi)
 {

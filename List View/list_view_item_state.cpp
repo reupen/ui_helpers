@@ -1,4 +1,4 @@
-#include "..\stdafx.h"
+#include "../stdafx.h"
 
 void t_list_view::get_selection_state(bit_array_var & out)
 {

@@ -1,4 +1,4 @@
-#include "..\stdafx.h"
+#include "../stdafx.h"
 
 const t_size _level_spacing_size = 3;
 

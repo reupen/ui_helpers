@@ -1,4 +1,4 @@
-#include "..\stdafx.h"
+#include "../stdafx.h"
 
 void t_list_view::hit_test_ex(POINT pt_client, t_list_view::t_hit_test_result & result)
 {

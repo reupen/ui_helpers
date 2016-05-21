@@ -32,7 +32,7 @@
 
 #include "gdi.h"
 #include "text_drawing.h"
-#include "List View\list_view.h"
+#include "List View/list_view.h"
 #include "drag_image.h"
 #include "message_window.h"
 #include "menu.h"
@@ -40,7 +40,7 @@
 #include "config_var.h"
 #include "fcl.h"
 
-#include "OLE\DataObj.h"
-#include "OLE\EnumFE.h"
+#include "OLE/DataObj.h"
+#include "OLE/EnumFE.h"
 
 #endif

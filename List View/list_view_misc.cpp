@@ -1,4 +1,4 @@
-#include "..\stdafx.h"
+#include "../stdafx.h"
 
 bool t_list_view::copy_selected_items_as_text(t_size default_single_item_column)
 {
