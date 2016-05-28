@@ -266,16 +266,16 @@ void t_list_view::update_items(t_size index, t_size count, bool b_update_display
 {
 	t_size i;
 	for (i=0;i<count;i++)
-		m_items[i+index]->m_subitems.remove_all();
+		m_items[i+index]->m_subitems.set_size(0);
 	invalidate_items(index, count, b_update_display);
 }
 
 void t_list_view::reorder_items_partial(size_t base, const size_t * order, size_t count, bool update_focus_item, bool update_display)
 {
 	m_items.reorder_partial(base, order, count);
-	auto item_insert = t_item_insert();
-	auto insert_item = pfc::list_single_ref_t<t_item_insert>(item_insert);
-	replace_items(base, insert_item, update_display);
+	pfc::list_t<t_item_insert> insert_items;
+	insert_items.set_size(count);
+	replace_items(base, insert_items, update_display);
 
 	if (update_focus_item) {
 		auto focus_item = storage_get_focus_item();

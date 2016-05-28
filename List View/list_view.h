@@ -52,22 +52,31 @@ public:
 		t_column() : m_size(0), m_display_size(0), m_autosize_weight(1), m_alignment(ui_helpers::ALIGN_LEFT) {};
 	};
 
-	typedef pfc::list_t<pfc::string8_fast_aggressive, pfc::alloc_fast_aggressive> t_string_list_fast;
-	typedef pfc::list_base_const_t<pfc::string8_fast_aggressive> t_string_list_const_fast;
-	typedef const pfc::list_base_const_t<pfc::string8_fast_aggressive>& t_string_list_cref_fast;
+	using string_array = pfc::array_t<pfc::string_simple>;
 
 	class t_item_insert {
 	public:
-		t_string_list_fast m_subitems;
-		t_string_list_fast m_groups;
+		string_array m_subitems;
+		string_array m_groups;
 
 		t_item_insert() {};
 
-		t_item_insert(const t_string_list_const_fast& text, const t_string_list_const_fast& p_groups)
+		t_item_insert(const string_array& text, const string_array& p_groups)
 		{
-			m_subitems.add_items(text);
-			m_groups.add_items(p_groups);
+			m_subitems = text;
+			m_groups = p_groups;
 		};
+		t_item_insert(size_t subitem_count, size_t group_count)
+		{
+			m_subitems.set_size(subitem_count);
+			m_groups.set_size(group_count);
+		};
+	};
+
+	template<size_t subitem_count, size_t group_count>
+	class t_item_insert_sized : public t_item_insert {
+	public:
+		t_item_insert_sized() : t_item_insert(subitem_count, group_count) {}
 	};
 
 private:
@@ -103,9 +112,9 @@ protected:
 
 	class t_item : public pfc::refcounted_object_root {
 	public:
-		//pfc::list_t<t_string_list_fast> m_subitems_v2;
+		//pfc::list_t<string_array> m_subitems_v2;
 		t_uint8 m_line_count;
-		t_string_list_fast m_subitems;
+		string_array m_subitems;
 		pfc::array_t<t_group_ptr> m_groups;
 
 		//t_size m_position;
@@ -241,7 +250,13 @@ public:
 	//void insert_item(t_size index, const t_string_list_const_fast & text, const t_string_list_const_fast & p_groups, t_size size);
 	//void insert_items(t_size index_start, const pfc::list_base_const_t<t_item_insert> & items, bool b_update_display = true);
 	void insert_items(t_size index_start, t_size count, const t_item_insert* items, bool b_update_display = true);
-	void replace_items(t_size index_start, const pfc::list_base_const_t<t_item_insert>& items, bool b_update_display = true);
+
+	template<class TItems>
+	void replace_items(t_size index_start, const TItems& items, bool b_update_display = true)
+	{
+		replace_items(index_start, items.get_size(), items.get_ptr(), b_update_display);
+	}
+	void replace_items(t_size index_start, t_size count, const t_item_insert* items, bool b_update_display = true);
 	void remove_item(t_size index);
 	void remove_items(const bit_array& p_mask, bool b_update_display = true);
 
@@ -569,7 +584,7 @@ public:
 
 	virtual void notify_on_header_rearrange(t_size index_from, t_size index_to) {};
 
-	t_string_list_fast& get_item_subitems(t_size index)
+	string_array& get_item_subitems(t_size index)
 	{
 		return m_items[index]->m_subitems;
 	} //hmmm
@@ -830,7 +845,7 @@ private:
 	void render_items(HDC dc, const RECT& rc_update, t_size cx);
 	void __insert_items_v2(t_size index_start, const pfc::list_base_const_t<t_item_insert>& items);
 	void __insert_items_v3(t_size index_start, t_size count, const t_item_insert* items);
-	void __replace_items_v2(t_size index_start, const pfc::list_base_const_t<t_item_insert>& items);
+	void __replace_items_v2(t_size index_start, t_size count, const t_item_insert* items);
 	void __remove_item(t_size index);
 	void __calculate_item_positions(t_size index_start = 0);
 

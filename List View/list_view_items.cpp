@@ -31,9 +31,9 @@ void t_list_view::insert_items(t_size index_start, t_size count, const t_item_in
 	if (b_update_display)
 		RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
 }
-void t_list_view::replace_items(t_size index_start, const pfc::list_base_const_t<t_item_insert> & items, bool b_update_display)
+void t_list_view::replace_items(t_size index_start, t_size count, const t_item_insert* items, bool b_update_display)
 {
-	__replace_items_v2(index_start, items);
+	__replace_items_v2(index_start, count, items);
 	__calculate_item_positions(index_start);
 	update_scroll_info();
 	if (b_update_display)
@@ -61,10 +61,10 @@ void t_list_view::remove_items(const bit_array & p_mask, bool b_update_display)
 	insert_items(index, pfc::list_single_ref_t<t_item_insert>(item));
 }*/
 
-void t_list_view::__replace_items_v2(t_size index_start, const pfc::list_base_const_t<t_item_insert> & items)
+void t_list_view::__replace_items_v2(t_size index_start, t_size countl, const t_item_insert* items)
 {
 	pfc::list_t<t_item_ptr> items_prev(m_items);
-	t_size l, countl = items.get_count(), countitems = m_items.get_count();
+	t_size l, countitems = m_items.get_count();
 	t_size newgroupcount = 0, oldgroupcount=0;
 
 // Calculate old group count
