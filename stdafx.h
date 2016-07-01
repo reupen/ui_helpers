@@ -4,6 +4,10 @@
 #define OEMRESOURCE
 
 #include <string>
+#include <vector>
+#include <memory>
+#include <algorithm>
+
 #include <windows.h>
 #include <WindowsX.h>
 #include <SHLWAPI.H>
@@ -27,6 +31,7 @@
 #include "ole.h"
 
 #include "message_hook.h"
+#include "low_level_hook.h"
 #include "trackbar.h"
 #include "solid_fill.h"
 

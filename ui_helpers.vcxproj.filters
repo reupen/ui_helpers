@@ -32,6 +32,7 @@
     <ClInclude Include="drag_image.h" />
     <ClInclude Include="handle.h" />
     <ClInclude Include="config_var.h" />
+    <ClInclude Include="low_level_hook.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="List View\list_view_columns.cpp">
@@ -91,5 +92,6 @@
     <ClCompile Include="ole.cpp" />
     <ClCompile Include="drag_image.cpp" />
     <ClCompile Include="fcl.cpp" />
+    <ClCompile Include="low_level_hook.cpp" />
   </ItemGroup>
 </Project>
