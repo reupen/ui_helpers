@@ -7,7 +7,7 @@ namespace uih {
 		MainThreadCallback(WPARAM msg, const MSLLHOOKSTRUCT& mllhs)
 			: m_msg(msg), m_mllhs(mllhs) {}
 	private:
-		void callback_run()
+		void callback_run() override
 		{
 			LowLevelMouseHookManager::s_get_instance().on_event(m_msg, m_mllhs);
 		}

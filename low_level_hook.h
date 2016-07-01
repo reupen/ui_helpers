@@ -29,4 +29,4 @@ namespace uih {
 
 		friend class MainThreadCallback;
 	};
-};
+}
