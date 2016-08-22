@@ -724,6 +724,7 @@ protected:
 			update_column_sizes();
 			update_header();
 			refresh_item_positions();
+			on_size();
 		}
 	}
 
