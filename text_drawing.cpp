@@ -529,7 +529,7 @@ BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width,
 	}
 
 
-	BOOL text_out_colours_ellipsis(HDC dc,const char * src_c,int src_c_len,int x_offset,int pos_y,const RECT * base_clip,bool selected,bool show_ellipsis,DWORD default_color,alignment align, unsigned * p_width, bool b_set_default_colours, unsigned * p_position)
+	BOOL text_out_colours_ellipsis(HDC dc,const char * src_c,int src_c_len,int x_offset,int pos_y,const RECT * base_clip,bool selected,bool show_ellipsis,DWORD default_color,alignment align, unsigned * p_width, bool b_set_default_colours, int * p_position)
 	{
 		class colour_change_data
 		{
@@ -768,7 +768,7 @@ BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width,
 		return TRUE;
 	}
 
-	BOOL text_out_colours_tab(HDC dc,const char * display,int display_len,int left_offset,int border,const RECT * base_clip,bool selected,DWORD default_color,bool columns,bool use_tab,bool show_ellipsis,alignment align, unsigned * p_width, bool b_set_default_colours, bool b_vertical_align_centre, unsigned * p_position)
+	BOOL text_out_colours_tab(HDC dc,const char * display,int display_len,int left_offset,int border,const RECT * base_clip,bool selected,DWORD default_color,bool columns,bool use_tab,bool show_ellipsis,alignment align, unsigned * p_width, bool b_set_default_colours, bool b_vertical_align_centre, int * p_position)
 	{
 
 		if (!base_clip) return FALSE;

@@ -165,8 +165,8 @@ int get_text_width(HDC dc,const char * src,int len);
 int get_text_width_color(HDC dc,const char * src,int len, bool b_ignore_tabs = false);
 int get_text_width_color_legacy(HDC dc,const char * src,int len, bool b_ignore_tabs = false);
 unsigned get_trunc_len(const char * src, unsigned len);
-BOOL text_out_colours_ellipsis(HDC dc,const char * src,int len,int x_offset,int pos_y,const RECT * base_clip,bool selected,bool show_ellipsis,DWORD default_color,alignment align, unsigned * p_width = nullptr, bool b_set_default_colours = true, unsigned * p_position = nullptr);
-BOOL text_out_colours_tab(HDC dc,const char * display,int display_len,int left_offset,int border,const RECT * base_clip,bool selected,DWORD default_color,bool columns,bool tab,bool show_ellipsis,alignment align, unsigned * p_width = nullptr, bool b_set_default_colours = true, bool b_vertical_align_centre = true, unsigned * p_position = nullptr);
+BOOL text_out_colours_ellipsis(HDC dc,const char * src,int len,int x_offset,int pos_y,const RECT * base_clip,bool selected,bool show_ellipsis,DWORD default_color,alignment align, unsigned * p_width = nullptr, bool b_set_default_colours = true, int * p_position = nullptr);
+BOOL text_out_colours_tab(HDC dc,const char * display,int display_len,int left_offset,int border,const RECT * base_clip,bool selected,DWORD default_color,bool columns,bool tab,bool show_ellipsis,alignment align, unsigned * p_width = nullptr, bool b_set_default_colours = true, bool b_vertical_align_centre = true, int * p_position = nullptr);
 };
 
 #endif

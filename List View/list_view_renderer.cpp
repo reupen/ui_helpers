@@ -219,14 +219,14 @@ void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
 	{
 		COLORREF cr = p_data.m_group_text;
 
-		unsigned text_width = NULL;
+		int text_width = NULL;
 
 		render_group_background_default(p_data, dc, &rc);
 		ui_helpers::text_out_colours_tab(dc, text, strlen(text), 2 + indentation*level, 2, &rc, false, cr, false, false, true, ui_helpers::ALIGN_LEFT, nullptr, true, true, &text_width);
 
 		t_size cx = text_width;
 
-		RECT rc_line = {cx+7, rc.top+RECT_CY(rc)/2, rc.right-4, rc.top+RECT_CY(rc)/2+1};
+		RECT rc_line = { cx + 7, rc.top + RECT_CY(rc) / 2, rc.right - 4, rc.top + RECT_CY(rc) / 2 + 1 };
 
 		if (rc_line.right > rc_line.left)
 		{
