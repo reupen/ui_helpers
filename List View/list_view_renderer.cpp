@@ -27,6 +27,9 @@ t_size t_list_view::get_default_indentation_step()
 
 void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
 {
+	colour_data_t p_data;
+	render_get_colour_data(p_data);
+
 	const t_size level_spacing_size = m_group_level_indentation_enabled ? _level_spacing_size : 0;
 	//COLORREF cr_orig = GetTextColor(dc);
 	//OffsetWindowOrgEx(dc, m_horizontal_scroll_position, 0, NULL);
@@ -158,7 +161,8 @@ void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
 		rc_line.bottom = yPos + 2;
 		if (IntersectRect(&rc_dummy, &rc_line, &rc_update))
 		{
-			FillRect(dc, &rc_line, GetSysColorBrush(COLOR_WINDOWTEXT));
+			gdi_object_t<HBRUSH>::ptr_t br = CreateSolidBrush(p_data.m_text);
+			FillRect(dc, &rc_line, br);
 		}
 		/*gdi_object_t<HBRUSH>::ptr_t pen = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_WINDOWTEXT));
 		HPEN pen_old = SelectPen(dc, pen);
