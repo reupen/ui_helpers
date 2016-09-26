@@ -93,7 +93,6 @@ LRESULT t_list_view::on_inline_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM l
 					{
 						t_size column = m_inline_edit_column;
 						t_size row = m_inline_edit_indices[0];
-						t_size playlist_count = m_items.get_count();
 						pfc::string8_fast_aggressive temp;
 						bool found = false;
 
@@ -102,7 +101,7 @@ LRESULT t_list_view::on_inline_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM l
 							do
 							{
 								pfc::list_single_ref_t<t_size> indices(row);
-								while (column > 0 && !(found = notify_before_create_inline_edit(indices, --column, false)))
+								while (column > 0 && !((found = notify_before_create_inline_edit(indices, --column, false))))
 								{
 								}
 								if (!found)
@@ -115,7 +114,7 @@ LRESULT t_list_view::on_inline_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM l
 								create_inline_edit(indices, column);
 							}
 						} else {
-							while (column > 0 && !(found = notify_before_create_inline_edit(m_inline_edit_indices, --column, false)))
+							while (column > 0 && !((found = notify_before_create_inline_edit(m_inline_edit_indices, --column, false))))
 							{
 							}
 
@@ -138,7 +137,7 @@ LRESULT t_list_view::on_inline_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM l
 							do
 							{
 								pfc::list_single_ref_t<t_size> indices(row);
-								while (column < count && !(found = notify_before_create_inline_edit(indices, column, false)))
+								while (column < count && !((found = notify_before_create_inline_edit(indices, column, false))))
 								{
 									column++;
 								}
@@ -153,7 +152,7 @@ LRESULT t_list_view::on_inline_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM l
 							}
 
 						} else {
-							while (column < count && !(found = notify_before_create_inline_edit(m_inline_edit_indices, column, false)))
+							while (column < count && !((found = notify_before_create_inline_edit(m_inline_edit_indices, column, false))))
 							{
 								column++;
 							}
@@ -202,10 +201,10 @@ void t_list_view::create_inline_edit(const pfc::list_base_const_t<t_size> & indi
 		}
 	}
 
-	t_size indices_spread = indices[indices_count-1] - indices[0] +1;
-	t_size indices_total_height = get_item_position_bottom(indices[indices_count-1]) - get_item_position(indices[0]);
-
-	t_size active_count = m_items.get_count();
+	t_size indices_spread = indices[indices_count-1] - indices[0] + 1;
+	t_size items_top = get_item_position(indices[0]);
+	t_size items_bottom = get_item_position_bottom(indices[indices_count - 1]);
+	int indices_total_height = min(items_bottom - items_top, MAXLONG);
 
 	if (m_timer_inline_edit)
 	{
@@ -238,19 +237,14 @@ void t_list_view::create_inline_edit(const pfc::list_base_const_t<t_size> & indi
 		}
 	}
 
-	int x = 0;
-	{
+	int x;
+	{		
+		x = get_total_indentation();
 		
+		unsigned n, count = m_columns.get_count();
+		for (n=0; n<count && n<column; n++)
 		{
-			x = get_total_indentation();
-		}
-		
-		{
-			unsigned n, count = m_columns.get_count();
-			for (n=0; n<count && n<column; n++)
-			{
-				x += m_columns[n].m_display_size;
-			}
+			x += m_columns[n].m_display_size;
 		}
 	}
 
@@ -259,22 +253,18 @@ void t_list_view::create_inline_edit(const pfc::list_base_const_t<t_size> & indi
 	get_items_rect(&rc_items);
 
 	int font_height = uGetFontHeight(m_font);
-	int header_height = rc_items.top;//get_header_height();
+	int header_height = rc_items.top;
 
-	int y = (get_item_position(indices[0])-m_scroll_position) + header_height;
-	if (y < header_height) y= header_height;
 	int cx = m_columns[column].m_display_size;
-	//if (column == 0)
-	//	cx -= min(x,cx);
-	int cy = min (indices_total_height, t_size(rc_items.bottom-rc_items.top));
+	int cy = min(max(indices_total_height, font_height), rc_items.bottom - rc_items.top);
+	int y = get_item_position(indices[0]) - m_scroll_position + header_height;
+	if (cy > indices_total_height)
+		y -= (cy - indices_total_height) / 2;
+	if (y < header_height)
+		y = header_height;
 
 	if (!m_autosize && ( (x - m_horizontal_scroll_position < 0) || x + cx - m_horizontal_scroll_position > rc_items.right))
 	{
-		/*SCROLLINFO si;
-		memset(&si, 0, sizeof(SCROLLINFO));
-		si.cbSize = sizeof(si);
-		si.fMask = SIF_POS|SIF_TRACKPOS|SIF_PAGE|SIF_RANGE;
-		GetScrollInfo(get_wnd(), SB_HORZ, &si);*/
 		if (x - m_horizontal_scroll_position < 0)
 		{
 			scroll(false, x, true);
@@ -288,31 +278,16 @@ void t_list_view::create_inline_edit(const pfc::list_base_const_t<t_size> & indi
 
 	x -= m_horizontal_scroll_position;
 
-	/*int horizontal_offset = 0;
-	if (x-horizontal_offset + cx > rc_playlist.right)
-		scroll(scroll_horizontally, scroll_position_delta, x-horizontal_offset + (cx>rc_playlist.right?0:cx-rc_playlist.right));
-	else if (x-horizontal_offset < 0)
-		scroll(scroll_horizontally, scroll_position_delta, x-horizontal_offset);
-
-	x-=horizontal_offset;*/
-
 	if (m_wnd_inline_edit)
 	{
 		save_inline_edit();
 
-		//NEW
 		m_inline_edit_prevent_kill = true;
 		DestroyWindow(m_wnd_inline_edit);
 		m_wnd_inline_edit=nullptr;
 		m_inline_edit_autocomplete.release();
 		m_inline_edit_prevent_kill = false;
-		//END NEW
 	}
-
-	//m_inline_edit_field.set_string(pfc::empty_string_t<char>());
-	//m_inline_edit_items.remove_all();
-	//m_inline_edit_items.set_count(indices_count);
-	//pfc::list_t<bool> mask;
 
 	pfc::string8 text;
 	t_size flags = 0;
@@ -333,9 +308,9 @@ void t_list_view::create_inline_edit(const pfc::list_base_const_t<t_size> & indi
 			cx, cy, get_wnd(), HMENU(667),
 			core_api::get_my_instance(), nullptr);
 
-		m_proc_original_inline_edit = (WNDPROC)GetWindowLongPtr(m_wnd_inline_edit,GWLP_WNDPROC);
+		m_proc_original_inline_edit = reinterpret_cast<WNDPROC>(GetWindowLongPtr(m_wnd_inline_edit,GWLP_WNDPROC));
 
-		if (/*flags & inline_edit_autocomplete && */pAutoCompleteEntries.is_valid())
+		if (pAutoCompleteEntries.is_valid())
 		{
 			if (SUCCEEDED(m_inline_edit_autocomplete.instantiate(CLSID_AutoComplete)))
 			{
@@ -351,47 +326,25 @@ void t_list_view::create_inline_edit(const pfc::list_base_const_t<t_size> & indi
 			}
 		}
 
-		SetWindowLongPtr(m_wnd_inline_edit,GWL_USERDATA,(LPARAM)(this));
-		m_proc_inline_edit = (WNDPROC)SetWindowLongPtr(m_wnd_inline_edit,GWL_WNDPROC,(LPARAM)(g_on_inline_edit_message));
+		SetWindowLongPtr(m_wnd_inline_edit,GWL_USERDATA,reinterpret_cast<LPARAM>(this));
+		m_proc_inline_edit = reinterpret_cast<WNDPROC>(SetWindowLongPtr(m_wnd_inline_edit,GWL_WNDPROC, reinterpret_cast<LPARAM>(g_on_inline_edit_message)));
 
 		SetWindowPos(m_wnd_inline_edit,HWND_TOP,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);
 
-		SendMessage(m_wnd_inline_edit, WM_SETFONT, (WPARAM)m_font.get(), MAKELONG(TRUE,0));
+		SendMessage(m_wnd_inline_edit, WM_SETFONT, reinterpret_cast<WPARAM>(m_font.get()), MAKELONG(TRUE,0));
 	}
-#if 0
-	else
-	{
-		if (m_inline_edit_autocomplete.is_valid())
-			m_inline_edit_autocomplete->Enable(FALSE);
-		SetWindowLongPtr(m_wnd_inline_edit, GWL_STYLE, (GetWindowLongPtr (m_wnd_inline_edit, GWL_STYLE) & ~ES_UPPERCASE) | ((flags & inline_edit_uppercase)  ? ES_UPPERCASE  : 0));
-		SendMessage(m_wnd_inline_edit, WM_SETTEXT, 0, (LPARAM)_T(""));
-		SetWindowPos(m_wnd_inline_edit, NULL, x, y,	cx, cy, SWP_NOZORDER);
-		uSendMessageText(m_wnd_inline_edit, WM_SETTEXT, 0, text);
-
-		if (m_inline_edit_autocomplete.is_valid())
-		{
-			if (pAutoCompleteEntries.is_valid())
-			{
-				m_inline_edit_autocomplete->Init(m_wnd_inline_edit, pAutoCompleteEntries, NULL, NULL);
-				m_inline_edit_autocomplete->Enable(TRUE);
-			}
-		}
-	}
-#endif
-
 
 	RECT rc;
 	rc.left = x+2;
 	rc.top = y + (cy-font_height)/2;
 	rc.right = x+(cx>0?cx-2:0);
 	rc.bottom = rc.top + font_height;
-	MapWindowPoints(get_wnd(), m_wnd_inline_edit, (LPPOINT)&rc, 2);
+	MapWindowPoints(get_wnd(), m_wnd_inline_edit, reinterpret_cast<LPPOINT>(&rc), 2);
 
-	SendMessage(m_wnd_inline_edit, EM_SETRECT, NULL, (LPARAM)&rc);
+	SendMessage(m_wnd_inline_edit, EM_SETRECT, NULL, reinterpret_cast<LPARAM>(&rc));
 
 	SendMessage(m_wnd_inline_edit, EM_SETSEL, 0, -1);
 	SetFocus(m_wnd_inline_edit);
-
 	
 	if (&indices != &m_inline_edit_indices)
 		m_inline_edit_indices = indices;
