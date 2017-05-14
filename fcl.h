@@ -134,14 +134,20 @@ namespace fcl {
 			m_position += sizeof(t_int_type);
 		};
 
-		template <typename t_int_type, typename t_item_type>
-		void read_item_indirect(t_item_type& p_out)
+		/**
+		 * \brief Reads an item using a temporary variable.
+		 * 
+		 * \tparam t_int_type	The type of the object to read
+		 * \return				The read value
+		 */
+		template <typename t_int_type>
+		t_int_type read_raw_item()
 		{
 			pfc::assert_raw_type<t_int_type>();
 			t_int_type temp;
 			m_input->read_lendian_t(temp, m_abort);
-			p_out = temp;
 			m_position += sizeof(t_int_type);
+			return temp;
 		}
 
 		template <typename t_item>
