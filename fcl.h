@@ -134,10 +134,19 @@ namespace fcl {
 			m_position += sizeof(t_int_type);
 		};
 
+		template <typename t_int_type, typename t_item_type>
+		void read_item_indirect(t_item_type& p_out)
+		{
+			pfc::assert_raw_type<t_int_type>();
+			t_int_type temp;
+			m_input->read_lendian_t(temp, m_abort);
+			p_out = temp;
+			m_position += sizeof(t_int_type);
+		}
+
 		template <typename t_item>
 		void read_item_force_bool(t_item& p_out)
 		{
-			pfc::assert_raw_type<t_item>();
 			bool temp;
 			m_input->read_lendian_t(temp, m_abort);
 			p_out = temp;
@@ -167,7 +176,7 @@ namespace fcl {
 		}
 
 		reader(stream_reader* p_input, t_size size, abort_callback& p_abort)
-			: m_size(size), m_position(0), m_input(p_input), m_abort(p_abort) {} ;
+			: m_size(size), m_position(0), m_input(p_input), m_abort(p_abort) {}
 
 		reader(reader& p_reader, t_size size, abort_callback& p_abort)
 			: m_size(size), m_position(0), m_input(p_reader.m_input), m_abort(p_abort)
