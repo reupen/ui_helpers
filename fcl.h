@@ -1,138 +1,179 @@
 #pragma once
 
 namespace fcl {
+	/**
+	 * \brief Helper class. Used to write data to FCL files.
+	 */
 	class writer {
 	public:
+		writer(stream_writer* p_out, abort_callback& p_abort)
+			: m_output(p_out), m_abort(p_abort) {}
+
+		/**
+		 * \brief Writes a POD object (without item ID or size).
+		 * \tparam t_item	Object type
+		 * \param item		Object to write
+		 */
 		template <typename t_item>
 		void write_raw(const t_item& item)
 		{
 			pfc::assert_raw_type<t_item>();
 			m_output->write_lendian_t(item, m_abort);
-		};
+		}
 
-		void write_item(unsigned id, const void* item, t_size size)
-		{
-			m_output->write_lendian_t(id, m_abort);
-			m_output->write_lendian_t(size, m_abort);
-			m_output->write(item, size, m_abort);
-		};
-
-		template <typename t_item>
+		/**
+		 * \brief Writes an object, with ID and size values, using a matching fcl_write_item() free function.
+		 * 
+		 * This allows a custom type to be made serialisable by defining an fcl_write_item() function with
+		 * an appropriate signature.
+		 * 
+		 * \tparam t_item	Type of object to write
+		 * \param id		Item ID
+		 * \param item		Object to write
+		 */
+		template <
+			typename t_item,
+			decltype(fcl_write_item(std::declval<writer>(), std::declval<unsigned>(), std::declval<t_item>()))* = nullptr
+		>
 		void write_item(unsigned id, const t_item& item)
 		{
-			pfc::assert_raw_type<t_item>();
-			m_output->write_lendian_t(id, m_abort);
-			m_output->write_lendian_t(sizeof(item), m_abort);
-			m_output->write_lendian_t(item, m_abort);
-		};
+			fcl_write_item(*this, id, item);
+		}
 
-		template <typename t_int_type>
-		void write_item(unsigned id, const cfg_int_t<t_int_type>& item)
+		/**
+		 * \brief Writes an integer or float.
+		 * 
+		 * \tparam t_item	Type of object to write
+		 * \param id		Item ID
+		 * \param item		Integer or float to write
+		 */
+		template <
+			typename t_item, 
+			std::enable_if_t<std::is_arithmetic_v<t_item>>* = nullptr
+		>
+		void write_item(unsigned id, const t_item& item)
 		{
-			m_output->write_lendian_t(id, m_abort);
-			m_output->write_lendian_t(sizeof(t_int_type), m_abort);
-			m_output->write_lendian_t(t_int_type(item.get_value()), m_abort);
-		};
+			write_raw(id);
+			write_raw(pfc::downcast_guarded<uint32_t>(sizeof t_item));
+			write_raw(item);
+		}
 
-		template <typename t_int_type>
-		void write_item_config(unsigned id, const config_item_t<t_int_type>& item)
+		/**
+		 * \brief Writes a sequence of bytes.
+		 * 
+		 * \param id		Item ID
+		 * \param data		Data to write
+		 * \param size		Number of bytes to write
+		 */
+		void write_item(unsigned id, const void* data, t_size size)
 		{
-			m_output->write_lendian_t(id, m_abort);
-			m_output->write_lendian_t(sizeof(t_int_type), m_abort);
-			m_output->write_lendian_t(t_int_type(item.get()), m_abort);
-		};
+			write_raw(id);
+			write_raw(size);
+			m_output->write(data, size, m_abort);
+		}
 
-		writer(stream_writer* p_out, abort_callback& p_abort)
-			: m_output(p_out), m_abort(p_abort) {} ;
+		/**
+		 * \brief Writes a UTF-8 string.
+		 * 
+		 * \param id	Item ID
+		 * \param item	Null-terminated string to write
+		 */
+		void write_item(unsigned id, const char* item);
 
+		/**
+		 * \brief Writes a GUID
+		 * 
+		 * \param id	Item ID
+		 * \param item	GUID to write
+		 */
+		void write_item(unsigned id, const GUID& item)
+		{
+			write_raw(id);
+			write_raw(sizeof GUID);
+			write_raw(item);
+		}
+
+		/**
+		* \brief Writes a set of font attributes.
+		*
+		* \param id		Item ID
+		* \param lfc	LOGFONT structure to write
+		*/
+		void write_item(unsigned id, const LOGFONT& lfc);
 	private:
 		stream_writer* m_output;
 		abort_callback& m_abort;
 	};
 
-	template <>
-	void writer::write_item(unsigned id, const char* const & item);
-
-	template <>
-	void writer::write_item(unsigned id, const cfg_string& item);
-
-	template <>
-	void writer::write_item(unsigned id, const pfc::string8& item);
-
-	template <>
-	void writer::write_item(unsigned id, const LOGFONT& lfc);
-
-	template <>
-	void writer::write_item(unsigned id, const cfg_struct_t<LOGFONT>& cfg_lfc);
-
+	/**
+	* \brief Helper class. Used to read data from FCL files.
+	*/
 	class reader {
 	public:
-		template <typename t_item>
+		/**
+		 * \brief Reads an integer or float.
+		 * 
+		 * \tparam t_item	Intergral or floating-point type.
+		 * \param p_out		Object that receives the read value.
+		 */
+		template <
+			typename t_item,
+			std::enable_if_t<std::is_arithmetic_v<t_item>>* = nullptr
+		>
 		void read_item(t_item& p_out)
 		{
-			pfc::assert_raw_type<t_item>();
-			m_input->read_lendian_t(p_out, m_abort);
-			m_position += sizeof (t_item);
-		};
+			p_out = read_raw_item<t_item>();
+		}
 
-		void read(void* pout, t_size size)
+		/**
+		* \brief Reads a sequence of bytes.
+		*
+		* \param p_out		Output buffer
+		* \param size		Number of bytes to read
+		*/
+		void read(void* p_out, t_size size)
 		{
-			t_size pread = m_input->read(pout, size, m_abort);
+			auto pread = m_input->read(p_out, size, m_abort);
 			m_position += pread;
 			if (pread != size)
 				throw exception_io_data_truncation();
-		};
+		}
 
-		template <typename t_int_type>
-		void read_item(cfg_int_t<t_int_type>& p_out)
+		/**
+		 * \brief Reads a custom type using a matching fcl_read_item() free function.
+		 *
+		 * This allows a custom type to be made deserialisable by defining an fcl_read_item() function with
+		 * an appropriate signature.
+		 *
+		 * \tparam t_item	Type of object to read
+		 * \param p_out		Output object
+		 */
+		template <
+			typename t_item,
+			decltype(fcl_read_item(std::declval<reader>(), std::declval<t_item>()))* = nullptr
+		>
+		void read_item(t_item& p_out)
 		{
-			pfc::assert_raw_type<t_int_type>();
-			t_int_type temp;
-			m_input->read_lendian_t(temp, m_abort);
-			p_out = temp;
-			m_position += sizeof (t_int_type);
-		};
+			fcl_read_item(*this, p_out);
+		}
 
-		void read_item(cfg_string& p_out, t_size size)
+		/**
+		 * \brief Reads a GUID.
+		 * 
+		 * \param p_out		Output object
+		 */
+		void read_item(GUID& p_out)
 		{
-			read_item((pfc::string8&)p_out, size);
-		};
+			p_out = read_raw_item<GUID>();
+		}
 
-		void read_item(pfc::string8& p_out, t_size size)
-		{
-			pfc::array_t<char> temp;
-			temp.set_size(size + 1);
-			temp.fill(0);
-
-			if (size) {
-				unsigned read = 0;
-				read = m_input->read(temp.get_ptr(), size, m_abort);
-				if (read != size)
-					throw exception_io_data_truncation();
-			}
-			p_out = temp.get_ptr();
-			m_position += size;
-		};
-
-		template <typename t_int_type>
-		void read_item_config(config_item_t<t_int_type>& p_out)
-		{
-			pfc::assert_raw_type<t_int_type>();
-			t_int_type temp;
-			m_input->read_lendian_t(temp, m_abort);
-			p_out.set(temp);
-			m_position += sizeof (t_int_type);
-		};
-
-		template <typename t_int_type>
-		void read_item_config(uih::ConfigItem<t_int_type>& p_out)
-		{
-			pfc::assert_raw_type<t_int_type>();
-			t_int_type temp;
-			m_input->read_lendian_t(temp, m_abort);
-			p_out = temp;
-			m_position += sizeof(t_int_type);
-		};
+		/**
+		 * \brief Reads a UTF-8 string.
+		 * 
+		 * \param p_out		Output object
+		 * \param size		Number of bytes to read
+		 */
+		void read_item(pfc::string8& p_out, t_size size);
 
 		/**
 		 * \brief Reads an item using a temporary variable.
@@ -150,29 +191,28 @@ namespace fcl {
 			return temp;
 		}
 
-		template <typename t_item>
-		void read_item_force_bool(t_item& p_out)
-		{
-			bool temp;
-			m_input->read_lendian_t(temp, m_abort);
-			p_out = temp;
-			m_position += sizeof (bool);
-		};
+		/**
+		 * \brief Reads a set of font attributes.
+		 * 
+		 * \param lf_out		Output object
+		 */
+		void read_item(LOGFONT& lf_out);
 
-		template <typename t_int_type>
-		void read_item_force_bool(cfg_int_t<t_int_type>& p_out)
-		{
-			bool temp;
-			m_input->read_lendian_t(temp, m_abort);
-			p_out = temp;
-			m_position += sizeof (bool);
-		};
-
-		t_size get_remaining()
+		/**
+		 * \brief Gets the number of remaining bytes in the stream.
+		 * 
+		 * \return				Number of remaining bytes
+		 */
+		t_size get_remaining() const
 		{
 			return m_position > m_size ? 0 : m_size - m_position;
 		}
 
+		/**
+		 * \brief Skips a specified number of bytes.
+		 * 
+		 * \param delta			Number of bytes to skip
+		 */
 		void skip(t_size delta)
 		{
 			auto read = static_cast<size_t>(m_input->skip(delta, m_abort));
@@ -181,14 +221,28 @@ namespace fcl {
 				throw exception_io_data_truncation();
 		}
 
+		/**
+		 * \brief Initialises the reader from a stream_reader.
+		 * 
+		 * \param p_input		Source reader
+		 * \param size			Number of bytes in the stream
+		 * \param p_abort		Abort callback for all operatioins
+		 */
 		reader(stream_reader* p_input, t_size size, abort_callback& p_abort)
 			: m_size(size), m_position(0), m_input(p_input), m_abort(p_abort) {}
 
+		/**
+		 * \brief Initialises the reader from another reader.
+		 *
+		 * \param p_reader		Source reader
+		 * \param size			Number of bytes in the stream
+		 * \param p_abort		Abort callback for all operatioins
+		 */
 		reader(reader& p_reader, t_size size, abort_callback& p_abort)
 			: m_size(size), m_position(0), m_input(p_reader.m_input), m_abort(p_abort)
 		{
 			p_reader.m_position += size;
-		};
+		}
 
 	private:
 		t_size m_size, m_position;
@@ -196,9 +250,38 @@ namespace fcl {
 		abort_callback& m_abort;
 	};
 
-	template <>
-	void reader::read_item(LOGFONT& lf_out);
+	/**
+	 * \brief Writes an integer held in a cfg_int_t<> object to an FCL writer.
+	 * 
+	 * \tparam t_int	Integral or floating-point type
+	 * \param writer	FCL writer
+	 * \param id		Item ID
+	 * \param item		Value to write
+	 */
+	template<typename t_int>
+	void fcl_write_item(writer& writer, unsigned id, const cfg_int_t<t_int>& item)
+	{
+		writer.write_item(id, static_cast<t_int>(item));
+	}
 
-	template <>
-	void reader::read_item(cfg_struct_t<LOGFONT>& cfg_out);
+	/**
+	 * \brief Reads an integer from an FCL reader to a cfg_int_t<> object.
+	 * 
+	 * \tparam t_int	Integral or floating-point type
+	 * \param reader	FCL reader
+	 * \param item		Output object
+	 */
+	template<typename t_int>
+	void fcl_read_item(reader& reader, cfg_int_t<t_int>& item)
+	{
+		item = reader.read_raw_item<t_int>();
+	}
+
+	/**
+	 * \brief Reads a set of font attributes to a cfg_struct_t<LOGFONT> object.
+	 * 
+	 * \param reader	FCL reader
+	 * \param item		Output object
+	 */
+	void fcl_read_item(reader& reader, cfg_struct_t<LOGFONT>& item);
 }

@@ -1,26 +1,12 @@
 #include "stdafx.h"
 
 namespace fcl {
-	template <>
-	void writer::write_item(unsigned id, const char* const & item)
+	void writer::write_item(unsigned id, const char* item)
 	{
 		m_output->write_lendian_t(id, m_abort);
 		m_output->write_string(item, m_abort);
-	};
+	}
 
-	template <>
-	void writer::write_item(unsigned id, const cfg_string& item)
-	{
-		write_item(id, item.get_ptr());
-	};
-
-	template <>
-	void writer::write_item(unsigned id, const pfc::string8& item)
-	{
-		write_item(id, item.get_ptr());
-	};
-
-	template <>
 	void writer::write_item(unsigned id, const LOGFONT& lfc)
 	{
 		LOGFONT lf = lfc;
@@ -33,7 +19,7 @@ namespace fcl {
 		}
 
 		m_output->write_lendian_t(id, m_abort);
-		m_output->write_lendian_t(sizeof(lf), m_abort);
+		m_output->write_lendian_t(sizeof lf, m_abort);
 
 		m_output->write_lendian_t(lf.lfHeight, m_abort);
 		m_output->write_lendian_t(lf.lfWidth, m_abort);
@@ -45,16 +31,26 @@ namespace fcl {
 		m_output->write(&lf.lfItalic, 8 + sizeof(lf.lfFaceName), m_abort);
 	}
 
-	template <>
-	void writer::write_item(unsigned id, const cfg_struct_t<LOGFONT>& cfg_lfc)
+	void reader::read_item(pfc::string8& p_out, t_size size)
 	{
-		write_item(id, cfg_lfc.get_value());
+		pfc::array_t<char> temp;
+		temp.set_size(size + 1);
+		temp.fill(0);
+
+		if (size) {
+			unsigned read = 0;
+			read = m_input->read(temp.get_ptr(), size, m_abort);
+			if (read != size)
+				throw exception_io_data_truncation();
+		}
+		p_out = temp.get_ptr();
+		m_position += size;
 	}
 
-	template <>
 	void reader::read_item(LOGFONT& lf_out)
 	{
 		LOGFONT lf;
+		memset(&lf, 0, sizeof(LOGFONT));
 
 		read_item(lf.lfHeight);
 		read_item(lf.lfWidth);
@@ -68,9 +64,8 @@ namespace fcl {
 		lf_out = lf;
 	}
 
-	template <>
-	void reader::read_item(cfg_struct_t<LOGFONT>& cfg_out)
+	void fcl_read_item(reader& reader, cfg_struct_t<LOGFONT>& item)
 	{
-		read_item(cfg_out.get_value());
+		reader.read_item(item.get_value());
 	}
 }

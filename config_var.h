@@ -1,5 +1,7 @@
 #pragma once
 
+#include "fcl.h"
+
 template <typename t_type>
 class config_item_t {
 	cfg_int_t<t_type> m_value;
@@ -134,4 +136,12 @@ namespace uih {
 
 	using ConfigUint32DpiAware = ConfigIntegerDpiAware<uint32_t>;
 	using ConfigInt32DpiAware = ConfigIntegerDpiAware<int32_t>;
+}
+
+namespace fcl {
+	template<typename t_int>
+	void fcl_read_item(reader& reader, config_item_t<t_int>& item)
+	{
+		item.set(reader.read_raw_item<t_int>());
+	}
 }
