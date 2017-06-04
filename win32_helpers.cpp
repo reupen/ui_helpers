@@ -477,4 +477,15 @@ namespace uih {
 		}
 	}
 
+	void send_message_to_direct_children(HWND wnd_parent, UINT msg, WPARAM wp, LPARAM lp)
+	{
+		HWND wnd = GetWindow(wnd_parent, GW_CHILD);
+		if (!wnd)
+			return;
+
+		do {
+			SendMessage(wnd, msg, wp, lp);
+		}
+		while ((wnd = GetWindow(wnd, GW_HWNDNEXT)));
+	}
 }

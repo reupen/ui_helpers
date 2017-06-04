@@ -151,6 +151,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="config_var.h" />
+    <ClInclude Include="container_window.h" />
     <ClInclude Include="drag_image.h" />
     <ClInclude Include="handle.h" />
     <ClInclude Include="List View\list_view.h" />
@@ -170,6 +171,7 @@
     <ClInclude Include="win32_helpers.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="container_window.cpp" />
     <ClCompile Include="drag_image.cpp" />
     <ClCompile Include="fcl.cpp" />
     <ClCompile Include="List View\list_view_columns.cpp">

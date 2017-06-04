@@ -4,6 +4,7 @@
 #define OEMRESOURCE
 
 #include <algorithm>
+#include <unordered_map>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -31,6 +32,7 @@
 #include "win32_helpers.h"
 #include "ole.h"
 
+#include "container_window.h"
 #include "message_hook.h"
 #include "low_level_hook.h"
 #include "trackbar.h"
