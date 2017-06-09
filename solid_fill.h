@@ -1,7 +1,7 @@
 #ifndef _COLUMNS_SOLID_FILL_H_
 #define _COLUMNS_SOLID_FILL_H_
 
-class window_fill : public ui_helpers::container_window
+class window_fill
 {
 public:
     enum t_mode
@@ -15,7 +15,7 @@ public:
     {
         m_mode = mode_solid_fill;
         m_fill_colour = value;
-        if (get_wnd())
+        if (m_container_window->get_wnd())
             redraw();
     }
     void set_fill_themed(const WCHAR * pclass, int part, int state, COLORREF fallback)
@@ -28,9 +28,9 @@ public:
         if (m_theme)
             CloseThemeData(m_theme);
         m_theme=nullptr;
-        if (get_wnd())
+        if (m_container_window->get_wnd())
         {
-            m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(get_wnd(), m_theme_class) : nullptr;
+            m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(m_container_window->get_wnd(), m_theme_class) : nullptr;
             redraw();
         }
     }
@@ -43,29 +43,45 @@ public:
         if (m_theme)
             CloseThemeData(m_theme);
         m_theme=nullptr;
-        if (get_wnd())
+        if (m_container_window->get_wnd())
         {
-            m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(get_wnd(), m_theme_class) : nullptr;
+            m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(m_container_window->get_wnd(), m_theme_class) : nullptr;
             redraw();
         }
     }
 
     window_fill()
-        : m_mode(mode_solid_fill), m_fill_colour(NULL), m_theme(nullptr), m_theme_part(NULL), m_theme_state(NULL),
-        m_theme_colour_index(NULL)
-    {};
+    {
+        auto window_config = uih::ContainerWindowConfig{L"columns_ui_fill"};
+        window_config.window_styles = WS_CHILD | WS_CLIPCHILDREN | WS_VISIBLE;
+        window_config.window_ex_styles = WS_EX_CONTROLPARENT | WS_EX_STATICEDGE;
+        window_config.class_styles = NULL;
+        m_container_window = std::make_unique<uih::ContainerWindow>(
+            window_config,
+            std::bind(&window_fill::on_message, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
+            );
+    }
 
+    template<typename... Ts>
+    HWND create(Ts&&... vals)
+    {
+        return m_container_window->create(std::forward<Ts>(vals)...);
+    }
+    void destroy()
+    {
+        m_container_window->destroy();
+    }
+    HWND get_wnd() const
+    {
+        return m_container_window->get_wnd();
+    }
 private:
     void redraw()
     {
-        RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
+        RedrawWindow(m_container_window->get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
         //RedrawWindow(get_wnd(), 0, 0, RDW_INVALIDATE|RDW_ERASE);
     }
-    class_data & get_class_data()const override 
-    {
-        __implement_get_class_data_ex(_T("columns_ui_fill"), _T(""), false, 0, WS_CHILD|WS_CLIPCHILDREN|WS_VISIBLE, WS_EX_CONTROLPARENT|WS_EX_STATICEDGE, 0);
-    }
-    LRESULT on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp) override
+    LRESULT on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
     {
         switch (msg)
         {
@@ -135,11 +151,14 @@ private:
         return DefWindowProc(wnd, msg, wp, lp);
     };
 
-    t_mode m_mode;
+    t_mode m_mode{mode_solid_fill};
     pfc::string_simple_t<WCHAR> m_theme_class;
-    COLORREF m_fill_colour;
-    HTHEME m_theme;
-    int m_theme_part, m_theme_state, m_theme_colour_index;
+    COLORREF m_fill_colour = NULL;
+    HTHEME m_theme = nullptr;
+    int m_theme_part = NULL;
+    int m_theme_state = NULL;
+    int m_theme_colour_index = NULL;
+    std::unique_ptr<uih::ContainerWindow> m_container_window;
 };
 
 class window_transparent_fill : public ui_helpers::container_window

@@ -12,8 +12,11 @@ namespace uih {
         }
     }
 
-    HWND ContainerWindow::create(HWND wnd_parent, WindowPosition window_position, LPVOID create_param)
+    HWND ContainerWindow::create(HWND wnd_parent, WindowPosition window_position, LPVOID create_param, bool use_dialog_units)
     {
+        if (use_dialog_units)
+            window_position.convert_from_dialog_units_to_pixels(wnd_parent);
+
         auto ref = s_window_count.try_emplace(m_config.class_name, 0);
         if ((*ref.first).second++ == 0) {
             register_class();

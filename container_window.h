@@ -19,10 +19,9 @@ namespace uih {
         WindowPosition() {}
 
         WindowPosition(int32_t x_, int32_t y_, int32_t cx_, int32_t cy_)
-            : x(x_), y(y_), cx(cx_), cy(cy_) {}
+            : x{x_}, y{y_}, cx{cx_}, cy{cy_} {}
 
-        WindowPosition(RECT rc)
-            : x(rc.left), y(rc.top), cx(rc.right - rc.left), cy(rc.bottom - rc.top) {}
+        WindowPosition(RECT rc) { from_rect(rc); }
 
         WindowPosition(HWND wnd_relative, int32_t cx_, int32_t cy_)
         {
@@ -34,10 +33,22 @@ namespace uih {
             cx = cx_;
             cy = cy_;
         }
-
+        void from_rect(RECT rc)
+        {
+            x = rc.left;
+            y = rc.top;
+            cx = rc.right - rc.left;
+            cy = rc.bottom - rc.top;
+        }
         RECT to_rect() const
         {
-            return RECT{x, y, x + cx , y + cx};
+            return RECT{x, y, x + cx , y + cy};
+        }
+        void convert_from_dialog_units_to_pixels(HWND wnd_dialog)
+        {
+            auto rc = to_rect();
+            MapDialogRect(wnd_dialog, &rc);
+            from_rect(rc);
         }
     };
 
@@ -67,7 +78,7 @@ namespace uih {
         ContainerWindow(const ContainerWindow& p_source) = delete;
 
         void on_size() const;
-        HWND create(HWND wnd_parent, WindowPosition window_position, LPVOID create_param = nullptr);
+        HWND create(HWND wnd_parent, WindowPosition window_position, LPVOID create_param = nullptr, bool use_dialog_units = false);
         void destroy();
         HWND get_wnd() const { return m_wnd; };
     private:
