@@ -25,7 +25,7 @@ BOOL track_bar::create_tooltip(const TCHAR * text, POINT pt)
     bool b_comctl_6 = SUCCEEDED(uih::GetComCtl32Version(dvi)) && dvi.info1.dwMajorVersion >= 6;
 
     m_wnd_tooltip = CreateWindowEx(WS_EX_TOPMOST|(b_comctl_6?WS_EX_TRANSPARENT:0), TOOLTIPS_CLASS, nullptr, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, get_wnd(), nullptr, core_api::get_my_instance(), nullptr);
+        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, get_wnd(), nullptr, uih::get_current_instance(), nullptr);
 
     SetWindowPos(m_wnd_tooltip, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
@@ -36,7 +36,7 @@ BOOL track_bar::create_tooltip(const TCHAR * text, POINT pt)
     ti.cbSize = TTTOOLINFO_V1_SIZE;
     ti.uFlags = TTF_SUBCLASS|TTF_TRANSPARENT|TTF_TRACK|TTF_ABSOLUTE;
     ti.hwnd = get_wnd();
-    ti.hinst = core_api::get_my_instance();
+    ti.hinst = uih::get_current_instance();
     ti.lpszText = const_cast<TCHAR *>(text);
 
     win32_helpers::tooltip_add_tool(m_wnd_tooltip, &ti);
@@ -65,7 +65,7 @@ BOOL track_bar::update_tooltip(POINT pt, const TCHAR * text)
     ti.cbSize = TTTOOLINFO_V1_SIZE;
     ti.uFlags = TTF_SUBCLASS|TTF_TRANSPARENT|TTF_TRACK|TTF_ABSOLUTE;
     ti.hwnd = get_wnd();
-    ti.hinst = core_api::get_my_instance();
+    ti.hinst = uih::get_current_instance();
     ti.lpszText = const_cast<TCHAR *>(text);
 
     win32_helpers::tooltip_add_tool(m_wnd_tooltip, &ti, true);

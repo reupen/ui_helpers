@@ -58,7 +58,7 @@ namespace uih {
         MSG msg;
         BOOL res;
 
-        m_hook = SetWindowsHookEx(WH_MOUSE_LL, &s_on_event, core_api::get_my_instance(), NULL);
+        m_hook = SetWindowsHookEx(WH_MOUSE_LL, &s_on_event, get_current_instance(), NULL);
 
         while ((res = GetMessage(&msg, nullptr, 0, 0)) != 0) {
             if (res == -1) {

@@ -306,7 +306,7 @@ void t_list_view::create_inline_edit(const pfc::list_base_const_t<t_size> & indi
             ES_AUTOHSCROLL|ES_MULTILINE|ES_AUTOVSCROLL|WS_BORDER|WS_CLIPCHILDREN|((flags & inline_edit_uppercase) ? ES_UPPERCASE : 0), x, 
             y,
             cx, cy, get_wnd(), HMENU(667),
-            core_api::get_my_instance(), nullptr);
+            uih::get_current_instance(), nullptr);
 
         m_proc_original_inline_edit = reinterpret_cast<WNDPROC>(GetWindowLongPtr(m_wnd_inline_edit,GWLP_WNDPROC));
 
