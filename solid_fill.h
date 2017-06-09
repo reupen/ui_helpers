@@ -1,50 +1,6 @@
 #ifndef _COLUMNS_SOLID_FILL_H_
 #define _COLUMNS_SOLID_FILL_H_
 
-class window_solid_fill : public ui_helpers::container_window
-{
-public:
-    void set_fill_colour(COLORREF value)
-    {
-        m_fill_colour = value;
-        if (get_wnd())
-            redraw();
-    }
-
-    window_solid_fill()
-        : m_fill_colour(NULL)
-    {};
-
-private:
-    void redraw()
-    {
-        RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
-    }
-    class_data & get_class_data()const override 
-    {
-        __implement_get_class_data_ex(_T("columns_ui_solid_fill"), _T(""), false, 0, WS_CHILD|WS_CLIPCHILDREN, WS_EX_CONTROLPARENT|WS_EX_STATICEDGE, 0);
-    }
-    LRESULT on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp) override
-    {
-        switch (msg)
-        {
-        case WM_ERASEBKGND:
-            return FALSE;
-        case WM_PAINT:
-            PAINTSTRUCT ps;
-            HDC dc = BeginPaint(wnd, &ps);
-            gdi_object_t<HBRUSH>::ptr_t p_brush = CreateSolidBrush(m_fill_colour);
-            FillRect(dc, &ps.rcPaint, p_brush);
-            p_brush.release();
-            EndPaint(wnd, &ps);
-            return 0;
-        }
-        return DefWindowProc(wnd, msg, wp, lp);
-    };
-
-    COLORREF m_fill_colour;
-};
-
 class window_fill : public ui_helpers::container_window
 {
 public:
