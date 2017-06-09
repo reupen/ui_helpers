@@ -39,35 +39,35 @@ class CDataObject: public IDataObject
 {
 private:
 
-	class t_data_entry 
-	{
-	public:
-		FORMATETC fe;
-		STGMEDIUM sm;
+    class t_data_entry 
+    {
+    public:
+        FORMATETC fe;
+        STGMEDIUM sm;
 
-		static int g_compare_formatetc (const t_data_entry & v1, const t_data_entry & v2)
-		{
-			int rv = pfc::compare_t(v1.fe.cfFormat, v2.fe.cfFormat);
-			if (!rv) rv = pfc::compare_t(v1.fe.dwAspect, v2.fe.dwAspect);
-			if (!rv) rv = pfc::compare_t(v1.fe.lindex, v2.fe.lindex);
-			return rv;
-		}
-		static int g_compare_formatetc_value (const t_data_entry & v1, LPFORMATETC v2)
-		{
-			int rv = pfc::compare_t(v1.fe.cfFormat, v2->cfFormat);
-			if (!rv) rv = pfc::compare_t(v1.fe.dwAspect, v2->dwAspect);
-			if (!rv) rv = pfc::compare_t(v1.fe.lindex, v2->lindex);
-			return rv;
-		}
+        static int g_compare_formatetc (const t_data_entry & v1, const t_data_entry & v2)
+        {
+            int rv = pfc::compare_t(v1.fe.cfFormat, v2.fe.cfFormat);
+            if (!rv) rv = pfc::compare_t(v1.fe.dwAspect, v2.fe.dwAspect);
+            if (!rv) rv = pfc::compare_t(v1.fe.lindex, v2.fe.lindex);
+            return rv;
+        }
+        static int g_compare_formatetc_value (const t_data_entry & v1, LPFORMATETC v2)
+        {
+            int rv = pfc::compare_t(v1.fe.cfFormat, v2->cfFormat);
+            if (!rv) rv = pfc::compare_t(v1.fe.dwAspect, v2->dwAspect);
+            if (!rv) rv = pfc::compare_t(v1.fe.lindex, v2->lindex);
+            return rv;
+        }
 
-		t_data_entry() 
-		{
-			memset (&fe, 0, sizeof(fe));
-			memset (&sm, 0, sizeof(sm));
-		}
-	};
+        t_data_entry() 
+        {
+            memset (&fe, 0, sizeof(fe));
+            memset (&sm, 0, sizeof(sm));
+        }
+    };
 
-	pfc::list_t<t_data_entry> m_data_entries;
+    pfc::list_t<t_data_entry> m_data_entries;
 
    DWORD m_cRefCount;
 
@@ -92,8 +92,8 @@ public:
    STDMETHOD(EnumDAdvise)(LPENUMSTATDATA*);
 
 private:
-	HRESULT _FindFormatEtc(LPFORMATETC lpfe, t_size & index, bool b_checkTymed);
-	HRESULT _GetStgMediumAddRef(t_size index, STGMEDIUM *pstgmOut);
+    HRESULT _FindFormatEtc(LPFORMATETC lpfe, t_size & index, bool b_checkTymed);
+    HRESULT _GetStgMediumAddRef(t_size index, STGMEDIUM *pstgmOut);
 };
 
 #endif   //DATAOBJ_H
