@@ -1,7 +1,6 @@
-#ifndef _COLUMNS_SOLID_FILL_H_
-#define _COLUMNS_SOLID_FILL_H_
+#pragma once
 
-class window_fill
+class FillWindow
 {
 public:
     enum t_mode
@@ -50,7 +49,7 @@ public:
         }
     }
 
-    window_fill()
+    FillWindow()
     {
         auto window_config = uih::ContainerWindowConfig{L"columns_ui_fill"};
         window_config.window_styles = WS_CHILD | WS_CLIPCHILDREN | WS_VISIBLE;
@@ -58,8 +57,8 @@ public:
         window_config.class_styles = NULL;
         m_container_window = std::make_unique<uih::ContainerWindow>(
             window_config,
-            std::bind(&window_fill::on_message, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
-            );
+            std::bind(&FillWindow::on_message, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
+        );
     }
 
     template<typename... Ts>
@@ -161,32 +160,55 @@ private:
     std::unique_ptr<uih::ContainerWindow> m_container_window;
 };
 
-class window_transparent_fill : public ui_helpers::container_window
+/** For backwards compatibility */
+using window_fill [[deprecated("Class was renamed to FillWindow")]] = FillWindow;
+
+class TranslucentFillWindow
 {
 public:
     void set_fill_colour(COLORREF value)
     {
         m_fill_colour = value;
-        if (get_wnd())
+        if (m_container_window->get_wnd())
             redraw();
     }
 
-    window_transparent_fill()
+    TranslucentFillWindow()
         : m_fill_colour(NULL)
-    {};
+    {
+        auto window_config = uih::ContainerWindowConfig{L"columns_ui_transparent_fill"};
+        window_config.window_styles = WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+        window_config.window_ex_styles = WS_EX_LAYERED;
+        window_config.class_styles = NULL;
+        m_container_window = std::make_unique<uih::ContainerWindow>(
+            window_config,
+            std::bind(&TranslucentFillWindow::on_message, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
+            );
+    }
 
+    template<typename... Ts>
+    HWND create(Ts&&... vals)
+    {
+        return m_container_window->create(std::forward<Ts>(vals)...);
+    }
+    void destroy()
+    {
+        m_container_window->destroy();
+    }
+    HWND get_wnd() const
+    {
+        return m_container_window->get_wnd();
+    }
 private:
     void redraw()
     {
-        RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
+        RedrawWindow(m_container_window->get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
     }
-    class_data & get_class_data()const override 
-    {
-        __implement_get_class_data_ex(_T("columns_ui_transparent_fill"), _T(""), false, 0, WS_POPUP|WS_CLIPSIBLINGS| WS_CLIPCHILDREN, /*WS_EX_TOPMOST|*/WS_EX_LAYERED, 0);
-    }
-    LRESULT on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp) override;
+    LRESULT on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp);
 
     COLORREF m_fill_colour;
+    std::unique_ptr<uih::ContainerWindow> m_container_window;
 };
 
-#endif //_COLUMNS_SOLID_FILL_H_
+/** For backwards compatibility */
+using window_transparent_fill [[deprecated("Class was renamed to TranslucentFillWindow")]] = TranslucentFillWindow;
