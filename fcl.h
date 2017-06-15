@@ -33,7 +33,7 @@ namespace fcl {
          */
         template <
             typename t_item,
-            decltype(fcl_write_item(std::declval<writer>(), std::declval<unsigned>(), std::declval<t_item>()))* = nullptr
+            decltype(fcl_write_item(std::declval<writer&>(), std::declval<unsigned>(), std::declval<t_item&>()))* = nullptr
         >
         void write_item(unsigned id, const t_item& item)
         {
@@ -54,7 +54,7 @@ namespace fcl {
         void write_item(unsigned id, const t_item& item)
         {
             write_raw(id);
-            write_raw(pfc::downcast_guarded<uint32_t>(sizeof t_item));
+            write_raw(pfc::downcast_guarded<uint32_t>(sizeof (t_item)));
             write_raw(item);
         }
 
@@ -89,7 +89,7 @@ namespace fcl {
         void write_item(unsigned id, const GUID& item)
         {
             write_raw(id);
-            write_raw(sizeof GUID);
+            write_raw(sizeof (GUID));
             write_raw(item);
         }
 
@@ -150,7 +150,7 @@ namespace fcl {
          */
         template <
             typename t_item,
-            decltype(fcl_read_item(std::declval<reader>(), std::declval<t_item>()))* = nullptr
+            decltype(fcl_read_item(std::declval<reader&>(), std::declval<t_item&>()))* = nullptr
         >
         void read_item(t_item& p_out)
         {
