@@ -7,16 +7,6 @@
 * \author musicmusic
 */
 
-#ifndef WM_XBUTTONDOWN
-#define WM_XBUTTONDOWN                  0x020B
-#endif
-
-
-track_bar::class_data & track_bar::get_class_data()const 
-{
-    __implement_get_class_data(_T("ui_extension_track_bar"), false);
-}
-
 BOOL track_bar::create_tooltip(const TCHAR * text, POINT pt)
 {
     destroy_tooltip();
@@ -51,7 +41,6 @@ void track_bar::destroy_tooltip()
 {
     if (m_wnd_tooltip) {DestroyWindow(m_wnd_tooltip); m_wnd_tooltip=nullptr;}
 }
-
 
 BOOL track_bar::update_tooltip(POINT pt, const TCHAR * text)
 {
@@ -189,6 +178,7 @@ void track_bar::set_enabled(bool enabled)
 {
     EnableWindow(get_wnd(), enabled);
 }
+
 bool track_bar::get_enabled() const
 {
     return IsWindowEnabled(get_wnd()) !=0;
@@ -273,8 +263,8 @@ void track_bar_impl::draw_background (HDC dc, const RECT * rc) const
     POINT pt = {0, 0}, pt_old = {0,0};
     MapWindowPoints(get_wnd(), wnd_parent, &pt, 1);
     OffsetWindowOrgEx(dc, pt.x, pt.y, &pt_old);
-    if (SendMessage(wnd_parent, WM_ERASEBKGND,(WPARAM)dc, 0) == FALSE)
-        SendMessage(wnd_parent, WM_PRINTCLIENT,(WPARAM)dc, PRF_ERASEBKGND);
+    if (SendMessage(wnd_parent, WM_ERASEBKGND, reinterpret_cast<WPARAM>(dc), 0) == FALSE)
+        SendMessage(wnd_parent, WM_PRINTCLIENT, reinterpret_cast<WPARAM>(dc), PRF_ERASEBKGND);
     SetWindowOrgEx(dc, pt_old.x, pt_old.y, nullptr);
 }
 
@@ -282,7 +272,9 @@ void track_bar_impl::draw_thumb (HDC dc, const RECT * rc) const
 {
     if (get_theme_handle())
     {
-        DrawThemeBackground(get_theme_handle(), dc, get_orientation() ? TKP_THUMBVERT : TKP_THUMB, get_enabled() ? (get_tracking() ? TUS_PRESSED : (get_hot() ? TUS_HOT : TUS_NORMAL)) : TUS_DISABLED, rc, nullptr);
+        const auto part_id = get_orientation() ? TKP_THUMBVERT : TKP_THUMB;
+        const auto state_id = get_enabled() ? (get_tracking() ? TUS_PRESSED : (get_hot() ? TUS_HOT : TUS_NORMAL)) : TUS_DISABLED;
+        DrawThemeBackground(get_theme_handle(), dc, part_id, state_id, rc, nullptr);
     }
     else
     {
@@ -333,9 +325,8 @@ void track_bar_impl::draw_thumb (HDC dc, const RECT * rc) const
         if (!get_enabled())
         {
             COLORREF cr_btnhighlight = GetSysColor(COLOR_BTNHIGHLIGHT);
-            int x, y;
-            for (x=rc_fill.left; x<rc_fill.right; x++)
-                for (y=rc_fill.top; y<rc_fill.bottom; y++)
+            for (int x=rc_fill.left; x<rc_fill.right; x++)
+                for (int y=rc_fill.top; y<rc_fill.bottom; y++)
                     if ((x+y)%2)
                         SetPixel(dc, x, y, cr_btnhighlight); //i dont have anything better than SetPixel
         }
@@ -608,7 +599,7 @@ LRESULT track_bar::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
             if ( !(lp & (1<<31)) && (wp == VK_HOME || wp == VK_END))
             {
                 bool down = (wp == VK_END) == false;//!get_direction();
-                unsigned newpos = m_position;
+                unsigned newpos;
                 if (down) newpos = m_range;
                 else newpos = 0;
                 if (newpos != m_position)
@@ -624,10 +615,7 @@ LRESULT track_bar::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
         {
             UINT ucNumLines=3;  // 3 is the default
             SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &ucNumLines, 0);
-            unsigned short fwKeys = GET_KEYSTATE_WPARAM(wp);
             short zDelta = GET_WHEEL_DELTA_WPARAM(wp);
-            int xPos = GET_X_LPARAM(lp); 
-            int yPos = GET_Y_LPARAM(lp);
             if (ucNumLines == WHEEL_PAGESCROLL)
                 ucNumLines = 3;
             int delta = MulDiv(m_step*zDelta, ucNumLines, WHEEL_DELTA);
@@ -644,7 +632,7 @@ LRESULT track_bar::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
             else if (!down && offset + m_position > m_range)
                 newpos = m_range;
             else
-                newpos += down ? -(int)offset : offset;
+                newpos += down ? -static_cast<int>(offset) : offset;
             if (newpos != m_position)
             {
                 set_position(newpos);

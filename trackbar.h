@@ -55,28 +55,38 @@ public:
 * Track bar base class. 
 *
 * Implemented by trackbar clients, used by host.
-*
-* \see container_window::create, container_window::destroy
 */
-class track_bar : public ui_helpers::container_window, message_hook_manager::message_hook
+class track_bar : message_hook_manager::message_hook
 {
-    /**
-    * Message handler for track bar.
-    *
-    * \note                        Do not override!
-    *
-    * \param [in]    wnd            Specifies window recieving the message
-    * \param [in]    msg            Specifies message code
-    * \param [in]    wp            Specifies message-specific WPARAM code
-    * \param [in]    lp            Specifies message-specific LPARAM code
-    *
-    * \return                    Message-specific value
-    */
-    LRESULT on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp) override;
-
-    bool on_hooked_message(message_hook_manager::t_message_hook_type p_type, int code, WPARAM wp, LPARAM lp) override;
-
 public:
+    /**
+     * \brief               Creates a new track bar window
+     * \param wnd_parent    Handle of the parent window
+     * \param window_pos    Initial window position
+     * \return              Window handle of the created track bar
+     */
+    HWND create(HWND wnd_parent, uih::WindowPosition window_pos = {})
+    {
+        return m_container_window->create(wnd_parent, window_pos);
+    }
+
+    /**
+     * \brief   Destroys the track bar window.
+     */
+    void destroy()
+    {
+        m_container_window->destroy();
+    }
+
+    /**
+     * \brief   Gets the track bar window handle.
+     * \return  Track bar window handle
+     */
+    HWND get_wnd() const
+    {
+        return m_container_window->get_wnd();
+    }
+
     /**
     * Sets position of trackbar thumb
     *
@@ -226,7 +236,7 @@ public:
     * Retrieves thumb rect for given position and range
     *
     * \param [in]    pos            Position of thumb
-    * \param [in]    range        Maximum position of thumb
+    * \param [in]    range          Maximum position of thumb
     * \param [out]    rc            Receives thumb rect
     *
     * \note    Minimum position of thumb is zero
@@ -258,7 +268,7 @@ public:
     *
     * \note Track bar implementations must implement this function
     */
-    virtual void draw_thumb (HDC dc, const RECT * rc) const = 0;
+    virtual void draw_thumb(HDC dc, const RECT * rc) const = 0;
 
     /**
     * Draws track bar channel
@@ -268,18 +278,18 @@ public:
     *
     * \note Track bar implementations must implement this function
     */
-    virtual void draw_channel (HDC dc, const RECT * rc) const = 0;
+    virtual void draw_channel(HDC dc, const RECT * rc) const = 0;
 
     /**
     * Draws track bar background
     *
     * \param [in]    dc            Handle to device context for the drawing operation
     * \param [in]    rc            Rectangle specifying the background area in client co-ordinates
-    *                            This is equal to the client area.
+    *                              This is equal to the client area.
     *
     * \note Track bar implementations must implement this function
     */
-    virtual void draw_background (HDC dc, const RECT * rc) const = 0;
+    virtual void draw_background(HDC dc, const RECT * rc) const = 0;
 
     /**
     * Sets host callback interface
@@ -304,19 +314,16 @@ public:
     * Default constructor for track_bar class
     */
     track_bar()
-        : m_theme(nullptr), m_position(0), m_range(0), m_thumb_hot(0), m_dragging(false), 
-        m_vertical(false), m_reversed(false), m_auto_focus(false), m_hook_registered(false),
-        m_step(1), m_display_position(0), m_show_tooltips(false), m_wnd_prev(nullptr),
-        m_wnd_tooltip(nullptr), m_host(nullptr)
-    {};
+    {
+        auto window_config = uih::ContainerWindowConfig{L"ui_extension_track_bar"};
+        m_container_window = std::make_unique<uih::ContainerWindow>(
+            window_config,
+            std::bind(&track_bar::on_message, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
+            );
+    }
+
+    virtual ~track_bar() = default;
 protected:
-    /**
-    * Retreives a reference to the uxtheme_handle pointer
-    *
-    * \return                    Reference to the uxtheme_handle pointer.
-    *                            May be empty in case uxtheme was not loaded.
-    */
-    //const uxtheme_api_ptr & get_uxtheme_ptr() const;
     /**
     * Retreives a handle to the theme context to be used for calling uxtheme APIs
     *
@@ -329,6 +336,26 @@ protected:
     */
     HTHEME get_theme_handle() const;
 private:
+    /**
+    * Message handler for track bar.
+    *
+    * \param [in]    wnd           Specifies window recieving the message
+    * \param [in]    msg           Specifies message code
+    * \param [in]    wp            Specifies message-specific WPARAM code
+    * \param [in]    lp            Specifies message-specific LPARAM code
+    *
+    * \return                      Message-specific value
+    */
+    LRESULT on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
+
+    /**
+     * \brief Handles hooked keyboard events. 
+     * 
+     * Used to capture Esc presses when dragging the thumb outside of the
+     * window boundary.
+     */
+    bool on_hooked_message(message_hook_manager::t_message_hook_type p_type, int code, WPARAM wp, LPARAM lp) override;
+
     /**
     * Used internally by the track bar.\n
     * Sets position of the thumb and re-renders regions invalided as a result.
@@ -352,7 +379,7 @@ private:
     * Used to calulate the position at a given point.
     *
     * \param [in]    pt            Client co-ordinate to test.
-    * \return                    Position at pt specified.
+    * \return                      Position at pt specified.
     */
     unsigned calculate_position_from_point(const POINT & pt) const;
 
@@ -360,7 +387,7 @@ private:
     * Used internally by the track bar.\n
     * Creates a tracking tooltip.
     *
-    * \param [in]    text        Text to display in the tooltip.
+    * \param [in]    text          Text to display in the tooltip.
     * \param [in]    pt            Position of the mouse pointer, in screen co-ordinates.
     */
     BOOL create_tooltip(const TCHAR * text, POINT pt);
@@ -376,70 +403,67 @@ private:
     * Updates position and text of tooltip.
     *
     * \param [in]    pt            Position of the mouse pointer, in screen co-ordinates.
-    * \param [in]    text        Text to display in the tooltip.
+    * \param [in]    text          Text to display in the tooltip.
     */
     BOOL update_tooltip(POINT pt, const TCHAR * text);
 
     /** Handle to the theme used for theme rendering. */
-    HTHEME m_theme;
-
-    /** Pointer to the uxtheme API. */
-    //uxtheme_api_ptr m_uxtheme;
+    HTHEME m_theme{nullptr};
 
     /**
     * Current position of the thumb.
     */
-    unsigned m_position;
+    unsigned m_position{0};
     /**
     * Maximum position of the thumb.
     */
-    unsigned m_range;
+    unsigned m_range{0};
 
     /**
     * Hot state of the thumb.
     */
-    bool m_thumb_hot;
+    bool m_thumb_hot{false};
 
     /**
     * Tracking state of the thumb.
     */
-    bool m_dragging;
+    bool m_dragging{false};
 
     /** Orientation of the thumb. */
-    bool m_vertical;
+    bool m_vertical{false};
 
     /** Reversed state of the thumb. */
-    bool m_reversed;
+    bool m_reversed{false};
 
     /** Reversed state of mouse wheel scrolling. */
-    bool m_mouse_wheel_reversed;
+    bool m_mouse_wheel_reversed{false};
 
     /** Automatically take focus on mouse button down state. */
-    bool m_auto_focus;
+    bool m_auto_focus{false};
 
     /** Stores hook registration state. */
-    bool m_hook_registered;
+    bool m_hook_registered{false};
 
     /** Scroll step for scrolling a single line */
-    unsigned m_step;
+    unsigned m_step{1};
 
     /** Current display position of the thumb. Used when tracking. */
-    unsigned m_display_position;
+    unsigned m_display_position{0};
 
     /**
     * Show tooltips state.
     */
-    bool m_show_tooltips;
+    bool m_show_tooltips{false};
 
     /**
     * Window focus was obtained from.
     */
-    HWND m_wnd_prev;
+    HWND m_wnd_prev{nullptr};
 
     /**
     * Handle to tooltip window.
     */
-    HWND m_wnd_tooltip;
+    HWND m_wnd_tooltip{nullptr};
 
     class t_last_mousemove
     {
@@ -453,12 +477,15 @@ private:
         {};
     } m_last_mousemove;
 
-    class_data & get_class_data()const override ;
-
     /**
     * Pointer to host interface.
     */
     track_bar_host * m_host;
+
+    /**
+     * \brief The underlying container window.
+     */
+    std::unique_ptr<uih::ContainerWindow> m_container_window;
 };
 
 /**

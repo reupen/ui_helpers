@@ -54,7 +54,6 @@ public:
         auto window_config = uih::ContainerWindowConfig{L"columns_ui_fill"};
         window_config.window_styles = WS_CHILD | WS_CLIPCHILDREN | WS_VISIBLE;
         window_config.window_ex_styles = WS_EX_CONTROLPARENT | WS_EX_STATICEDGE;
-        window_config.class_styles = NULL;
         m_container_window = std::make_unique<uih::ContainerWindow>(
             window_config,
             std::bind(&FillWindow::on_message, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
@@ -179,7 +178,6 @@ public:
         auto window_config = uih::ContainerWindowConfig{L"columns_ui_transparent_fill"};
         window_config.window_styles = WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
         window_config.window_ex_styles = WS_EX_LAYERED;
-        window_config.class_styles = NULL;
         m_container_window = std::make_unique<uih::ContainerWindow>(
             window_config,
             std::bind(&TranslucentFillWindow::on_message, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)

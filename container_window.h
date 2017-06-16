@@ -56,7 +56,7 @@ namespace uih {
         bool transparent_background{false};
         uint32_t window_styles{window_styles::style_child_default};
         uint32_t window_ex_styles{window_styles::ex_style_child_default};
-        uint32_t class_styles{CS_DBLCLKS};
+        uint32_t class_styles{NULL};
         LPWSTR class_cursor{IDC_ARROW};
         HBRUSH class_background{nullptr};
         const wchar_t* window_title{L""};
