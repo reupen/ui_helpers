@@ -19,10 +19,24 @@
 #include <ShlObj.h>
 #include <gdiplus.h>
 #include <Usp10.h>
+#include <CommonControls.h>
+
+// Windows SDK headers define min and max macros, which are used by gdiplus.h.
+// 
+// This undefines them temporarily to avoid conflicts with the C++ standard 
+// library. They are redefined at the end of this header.
+#ifdef max
+#define _UI_HELPERS_OLD_MAX_
+#undef max
+#endif
+
+#ifdef min
+#define _UI_HELPERS_OLD_MIN_
+#undef min
+#endif
 
 #include "../pfc/pfc.h"
 #include "../foobar2000/shared/shared.h"
-#include <CommonControls.h>
 
 #include "../mmh/stdafx.h"
 
@@ -50,5 +64,16 @@
 
 #include "OLE/DataObj.h"
 #include "OLE/EnumFE.h"
+
+
+#ifdef _UI_HELPERS_OLD_MAX_
+#define max(a,b)            (((a) > (b)) ? (a) : (b))
+#undef _UI_HELPERS_OLD_MAX_
+#endif
+
+#ifdef _UI_HELPERS_OLD_MIN_
+#define min(a,b)            (((a) < (b)) ? (a) : (b))
+#undef _UI_HELPERS_OLD_MIN_
+#endif
 
 #endif

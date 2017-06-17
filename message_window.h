@@ -54,7 +54,7 @@ public:
         GetWindowRect(m_wnd_button, &rc);
         GetWindowRect(m_container_window->get_wnd(), &rcw);
         GetClientRect(m_container_window->get_wnd(), &rcwc);
-        return get_large_padding() * 4 + uih::ScaleDpiValue(1) + RECT_CY(rc) + (RECT_CY(rcw) - RECT_CY(rcwc)) + max((t_size)get_text_height(),(t_size)get_icon_height());
+        return get_large_padding() * 4 + uih::ScaleDpiValue(1) + RECT_CY(rc) + (RECT_CY(rcw) - RECT_CY(rcwc)) + std::max((t_size)get_text_height(),(t_size)get_icon_height());
     }
 
     int get_text_height() const
@@ -107,7 +107,7 @@ private:
         HICON icon = static_cast<HICON>(LoadImage(nullptr, MAKEINTRESOURCE(oem_icon), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
         SendMessage(m_wnd_static, STM_SETIMAGE, IMAGE_ICON, LPARAM(icon));
 
-        cy = min(calc_height(), max(RECT_CY(rc), uih::ScaleDpiValue(150)));
+        cy = std::min(calc_height(), std::max(static_cast<int>(RECT_CY(rc)), uih::ScaleDpiValue(150)));
         int y = (rc.top + (RECT_CY(rc) - cy) / 2);
         if (y < rc.top)
             y = rc.top;

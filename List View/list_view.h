@@ -1,7 +1,7 @@
 #ifndef _LIST_PVT_H_
 #define _LIST_PVT_H_
 
-class t_list_view : public ui_helpers::container_window {
+class t_list_view  {
 public:
     enum {
         IDC_HEADER = 1001,
@@ -79,12 +79,6 @@ public:
         t_item_insert_sized() : t_item_insert(subitem_count, group_count) {}
     };
 
-private:
-    class_data& get_class_data() const override
-    {
-        __implement_get_class_data_ex(_T("NGLV"), _T(""), false, 0, WS_CHILD | WS_CLIPSIBLINGS| WS_CLIPCHILDREN | WS_TABSTOP | WS_BORDER, NULL, CS_DBLCLKS|CS_HREDRAW);
-    }
-
 protected:
     enum edge_style_t {
         edge_none,
@@ -135,7 +129,7 @@ protected:
                     }
                     ptr++;
                 }
-                m_line_count = max (m_line_count, lc);
+                m_line_count = std::max(m_line_count, lc);
             }
         }
 
@@ -157,27 +151,49 @@ protected:
 
 public:
     t_list_view()
-        : m_theme(nullptr), m_dd_theme(nullptr), m_wnd_header(nullptr), m_wnd_inline_edit(nullptr), m_proc_inline_edit(nullptr), m_proc_original_inline_edit(nullptr), m_inline_edit_save(false),
-          m_inline_edit_saving(false), m_timer_inline_edit(false), m_inline_edit_prevent(false), m_inline_edit_prevent_kill(false), m_inline_edit_column(pfc_infinite), m_lf_items_valid(false),
-          m_lf_header_valid(false), m_lf_group_header_valid(NULL), m_selecting(false) , m_selecting_move(false), m_selecting_moved(false),
-          m_dragging_rmb(false), m_selecting_start(pfc_infinite), m_selecting_start_column(pfc_infinite), m_scroll_position(0), m_horizontal_scroll_position(0), m_group_count(0),
-          m_item_height(1), m_group_height(1), m_shift_start(pfc_infinite), m_timer_scroll_up(false),
-          m_timer_scroll_down(false), m_lbutton_down_ctrl(false), m_insert_mark_index(pfc_infinite), m_highlight_item_index(pfc_infinite), m_highlight_selected_item_index(pfc_infinite),
-          m_shown(false), m_focus_index(pfc_infinite), m_autosize(false), m_initialised(false),
-          m_always_show_focus(false), m_show_header(true), m_ignore_column_size_change_notification(false), m_vertical_item_padding(4),
-          m_variable_height_items(false), m_prevent_wm_char_processing(false), m_timer_search(false), m_show_tooltips(true), m_limit_tooltips_to_clipped_items(true),
-          m_wnd_tooltip(nullptr), m_rc_tooltip(uih::rect_null), m_tooltip_last_index(-1), m_tooltip_last_column(-1), m_sorting_enabled(false),
-          m_show_sort_indicators(true), m_sort_column_index(pfc_infinite), m_sort_direction(false), m_edge_style(edge_grey),
-          m_sizing(false), m_single_selection(false), m_alternate_selection(false), m_allow_header_rearrange(false), m_group_info_area_width(0),
-          m_group_info_area_height(0), m_show_group_info_area(false), m_have_indent_column(false),
-          m_search_editbox(nullptr), m_proc_search_edit(nullptr), m_search_box_hot(false), m_group_level_indentation_enabled(true)
-    //, m_search_box_theme(NULL)
     {
         m_dragging_initial_point.x = 0;
         m_dragging_initial_point.y = 0;
         m_dragging_rmb_initial_point.x = 0;
         m_dragging_rmb_initial_point.y = 0;
-    };
+
+        auto window_config = uih::ContainerWindowConfig{L"NGLV"};
+        window_config.window_styles = WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_TABSTOP | WS_BORDER;
+        window_config.class_styles = CS_DBLCLKS | CS_HREDRAW;
+        m_container_window = std::make_unique<uih::ContainerWindow>(
+            window_config,
+            std::bind(&t_list_view::on_message, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
+        );
+
+    }
+
+    /**
+    * \brief               Creates a new list view window
+    * \param wnd_parent    Handle of the parent window
+    * \param window_pos    Initial window position
+    * \return              Window handle of the created list view
+    */
+    HWND create(HWND wnd_parent, uih::WindowPosition window_pos = {}, bool use_dialog_units = false)
+    {
+        return m_container_window->create(wnd_parent, window_pos, nullptr, use_dialog_units);
+    }
+
+    /**
+    * \brief   Destroys the list view window.
+    */
+    void destroy()
+    {
+        m_container_window->destroy();
+    }
+
+    /**
+    * \brief   Gets the list view window handle.
+    * \return  List view window handle
+    */
+    HWND get_wnd() const
+    {
+        return m_container_window->get_wnd();
+    }
 
     unsigned calculate_header_height();
     void set_columns(const pfc::list_base_const_t<t_column>& columns);
@@ -841,7 +857,7 @@ private:
     bool on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret);
     bool on_wm_keydown(WPARAM wp, LPARAM lp, LRESULT& ret, bool& b_processed);
 
-    LRESULT on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) override;
+    LRESULT on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 
     void render_items(HDC dc, const RECT& rc_update, t_size cx);
     void __insert_items_v2(t_size index_start, const pfc::list_base_const_t<t_item_insert>& items);
@@ -890,97 +906,105 @@ private:
 
     gdi_object_t<HFONT>::ptr_t m_font, m_font_header, m_group_font;
 
-    HTHEME m_theme;
-    HTHEME m_dd_theme;
+    HTHEME m_theme{nullptr};
+    HTHEME m_dd_theme{nullptr};
 
-    HWND m_wnd_header;
-    HWND m_wnd_inline_edit;
-    WNDPROC m_proc_inline_edit, m_proc_original_inline_edit;
-    bool m_inline_edit_save;
-    bool m_inline_edit_saving;
-    bool m_timer_inline_edit;
-    bool m_inline_edit_prevent;
-    bool m_inline_edit_prevent_kill;
-    t_size m_inline_edit_column;
+    HWND m_wnd_header{nullptr};
+    HWND m_wnd_inline_edit{nullptr};
+    WNDPROC m_proc_inline_edit{nullptr};
+    WNDPROC m_proc_original_inline_edit{nullptr};
+    bool m_inline_edit_save{false};
+    bool m_inline_edit_saving{false};
+    bool m_timer_inline_edit{false};
+    bool m_inline_edit_prevent{false};
+    bool m_inline_edit_prevent_kill{false};
+    t_size m_inline_edit_column{std::numeric_limits<t_size>::max()};
     pfc::list_t<t_size> m_inline_edit_indices;
     //mmh::comptr_t<IUnknown> m_inline_edit_autocomplete_entries;
     mmh::comptr_t<IAutoComplete> m_inline_edit_autocomplete;
 
-    LOGFONT m_lf_items;
-    LOGFONT m_lf_header;
-    LOGFONT m_lf_group_header;
-    bool m_lf_items_valid;
-    bool m_lf_header_valid;
-    bool m_lf_group_header_valid;
+    LOGFONT m_lf_items{0};
+    LOGFONT m_lf_header{0};
+    LOGFONT m_lf_group_header{0};
+    bool m_lf_items_valid{false};
+    bool m_lf_header_valid{false};
+    bool m_lf_group_header_valid{false};
 
-    bool m_selecting;
-    bool m_selecting_move;
-    bool m_selecting_moved;
-    bool m_dragging_rmb;
-    t_size m_selecting_start;
-    t_size m_selecting_start_column;
+    bool m_selecting{false};
+    bool m_selecting_move{false};
+    bool m_selecting_moved{false};
+    bool m_dragging_rmb{false};
+    t_size m_selecting_start{std::numeric_limits<t_size>::max()};
+    t_size m_selecting_start_column{std::numeric_limits<t_size>::max()};
     t_hit_test_result m_lbutton_down_hittest;
-    int m_scroll_position;
-    int m_horizontal_scroll_position;
-    t_size m_group_count;
-    t_size m_item_height;
-    t_size m_group_height;
-    t_size m_shift_start;
-    bool m_timer_scroll_up;
-    bool m_timer_scroll_down;
-    bool m_lbutton_down_ctrl;
-    t_size m_insert_mark_index;
-    t_size m_highlight_item_index;
-    t_size m_highlight_selected_item_index;
-    POINT m_dragging_initial_point, m_dragging_rmb_initial_point;
-    bool m_shown;
-    t_size m_focus_index;
-    bool m_autosize;
-    bool m_initialised;
-    bool m_always_show_focus;
-    bool m_show_header;
-    bool m_ignore_column_size_change_notification;
-    int m_vertical_item_padding;
+    int m_scroll_position{0};
+    int m_horizontal_scroll_position{0};
+    t_size m_group_count{0};
+    t_size m_item_height{1};
+    t_size m_group_height{1};
+    t_size m_shift_start{std::numeric_limits<t_size>::max()};
+    bool m_timer_scroll_up{false};
+    bool m_timer_scroll_down{false};
+    bool m_lbutton_down_ctrl{false};
+    t_size m_insert_mark_index{std::numeric_limits<t_size>::max()};
+    t_size m_highlight_item_index{std::numeric_limits<t_size>::max()};
+    t_size m_highlight_selected_item_index{std::numeric_limits<t_size>::max()};
+    POINT m_dragging_initial_point{0};
+    POINT m_dragging_rmb_initial_point{0};
+    bool m_shown{false};
+    t_size m_focus_index{std::numeric_limits<t_size>::max()};
+    bool m_autosize{false};
+    bool m_initialised{false};
+    bool m_always_show_focus{false};
+    bool m_show_header{true};
+    bool m_ignore_column_size_change_notification{false};
+    int m_vertical_item_padding{4};
 
-    bool m_variable_height_items;
+    bool m_variable_height_items{false};
 
-    bool m_prevent_wm_char_processing;
-    bool m_timer_search;
+    bool m_prevent_wm_char_processing{false};
+    bool m_timer_search{false};
     pfc::string8 m_search_string;
 
-    bool m_show_tooltips;
-    bool m_limit_tooltips_to_clipped_items;
-    HWND m_wnd_tooltip;
-    RECT m_rc_tooltip;
-    t_size m_tooltip_last_index;
-    t_size m_tooltip_last_column;
+    bool m_show_tooltips{true};
+    bool m_limit_tooltips_to_clipped_items{true};
+    HWND m_wnd_tooltip{nullptr};
+    RECT m_rc_tooltip{0};
+    t_size m_tooltip_last_index{std::numeric_limits<t_size>::max()};
+    t_size m_tooltip_last_column{std::numeric_limits<t_size>::max()};
 
-    bool m_sorting_enabled;
-    bool m_show_sort_indicators;
-    t_size m_sort_column_index;
-    bool m_sort_direction;
-    edge_style_t m_edge_style;
-    bool m_sizing;
+    bool m_sorting_enabled{false};
+    bool m_show_sort_indicators{true};
+    t_size m_sort_column_index{std::numeric_limits<t_size>::max()};
+    bool m_sort_direction{false};
+    edge_style_t m_edge_style{edge_grey};
+    bool m_sizing{false};
 
-    bool m_single_selection, m_alternate_selection;
-    bool m_allow_header_rearrange;
+    bool m_single_selection{false};
+    bool m_alternate_selection{false};
+    bool m_allow_header_rearrange{false};
 
-    t_size m_group_info_area_width, m_group_info_area_height;
-    bool m_show_group_info_area;
-    bool m_have_indent_column;
+    t_size m_group_info_area_width{0};
+    t_size m_group_info_area_height{0};
+    bool m_show_group_info_area{false};
+    bool m_have_indent_column{false};
 
-    HWND m_search_editbox;
-    WNDPROC m_proc_search_edit;
+    HWND m_search_editbox{nullptr};
+    WNDPROC m_proc_search_edit{nullptr};
     pfc::string8 m_search_label;
-    bool m_search_box_hot;
+    bool m_search_box_hot{false};
     //HTHEME m_search_box_theme;
     //gdi_object_t<HBRUSH>::ptr_t m_search_box_hot_brush, m_search_box_nofocus_brush;
 
-    bool m_group_level_indentation_enabled;
+    bool m_group_level_indentation_enabled{true};
 
     pfc::list_t<t_item_ptr, pfc::alloc_fast> m_items;
     pfc::list_t<t_column> m_columns;
 
+    /**
+    * \brief The underlying container window.
+    */
+    std::unique_ptr<uih::ContainerWindow> m_container_window;
 };
 
 #endif //_LIST_PVT_H_
