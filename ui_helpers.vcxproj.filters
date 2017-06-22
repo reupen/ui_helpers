@@ -18,7 +18,6 @@
     <ClInclude Include="OLE\Enumfe.h">
       <Filter>Data Object</Filter>
     </ClInclude>
-    <ClInclude Include="fcl.h" />
     <ClInclude Include="gdi.h" />
     <ClInclude Include="menu.h" />
     <ClInclude Include="message_hook.h" />
@@ -31,7 +30,6 @@
     <ClInclude Include="ole.h" />
     <ClInclude Include="drag_image.h" />
     <ClInclude Include="handle.h" />
-    <ClInclude Include="config_var.h" />
     <ClInclude Include="low_level_hook.h" />
     <ClInclude Include="container_window.h" />
   </ItemGroup>
@@ -92,7 +90,6 @@
     </ClCompile>
     <ClCompile Include="ole.cpp" />
     <ClCompile Include="drag_image.cpp" />
-    <ClCompile Include="fcl.cpp" />
     <ClCompile Include="low_level_hook.cpp" />
     <ClCompile Include="container_window.cpp" />
   </ItemGroup>

@@ -150,7 +150,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="config_var.h" />
     <ClInclude Include="container_window.h" />
     <ClInclude Include="drag_image.h" />
     <ClInclude Include="handle.h" />
@@ -159,7 +158,6 @@
     <ClInclude Include="ole.h" />
     <ClInclude Include="OLE\DataObj.h" />
     <ClInclude Include="OLE\Enumfe.h" />
-    <ClInclude Include="fcl.h" />
     <ClInclude Include="gdi.h" />
     <ClInclude Include="menu.h" />
     <ClInclude Include="message_hook.h" />
@@ -173,7 +171,6 @@
   <ItemGroup>
     <ClCompile Include="container_window.cpp" />
     <ClCompile Include="drag_image.cpp" />
-    <ClCompile Include="fcl.cpp" />
     <ClCompile Include="List View\list_view_columns.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>
