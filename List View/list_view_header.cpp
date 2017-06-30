@@ -16,7 +16,7 @@ void t_list_view::create_header()
     {
         if (!m_wnd_header)
         {
-            m_font_header = m_lf_header_valid ? CreateFontIndirect(&m_lf_header) : uCreateIconFont();
+            m_font_header = m_lf_header_valid ? CreateFontIndirect(&m_lf_header) : uih::create_icon_font();
             m_wnd_header = CreateWindowEx(0, WC_HEADER, _T("NGLVH"),
                 WS_CHILD | (0) | /*(m_autosize ? 0x0800  : NULL) |*/ HDS_HOTTRACK | (m_allow_header_rearrange ? HDS_DRAGDROP : NULL )| HDS_HORZ | HDS_FULLDRAG | (m_sorting_enabled ? HDS_BUTTONS : 0 )|WS_CLIPSIBLINGS| WS_CLIPCHILDREN,
                 0, 0, 0, 0, get_wnd(), HMENU(IDC_HEADER), uih::get_current_instance(), nullptr);
@@ -68,13 +68,14 @@ void t_list_view::build_header()
         for (;header_count;header_count--)
             Header_DeleteItem(m_wnd_header, header_count-1);
 
-        uHDITEM hdi; 
+        HDITEM hdi; 
         memset(&hdi, 0, sizeof(HDITEM));
 
         hdi.mask = HDI_TEXT | HDI_FORMAT | HDI_WIDTH; 
         hdi.fmt = HDF_LEFT | HDF_STRING; 
 
         pfc::string8 name;
+        pfc::stringcvt::string_wide_from_utf8 wstr;
 
         {
             int n,t=m_columns.get_count(),i=0;
@@ -83,11 +84,11 @@ void t_list_view::build_header()
             {
                 hdi.fmt = HDF_STRING | HDF_LEFT ; 
                 hdi.cchTextMax = 0; 
-                hdi.pszText = const_cast<char*>("");
+                hdi.pszText = const_cast<wchar_t*>(L"");
 
                 hdi.cxy = indentation;
 
-                uHeader_InsertItem(m_wnd_header, i++, &hdi); 
+                Header_InsertItem(m_wnd_header, i++, &hdi); 
 
                 m_have_indent_column = true;
             }
@@ -100,7 +101,8 @@ void t_list_view::build_header()
                 else if (m_columns[n].m_alignment == ui_helpers::ALIGN_RIGHT)
                     hdi.fmt |= HDF_RIGHT;
                 hdi.cchTextMax = m_columns[n].m_title.length(); 
-                hdi.pszText = const_cast<char*>(m_columns[n].m_title.get_ptr());
+                wstr.convert(m_columns[n].m_title);
+                hdi.pszText = const_cast<wchar_t*>(wstr.get_ptr());
 
                 hdi.cxy = m_columns[n].m_display_size;
 
@@ -108,7 +110,7 @@ void t_list_view::build_header()
                     hdi.fmt |= (m_sort_direction ? HDF_SORTDOWN : HDF_SORTUP);
                 }
 
-                uHeader_InsertItem(m_wnd_header, i++, &hdi); 
+                Header_InsertItem(m_wnd_header, i++, &hdi); 
             }
         }
     }
@@ -313,16 +315,18 @@ bool t_list_view::on_wm_notify_header(LPNMHDR lpnm, LRESULT & ret)
     }
     return false;
 }
+
 void t_list_view::get_header_rect(LPRECT rc)
 {
     if (m_wnd_header)
-        GetRelativeRect(m_wnd_header, get_wnd(), rc);
+        *rc = uih::get_relative_rect(m_wnd_header, get_wnd());
     else
     {
         GetClientRect(get_wnd(), rc);
         rc->bottom = rc->top;
     }
 }
+
 unsigned t_list_view::get_header_height()
 {
     unsigned ret = 0;
@@ -340,10 +344,11 @@ unsigned t_list_view::calculate_header_height()
     if (m_wnd_header)
     {
         HFONT font = (HFONT)SendMessage(m_wnd_header, WM_GETFONT, 0, 0);
-        rv = uGetFontHeight(font) + 7; //padding + 3
+        rv = uih::get_font_height(font) + 7; //padding + 3
     }
     return rv;
 }
+
 void t_list_view::update_header(bool b_update)
 {
     if (m_wnd_header)
@@ -353,12 +358,12 @@ void t_list_view::update_header(bool b_update)
         t_size i, count = m_columns.get_count(),j=0;
         if (m_have_indent_column)
         {
-            uHeader_SetItemWidth(m_wnd_header, j, get_total_indentation());
+            uih::header_set_item_width(m_wnd_header, j, get_total_indentation());
             j++;
         }
         for (i=0; i<count; i++)
         {
-            uHeader_SetItemWidth(m_wnd_header, i+j, m_columns[i].m_display_size);
+            uih::header_set_item_width(m_wnd_header, i+j, m_columns[i].m_display_size);
         }
         //SendMessage(m_wnd_header, WM_SETREDRAW, TRUE, NULL);
         //RedrawWindow(m_wnd_header, NULL, NULL, RDW_INVALIDATE|(b_update?RDW_UPDATENOW:0));

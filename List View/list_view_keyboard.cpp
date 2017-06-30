@@ -12,7 +12,7 @@ bool t_list_view::on_wm_keydown(WPARAM wp, LPARAM lp, LRESULT & ret, bool & b_pr
         SendMessage(get_wnd(), WM_CHANGEUISTATE, MAKEWPARAM(UIS_CLEAR, UISF_HIDEFOCUS), NULL);
         if (wp == VK_TAB)
         {
-            ui_extension::window::g_on_tab(get_wnd());
+            uih::handle_tab_down(get_wnd());
             b_processed = true;
         }
         else if (wp == VK_HOME ||wp == VK_DOWN || wp == VK_END || wp == VK_PRIOR || wp == VK_NEXT ||  wp == VK_UP) 

@@ -29,7 +29,7 @@ BOOL track_bar::create_tooltip(const TCHAR * text, POINT pt)
     ti.hinst = uih::get_current_instance();
     ti.lpszText = const_cast<TCHAR *>(text);
 
-    win32_helpers::tooltip_add_tool(m_wnd_tooltip, &ti);
+    uih::tooltip_add_tool(m_wnd_tooltip, &ti);
 
     SendMessage(m_wnd_tooltip, TTM_TRACKPOSITION, 0, MAKELONG(pt.x, pt.y+21));
     SendMessage(m_wnd_tooltip, TTM_TRACKACTIVATE, TRUE, (LPARAM)  &ti);    
@@ -42,7 +42,7 @@ void track_bar::destroy_tooltip()
     if (m_wnd_tooltip) {DestroyWindow(m_wnd_tooltip); m_wnd_tooltip=nullptr;}
 }
 
-BOOL track_bar::update_tooltip(POINT pt, const TCHAR * text)
+BOOL track_bar::update_tooltip(POINT pt, const TCHAR* text)
 {
     if (!m_wnd_tooltip) return FALSE;
 
@@ -55,9 +55,9 @@ BOOL track_bar::update_tooltip(POINT pt, const TCHAR * text)
     ti.uFlags = TTF_SUBCLASS|TTF_TRANSPARENT|TTF_TRACK|TTF_ABSOLUTE;
     ti.hwnd = get_wnd();
     ti.hinst = uih::get_current_instance();
-    ti.lpszText = const_cast<TCHAR *>(text);
+    ti.lpszText = const_cast<TCHAR*>(text);
 
-    win32_helpers::tooltip_add_tool(m_wnd_tooltip, &ti, true);
+    uih::tooltip_update_tip_text(m_wnd_tooltip, &ti);
 
     return TRUE;
 }

@@ -4,11 +4,12 @@
 #define OEMRESOURCE
 
 #include <algorithm>
-#include <unordered_map>
+#include <functional>
 #include <memory>
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <unordered_map>
 
 #include <windows.h>
 #include <WindowsX.h>
@@ -36,11 +37,15 @@
 #endif
 
 #include "../pfc/pfc.h"
-#include "../foobar2000/shared/shared.h"
-
 #include "../mmh/stdafx.h"
 
-#include "../columns_ui-sdk/ui_extension.h"
+#ifndef RECT_CX
+#define RECT_CX(rc) (rc.right-rc.left)
+#endif
+
+#ifndef RECT_CY
+#define RECT_CY(rc) (rc.bottom-rc.top)
+#endif
 
 #include "handle.h"
 #include "win32_helpers.h"
@@ -48,7 +53,6 @@
 
 #include "container_window.h"
 #include "message_hook.h"
-#include "low_level_hook.h"
 #include "trackbar.h"
 #include "solid_fill.h"
 

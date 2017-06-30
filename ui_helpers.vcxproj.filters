@@ -91,4 +91,10 @@
     <ClCompile Include="drag_image.cpp" />
     <ClCompile Include="container_window.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
+    <None Include="COPYING" />
+    <None Include="COPYING.LESSER" />
+    <None Include="COPYRIGHT" />
+  </ItemGroup>
 </Project>

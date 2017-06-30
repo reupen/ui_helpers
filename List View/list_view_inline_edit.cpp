@@ -252,7 +252,7 @@ void t_list_view::create_inline_edit(const pfc::list_base_const_t<t_size> & indi
     GetClientRect(get_wnd(), &rc_playlist);
     get_items_rect(&rc_items);
 
-    int font_height = uGetFontHeight(m_font);
+    int font_height = uih::get_font_height(m_font);
     int header_height = rc_items.top;
 
     int cx = m_columns[column].m_display_size;
@@ -358,7 +358,7 @@ void t_list_view::save_inline_edit()
         m_inline_edit_saving=true;
 
         pfc::string8 text;
-        uGetWindowText(m_wnd_inline_edit, text);
+        uih::get_window_text(m_wnd_inline_edit, text);
         notify_save_inline_edit(text.get_ptr());
         
         m_inline_edit_saving=false;

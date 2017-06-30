@@ -28,8 +28,8 @@ bool t_list_view::copy_selected_items_as_text(t_size default_single_item_column)
                     text << (j?"\t":"") << get_item_text(i,j);
             }
     }
-    titleformat_compiler::remove_color_marks(text, cleanedText);
-    uSetClipboardString(cleanedText);
+    ui_helpers::remove_color_marks(text, cleanedText);
+    uih::set_clipboard_text(cleanedText);
     return selected_count > 0;
 }
 
@@ -236,14 +236,14 @@ void t_list_view::process_keydown(int offset, bool alt_down, bool repeat)
 
 int t_list_view::get_default_item_height()
 {
-    int ret = uGetFontHeight(m_font) + m_vertical_item_padding;
+    int ret = uih::get_font_height(m_font) + m_vertical_item_padding;
     if (ret < 1) ret = 1;
     return ret;
 }
 
 int t_list_view::get_default_group_height()
 {
-    int ret = uGetFontHeight(m_group_font) + m_vertical_item_padding;
+    int ret = uih::get_font_height(m_group_font) + m_vertical_item_padding;
     if (ret < 1) ret = 1;
     return ret;
 }
@@ -522,11 +522,11 @@ void t_list_view::on_search_string_change(WCHAR c)
 
         if (strchr(p_compare, 3))
         {
-            titleformat_compiler::remove_color_marks(p_compare, compare_noccodes);
+            ui_helpers::remove_color_marks(p_compare, compare_noccodes);
             p_compare = compare_noccodes;
         }
 
-        if ((b_all_same && !stricmp_utf8_partial(p_compare, temp)) || !stricmp_utf8_partial(p_compare, m_search_string)) 
+        if ((b_all_same && !mmh::compare_string_partial_case_insensitive(p_compare, temp)) || !mmh::compare_string_partial_case_insensitive(p_compare, m_search_string))
         {
             if (!is_visible(j))
             {

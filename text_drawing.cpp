@@ -205,11 +205,11 @@ static bool check_colour_marks(const char * src, unsigned int len = -1)
     return false;
 }
 
-void remove_color_marks(const char * src,pfc::string8 & out, t_size len = pfc_infinite)//helper
+void remove_color_marks(const char * src, pfc::string_base& out, t_size len)
 {
     out.reset();
     const char * ptr = src;
-    while(*src && (unsigned)(src-ptr) < len)
+    while(*src && static_cast<t_size>(src - ptr) < len)
     {
         if (*src==3)
         {
@@ -221,21 +221,6 @@ void remove_color_marks(const char * src,pfc::string8 & out, t_size len = pfc_in
     }
 }
 
-void remove_color_marks(const char * src,pfc::string8_fast_aggressive & out, t_size len = pfc_infinite)//helper
-{
-    out.reset();
-    const char * ptr = src;
-    while(*src && (unsigned)(src-ptr) < len)
-    {
-        if (*src==3)
-        {
-            src++;
-            while(*src && *src!=3) src++;
-            if (*src==3) src++;
-        }
-        else out.add_byte(*src++);
-    }
-}
 unsigned get_trunc_len(const char * src, unsigned len)
 {
     unsigned rv = len;
@@ -321,30 +306,15 @@ BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width,
         length = temp.length();
     }
 
-    if (IsUnicode())
+    pfc::stringcvt::string_wide_from_utf8 text_w(src, length);
+    if (GetTextExtentExPointW(dc, text_w.get_ptr(), text_w.length(), max_width, max_chars, width_array, sz))
     {
-        pfc::stringcvt::string_wide_from_utf8 text_w(src, length);
-        if (GetTextExtentExPointW(dc, text_w.get_ptr(), text_w.length(), max_width, max_chars, width_array, sz))
-        {
-            pfc::stringcvt::string_utf8_from_wide w_utf8(text_w.get_ptr(), *max_chars);
-            *max_chars = trunc ? get_trunc_len(w_utf8, w_utf8.length()) : w_utf8.length();
-            width_out = get_text_width_color(dc, w_utf8, *max_chars);
-            return TRUE;
-        }
-        return FALSE;
+        pfc::stringcvt::string_utf8_from_wide w_utf8(text_w.get_ptr(), *max_chars);
+        *max_chars = trunc ? get_trunc_len(w_utf8, w_utf8.length()) : w_utf8.length();
+        width_out = get_text_width_color(dc, w_utf8, *max_chars);
+        return TRUE;
     }
-    else 
-    {
-        pfc::stringcvt::string_ansi_from_utf8 text_a(src, length);
-        if (GetTextExtentExPointA(dc, text_a.get_ptr(), text_a.length(), max_width, max_chars, width_array, sz))
-        {
-            pfc::stringcvt::string_utf8_from_ansi a_utf8(text_a.get_ptr(), *max_chars);
-            *max_chars = trunc ? get_trunc_len(a_utf8, a_utf8.length()) : a_utf8.length();
-            width_out = get_text_width_color(dc, a_utf8, *max_chars);
-            return TRUE;
-        }
-        return FALSE;
-    }
+    return FALSE;
 }
     bool is_rect_null(const RECT * r)
     {
@@ -403,7 +373,8 @@ BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width,
         if (len<=0) return;
         else
         {
-            uGetTextExtentPoint32(dc,src,len,&sz);
+            pfc::stringcvt::string_wide_from_utf8 wstr(src, len);
+            GetTextExtentPoint32(dc, wstr, wstr.length(), &sz);
         }
     }
 
@@ -672,8 +643,6 @@ BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width,
         //if (b_set_default_colours)
         //    SetTextColor(dc, default_color);
 
-        int height = uGetTextHeight(dc);
-
         int position = clip.left;//item.left+BORDER;
 
 #if 1
@@ -777,7 +746,7 @@ BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width,
 
         if (is_rect_null(&clip)) return TRUE;
 
-        int extra = (clip.bottom-clip.top - uGetTextHeight(dc));
+        int extra = (clip.bottom-clip.top - uih::get_dc_font_height(dc));
 
         int pos_y = clip.top + (b_vertical_align_centre ? (extra/2) : extra);
 

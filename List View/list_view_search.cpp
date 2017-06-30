@@ -79,7 +79,7 @@ void t_list_view::get_search_box_rect(LPRECT rc)
 {
     if (m_search_editbox)
     {
-        GetRelativeRect(m_search_editbox, get_wnd(), rc);
+        *rc = uih::get_relative_rect(m_search_editbox, get_wnd());
         //rc->top -= 2;
         //rc->bottom += 2;
     }
@@ -129,7 +129,7 @@ LRESULT t_list_view::on_search_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM l
         {
         case VK_TAB:
             {
-                uie::window::g_on_tab(wnd);
+                uih::handle_tab_down(wnd);
             }
             //return 0;
             break;

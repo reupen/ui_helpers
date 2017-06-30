@@ -24,18 +24,19 @@ void t_list_view::create_tooltip(/*t_size index, t_size column, */const char * s
     RECT rect;
     GetClientRect (get_wnd(), &rect);
 
-    uTOOLINFO ti;
+    pfc::stringcvt::string_wide_from_utf8 wstr(str);
+    TOOLINFO ti;
     memset(&ti,0,sizeof(ti));
 
-    ti.cbSize = sizeof(uTOOLINFO);
+    ti.cbSize = sizeof(TOOLINFO);
     ti.uFlags = TTF_TRANSPARENT|TTF_SUBCLASS;
     ti.hwnd = get_wnd();
     ti.hinst = uih::get_current_instance();
     ti.uId = IDC_TOOLTIP;
-    ti.lpszText = const_cast<char *>(str);
+    ti.lpszText = const_cast<wchar_t*>(wstr.get_ptr());
     ti.rect = rect;
 
-    uToolTip_AddTool(m_wnd_tooltip, &ti);
+    uih::tooltip_add_tool(m_wnd_tooltip, &ti);
 }
 void t_list_view::destroy_tooltip()
 {

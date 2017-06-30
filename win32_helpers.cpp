@@ -168,14 +168,14 @@ namespace uih {
         SystemTimeToTzSpecificLocalTime(nullptr, &stUTC, &stLocal);
         return SystemTimeToFileTime(&stLocal, lpLocalFileTime);
     }
-    FILETIME filetimestamp_to_FileTime(t_filetimestamp time)
+    FILETIME filetimestamp_to_FileTime(uint64_t time)
     {
         FILETIME ret;
         ret.dwLowDateTime = (DWORD)(time & 0xFFFFFFFF);
         ret.dwHighDateTime = (DWORD)(time >> 32);
         return ret;
     }
-    void FormatDate(t_filetimestamp time, std::basic_string<TCHAR> & str, bool b_convert_to_local)
+    void FormatDate(uint64_t time, std::basic_string<TCHAR> & str, bool b_convert_to_local)
     {
         FILETIME ft1 = filetimestamp_to_FileTime(time), ft2 = ft1;
         if (b_convert_to_local)
@@ -231,22 +231,19 @@ namespace uih {
         return MulDiv(value, GetSystemDpiCached().cx, original_dpi);
     }
 
-    HRESULT GetComCtl32Version(DLLVERSIONINFO2 & p_dvi, pfc::string_base * p_path_out)
+    HRESULT GetComCtl32Version(DLLVERSIONINFO2 & p_dvi)
     {
         static bool have_version = false;
         static HRESULT rv = E_FAIL;
 
         static DLLVERSIONINFO2 g_dvi;
 
-        if (!have_version || p_path_out)
+        if (!have_version)
         {
             HINSTANCE hinstDll = LoadLibrary(_T("comctl32.dll"));
 
             if (hinstDll)
             {
-                if (p_path_out)
-                    uGetModuleFileName(hinstDll, *p_path_out);
-
                 if (!have_version)
                 {
                     DLLGETVERSIONPROC pDllGetVersion = (DLLGETVERSIONPROC)GetProcAddress(hinstDll, "DllGetVersion");
@@ -428,11 +425,11 @@ namespace uih {
         rbbi.cbSize = sizeof(rbbi);
         rbbi.fMask = RBBIM_ID;
 
-        UINT count = uSendMessage(wnd, RB_GETBANDCOUNT, 0, 0);
+        UINT count = SendMessage(wnd, RB_GETBANDCOUNT, 0, 0);
         unsigned n;
         for (n = 0; n < count; n++)
         {
-            uSendMessage(wnd, RB_GETBANDINFO, n, (long)&rbbi);
+            SendMessage(wnd, RB_GETBANDINFO, n, (long)&rbbi);
             if (rbbi.wID == id) return n;
         }
         return -1;
@@ -440,11 +437,11 @@ namespace uih {
 
     void Rebar_ShowAllBands(HWND wnd)
     {
-        UINT count = uSendMessage(wnd, RB_GETBANDCOUNT, 0, 0);
+        UINT count = SendMessage(wnd, RB_GETBANDCOUNT, 0, 0);
         unsigned n;
         for (n = 0; n < count; n++)
         {
-            uSendMessage(wnd, RB_SHOWBAND, n, TRUE);
+            SendMessage(wnd, RB_SHOWBAND, n, TRUE);
         }
     }
 
@@ -487,5 +484,131 @@ namespace uih {
             SendMessage(wnd, msg, wp, lp);
         }
         while ((wnd = GetWindow(wnd, GW_HWNDNEXT)));
+    }
+
+    RECT get_relative_rect(HWND wnd, HWND wnd_parent)
+    {
+        RECT rc{0};
+        GetWindowRect(wnd, &rc);
+        MapWindowPoints(HWND_DESKTOP, wnd_parent, reinterpret_cast<LPPOINT>(&rc), 2);
+        return rc;
+    }
+
+    bool get_window_text(HWND wnd, pfc::string_base& out)
+    {
+        auto buffer_size = GetWindowTextLength(wnd);
+        if (buffer_size <= 0)
+            return false;
+
+        pfc::array_staticsize_t<wchar_t> buffer(buffer_size);
+        pfc::fill_array_t(buffer, 0);
+        auto chars_written = GetWindowText(wnd, buffer.get_ptr(), buffer_size);
+        if (chars_written <= 0)
+            return false;
+
+        auto utf8_size = pfc::stringcvt::estimate_wide_to_utf8(buffer.get_ptr(), chars_written);
+        auto utf8_buffer = pfc::string_buffer(out, utf8_size);
+        pfc::stringcvt::convert_wide_to_utf8(utf8_buffer, utf8_size, buffer.get_ptr(), chars_written);
+        return true;
+    }
+
+    HFONT create_icon_font()
+    {
+        LOGFONT lf;
+        memset(&lf, 0, sizeof(LOGFONT));
+        SystemParametersInfo(SPI_GETICONTITLELOGFONT, 0, &lf, 0);
+
+        return CreateFontIndirectW(&lf);
+    }
+
+    int get_font_height(HFONT font)
+    {
+        HDC dc{GetDC(nullptr)};
+        HFONT font_old = SelectFont(dc, font);
+        const auto font_height = get_dc_font_height(dc);
+        SelectFont(dc, font_old);
+        ReleaseDC(nullptr, dc);
+        return font_height;
+    }
+
+    int get_dc_font_height(HDC dc)
+    {
+        TEXTMETRIC tm{};
+        GetTextMetrics(dc, &tm);
+        // Default mapping mode is MM_TEXT, so we don't map the units
+        return tm.tmHeight > 1 ? tm.tmHeight : 1;
+    }
+
+    BOOL tooltip_add_tool(HWND wnd, const LPTOOLINFO pti)
+    {
+        return static_cast<BOOL>(SendMessage(wnd, TTM_ADDTOOL, 0, reinterpret_cast<LPARAM>(pti)));
+    }
+
+    BOOL tooltip_update_tip_text(HWND wnd, const LPTOOLINFO pti)
+    {
+        return static_cast<BOOL>(SendMessage(wnd, TTM_UPDATETIPTEXT, 0, reinterpret_cast<LPARAM>(pti)));
+    }
+
+    BOOL header_set_item_text(HWND wnd, int n, const wchar_t * text)
+    {
+        HDITEM hdi;
+        memset(&hdi, 0, sizeof(hdi));
+        hdi.mask = HDI_TEXT;
+        hdi.cchTextMax = NULL;
+        hdi.pszText = const_cast<wchar_t*>(text);
+        return Header_SetItem(wnd, n, &hdi);
+    }
+
+    BOOL header_set_item_width(HWND wnd, int n, UINT cx)
+    {
+        HDITEM hdi;
+        memset(&hdi, 0, sizeof(hdi));
+        hdi.mask = HDI_WIDTH;
+        hdi.cxy = cx;
+        return Header_SetItem(wnd, n, &hdi);
+    }
+
+    HWND handle_tab_down(HWND wnd)
+    {
+        HWND wnd_focused{nullptr};
+        HWND wnd_temp{GetAncestor(wnd, GA_ROOT)};
+
+        if (wnd_temp) {
+            HWND wnd_next = GetNextDlgTabItem(wnd_temp, wnd, (GetKeyState(VK_SHIFT) & KF_UP) ? TRUE : FALSE);
+            if (wnd_next && wnd_next != wnd) {
+                unsigned flags = SendMessage(wnd_next, WM_GETDLGCODE, 0, 0);
+                if (flags & DLGC_HASSETSEL) SendMessage(wnd_next, EM_SETSEL, 0, -1);
+                SetFocus(wnd_next);
+
+                wnd_focused = wnd_next;
+            }
+        }
+        return wnd_focused;
+    }
+
+    bool set_clipboard_text(const char* text, HWND wnd)
+    {
+        pfc::stringcvt::string_wide_from_utf8 wstr(text);
+
+        if (!OpenClipboard(nullptr))
+            return false;
+
+        auto succeeded = false;
+        const auto buffer_size = wstr.length() * sizeof(WCHAR) + 1;
+        HGLOBAL mem = GlobalAlloc(GMEM_MOVEABLE, buffer_size);
+        if (mem) {
+            auto buffer = GlobalLock(mem);
+
+            if (buffer) {
+                memcpy(buffer, wstr.get_ptr(), buffer_size);
+                GlobalUnlock(mem);
+                if (EmptyClipboard())
+                    succeeded = SetClipboardData(CF_UNICODETEXT, mem) != nullptr;
+            }
+        }
+        if (!succeeded && mem)
+            GlobalFree(mem);
+        CloseClipboard();
+        return succeeded;
     }
 }

@@ -46,8 +46,8 @@ namespace uih {
     void RemoveTreeViewWindowExplorerTheme(HWND wnd);
     bool GetKeyboardCuesEnabled();
 
-    void FormatDate(t_filetimestamp time, std::basic_string<TCHAR> & str, bool b_convert_to_local = false);
-    HRESULT GetComCtl32Version(DLLVERSIONINFO2 & p_dvi, pfc::string_base * p_path_out = nullptr);
+    void FormatDate(uint64_t time, std::basic_string<TCHAR> & str, bool b_convert_to_local = false);
+    HRESULT GetComCtl32Version(DLLVERSIONINFO2 & p_dvi);
 
     int ListView_InsertColumnText(HWND wnd_lv, UINT index, const TCHAR * text, int cx);
     LRESULT ListView_InsertItemText(HWND wnd_lv, UINT item, UINT subitem, const TCHAR * text, bool b_set = false, LPARAM lp = 0, int image_index = I_IMAGENONE);
@@ -86,6 +86,28 @@ namespace uih {
     void HandleModernBackgroundPaint(HWND wnd, HWND wnd_button);
 
     void send_message_to_direct_children(HWND wnd_parent, UINT msg, WPARAM wp, LPARAM lp);
+
+    /**
+     * \brief Gets window rect of a window using the co-ordinate space of another window
+     * \param wnd           Window to retrieve the window rect of
+     * \param wnd_parent    Window whose co-ordinate space should be used
+     * \return              Window rect of wnd in wnd_parent co-ordinate space
+     */
+    RECT get_relative_rect(HWND wnd, HWND wnd_parent);
+    bool get_window_text(HWND wnd, pfc::string_base& out);
+
+    HFONT create_icon_font();
+    int get_font_height(HFONT font);
+    int get_dc_font_height(HDC dc);
+
+    BOOL tooltip_add_tool(HWND wnd, const LPTOOLINFO pti);
+    BOOL tooltip_update_tip_text(HWND wnd, const LPTOOLINFO pti);
+
+    BOOL header_set_item_text(HWND wnd, int n, const wchar_t* text);
+    BOOL header_set_item_width(HWND wnd, int n, UINT cx);
+
+    HWND handle_tab_down(HWND wnd);
+    bool set_clipboard_text(const char* text, HWND wnd = nullptr);
 }
 
 class DisableRedrawing

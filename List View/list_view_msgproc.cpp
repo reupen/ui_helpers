@@ -22,8 +22,8 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
             SetWindowTheme(wnd, L"Explorer", nullptr);
         }
         notify_on_initialisation();
-        m_font = m_lf_items_valid ? CreateFontIndirect(&m_lf_items) : uCreateIconFont();
-        m_group_font = m_lf_group_header_valid ? CreateFontIndirect(&m_lf_group_header) : (m_lf_items_valid ? CreateFontIndirect(&m_lf_items) : uCreateIconFont());
+        m_font = m_lf_items_valid ? CreateFontIndirect(&m_lf_items) : uih::create_icon_font();
+        m_group_font = m_lf_group_header_valid ? CreateFontIndirect(&m_lf_group_header) : (m_lf_items_valid ? CreateFontIndirect(&m_lf_items) : uih::create_icon_font());
         m_item_height = get_default_item_height();
         m_group_height = get_default_group_height();
         if (m_show_header)
@@ -404,7 +404,7 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
                             if (!m_limit_tooltips_to_clipped_items || is_clipped)
                             {
                                 pfc::string8 temp;
-                                titleformat_compiler::remove_color_marks(get_item_text(hit_result.index,hit_result.column), temp);
+                                ui_helpers::remove_color_marks(get_item_text(hit_result.index,hit_result.column), temp);
                                 temp.replace_char(9, 0x20);
                                 if (temp.length() > 128)
                                 {
@@ -420,7 +420,7 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 
                                 int text_cx = get_text_width(temp, temp.length());
 
-                                m_rc_tooltip.top = a.y + ((m_item_height-uGetFontHeight(m_font))/2);
+                                m_rc_tooltip.top = a.y + ((m_item_height- uih::get_font_height(m_font))/2);
                                 m_rc_tooltip.bottom = a.y + m_item_height;
                                 m_rc_tooltip.left = a.x;
                                 m_rc_tooltip.right = a.x + text_cx;//m_columns[hit_result.column].m_display_size;
@@ -732,7 +732,9 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
             {
             case EN_CHANGE:
                 {
-                    notify_on_search_box_contents_change(string_utf8_from_window(HWND(lp)));
+                    pfc::string8 text;
+                    uih::get_window_text(reinterpret_cast<HWND>(lp), text);
+                    notify_on_search_box_contents_change(text);
                 }
                 break;
             case EN_KILLFOCUS:
@@ -877,7 +879,7 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
                 HDHITTESTINFO hittest;
                 hittest.pt.x = temp.x;
                 hittest.pt.y = temp.y;
-                uSendMessage(m_wnd_header, HDM_HITTEST, 0, (LPARAM)&hittest);
+                SendMessage(m_wnd_header, HDM_HITTEST, 0, (LPARAM)&hittest);
 
                 if (notify_on_contextmenu_header(pt, hittest))
                     return 0;

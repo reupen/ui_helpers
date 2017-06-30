@@ -2,8 +2,9 @@
 
 class message_window_t {
 public:
-    message_window_t()
-        : m_wnd_edit(nullptr), m_wnd_button(nullptr), m_wnd_static(nullptr)
+    message_window_t(std::function<void(HWND)> on_creation = nullptr, std::function<void(HWND)> on_destruction = nullptr)
+        : m_wnd_edit(nullptr), m_wnd_button(nullptr), m_wnd_static(nullptr),
+          m_on_creation(on_creation), m_on_destruction(on_destruction)
     {
         auto window_config = uih::ContainerWindowConfig{L"uih_message_window"};
         window_config.window_styles = uih::window_styles::style_popup_default;
@@ -14,38 +15,12 @@ public:
         );
     }
 
-    class callback_t : public main_thread_callback {
-    public:
-        callback_t(HWND wnd, const char* p_title, const char* p_text, INT oem_icon = OIC_INFORMATION)
-            : m_title(p_title), m_text(p_text), m_wnd(wnd), m_oem_icon(oem_icon) {};
-    private:
-        void callback_run() override
-        {
-            g_run(m_wnd ? m_wnd : core_api::get_main_window(), m_title, m_text, m_oem_icon);
-        }
-
-        pfc::string8 m_title, m_text;
-        HWND m_wnd;
-        INT m_oem_icon;
-    };
-
-    static void g_run(HWND wnd_parent, const char* p_title, const char* p_text, INT icon = OIC_INFORMATION)
+    static void g_run(HWND wnd_parent, const char* p_title, const char* p_text, INT icon = OIC_INFORMATION, 
+        std::function<void(HWND)> on_creation = nullptr, std::function<void(HWND)> on_destruction = nullptr)
     {
-        auto message_window = std::make_unique<message_window_t>();
+        auto message_window = std::make_unique<message_window_t>(on_creation, on_destruction);
         message_window->create(wnd_parent, p_title, p_text, icon);
         message_window.release();
-    }
-
-    static void g_run_threadsafe(HWND wnd, const char* p_title, const char* p_text, INT oem_icon = OIC_INFORMATION)
-    {
-        service_ptr_t<main_thread_callback> cb = new service_impl_t<callback_t>(wnd, p_title, p_text, oem_icon);
-        static_api_ptr_t<main_thread_callback_manager>()->add_callback(cb);
-    }
-
-    static void g_run_threadsafe(const char* p_title, const char* p_text, INT oem_icon = OIC_INFORMATION)
-    {
-        service_ptr_t<main_thread_callback> cb = new service_impl_t<callback_t>((HWND)nullptr, p_title, p_text, oem_icon);
-        static_api_ptr_t<main_thread_callback_manager>()->add_callback(cb);
     }
 
     int calc_height() const
@@ -59,7 +34,7 @@ public:
 
     int get_text_height() const
     {
-        return SendMessage(m_wnd_edit, EM_GETLINECOUNT, 0, 0) * uGetFontHeight(m_font);
+        return SendMessage(m_wnd_edit, EM_GETLINECOUNT, 0, 0) * uih::get_font_height(m_font);
     }
 
     int get_icon_height() const
@@ -83,7 +58,7 @@ private:
 
         HWND wnd = m_container_window->create(wnd_parent, uih::WindowPosition((rc.left + (RECT_CX(rc) - cx) / 2), (rc.top + (RECT_CY(rc) - cy) / 2), cx, cy));
 
-        uSetWindowText(wnd, p_title);
+        SetWindowText(wnd, pfc::stringcvt::string_wide_from_utf8(p_title));
         pfc::string8 buffer;
         const char* ptr = p_text;
 
@@ -103,7 +78,7 @@ private:
                 ptr++;
         }
 
-        uSetWindowText(m_wnd_edit, buffer);
+        SetWindowText(m_wnd_edit, pfc::stringcvt::string_wide_from_utf8(buffer));
         HICON icon = static_cast<HICON>(LoadImage(nullptr, MAKEINTRESOURCE(oem_icon), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
         SendMessage(m_wnd_static, STM_SETIMAGE, IMAGE_ICON, LPARAM(icon));
 
@@ -119,7 +94,7 @@ private:
     {
         switch (msg) {
             case WM_NCCREATE:
-                modeless_dialog_manager::g_add(wnd);
+                if (m_on_creation) m_on_creation(wnd);
                 break;
             case WM_SIZE:
                 {
@@ -169,7 +144,7 @@ private:
                 return 0;
             case WM_CREATE:
                 { 
-                    m_font = uCreateIconFont();                    
+                    m_font = uih::create_icon_font();                    
                     RECT rc;
                     GetClientRect(wnd, &rc);
                     m_wnd_edit = CreateWindowEx(0,
@@ -185,7 +160,7 @@ private:
                                                 uih::get_current_instance(),
                                                 nullptr);
                     SendMessage(m_wnd_edit, WM_SETFONT, reinterpret_cast<WPARAM>(m_font.get()), MAKELPARAM(FALSE,0));
-                    int cy_button = uGetFontHeight(m_font) + uih::ScaleDpiValue(10);
+                    int cy_button = uih::get_font_height(m_font) + uih::ScaleDpiValue(10);
                     m_wnd_button = CreateWindowEx(0,
                                                   WC_BUTTON,
                                                   L"Close",
@@ -247,7 +222,7 @@ private:
                 }
                 return 0;
             case WM_NCDESTROY:
-                modeless_dialog_manager::g_remove(wnd);
+                if (m_on_destruction) m_on_destruction(wnd);
                 delete this;
                 break;
             case WM_COMMAND:
@@ -267,5 +242,7 @@ private:
 
     HWND m_wnd_edit, m_wnd_button, m_wnd_static;
     gdi_object_t<HFONT>::ptr_t m_font;
+    std::function<void(HWND)> m_on_creation;
+    std::function<void(HWND)> m_on_destruction;
     std::unique_ptr<uih::ContainerWindow> m_container_window;
 };
