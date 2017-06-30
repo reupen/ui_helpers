@@ -154,7 +154,6 @@
     <ClInclude Include="drag_image.h" />
     <ClInclude Include="handle.h" />
     <ClInclude Include="List View\list_view.h" />
-    <ClInclude Include="low_level_hook.h" />
     <ClInclude Include="ole.h" />
     <ClInclude Include="OLE\DataObj.h" />
     <ClInclude Include="OLE\Enumfe.h" />
@@ -255,7 +254,6 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="low_level_hook.cpp" />
     <ClCompile Include="ole.cpp" />
     <ClCompile Include="OLE\DataObj.Cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\stdafx.h</PrecompiledHeaderFile>

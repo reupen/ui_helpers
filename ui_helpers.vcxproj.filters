@@ -30,7 +30,6 @@
     <ClInclude Include="ole.h" />
     <ClInclude Include="drag_image.h" />
     <ClInclude Include="handle.h" />
-    <ClInclude Include="low_level_hook.h" />
     <ClInclude Include="container_window.h" />
   </ItemGroup>
   <ItemGroup>
@@ -90,7 +89,6 @@
     </ClCompile>
     <ClCompile Include="ole.cpp" />
     <ClCompile Include="drag_image.cpp" />
-    <ClCompile Include="low_level_hook.cpp" />
     <ClCompile Include="container_window.cpp" />
   </ItemGroup>
 </Project>
