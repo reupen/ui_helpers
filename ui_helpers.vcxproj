@@ -280,9 +280,7 @@
     <ClCompile Include="win32_helpers.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="COPYING" />
-    <None Include="COPYING.LESSER" />
-    <None Include="COPYRIGHT" />
+    <None Include="LICENCE" />
     <None Include="README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

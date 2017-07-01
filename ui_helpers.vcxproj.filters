@@ -93,8 +93,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
-    <None Include="COPYING" />
-    <None Include="COPYING.LESSER" />
-    <None Include="COPYRIGHT" />
+    <None Include="LICENCE" />
   </ItemGroup>
 </Project>
