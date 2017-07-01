@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-LRESULT window_transparent_fill::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
+LRESULT TranslucentFillWindow::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 {
     switch (msg)
     {
