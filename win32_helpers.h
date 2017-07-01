@@ -108,6 +108,27 @@ namespace uih {
 
     HWND handle_tab_down(HWND wnd);
     bool set_clipboard_text(const char* text, HWND wnd = nullptr);
+
+    template <typename TInteger>
+    class IntegerAndDpi {
+    public:
+        using Type = IntegerAndDpi<TInteger>;
+
+        TInteger value;
+        uint32_t dpi;
+
+        operator TInteger () const { return getScaledValue(); }
+        Type & operator = (TInteger value) { set(value);  return *this; }
+
+        void set(TInteger _value, uint32_t _dpi = GetSystemDpiCached().cx)
+        {
+            value = _value;
+            dpi = _dpi;
+        }
+        TInteger getScaledValue() const { return ScaleDpiValue(value, dpi); };
+
+        IntegerAndDpi(TInteger _value = NULL, uint32_t _dpi = USER_DEFAULT_SCREEN_DPI) : value(_value), dpi(_dpi) {};
+    };
 }
 
 class DisableRedrawing
