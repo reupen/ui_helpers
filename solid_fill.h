@@ -159,9 +159,6 @@ private:
     std::unique_ptr<uih::ContainerWindow> m_container_window;
 };
 
-/** For backwards compatibility */
-using window_fill [[deprecated("Class was renamed to FillWindow")]] = FillWindow;
-
 class TranslucentFillWindow
 {
 public:
@@ -207,6 +204,3 @@ private:
     COLORREF m_fill_colour;
     std::unique_ptr<uih::ContainerWindow> m_container_window;
 };
-
-/** For backwards compatibility */
-using window_transparent_fill [[deprecated("Class was renamed to TranslucentFillWindow")]] = TranslucentFillWindow;
