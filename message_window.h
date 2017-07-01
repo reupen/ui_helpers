@@ -157,7 +157,7 @@ private:
                                                 RECT_CY(rc) - get_large_padding() * 2,
                                                 wnd,
                                                 reinterpret_cast<HMENU>(1001),
-                                                uih::get_current_instance(),
+                                                mmh::get_current_instance(),
                                                 nullptr);
                     SendMessage(m_wnd_edit, WM_SETFONT, reinterpret_cast<WPARAM>(m_font.get()), MAKELPARAM(FALSE,0));
                     int cy_button = uih::get_font_height(m_font) + uih::ScaleDpiValue(10);
@@ -171,10 +171,10 @@ private:
                                                   cy_button,
                                                   wnd,
                                                   reinterpret_cast<HMENU>(IDCANCEL),
-                                                  uih::get_current_instance(),
+                                                  mmh::get_current_instance(),
                                                   nullptr);
                     SendMessage(m_wnd_button, WM_SETFONT, reinterpret_cast<WPARAM>(m_font.get()), MAKELPARAM(FALSE,0));
-                    m_wnd_static = CreateWindowEx(0, WC_STATIC, L"", WS_CHILD | WS_VISIBLE | WS_GROUP | SS_ICON, 0, 0, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), wnd, reinterpret_cast<HMENU>(1002), uih::get_current_instance(), nullptr);
+                    m_wnd_static = CreateWindowEx(0, WC_STATIC, L"", WS_CHILD | WS_VISIBLE | WS_GROUP | SS_ICON, 0, 0, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), wnd, reinterpret_cast<HMENU>(1002), mmh::get_current_instance(), nullptr);
                 }
                 return 0;
             case WM_SHOWWINDOW:

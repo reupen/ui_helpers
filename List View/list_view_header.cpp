@@ -19,7 +19,7 @@ void t_list_view::create_header()
             m_font_header = m_lf_header_valid ? CreateFontIndirect(&m_lf_header) : uih::create_icon_font();
             m_wnd_header = CreateWindowEx(0, WC_HEADER, _T("NGLVH"),
                 WS_CHILD | (0) | /*(m_autosize ? 0x0800  : NULL) |*/ HDS_HOTTRACK | (m_allow_header_rearrange ? HDS_DRAGDROP : NULL )| HDS_HORZ | HDS_FULLDRAG | (m_sorting_enabled ? HDS_BUTTONS : 0 )|WS_CLIPSIBLINGS| WS_CLIPCHILDREN,
-                0, 0, 0, 0, get_wnd(), HMENU(IDC_HEADER), uih::get_current_instance(), nullptr);
+                0, 0, 0, 0, get_wnd(), HMENU(IDC_HEADER), mmh::get_current_instance(), nullptr);
             //SetWindowTheme(m_wnd_header, L"ItemsView", NULL);
             //SendMessage (m_wnd_header, 0x2009, (WPARAM)get_wnd(), NULL);
             SendMessage(m_wnd_header, WM_SETFONT, (WPARAM)m_font_header.get(), MAKELPARAM(FALSE,0));

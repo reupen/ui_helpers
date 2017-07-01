@@ -26,7 +26,7 @@ namespace uih {
         m_wnd = CreateWindowEx(
             m_config.window_ex_styles, m_config.class_name, m_config.window_title,
             m_config.window_styles, window_position.x, window_position.y, window_position.cx, window_position.cy,
-            wnd_parent, nullptr, get_current_instance(), &createparams
+            wnd_parent, nullptr, mmh::get_current_instance(), &createparams
         );
 
         if (!m_wnd)
@@ -121,7 +121,7 @@ namespace uih {
         memset(&wc, 0, sizeof(WNDCLASS));
 
         wc.lpfnWndProc = static_cast<WNDPROC>(&s_on_message);
-        wc.hInstance = get_current_instance();
+        wc.hInstance = mmh::get_current_instance();
         wc.hCursor = LoadCursor(nullptr, m_config.class_cursor);
         wc.hbrBackground = m_config.class_background;
         wc.lpszClassName = m_config.class_name;
@@ -134,7 +134,7 @@ namespace uih {
 
     void ContainerWindow::deregister_class()
     {
-        const auto unregistered = UnregisterClass(m_config.class_name, get_current_instance());
+        const auto unregistered = UnregisterClass(m_config.class_name, mmh::get_current_instance());
         assert(unregistered);
     }
 
