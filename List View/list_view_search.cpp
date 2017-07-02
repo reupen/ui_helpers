@@ -33,7 +33,7 @@ void t_list_view::show_search_box(const char * label, bool b_focus)
         cr = RGB(r, g, b);
         m_search_box_nofocus_brush = CreateSolidBrush(cr);*/
         //SendMessage(m_search_editbox, EM_SETMARGINS, EC_LEFTMARGIN, 0);
-        Edit_SetCueBannerText(m_search_editbox, uT(label));
+        Edit_SetCueBannerText(m_search_editbox, pfc::stringcvt::string_wide_from_utf8(label).get_ptr());
         if (b_focus)
             SetFocus(m_search_editbox);
         on_size();
