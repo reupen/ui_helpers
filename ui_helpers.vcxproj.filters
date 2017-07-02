@@ -21,7 +21,6 @@
     <ClInclude Include="gdi.h" />
     <ClInclude Include="menu.h" />
     <ClInclude Include="message_hook.h" />
-    <ClInclude Include="message_window.h" />
     <ClInclude Include="solid_fill.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="text_drawing.h" />
@@ -31,6 +30,7 @@
     <ClInclude Include="drag_image.h" />
     <ClInclude Include="handle.h" />
     <ClInclude Include="container_window.h" />
+    <ClInclude Include="info_box.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="List View\list_view_columns.cpp">

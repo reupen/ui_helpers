@@ -160,7 +160,7 @@
     <ClInclude Include="gdi.h" />
     <ClInclude Include="menu.h" />
     <ClInclude Include="message_hook.h" />
-    <ClInclude Include="message_window.h" />
+    <ClInclude Include="info_box.h" />
     <ClInclude Include="solid_fill.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="text_drawing.h" />

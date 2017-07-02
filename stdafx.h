@@ -60,7 +60,7 @@
 #include "text_drawing.h"
 #include "List View/list_view.h"
 #include "drag_image.h"
-#include "message_window.h"
+#include "info_box.h"
 #include "menu.h"
 
 #include "OLE/DataObj.h"
