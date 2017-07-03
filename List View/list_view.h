@@ -162,7 +162,7 @@ public:
         window_config.class_styles = CS_DBLCLKS | CS_HREDRAW;
         m_container_window = std::make_unique<uih::ContainerWindow>(
             window_config,
-            std::bind(&t_list_view::on_message, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
+            [this](auto &&... args) {return on_message(std::forward<decltype(args)>(args)...); }
         );
 
     }

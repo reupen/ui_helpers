@@ -12,7 +12,7 @@ namespace uih {
             window_config.window_ex_styles = uih::window_styles::ex_style_popup_default;
             m_container_window = std::make_unique<uih::ContainerWindow>(
                 window_config,
-                std::bind(&InfoBox::on_message, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
+                [this](auto&&... args) {return on_message(std::forward<decltype(args)>(args)...); }
                 );
         }
 

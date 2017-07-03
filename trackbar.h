@@ -318,7 +318,7 @@ public:
         auto window_config = uih::ContainerWindowConfig{L"ui_extension_track_bar"};
         m_container_window = std::make_unique<uih::ContainerWindow>(
             window_config,
-            std::bind(&track_bar::on_message, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
+            [this](auto&&... args) {return on_message(std::forward<decltype(args)>(args)...); }
             );
     }
 

@@ -56,7 +56,7 @@ public:
         window_config.window_ex_styles = WS_EX_CONTROLPARENT | WS_EX_STATICEDGE;
         m_container_window = std::make_unique<uih::ContainerWindow>(
             window_config,
-            std::bind(&FillWindow::on_message, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
+            [this](auto&&... args) {return on_message(std::forward<decltype(args)>(args)...); }
         );
     }
 
@@ -177,7 +177,7 @@ public:
         window_config.window_ex_styles = WS_EX_LAYERED;
         m_container_window = std::make_unique<uih::ContainerWindow>(
             window_config,
-            std::bind(&TranslucentFillWindow::on_message, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)
+            [this](auto&&... args) {return on_message(std::forward<decltype(args)>(args)...); }
             );
     }
 
