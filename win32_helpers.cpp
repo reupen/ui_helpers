@@ -23,7 +23,7 @@ public:
 namespace uih {
     const RECT rect_null = { 0,0,0,0 };
 
-    void SetListViewWindowExplorerTheme(HWND wnd)
+    void list_view_set_explorer_theme(HWND wnd)
     {
         if (mmh::osversion::is_windows_vista_or_newer())
         {
@@ -40,7 +40,7 @@ namespace uih {
         }
     }
 
-    bool GetKeyboardCuesEnabled()
+    bool are_keyboard_cues_enabled()
     {
         BOOL a = true;
         SystemParametersInfo(SPI_GETKEYBOARDCUES, 0, &a, 0);
@@ -60,7 +60,7 @@ namespace uih {
 #define TVS_EX_DIMMEDCHECKBOXES     0x0200
 #define TVS_EX_DRAWIMAGEASYNC       0x0400 //
 
-    void SetTreeViewWindowExplorerTheme(HWND wnd, bool b_reduce_indent)
+    void tree_view_set_explorer_theme(HWND wnd, bool b_reduce_indent)
     {
         if (mmh::osversion::is_windows_vista_or_newer())
         {
@@ -76,7 +76,7 @@ namespace uih {
 
     }
 
-    void RemoveTreeViewWindowExplorerTheme(HWND wnd)
+    void tree_view_remove_explorer_theme(HWND wnd)
     {
         if (mmh::osversion::is_windows_vista_or_newer())
         {
@@ -90,7 +90,7 @@ namespace uih {
 
     }
 
-    int ListView_InsertColumnText(HWND wnd_lv, UINT index, const TCHAR * text, int cx)
+    int list_view_insert_column_text(HWND wnd_lv, UINT index, const TCHAR * text, int cx)
     {
         LVCOLUMN lvc;
         memset(&lvc, 0, sizeof(LVCOLUMN));
@@ -101,7 +101,7 @@ namespace uih {
         return ListView_InsertColumn(wnd_lv, index, &lvc);
     }
 
-    LRESULT ListView_InsertItemText(HWND wnd_lv, UINT item, UINT subitem, const TCHAR * text, bool b_set, LPARAM lp, int image_index)
+    LRESULT list_view_insert_item_text(HWND wnd_lv, UINT item, UINT subitem, const TCHAR * text, bool b_set, LPARAM lp, int image_index)
     {
         LVITEM lvi;
         memset(&lvi, 0, sizeof(LVITEM));
@@ -118,17 +118,17 @@ namespace uih {
         return b_set ? ListView_SetItem(wnd_lv, &lvi) : ListView_InsertItem(wnd_lv, &lvi);
     }
 
-    LRESULT ListView_InsertItemText(HWND wnd_lv, UINT item, UINT subitem, const char * text, bool b_set, LPARAM lp, int image_index)
+    LRESULT list_view_insert_item_text(HWND wnd_lv, UINT item, UINT subitem, const char * text, bool b_set, LPARAM lp, int image_index)
     {
         pfc::stringcvt::string_os_from_utf8 wide(text);
-        return ListView_InsertItemText(wnd_lv, item, subitem, const_cast<TCHAR*>(wide.get_ptr()), b_set, lp, image_index);
+        return list_view_insert_item_text(wnd_lv, item, subitem, const_cast<TCHAR*>(wide.get_ptr()), b_set, lp, image_index);
     }
-    HTREEITEM TreeView_InsertItemSimple(HWND wnd_tree, const char * sz_text, LPARAM data, DWORD state, HTREEITEM ti_parent, HTREEITEM ti_after, bool b_image, UINT image, UINT integral_height)
+    HTREEITEM tree_view_insert_item_simple(HWND wnd_tree, const char * sz_text, LPARAM data, DWORD state, HTREEITEM ti_parent, HTREEITEM ti_after, bool b_image, UINT image, UINT integral_height)
     {
-        return TreeView_InsertItemSimple(wnd_tree, pfc::stringcvt::string_os_from_utf8(sz_text), data, state, ti_parent, ti_after, b_image, image, integral_height);
+        return tree_view_insert_item_simple(wnd_tree, pfc::stringcvt::string_os_from_utf8(sz_text), data, state, ti_parent, ti_after, b_image, image, integral_height);
     }
 
-    HTREEITEM TreeView_InsertItemSimple(HWND wnd_tree, const WCHAR * sz_text, LPARAM data, DWORD state, HTREEITEM ti_parent, HTREEITEM ti_after, bool b_image, UINT image, UINT integral_height)
+    HTREEITEM tree_view_insert_item_simple(HWND wnd_tree, const WCHAR * sz_text, LPARAM data, DWORD state, HTREEITEM ti_parent, HTREEITEM ti_after, bool b_image, UINT image, UINT integral_height)
     {
         TVINSERTSTRUCT is;
         memset(&is, 0, sizeof(is));
@@ -145,7 +145,7 @@ namespace uih {
         return TreeView_InsertItem(wnd_tree, &is);
     }
 
-    t_size TreeView_GetChildIndex(HWND wnd_tv, HTREEITEM ti)
+    t_size tree_view_get_child_index(HWND wnd_tv, HTREEITEM ti)
     {
         HTREEITEM item = ti;
         unsigned n = 0;
@@ -175,7 +175,7 @@ namespace uih {
         ret.dwHighDateTime = (DWORD)(time >> 32);
         return ret;
     }
-    void FormatDate(uint64_t time, std::basic_string<TCHAR> & str, bool b_convert_to_local)
+    void format_date(uint64_t time, std::basic_string<TCHAR> & str, bool b_convert_to_local)
     {
         FILETIME ft1 = filetimestamp_to_FileTime(time), ft2 = ft1;
         if (b_convert_to_local)
@@ -194,7 +194,7 @@ namespace uih {
         str += _T(" ");
         str += buf2.get_ptr();
     }
-    BOOL SetProcessDpiAware()
+    BOOL set_process_dpi_aware()
     {
         typedef BOOL(WINAPI* SETPROCESSDPIAWAREPROC)();
         HINSTANCE hinstDll = LoadLibrary(_T("user32.dll"));
@@ -220,18 +220,18 @@ namespace uih {
         return ret;
     }
 
-    SIZE GetSystemDpiCached()
+    SIZE get_system_dpi_cached()
     {
         static const SIZE size = get_system_dpi();
         return size;
     }
 
-    int ScaleDpiValue(int value, unsigned original_dpi)
+    int scale_dpi_value(int value, unsigned original_dpi)
     {
-        return MulDiv(value, GetSystemDpiCached().cx, original_dpi);
+        return MulDiv(value, get_system_dpi_cached().cx, original_dpi);
     }
 
-    HRESULT GetComCtl32Version(DLLVERSIONINFO2 & p_dvi)
+    HRESULT get_comctl32_version(DLLVERSIONINFO2 & p_dvi)
     {
         static bool have_version = false;
         static HRESULT rv = E_FAIL;
@@ -273,7 +273,7 @@ namespace uih {
         return rv;
     }
 
-    BOOL ShellNotifyIconSimple(DWORD dwMessage, HWND wnd, UINT id, UINT callbackmsg, HICON icon,
+    BOOL shell_notify_icon_simple(DWORD dwMessage, HWND wnd, UINT id, UINT callbackmsg, HICON icon,
         const char * tip, const char * balloon_title, const char * balloon_msg)
     {
         //param_utf16_from_utf8 wtip(tip), wbtitle(balloon_title), wbmsg(balloon_msg);
@@ -311,7 +311,7 @@ namespace uih {
     }
 
 
-    BOOL ShellNotifyIcon(DWORD action, HWND wnd, UINT id, UINT version, UINT callbackmsg, HICON icon, const char * tip)
+    BOOL shell_notify_icon(DWORD action, HWND wnd, UINT id, UINT version, UINT callbackmsg, HICON icon, const char * tip)
     {
         NOTIFYICONDATA nid;
         memset(&nid, 0, sizeof(nid));
@@ -340,7 +340,7 @@ namespace uih {
         return run_action(action, &nid);
     }
 
-    BOOL ShellNotifyIconEx(DWORD action, HWND wnd, UINT id, UINT callbackmsg, HICON icon, const char * tip, const char * balloon_title, const char * balloon_msg)
+    BOOL shell_notify_icon_ex(DWORD action, HWND wnd, UINT id, UINT callbackmsg, HICON icon, const char * tip, const char * balloon_title, const char * balloon_msg)
     {
 
         NOTIFYICONDATA nid;
@@ -375,40 +375,14 @@ namespace uih {
 
 
     }
-    int ComboBox_AddStringData(HWND wnd, const TCHAR * str, LPARAM data)
+    int combo_box_add_string_data(HWND wnd, const TCHAR * str, LPARAM data)
     {
         int index = ComboBox_AddString(wnd, str);
         ComboBox_SetItemData(wnd, index, data);
         return index;
     }
 
-    void RegisterShellHookWindowHelper(HWND wnd)
-    {
-        typedef BOOL(WINAPI * RegisterShellHookWindowProc)(HWND);
-        HINSTANCE inst = LoadLibrary(L"user32.dll");
-        if (inst)
-        {
-            RegisterShellHookWindowProc pRegisterShellHookWindow = (RegisterShellHookWindowProc)GetProcAddress(inst, "RegisterShellHookWindow");
-            if (pRegisterShellHookWindow)
-                pRegisterShellHookWindow(wnd);
-            FreeLibrary(inst);
-        }
-    }
-
-    void DeregisterShellHookWindowHelper(HWND wnd)
-    {
-        typedef BOOL(WINAPI * DeregisterShellHookWindowProc)(HWND);
-        HINSTANCE inst = LoadLibrary(L"user32.dll");
-        if (inst)
-        {
-            DeregisterShellHookWindowProc pDeregisterShellHookWindow = (DeregisterShellHookWindowProc)GetProcAddress(inst, "DeregisterShellHookWindow");
-            if (pDeregisterShellHookWindow)
-                pDeregisterShellHookWindow(wnd);
-            FreeLibrary(inst);
-        }
-    }
-
-    int ComboBox_FindItemByData(HWND wnd, t_size id)
+    int combo_box_find_item_by_data(HWND wnd, t_size id)
     {
         t_size i, count = ComboBox_GetCount(wnd);
         for (i = 0; i < count; i++)
@@ -417,7 +391,7 @@ namespace uih {
         return -1;
     }
 
-    int Rebar_FindItemById(HWND wnd, unsigned id)
+    int rebar_find_item_by_id(HWND wnd, unsigned id)
     {
         /* Avoid RB_IDTOINDEX for backwards compatibility */
         REBARBANDINFO  rbbi;
@@ -435,7 +409,7 @@ namespace uih {
         return -1;
     }
 
-    void Rebar_ShowAllBands(HWND wnd)
+    void rebar_show_all_bands(HWND wnd)
     {
         UINT count = SendMessage(wnd, RB_GETBANDCOUNT, 0, 0);
         unsigned n;
@@ -445,7 +419,7 @@ namespace uih {
         }
     }
 
-    void HandleModernBackgroundPaint(HWND wnd, HWND wnd_button)
+    void handle_modern_background_paint(HWND wnd, HWND wnd_button)
     {
         PAINTSTRUCT ps;
         HDC dc = BeginPaint(wnd, &ps);

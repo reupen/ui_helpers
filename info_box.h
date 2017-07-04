@@ -30,7 +30,7 @@ namespace uih {
             GetWindowRect(m_wnd_button, &rc);
             GetWindowRect(m_container_window->get_wnd(), &rcw);
             GetClientRect(m_container_window->get_wnd(), &rcwc);
-            return get_large_padding() * 4 + uih::ScaleDpiValue(1) + RECT_CY(rc) + (RECT_CY(rcw) - RECT_CY(rcwc)) + std::max((t_size)get_text_height(), (t_size)get_icon_height());
+            return get_large_padding() * 4 + uih::scale_dpi_value(1) + RECT_CY(rc) + (RECT_CY(rcw) - RECT_CY(rcwc)) + std::max((t_size)get_text_height(), (t_size)get_icon_height());
         }
 
         int get_text_height() const
@@ -46,16 +46,16 @@ namespace uih {
         }
 
     private:
-        static int get_large_padding() { return uih::ScaleDpiValue(11); }
-        static int get_small_padding() { return uih::ScaleDpiValue(7); }
-        static int get_button_width() { return uih::ScaleDpiValue(75); }
+        static int get_large_padding() { return uih::scale_dpi_value(11); }
+        static int get_small_padding() { return uih::scale_dpi_value(7); }
+        static int get_button_width() { return uih::scale_dpi_value(75); }
 
         void create(HWND wnd_parent, const char* p_title, const char* p_text, INT oem_icon = OIC_INFORMATION)
         {
             RECT rc;
             GetWindowRect(wnd_parent, &rc);
-            int cx = uih::ScaleDpiValue(400);
-            int cy = uih::ScaleDpiValue(150);
+            int cx = uih::scale_dpi_value(400);
+            int cy = uih::scale_dpi_value(150);
 
             HWND wnd = m_container_window->create(wnd_parent, uih::WindowPosition((rc.left + (RECT_CX(rc) - cx) / 2), (rc.top + (RECT_CY(rc) - cy) / 2), cx, cy));
 
@@ -83,7 +83,7 @@ namespace uih {
             HICON icon = static_cast<HICON>(LoadImage(nullptr, MAKEINTRESOURCE(oem_icon), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
             SendMessage(m_wnd_static, STM_SETIMAGE, IMAGE_ICON, LPARAM(icon));
 
-            cy = std::min(calc_height(), std::max(static_cast<int>(RECT_CY(rc)), uih::ScaleDpiValue(150)));
+            cy = std::min(calc_height(), std::max(static_cast<int>(RECT_CY(rc)), uih::scale_dpi_value(150)));
             int y = (rc.top + (RECT_CY(rc) - cy) / 2);
             if (y < rc.top)
                 y = rc.top;
@@ -139,7 +139,7 @@ namespace uih {
                 GetWindowRect(wnd, &rcw);
                 GetClientRect(wnd, &rcwc);
                 LPMINMAXINFO lpmmi = reinterpret_cast<LPMINMAXINFO>(lp);
-                lpmmi->ptMinTrackSize.x = get_large_padding() * 4 + get_small_padding() + RECT_CX(rcicon) + uih::ScaleDpiValue(50) + (RECT_CX(rcw) - RECT_CX(rcwc));
+                lpmmi->ptMinTrackSize.x = get_large_padding() * 4 + get_small_padding() + RECT_CX(rcicon) + uih::scale_dpi_value(50) + (RECT_CX(rcw) - RECT_CX(rcwc));
                 lpmmi->ptMinTrackSize.y = get_large_padding() * 4 + RECT_CY(rcicon) + RECT_CY(rc) + (RECT_CY(rcw) - RECT_CY(rcwc));
             }
             return 0;
@@ -161,7 +161,7 @@ namespace uih {
                     mmh::get_current_instance(),
                     nullptr);
                 SendMessage(m_wnd_edit, WM_SETFONT, reinterpret_cast<WPARAM>(m_font.get()), MAKELPARAM(FALSE, 0));
-                int cy_button = uih::get_font_height(m_font) + uih::ScaleDpiValue(10);
+                int cy_button = uih::get_font_height(m_font) + uih::scale_dpi_value(10);
                 m_wnd_button = CreateWindowEx(0,
                     WC_BUTTON,
                     L"Close",
@@ -212,7 +212,7 @@ namespace uih {
 
                     if (m_wnd_button) {
                         rc_fill.top = rc_fill.bottom;
-                        rc_fill.bottom += uih::ScaleDpiValue(1);
+                        rc_fill.bottom += uih::scale_dpi_value(1);
                         FillRect(dc, &rc_fill, GetSysColorBrush(COLOR_3DLIGHT));
                     }
                     rc_fill.top = rc_fill.bottom;

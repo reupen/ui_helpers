@@ -80,7 +80,7 @@ namespace uih {
     }
     SIZE GetDragImageContentSize(HDC dc, bool isThemed, HTHEME theme)
     {
-        auto sz = uih::GetSystemDpiCached();
+        auto sz = uih::get_system_dpi_cached();
         auto margins = MARGINS{ 0 };
         auto themeState = 0;
         auto hr = HRESULT{ S_OK };

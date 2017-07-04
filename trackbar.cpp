@@ -12,7 +12,7 @@ BOOL track_bar::create_tooltip(const TCHAR * text, POINT pt)
     destroy_tooltip();
 
     DLLVERSIONINFO2 dvi;
-    bool b_comctl_6 = SUCCEEDED(uih::GetComCtl32Version(dvi)) && dvi.info1.dwMajorVersion >= 6;
+    bool b_comctl_6 = SUCCEEDED(uih::get_comctl32_version(dvi)) && dvi.info1.dwMajorVersion >= 6;
 
     m_wnd_tooltip = CreateWindowEx(WS_EX_TOPMOST|(b_comctl_6?WS_EX_TRANSPARENT:0), TOOLTIPS_CLASS, nullptr, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, get_wnd(), nullptr, mmh::get_current_instance(), nullptr);
