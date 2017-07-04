@@ -15,7 +15,7 @@ bool t_list_view::render_drag_image(LPSHDRAGIMAGE lpsdi)
     else
         GetObject(m_font, sizeof(lf), &lf);
 
-    return uih::CreateDragImage(get_wnd(), true, m_dd_theme, p_data.m_selection_background, p_data.m_selection_text, icon, &lf, show_text, drag_text, lpsdi) != 0;
+    return uih::create_drag_image(get_wnd(), true, m_dd_theme, p_data.m_selection_background, p_data.m_selection_text, icon, &lf, show_text, drag_text, lpsdi) != 0;
 }
 
 bool t_list_view::format_drag_text(t_size selection_count, pfc::string8 & p_out)

@@ -351,7 +351,7 @@ HTHEME track_bar::get_theme_handle() const
     return m_theme;
 }
 
-bool track_bar::on_hooked_message(message_hook_manager::t_message_hook_type p_type, int code, WPARAM wp, LPARAM lp)
+bool track_bar::on_hooked_message(uih::MessageHookType p_type, int code, WPARAM wp, LPARAM lp)
 {
     auto lpkeyb = uih::GetKeyboardLParam(lp);
     if (wp == VK_ESCAPE && !lpkeyb.transition_code && !lpkeyb.previous_key_state)
@@ -361,7 +361,7 @@ bool track_bar::on_hooked_message(message_hook_manager::t_message_hook_type p_ty
             ReleaseCapture();
         m_dragging = false;
         set_position_internal(m_position);
-        message_hook_manager::deregister_hook(message_hook_manager::type_keyboard, this);
+        uih::deregister_message_hook(uih::MessageHookType::type_keyboard, this);
         m_hook_registered=false;
         return true;
     }
@@ -432,7 +432,7 @@ LRESULT track_bar::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
         {
             if (m_hook_registered)
             {
-                message_hook_manager::deregister_hook(message_hook_manager::type_keyboard, this);
+                uih::deregister_message_hook(uih::MessageHookType::type_keyboard, this);
                 m_hook_registered=false;
             }
             {
@@ -499,7 +499,7 @@ LRESULT track_bar::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
                 destroy_tooltip();
                 if (GetCapture() == wnd)
                     ReleaseCapture();
-                message_hook_manager::deregister_hook(message_hook_manager::type_keyboard, this);
+                uih::deregister_message_hook(uih::MessageHookType::type_keyboard, this);
                 m_hook_registered=false;
                 //SetFocus(IsWindow(m_wnd_prev) ? m_wnd_prev : uFindParentPopup(wnd));
                 m_dragging = false;
@@ -528,7 +528,7 @@ LRESULT track_bar::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
                     SetCapture(wnd);
 
                     //SetFocus(wnd);
-                    message_hook_manager::register_hook(message_hook_manager::type_keyboard, this);
+                    uih::register_message_hook(uih::MessageHookType::type_keyboard, this);
                     m_hook_registered=true;
 
                     unsigned pos = calculate_position_from_point(pt);
@@ -565,7 +565,7 @@ LRESULT track_bar::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
                     set_position(pos);
                 }
                 //SetFocus(IsWindow(m_wnd_prev) ? m_wnd_prev : uFindParentPopup(wnd));
-                message_hook_manager::deregister_hook(message_hook_manager::type_keyboard, this);
+                uih::deregister_message_hook(uih::MessageHookType::type_keyboard, this);
                 m_hook_registered = false;
                 if (m_host)
                     m_host->on_position_change(m_display_position, false);

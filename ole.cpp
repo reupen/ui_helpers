@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-namespace mmh {
+namespace uih {
     namespace ole {
 
         CLIPFORMAT ClipboardFormatDropDescription()
@@ -120,7 +120,7 @@ namespace mmh {
 
         HRESULT SetDropDescription(IDataObject *pdtobj, DROPIMAGETYPE dit, const char * msg, const char * insert)
         {
-            if (osversion::is_windows_vista_or_newer())
+            if (mmh::osversion::is_windows_vista_or_newer())
             {
                 DROPDESCRIPTION dd_prev;
                 memset(&dd_prev, 0, sizeof(dd_prev));
@@ -177,7 +177,7 @@ namespace mmh {
 
             mmh::comptr_t<IDropSource> pDropSource;
             //if (!IsVistaOrNewer())
-            pDropSource = new mmh::ole::IDropSource_Generic(wnd, pDataObject, initialKeyState, true, lpsdi);
+            pDropSource = new uih::ole::IDropSource_Generic(wnd, pDataObject, initialKeyState, true, lpsdi);
             return SHDoDragDrop(wnd, pDataObject, pDropSource, dwEffect, pdwEffect);
         }
 

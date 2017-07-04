@@ -1,9 +1,9 @@
 #pragma once
 
 namespace uih {
-    void DrawDragImageBackground(HWND wnd, bool isThemed, HTHEME theme, HDC dc, COLORREF selectionBackgroundColour, const RECT & rc);
-    void DrawDragImageLabel(HWND wnd, bool isThemed, HTHEME theme, HDC dc, const RECT & rc, COLORREF selectionTextColour, const char * text);
-    void DrawDragImageIcon(HDC dc, const RECT & rc, HICON icon);
-    BOOL CreateDragImage(HWND wnd, bool isThemed, HTHEME theme, COLORREF selectionBackgroundColour, COLORREF selectionTextColour, 
-        HICON icon, const LPLOGFONT font, bool showText, const char * text, LPSHDRAGIMAGE lpsdi);
+    void draw_drag_image_background(HWND wnd, bool is_themed, HTHEME theme, HDC dc, COLORREF selection_background_colour, const RECT & rc);
+    void draw_drag_image_label(HWND wnd, bool is_themed, HTHEME theme, HDC dc, const RECT & rc, COLORREF selection_text_colour, const char * text);
+    void draw_drag_image_icon(HDC dc, const RECT & rc, HICON icon);
+    BOOL create_drag_image(HWND wnd, bool is_themed, HTHEME theme, COLORREF selection_background_colour, COLORREF selection_text_colour, 
+        HICON icon, const LPLOGFONT font, bool show_text, const char * text, LPSHDRAGIMAGE lpsdi);
 }

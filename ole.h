@@ -2,7 +2,7 @@
 
 #define DDWM_UPDATEWINDOW (WM_USER+3)
 
-namespace mmh {
+namespace uih {
     namespace ole {
 
         CLIPFORMAT ClipboardFormatDropDescription();

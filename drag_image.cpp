@@ -2,7 +2,7 @@
 
 namespace uih {
     // Only used in non-themed mode – if theming is active, the shell draws the background for us
-    void DrawDragImageBackground(HWND wnd, bool isThemed, HTHEME theme, HDC dc, COLORREF selectionBackgroundColour, const RECT & rc)
+    void draw_drag_image_background(HWND wnd, bool isThemed, HTHEME theme, HDC dc, COLORREF selectionBackgroundColour, const RECT & rc)
     {
         int themeState = 0;
 
@@ -21,7 +21,7 @@ namespace uih {
             FillRect(dc, &rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(selectionBackgroundColour)));
         }
     }
-    void DrawDragImageLabel(HWND wnd, bool isThemed, HTHEME theme, HDC dc, const RECT & rc, COLORREF selectionTextColour, const char * text)
+    void draw_drag_image_label(HWND wnd, bool isThemed, HTHEME theme, HDC dc, const RECT & rc, COLORREF selectionTextColour, const char * text)
     {
         int theme_state = 0;
         bool useTheming = theme && isThemed && IsThemePartDefined(theme, DD_TEXTBG, theme_state);
@@ -73,7 +73,7 @@ namespace uih {
             SetBkMode(dc, previousBackgroundMode);
         }
     }
-    void DrawDragImageIcon(HDC dc, const RECT & rc, HICON icon)
+    void draw_drag_image_icon(HDC dc, const RECT & rc, HICON icon)
     {
         // We may want to use better scaling.
         DrawIconEx(dc, 0, 0, icon, RECT_CX(rc), RECT_CY(rc), NULL, nullptr, DI_NORMAL);
@@ -99,7 +99,7 @@ namespace uih {
 
         return sz;
     }
-    BOOL CreateDragImage(HWND wnd, bool isThemed, HTHEME theme, COLORREF selectionBackgroundColour, COLORREF selectionTextColour,
+    BOOL create_drag_image(HWND wnd, bool isThemed, HTHEME theme, COLORREF selectionBackgroundColour, COLORREF selectionTextColour,
         HICON icon, const LPLOGFONT font, bool showText, const char * text, LPSHDRAGIMAGE lpsdi)
     {
         HDC dc = GetDC(wnd);
@@ -123,15 +123,15 @@ namespace uih {
 
         if (!isThemed || !theme)
         {
-            DrawDragImageBackground(wnd, isThemed, theme, dc_mem, selectionBackgroundColour, rc);
+            draw_drag_image_background(wnd, isThemed, theme, dc_mem, selectionBackgroundColour, rc);
         }
 
         if (icon)
-            uih::DrawDragImageIcon(dc_mem, rc, icon);
+            uih::draw_drag_image_icon(dc_mem, rc, icon);
 
         // Draw label
         if (showText)
-            uih::DrawDragImageLabel(wnd, isThemed, theme, dc_mem, rc, selectionTextColour, text);
+            uih::draw_drag_image_label(wnd, isThemed, theme, dc_mem, rc, selectionTextColour, text);
 
         SelectFont(dc_mem, font_old);
         DeleteFont(fnt);

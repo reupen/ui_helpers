@@ -56,7 +56,7 @@ public:
 *
 * Implemented by trackbar clients, used by host.
 */
-class track_bar : message_hook_manager::message_hook
+class track_bar : uih::MessageHook
 {
 public:
     /**
@@ -354,7 +354,7 @@ private:
      * Used to capture Esc presses when dragging the thumb outside of the
      * window boundary.
      */
-    bool on_hooked_message(message_hook_manager::t_message_hook_type p_type, int code, WPARAM wp, LPARAM lp) override;
+    bool on_hooked_message(uih::MessageHookType p_type, int code, WPARAM wp, LPARAM lp) override;
 
     /**
     * Used internally by the track bar.\n
