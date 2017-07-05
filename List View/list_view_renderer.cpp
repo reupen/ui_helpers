@@ -17,7 +17,7 @@ t_size t_list_view::get_default_indentation_step()
     {
         HDC dc = GetDC(get_wnd());
         HFONT font_old = SelectFont(dc, m_font);
-        const t_size cx_space = ui_helpers::get_text_width(dc, " ", 1);
+        const t_size cx_space = uih::get_text_width(dc, " ", 1);
         SelectFont(dc, font_old);
         ReleaseDC(get_wnd(), dc);
         ret = cx_space*_level_spacing_size;
@@ -47,7 +47,7 @@ void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
         return;
 
     t_size i, count = m_items.get_count();
-    const t_size cx_space = ui_helpers::get_text_width(dc, " ", 1);
+    const t_size cx_space = uih::get_text_width(dc, " ", 1);
     const t_size item_preindentation = cx_space*level_spacing_size*m_group_count + rc_items.left;
     const t_size item_indentation = item_preindentation + get_group_info_area_total_width();
     cx = get_columns_display_width() + item_indentation;
@@ -141,7 +141,7 @@ void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
         {
             FillRect(dc, &rc_search, GetSysColorBrush(COLOR_BTNFACE));
             //render_background(dc, &rc_search);
-            ui_helpers::text_out_colours_tab(dc, m_search_label.get_ptr(), m_search_label.get_length(), 0, 2, &rc_search, false, GetSysColor(COLOR_WINDOWTEXT), false, false, false, ui_helpers::ALIGN_LEFT, NULL);
+            uih::text_out_colours_tab(dc, m_search_label.get_ptr(), m_search_label.get_length(), 0, 2, &rc_search, false, GetSysColor(COLOR_WINDOWTEXT), false, false, false, uih::ALIGN_LEFT, NULL);
         }
     }*/
     if (m_insert_mark_index != pfc_infinite && (m_insert_mark_index <= count))
@@ -226,7 +226,7 @@ void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
         int text_width = NULL;
 
         render_group_background_default(p_data, dc, &rc);
-        ui_helpers::text_out_colours_tab(dc, text, strlen(text), 2 + indentation*level, 2, &rc, false, cr, false, false, true, ui_helpers::ALIGN_LEFT, nullptr, true, true, &text_width);
+        uih::text_out_colours_tab(dc, text, strlen(text), 2 + indentation*level, 2, &rc, false, cr, false, false, true, uih::ALIGN_LEFT, nullptr, true, true, &text_width);
 
         t_size cx = text_width;
 
@@ -270,7 +270,7 @@ void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
         for (k=0; k<countk; k++)
         {
             rc_subitem.right = rc_subitem.left + m_columns[k].m_display_size;
-            ui_helpers::text_out_colours_tab(dc, get_item_text(index,k), strlen(get_item_text(index,k)), 1+(k==0?indentation:0), 3, &rc_subitem, b_selected, cr_text, true, true, true, m_columns[k].m_alignment);
+            uih::text_out_colours_tab(dc, get_item_text(index,k), strlen(get_item_text(index,k)), 1+(k==0?indentation:0), 3, &rc_subitem, b_selected, cr_text, true, true, true, m_columns[k].m_alignment);
             rc_subitem.left = rc_subitem.right;
         }
         if (b_focused)
@@ -315,7 +315,7 @@ t_size t_list_view::get_text_width(const char * text, t_size length)
     if (hdc)
     {
         HFONT fnt_old = SelectFont(hdc, m_font);
-        ret = ui_helpers::get_text_width(hdc, text, strlen(text));
+        ret = uih::get_text_width(hdc, text, strlen(text));
         SelectFont(hdc, fnt_old);
         ReleaseDC(get_wnd(), hdc);
     }
@@ -330,7 +330,7 @@ bool t_list_view::is_item_clipped(t_size index, t_size column)
 
     pfc::string8 text = get_item_text(index,column);
     HFONT fnt_old = SelectFont(hdc, m_font);
-    t_size width = ui_helpers::get_text_width_color(hdc, text, text.length());
+    t_size width = uih::get_text_width_color(hdc, text, text.length());
     SelectFont(hdc, fnt_old);
     ReleaseDC(get_wnd(), hdc);
     unsigned col_width = m_columns[column].m_display_size;

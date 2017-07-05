@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ui_helpers
+namespace uih
 {
     class MemoryDC
     {

@@ -43,13 +43,13 @@ public:
         t_size m_size;
         t_size m_display_size;
         t_size m_autosize_weight;
-        ui_helpers::alignment m_alignment;
+        uih::alignment m_alignment;
 
-        t_column(const char* title, t_size cx, t_size p_autosize_weight = 1, ui_helpers::alignment alignment = ui_helpers::ALIGN_LEFT)
+        t_column(const char* title, t_size cx, t_size p_autosize_weight = 1, uih::alignment alignment = uih::ALIGN_LEFT)
             : m_title(title), m_size(cx), m_display_size(cx), m_autosize_weight(p_autosize_weight),
               m_alignment(alignment) {};
 
-        t_column() : m_size(0), m_display_size(0), m_autosize_weight(1), m_alignment(ui_helpers::ALIGN_LEFT) {};
+        t_column() : m_size(0), m_display_size(0), m_autosize_weight(1), m_alignment(uih::ALIGN_LEFT) {};
     };
 
     using string_array = pfc::array_t<pfc::string_simple>;
@@ -208,7 +208,7 @@ public:
     t_size get_columns_width();
     t_size get_columns_display_width();
     t_size get_column_display_width(t_size index);
-    ui_helpers::alignment get_column_alignment(t_size index);
+    uih::alignment get_column_alignment(t_size index);
     t_size get_column_count();
 
     void _set_scroll_position(t_size val)

@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
-SCRIPT_DIGITSUBSTITUTE ui_helpers::ScriptString_instance::m_sdg;
-bool ui_helpers::ScriptString_instance::m_sdg_valid;
+SCRIPT_DIGITSUBSTITUTE uih::ScriptString_instance::m_sdg;
+bool uih::ScriptString_instance::m_sdg_valid;
 
 template <typename char_t>
 unsigned strtoul_t(const char_t * p_val, unsigned p_val_length, unsigned base)
@@ -157,7 +157,7 @@ unsigned strtoul_n(const char * p_val, unsigned p_val_length)
 #define ELLIPSIS "\xe2\x80\xa6"//"\x85"
 #define ELLIPSIS_LEN 3
 
-namespace ui_helpers
+namespace uih
 {
 BOOL _uExtTextOut(HDC dc,int x,int y,const RECT * rect,const char * text,UINT text_length,bool b_ellipsis = false, alignment p_align = ALIGN_LEFT)
 {

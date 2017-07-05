@@ -404,7 +404,7 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
                             if (!m_limit_tooltips_to_clipped_items || is_clipped)
                             {
                                 pfc::string8 temp;
-                                ui_helpers::remove_color_marks(get_item_text(hit_result.index,hit_result.column), temp);
+                                uih::remove_color_marks(get_item_text(hit_result.index,hit_result.column), temp);
                                 temp.replace_char(9, 0x20);
                                 if (temp.length() > 128)
                                 {
@@ -427,8 +427,8 @@ LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 
                                 //if (!is_clipped)
                                 //{
-                                    //if (m_columns[hit_result.column].m_alignment == ui_helpers::ALIGN_RIGHT)
-                                        //m_rc_tooltip.left = m_rc_tooltip.right - ui_helpers::get_text_width(temp);
+                                    //if (m_columns[hit_result.column].m_alignment == uih::ALIGN_RIGHT)
+                                        //m_rc_tooltip.left = m_rc_tooltip.right - uih::get_text_width(temp);
                                 //}
                             }
                             else destroy_tooltip();

@@ -96,9 +96,9 @@ void t_list_view::build_header()
             for(n = 0; n<t; n++)
             {
                 hdi.fmt = HDF_STRING | HDF_LEFT ; 
-                if (m_columns[n].m_alignment == ui_helpers::ALIGN_CENTRE)
+                if (m_columns[n].m_alignment == uih::ALIGN_CENTRE)
                     hdi.fmt |= HDF_CENTER;
-                else if (m_columns[n].m_alignment == ui_helpers::ALIGN_RIGHT)
+                else if (m_columns[n].m_alignment == uih::ALIGN_RIGHT)
                     hdi.fmt |= HDF_RIGHT;
                 hdi.cchTextMax = m_columns[n].m_title.length(); 
                 wstr.convert(m_columns[n].m_title);
@@ -176,7 +176,7 @@ bool t_list_view::on_wm_notify_header(LPNMHDR lpnm, LRESULT & ret)
                         for (n=0; n<t; n++)
                         {
                             const char * str = get_item_text(n,realIndex);
-                            size = ui_helpers::get_text_width_color(dc, str, strlen(str));
+                            size = uih::get_text_width_color(dc, str, strlen(str));
                             if (size > w) w=size;
                         }
                         w += 7;

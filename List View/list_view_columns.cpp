@@ -27,9 +27,9 @@ t_size t_list_view::get_column_count()
     return m_columns.get_count();
 }
 
-ui_helpers::alignment t_list_view::get_column_alignment(t_size index)
+uih::alignment t_list_view::get_column_alignment(t_size index)
 {
-    ui_helpers::alignment  ret = ui_helpers::ALIGN_LEFT;
+    uih::alignment  ret = uih::ALIGN_LEFT;
     assert(index < get_column_count());
     if (index < get_column_count())
         ret = m_columns[index].m_alignment;

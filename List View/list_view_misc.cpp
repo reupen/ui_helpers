@@ -28,7 +28,7 @@ bool t_list_view::copy_selected_items_as_text(t_size default_single_item_column)
                     text << (j?"\t":"") << get_item_text(i,j);
             }
     }
-    ui_helpers::remove_color_marks(text, cleanedText);
+    uih::remove_color_marks(text, cleanedText);
     uih::set_clipboard_text(cleanedText);
     return selected_count > 0;
 }
@@ -522,7 +522,7 @@ void t_list_view::on_search_string_change(WCHAR c)
 
         if (strchr(p_compare, 3))
         {
-            ui_helpers::remove_color_marks(p_compare, compare_noccodes);
+            uih::remove_color_marks(p_compare, compare_noccodes);
             p_compare = compare_noccodes;
         }
 

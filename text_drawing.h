@@ -7,7 +7,7 @@ t_uint64 strtoul64_n(const char * p_val, unsigned p_val_length, unsigned base= 1
 template <typename char_t>
 unsigned strtoul_t(const char_t * p_val, unsigned p_val_length, unsigned base = 10);
 
-namespace ui_helpers {
+namespace uih {
 
 class ScriptString_instance
 {
