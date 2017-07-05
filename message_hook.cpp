@@ -89,5 +89,4 @@ namespace uih
             g_hooks[type_index].m_hook = nullptr;
         }
     }
-
-};
+}

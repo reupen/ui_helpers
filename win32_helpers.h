@@ -115,32 +115,4 @@ namespace uih {
 
         IntegerAndDpi(TInteger _value = NULL, uint32_t _dpi = USER_DEFAULT_SCREEN_DPI) : value(_value), dpi(_dpi) {};
     };
-
-    class DisableRedrawing
-    {
-        bool m_active, m_disable_invalidate, m_disable_update;
-        HWND m_wnd;
-    public:
-        void reenable_redrawing()
-        {
-            if (m_active)
-            {
-                SendMessage(m_wnd, WM_SETREDRAW, TRUE, 0);
-                if (!m_disable_invalidate || !m_disable_update)
-                    RedrawWindow(m_wnd, nullptr, nullptr, (m_disable_invalidate ? NULL : RDW_INVALIDATE) | (m_disable_update ? NULL : RDW_UPDATENOW));
-                m_active = false;
-            }
-        }
-        DisableRedrawing(HWND wnd, bool b_disable_invalidate = false, bool b_disable_update = false)
-            : m_active(false), m_disable_invalidate(b_disable_invalidate), m_disable_update(b_disable_update), m_wnd(wnd)
-        {
-            if (IsWindowVisible(m_wnd))
-            {
-                SendMessage(m_wnd, WM_SETREDRAW, FALSE, 0);
-                m_active = true;
-            }
-        }
-        ~DisableRedrawing() { reenable_redrawing(); }
-
-    };
 }
