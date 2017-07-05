@@ -5,29 +5,29 @@
 namespace uih {
     namespace ole {
 
-        CLIPFORMAT ClipboardFormatDropDescription();
-        HRESULT SetBlob(IDataObject *pdtobj, CLIPFORMAT cf, const void *pvBlob, UINT cbBlob);
-        HRESULT SetDropDescription(IDataObject *pdtobj, DROPIMAGETYPE dit, const char * msg, const char * insert);
-        HRESULT SetUsingDefaultDragImage(IDataObject *pdtobj, BOOL value = TRUE);
-        HRESULT SetIsShowingText(IDataObject *pdtobj, BOOL value = TRUE);
-        HRESULT SetDisableDragText(IDataObject *pdtobj, BOOL value);
-        HRESULT SetIsComputingImage(IDataObject *pdtobj, BOOL value = TRUE);
-        HRESULT DoDragDrop(HWND wnd, WPARAM initialKeyState, IDataObject *pDataObject, DWORD permittedEffects, DWORD preferredEffect, DWORD *pdwEffect, SHDRAGIMAGE * lpsdi = nullptr);
+        CLIPFORMAT get_clipboard_format_drop_description();
+        HRESULT set_blob(IDataObject *pdtobj, CLIPFORMAT cf, const void *pvBlob, UINT cbBlob);
+        HRESULT set_drop_description(IDataObject *pdtobj, DROPIMAGETYPE dit, const char * msg, const char * insert);
+        HRESULT set_using_default_drag_image(IDataObject *pdtobj, BOOL value = TRUE);
+        HRESULT set_is_showing_text(IDataObject *pdtobj, BOOL value = TRUE);
+        HRESULT set_disable_drag_text(IDataObject *pdtobj, BOOL value);
+        HRESULT set_is_computing_image(IDataObject *pdtobj, BOOL value = TRUE);
+        HRESULT do_drag_drop(HWND wnd, WPARAM initialKeyState, IDataObject *pDataObject, DWORD permittedEffects, DWORD preferredEffect, DWORD *pdwEffect, SHDRAGIMAGE * lpsdi = nullptr);
 
-        class IDropSource_Generic : public IDropSource {
+        class IDropSourceGeneric : public IDropSource {
         public:
             HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, void ** ppvObject) override;
             ULONG STDMETHODCALLTYPE AddRef() override;
             ULONG STDMETHODCALLTYPE Release() override;
             HRESULT STDMETHODCALLTYPE QueryContinueDrag(BOOL fEscapePressed, DWORD grfKeyState) override;
             HRESULT STDMETHODCALLTYPE GiveFeedback(DWORD dwEffect) override;
-            IDropSource_Generic(HWND wnd, IDataObject * pDataObj, DWORD initial_key_state, bool b_allowdropdescriptiontext = true, SHDRAGIMAGE * lpsdi = nullptr); //careful, some fb2k versions have broken IDataObject
+            IDropSourceGeneric(HWND wnd, IDataObject * pDataObj, DWORD initial_key_state, bool b_allowdropdescriptiontext = true, SHDRAGIMAGE * lpsdi = nullptr); //careful, some fb2k versions have broken IDataObject
         private:
-            long refcount;
+            long m_refcount;
             DWORD m_initial_key_state;
             bool m_prev_is_showing_layered;
-            mmh::comptr_t<IDragSourceHelper> m_DragSourceHelper;
-            mmh::comptr_t<IDataObject> m_DataObject;
+            mmh::comptr_t<IDragSourceHelper> m_drag_source_helper;
+            mmh::comptr_t<IDataObject> m_data_object;
         };
 
     }

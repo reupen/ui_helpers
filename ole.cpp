@@ -3,7 +3,7 @@
 namespace uih {
     namespace ole {
 
-        CLIPFORMAT ClipboardFormatDropDescription()
+        CLIPFORMAT get_clipboard_format_drop_description()
         {
             static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(CFSTR_DROPDESCRIPTION);
             return cfRet;
@@ -91,7 +91,7 @@ namespace uih {
             return GetDataObjectDataSimple(pDataObj, IsShowingLayeredFormat(), p_out);
         }
 
-        HRESULT SetBlob(IDataObject *pdtobj, CLIPFORMAT cf, const void *pvBlob, UINT cbBlob)
+        HRESULT set_blob(IDataObject *pdtobj, CLIPFORMAT cf, const void *pvBlob, UINT cbBlob)
         {
             HRESULT hr = E_OUTOFMEMORY;
             void *pv = GlobalAlloc(GPTR, cbBlob);
@@ -118,14 +118,14 @@ namespace uih {
             return hr;
         }
 
-        HRESULT SetDropDescription(IDataObject *pdtobj, DROPIMAGETYPE dit, const char * msg, const char * insert)
+        HRESULT set_drop_description(IDataObject *pdtobj, DROPIMAGETYPE dit, const char * msg, const char * insert)
         {
             if (mmh::osversion::is_windows_vista_or_newer())
             {
                 DROPDESCRIPTION dd_prev;
                 memset(&dd_prev, 0, sizeof(dd_prev));
 
-                bool dd_prev_valid = (SUCCEEDED(GetDataObjectDataSimple(pdtobj, ClipboardFormatDropDescription(), dd_prev)));
+                bool dd_prev_valid = (SUCCEEDED(GetDataObjectDataSimple(pdtobj, get_clipboard_format_drop_description(), dd_prev)));
 
                 pfc::stringcvt::string_os_from_utf8 wmsg(msg);
                 pfc::stringcvt::string_os_from_utf8 winsert(insert);
@@ -137,7 +137,7 @@ namespace uih {
                     dd.type = dit;
                     wcscpy_s(dd.szMessage, wmsg.get_ptr());
                     wcscpy_s(dd.szInsert, winsert.get_ptr());
-                    return SetBlob(pdtobj, ClipboardFormatDropDescription(), &dd, sizeof(dd));
+                    return set_blob(pdtobj, get_clipboard_format_drop_description(), &dd, sizeof(dd));
                 }
                 else
                     return S_OK;
@@ -145,43 +145,43 @@ namespace uih {
             return E_NOTIMPL;
         }
 
-        HRESULT SetUsingDefaultDragImage(IDataObject *pdtobj, BOOL value)
+        HRESULT set_using_default_drag_image(IDataObject *pdtobj, BOOL value)
         {
-            return SetBlob(pdtobj, UsingDefaultDragImageFormat(), &value, sizeof(value));
+            return set_blob(pdtobj, UsingDefaultDragImageFormat(), &value, sizeof(value));
         }
 
-        HRESULT SetIsShowingText(IDataObject *pdtobj, BOOL value)
+        HRESULT set_is_showing_text(IDataObject *pdtobj, BOOL value)
         {
-            return SetBlob(pdtobj, IsShowingTextFormat(), &value, sizeof(value));
+            return set_blob(pdtobj, IsShowingTextFormat(), &value, sizeof(value));
         }
 
-        HRESULT SetDisableDragText(IDataObject *pdtobj, BOOL value)
+        HRESULT set_disable_drag_text(IDataObject *pdtobj, BOOL value)
         {
-            return SetBlob(pdtobj, DisableDragTextFormat(), &value, sizeof(value));
+            return set_blob(pdtobj, DisableDragTextFormat(), &value, sizeof(value));
         }
 
-        HRESULT SetIsComputingImage(IDataObject *pdtobj, BOOL value)
+        HRESULT set_is_computing_image(IDataObject *pdtobj, BOOL value)
         {
-            return SetBlob(pdtobj, IsComputingImageFormat(), &value, sizeof(value));
+            return set_blob(pdtobj, IsComputingImageFormat(), &value, sizeof(value));
         }
 
         HRESULT SetPreferredDropEffect(IDataObject *pdtobj, DWORD effect)
         {
-            return SetBlob(pdtobj, PreferredDropEffectFormat(), &effect, sizeof(effect));
+            return set_blob(pdtobj, PreferredDropEffectFormat(), &effect, sizeof(effect));
         }
 
-        HRESULT DoDragDrop(HWND wnd, WPARAM initialKeyState, IDataObject *pDataObject, DWORD dwEffect, DWORD preferredEffect, DWORD *pdwEffect, SHDRAGIMAGE * lpsdi)
+        HRESULT do_drag_drop(HWND wnd, WPARAM initialKeyState, IDataObject *pDataObject, DWORD dwEffect, DWORD preferredEffect, DWORD *pdwEffect, SHDRAGIMAGE * lpsdi)
         {
             if (preferredEffect)
                 SetPreferredDropEffect(pDataObject, preferredEffect);
 
             mmh::comptr_t<IDropSource> pDropSource;
             //if (!IsVistaOrNewer())
-            pDropSource = new uih::ole::IDropSource_Generic(wnd, pDataObject, initialKeyState, true, lpsdi);
+            pDropSource = new uih::ole::IDropSourceGeneric(wnd, pDataObject, initialKeyState, true, lpsdi);
             return SHDoDragDrop(wnd, pDataObject, pDropSource, dwEffect, pdwEffect);
         }
 
-        HRESULT STDMETHODCALLTYPE IDropSource_Generic::QueryInterface(REFIID iid, void ** ppvObject)
+        HRESULT STDMETHODCALLTYPE IDropSourceGeneric::QueryInterface(REFIID iid, void ** ppvObject)
         {
             if (ppvObject == nullptr) return E_INVALIDARG;
             *ppvObject = nullptr;
@@ -189,10 +189,10 @@ namespace uih {
             else if (iid == IID_IDropSource) { AddRef(); *ppvObject = (IDropSource*)this; return S_OK; }
             else return E_NOINTERFACE;
         }
-        ULONG STDMETHODCALLTYPE IDropSource_Generic::AddRef() { return InterlockedIncrement(&refcount); }
-        ULONG STDMETHODCALLTYPE IDropSource_Generic::Release()
+        ULONG STDMETHODCALLTYPE IDropSourceGeneric::AddRef() { return InterlockedIncrement(&m_refcount); }
+        ULONG STDMETHODCALLTYPE IDropSourceGeneric::Release()
         {
-            LONG rv = InterlockedDecrement(&refcount);
+            LONG rv = InterlockedDecrement(&m_refcount);
             if (!rv)
             {
                 delete this;
@@ -200,7 +200,7 @@ namespace uih {
             return rv;
         }
 
-        HRESULT STDMETHODCALLTYPE IDropSource_Generic::QueryContinueDrag(BOOL fEscapePressed, DWORD grfKeyState)
+        HRESULT STDMETHODCALLTYPE IDropSourceGeneric::QueryContinueDrag(BOOL fEscapePressed, DWORD grfKeyState)
         {
             if (fEscapePressed || ((m_initial_key_state & MK_LBUTTON) && (grfKeyState & MK_RBUTTON)))
             {
@@ -216,14 +216,14 @@ namespace uih {
             else return S_OK;
         }
 
-        HRESULT STDMETHODCALLTYPE IDropSource_Generic::GiveFeedback(DWORD dwEffect)
+        HRESULT STDMETHODCALLTYPE IDropSourceGeneric::GiveFeedback(DWORD dwEffect)
         {
             HWND wnd_drag = nullptr;
             BOOL isShowingLayered = FALSE;
             if (IsThemeActive())
-                GetIsShowingLayered(m_DataObject, isShowingLayered);
+                GetIsShowingLayered(m_data_object, isShowingLayered);
 
-            if (SUCCEEDED(GetDragWindow(m_DataObject, wnd_drag)) && wnd_drag)
+            if (SUCCEEDED(GetDragWindow(m_data_object, wnd_drag)) && wnd_drag)
                 PostMessage(wnd_drag, DDWM_UPDATEWINDOW, NULL, NULL);
 
             if (isShowingLayered)
@@ -252,23 +252,23 @@ namespace uih {
             return isShowingLayered ? S_OK : DRAGDROP_S_USEDEFAULTCURSORS;
         }
 
-        IDropSource_Generic::IDropSource_Generic(HWND wnd, IDataObject * pDataObj, DWORD initial_key_state, bool b_allowdropdescriptiontext, SHDRAGIMAGE * lpsdi)
-            : refcount(0), m_initial_key_state(initial_key_state), m_prev_is_showing_layered(false), m_DataObject(pDataObj)
+        IDropSourceGeneric::IDropSourceGeneric(HWND wnd, IDataObject * pDataObj, DWORD initial_key_state, bool b_allowdropdescriptiontext, SHDRAGIMAGE * lpsdi)
+            : m_refcount(0), m_initial_key_state(initial_key_state), m_prev_is_showing_layered(false), m_data_object(pDataObj)
         {
             HRESULT hr;
 
             if (b_allowdropdescriptiontext)
             {
-                if (SUCCEEDED(m_DragSourceHelper.instantiate(CLSID_DragDropHelper, nullptr, CLSCTX_INPROC_SERVER)))
+                if (SUCCEEDED(m_drag_source_helper.instantiate(CLSID_DragDropHelper, nullptr, CLSCTX_INPROC_SERVER)))
                 {
-                    mmh::comptr_t<IDragSourceHelper2> pDragSourceHelper2 = m_DragSourceHelper;
+                    mmh::comptr_t<IDragSourceHelper2> pDragSourceHelper2 = m_drag_source_helper;
                     if (pDragSourceHelper2.is_valid())
                     {
                         hr = pDragSourceHelper2->SetFlags(DSH_ALLOWDROPDESCRIPTIONTEXT);
                     }
                     if (lpsdi)
                     {
-                        hr = m_DragSourceHelper->InitializeFromBitmap(lpsdi, pDataObj);
+                        hr = m_drag_source_helper->InitializeFromBitmap(lpsdi, pDataObj);
                         if (FAILED(hr) && lpsdi->hbmpDragImage)
                         {
                             DeleteObject(lpsdi->hbmpDragImage);
@@ -276,10 +276,10 @@ namespace uih {
                         }
                     }
                     else
-                        hr = m_DragSourceHelper->InitializeFromWindow(wnd, nullptr, pDataObj);
+                        hr = m_drag_source_helper->InitializeFromWindow(wnd, nullptr, pDataObj);
                     if (IsThemeActive() && IsAppThemed())
                     {
-                        SetUsingDefaultDragImage(pDataObj);
+                        set_using_default_drag_image(pDataObj);
                     }
                 }
             }
