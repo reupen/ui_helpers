@@ -39,7 +39,7 @@ namespace uih
         }
     }
 
-    unsigned get_trunc_len(const char * src, unsigned len)
+    unsigned get_text_truncate_point(const char * src, unsigned len)
     {
         unsigned rv = len;
 
@@ -71,7 +71,7 @@ namespace uih
         if (trunc || width_out)
         {
             w_utf8.convert(text_w.get_ptr(), *max_chars);
-            *max_chars = trunc ? get_trunc_len(w_utf8, w_utf8.length()) : w_utf8.length();
+            *max_chars = trunc ? get_text_truncate_point(w_utf8, w_utf8.length()) : w_utf8.length();
             if (width_out)
                 *width_out = get_text_width_colour(dc, w_utf8, *max_chars);
         }
