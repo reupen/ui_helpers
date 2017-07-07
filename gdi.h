@@ -1,9 +1,7 @@
 #pragma once
 
-namespace uih
-{
-    class MemoryDC
-    {
+namespace uih {
+    class MemoryDC {
     public:
         MemoryDC(const PAINTSTRUCT & ps)
         {
@@ -28,12 +26,13 @@ namespace uih
         operator HDC () const {return m_dc_mem;};
     private:
         RECT m_rc;
-        HDC m_dc, m_dc_mem;
-        HBITMAP m_bm_mem, m_bm_old;
+        HDC m_dc;
+        HDC m_dc_mem;
+        HBITMAP m_bm_mem;
+        HBITMAP m_bm_old;
     };
 
-    class PaintScope
-    {
+    class PaintScope {
     public:
         PaintScope(HWND wnd) : m_wnd(wnd)
         {
@@ -51,8 +50,7 @@ namespace uih
         HWND m_wnd;
     };
 
-    class DisableRedrawScope
-    {
+    class DisableRedrawScope {
     public:
         DisableRedrawScope(HWND wnd)
         {
@@ -73,5 +71,4 @@ namespace uih
         bool m_active;
         HWND m_wnd;
     };
-
-};
+}
