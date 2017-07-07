@@ -122,38 +122,6 @@ t_uint64 strtoul64_n(const char * p_val, unsigned p_val_length, unsigned base)
     return rv;
 }
 
-#if 0
-unsigned strtoul_n(const char * p_val, unsigned p_val_length)
-{
-    unsigned rv = 0;
-    const char * ptr = p_val;
-    /*while (ptr - p_val < p_val_length && *ptr == '0')
-    {
-    ptr++;
-    }*/
-    while ((ptr - p_val) < p_val_length && *ptr)
-    {
-        if (*ptr >= '0' && *ptr <='9')
-        {
-            rv *= 16;
-            rv += *ptr - '0';
-        }
-        else if (*ptr >= 'a' && *ptr <= 'f')
-        {
-            rv *= 16;
-            rv += *ptr - 'a' + 10;
-        }
-        else if (*ptr >= 'A' && *ptr <= 'F')
-        {
-            rv *= 16;
-            rv += *ptr - 'A' + 10;
-        }
-        else break;
-        ptr++;
-    }
-    return rv;
-}
-#endif
 #define ELLIPSIS "\xe2\x80\xa6"//"\x85"
 #define ELLIPSIS_LEN 3
 
