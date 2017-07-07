@@ -134,8 +134,6 @@ public:
     BOOL run(HDC dc, const char * text, int length, int max_width, LPINT max_chars, LPINT width_array, LPSIZE sz, unsigned * width_out, bool trunc);
 };
     
-//BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width, LPINT max_chars, LPINT width_array, LPSIZE sz, unsigned & width_out, bool trunc = true);
-//BOOL uGetTextExtentExPoint2(HDC dc, const char * text, int length, int max_width, LPINT max_chars, LPINT width_array, LPSIZE sz, unsigned * width_out = NULL, bool trunc = true);
 enum alignment
 {
     ALIGN_LEFT,

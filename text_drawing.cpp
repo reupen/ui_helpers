@@ -117,54 +117,6 @@ BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int 
         return FALSE;
     }
 
-BOOL uGetTextExtentExPoint2(HDC dc, const char * text, int length, int max_width, LPINT max_chars, LPINT width_array, LPSIZE sz, unsigned * width_out, bool trunc)
-{
-    const char * src = text;
-    pfc::string8 temp;
-
-    if (check_colour_marks(text, length))
-    { 
-        remove_color_marks(text, temp, length);
-        src = temp;
-        length = temp.length();
-    }
-
-    pfc::stringcvt::string_wide_from_utf8_fast text_w(src, length);
-    if (GetTextExtentExPointW(dc, text_w.get_ptr(), text_w.length(), max_width, max_chars, width_array, sz))
-    {
-        pfc::stringcvt::string_utf8_from_wide w_utf8(text_w.get_ptr(), *max_chars);
-        *max_chars = trunc ? get_trunc_len(w_utf8, w_utf8.length()) : w_utf8.length();
-        if (width_out)
-            *width_out = get_text_width_color(dc, w_utf8, *max_chars);
-        return TRUE;
-    }
-    return FALSE;
-}
-
-
-// here we depend on valid pointer anyway, no point using param_ stuff (or rather cant be bothered to make utf16/ansi => utf8 ones)
-BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width, LPINT max_chars, LPINT width_array, LPSIZE sz, unsigned & width_out, bool trunc)
-{
-    const char * src = text;
-    pfc::string8 temp;
-
-    if (check_colour_marks(text, length))
-    { 
-        remove_color_marks(text, temp, length);
-        src = temp;
-        length = temp.length();
-    }
-
-    pfc::stringcvt::string_wide_from_utf8 text_w(src, length);
-    if (GetTextExtentExPointW(dc, text_w.get_ptr(), text_w.length(), max_width, max_chars, width_array, sz))
-    {
-        pfc::stringcvt::string_utf8_from_wide w_utf8(text_w.get_ptr(), *max_chars);
-        *max_chars = trunc ? get_trunc_len(w_utf8, w_utf8.length()) : w_utf8.length();
-        width_out = get_text_width_color(dc, w_utf8, *max_chars);
-        return TRUE;
-    }
-    return FALSE;
-}
     bool is_rect_null(const RECT * r)
     {
         return r->right <= r->left || r->bottom <= r->top;
