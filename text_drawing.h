@@ -124,13 +124,13 @@ private:
     static bool m_sdg_valid;
 };
 
-class uGetTextExtentExPoint_helper
+class CharacterExtentsCalculator
 {
     pfc::string8_fast_aggressive temp;
     pfc::stringcvt::string_wide_from_utf8_fast text_w;
     pfc::stringcvt::string_utf8_from_wide w_utf8;
 public:
-    uGetTextExtentExPoint_helper() {temp.prealloc(64);}
+    CharacterExtentsCalculator() {temp.prealloc(64);}
     BOOL run(HDC dc, const char * text, int length, int max_width, LPINT max_chars, LPINT width_array, LPSIZE sz, unsigned * width_out, bool trunc);
 };
     

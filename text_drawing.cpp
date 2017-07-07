@@ -80,7 +80,7 @@ unsigned get_trunc_len(const char * src, unsigned len)
     return rv;
 }
 
-BOOL uGetTextExtentExPoint_helper::run(HDC dc, const char * text, int length, int max_width, LPINT max_chars, LPINT width_array, LPSIZE sz, unsigned * width_out, bool trunc)
+BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int max_width, LPINT max_chars, LPINT width_array, LPSIZE sz, unsigned * width_out, bool trunc)
     {
         const char * src = text;
 
