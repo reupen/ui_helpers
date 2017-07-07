@@ -1,11 +1,80 @@
-#ifndef _TEXT_DRAWING_H_COLUMNS_
-#define _TEXT_DRAWING_H_COLUMNS_
+#pragma once
 
-unsigned strtoul_n(const char * p_val, unsigned p_val_length, unsigned base=10);
-t_int64 strtol64_n(const char * p_val, unsigned p_val_length, unsigned base= 10);
-t_uint64 strtoul64_n(const char * p_val, unsigned p_val_length, unsigned base= 10);
-template <typename char_t>
-unsigned strtoul_t(const char_t * p_val, unsigned p_val_length, unsigned base = 10);
+template <typename TChar, typename TInteger = uint32_t>
+TInteger strtoul_n(const TChar* p_val, unsigned p_val_length, unsigned base = 10)
+{
+    TInteger rv = 0;
+    const TChar * ptr = p_val;
+
+    while (t_size(ptr - p_val) < p_val_length && *ptr)
+    {
+        if (*ptr >= '0' && *ptr <= '9')
+        {
+            rv *= base;
+            rv += *ptr - '0';
+        }
+        else if (base > 10 && *ptr >= 'a' && *ptr < TChar('a' + base - 10))
+        {
+            rv *= base;
+            rv += *ptr - 'a' + 10;
+        }
+        else if (base > 10 && *ptr >= 'A' && *ptr < TChar('A' + base - 10))
+        {
+            rv *= base;
+            rv += *ptr - 'A' + 10;
+        }
+        else break;
+        ++ptr;
+    }
+    return rv;
+}
+
+template <typename TChar>
+uint64_t strtoul64_n(const TChar* p_val, unsigned p_val_length, unsigned base = 10)
+{
+    return strtoul_n<TChar, uint64_t>(p_val, p_val_length, base);
+}
+
+template <typename TChar, typename TInteger = uint32_t>
+TInteger strtol_n(const TChar* p_val, unsigned p_val_length, unsigned base = 10)
+{
+    TInteger rv = 0;
+    const TChar * ptr = p_val;
+
+    t_int8 sign = 1;
+
+    if (*ptr == '-') { sign = -1; ptr++; }
+    else if (*ptr == '+') ptr++;
+
+    while (t_size(ptr - p_val) < p_val_length && *ptr)
+    {
+        if (*ptr >= '0' && *ptr <= '9')
+        {
+            rv *= base;
+            rv += *ptr - '0';
+        }
+        else if (base > 10 && *ptr >= 'a' && *ptr < static_cast<TChar>('a' + base - 10))
+        {
+            rv *= base;
+            rv += *ptr - 'a' + 10;
+        }
+        else if (base > 10 && *ptr >= 'A' && *ptr < static_cast<TChar>('A' + base - 10))
+        {
+            rv *= base;
+            rv += *ptr - 'A' + 10;
+        }
+        else break;
+        ++ptr;
+    }
+    rv *= sign;
+    return rv;
+}
+
+template <typename TChar>
+int64_t strtol64_n(const TChar* p_val, unsigned p_val_length, unsigned base = 10)
+{
+    return strtol_n<TChar, int64_t>(p_val, p_val_length, base);
+}
 
 namespace uih {
 
@@ -169,6 +238,4 @@ BOOL text_out_colours_ellipsis(HDC dc,const char * src,int len,int x_offset,int 
 BOOL text_out_colours_tab(HDC dc,const char * display,int display_len,int left_offset,int border,const RECT * base_clip,bool selected,DWORD default_color,bool columns,bool tab,bool show_ellipsis,alignment align, unsigned * p_width = nullptr, bool b_set_default_colours = true, bool b_vertical_align_centre = true, int * p_position = nullptr);
 
 void remove_color_marks(const char * src, pfc::string_base& out, t_size len = pfc_infinite);
-};
-
-#endif
+}

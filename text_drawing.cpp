@@ -3,125 +3,6 @@
 SCRIPT_DIGITSUBSTITUTE uih::ScriptString_instance::m_sdg;
 bool uih::ScriptString_instance::m_sdg_valid;
 
-template <typename char_t>
-unsigned strtoul_t(const char_t * p_val, unsigned p_val_length, unsigned base)
-{
-    unsigned rv = 0;
-    const char_t * ptr = p_val;
-
-    while (t_size(ptr - p_val) < p_val_length && *ptr)
-    {
-        if (*ptr >= '0' && *ptr <='9')
-        {
-            rv *= base;
-            rv += *ptr - '0';
-        }
-        else if (base > 10 && *ptr >= 'a' && *ptr < (char)('a'+base-10))
-        {
-            rv *= base;
-            rv += *ptr - 'a' + 10;
-        }
-        else if (base > 10 && *ptr >= 'A' && *ptr < char('A'+base-10))
-        {
-            rv *= base;
-            rv += *ptr - 'A' + 10;
-        }
-        else break;
-        ptr++;
-    }
-    return rv;
-}
-
-unsigned strtoul_n(const char * p_val, unsigned p_val_length, unsigned base)
-{
-    unsigned rv = 0;
-    const char * ptr = p_val;
-
-    while (t_size(ptr - p_val) < p_val_length && *ptr)
-    {
-        if (*ptr >= '0' && *ptr <='9')
-        {
-            rv *= base;
-            rv += *ptr - '0';
-        }
-        else if (base > 10 && *ptr >= 'a' && *ptr < (char)('a'+base-10))
-        {
-            rv *= base;
-            rv += *ptr - 'a' + 10;
-        }
-        else if (base > 10 && *ptr >= 'A' && *ptr < char('A'+base-10))
-        {
-            rv *= base;
-            rv += *ptr - 'A' + 10;
-        }
-        else break;
-        ptr++;
-    }
-    return rv;
-}
-
-t_int64 strtol64_n(const char * p_val, unsigned p_val_length, unsigned base)
-{
-    t_int64 rv = 0;
-    const char * ptr = p_val;
-
-    t_int8 sign = 1;
-
-    if (*ptr == '-') {sign = -1; ptr++;}
-    else if (*ptr == '+') ptr++;
-
-    while (t_size(ptr - p_val) < p_val_length && *ptr)
-    {
-        if (*ptr >= '0' && *ptr <='9')
-        {
-            rv *= base;
-            rv += *ptr - '0';
-        }
-        else if (base > 10 && *ptr >= 'a' && *ptr < (char)('a'+base-10))
-        {
-            rv *= base;
-            rv += *ptr - 'a' + 10;
-        }
-        else if (base > 10 && *ptr >= 'A' && *ptr < char('A'+base-10))
-        {
-            rv *= base;
-            rv += *ptr - 'A' + 10;
-        }
-        else break;
-        ptr++;
-    }
-    rv *= sign;
-    return rv;
-}
-
-t_uint64 strtoul64_n(const char * p_val, unsigned p_val_length, unsigned base)
-{
-    t_uint64 rv = 0;
-    const char * ptr = p_val;
-
-    while (t_size(ptr - p_val) < p_val_length && *ptr)
-    {
-        if (*ptr >= '0' && *ptr <='9')
-        {
-            rv *= base;
-            rv += *ptr - '0';
-        }
-        else if (base > 10 && *ptr >= 'a' && *ptr < (char)('a'+base-10))
-        {
-            rv *= base;
-            rv += *ptr - 'a' + 10;
-        }
-        else if (base > 10 && *ptr >= 'A' && *ptr < char('A'+base-10))
-        {
-            rv *= base;
-            rv += *ptr - 'A' + 10;
-        }
-        else break;
-        ptr++;
-    }
-    return rv;
-}
-
 #define ELLIPSIS "\xe2\x80\xa6"//"\x85"
 #define ELLIPSIS_LEN 3
 
@@ -543,7 +424,7 @@ BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width,
                         else
                         {
                             p_current++;
-                            new_colour = strtoul_t(p_current,min(6,wLen-(p_current-p_start)), 0x10);
+                            new_colour = strtoul_n(p_current,min(6,wLen-(p_current-p_start)), 0x10);
                             while(size_t(p_current-p_start)<wLen && p_current[0]!=3 && p_current[0]!='|')
                             {
                                 p_current++;
@@ -553,7 +434,7 @@ BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width,
                                 if (size_t(p_current-p_start)+1<wLen)
                                 {
                                     p_current++;
-                                    new_colour_selected = strtoul_t(p_current,min(6,wLen-(p_current-p_start)), 0x10);
+                                    new_colour_selected = strtoul_n(p_current,min(6,wLen-(p_current-p_start)), 0x10);
                                     have_selected = true;
                                 }
                                 else
