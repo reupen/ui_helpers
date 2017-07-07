@@ -166,30 +166,10 @@ BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int 
         }
     }
 
-    void get_text_size_legacy(HDC dc,const char * src,int len, SIZE & sz)
-    {
-        sz.cx = 0;
-        sz.cy = 0;
-        if (!dc) return;
-        if (len<=0) return;
-        else
-        {
-            pfc::stringcvt::string_wide_from_utf8 wstr(src, len);
-            GetTextExtentPoint32(dc, wstr, wstr.length(), &sz);
-        }
-    }
-
     int get_text_width(HDC dc,const char * src,int len)
     {
         SIZE sz;
         get_text_size(dc, src, len, sz);
-        return sz.cx;
-    }
-
-    int get_text_width_legacy(HDC dc,const char * src,int len)
-    {
-        SIZE sz;
-        get_text_size_legacy(dc, src, len, sz);
         return sz.cx;
     }
 
@@ -219,34 +199,6 @@ BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int 
             else ptr++;
         }
         rv += get_text_width(dc,src+start,ptr-start);
-        return rv;
-    }
-
-    int get_text_width_color_legacy(HDC dc,const char * src,int len, bool b_ignore_tabs)
-    {
-        if (!dc) return 0;
-        int ptr = 0;
-        int start = 0;
-        int rv = 0;
-        if (len<0) len = strlen(src);
-        while(ptr<len)
-        {
-            if (src[ptr]==3)
-            {
-                rv += get_text_width_legacy(dc,src+start,ptr-start);
-                ptr++;
-                while(ptr<len && src[ptr]!=3) ptr++;
-                if (ptr<len) ptr++;
-                start = ptr;
-            }
-            else if (b_ignore_tabs && src[ptr]=='\t')
-            {
-                rv += get_text_width_legacy(dc,src+start,ptr-start);
-                while (ptr<len && src[ptr]=='\t') ptr++;
-            }
-            else ptr++;
-        }
-        rv += get_text_width_legacy(dc,src+start,ptr-start);
         return rv;
     }
 
