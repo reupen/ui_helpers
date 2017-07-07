@@ -2,22 +2,22 @@
 
 namespace uih {
 
-class ScriptString_instance
+class UniscribeTextRenderer
 {
 public:
-    ScriptString_instance()
+    UniscribeTextRenderer()
     {
         initialise();
     }
-    ~ScriptString_instance() {cleanup();}
+    ~UniscribeTextRenderer() {cleanup();}
 
-    ScriptString_instance(HDC dc, const wchar_t * p_str, size_t p_str_len, int max_cx, bool b_clip)
+    UniscribeTextRenderer(HDC dc, const wchar_t * p_str, size_t p_str_len, int max_cx, bool b_clip)
     {
         initialise();
         analyse (dc, p_str, p_str_len, max_cx, b_clip);
     }
 
-    ScriptString_instance(HDC dc, const char * p_str, size_t p_str_len, int max_cx, bool b_clip)
+    UniscribeTextRenderer(HDC dc, const char * p_str, size_t p_str_len, int max_cx, bool b_clip)
     {
         initialise();
         analyse (dc, p_str, p_str_len, max_cx, b_clip);
@@ -25,7 +25,6 @@ public:
 
     void analyse(HDC dc, const wchar_t * p_str, size_t p_str_len, int max_cx, bool b_clip)
     {
-//        profiler(analyse);
         if (m_ssa)
         {
             cleanup();
@@ -42,7 +41,6 @@ public:
     }
     void text_out (int x, int y, UINT flags, const RECT * p_rc)
     {
-//        profiler(text_out);
         if (m_ssa)
             ScriptStringOut (m_ssa, x, y, flags, p_rc, 0, 0, FALSE);
     }
@@ -53,7 +51,6 @@ public:
     }
     void get_output_size(SIZE & p_sz)
     {
-//        profiler(get_output_size);
         const SIZE * sz = m_ssa ? ScriptString_pSize(m_ssa) : nullptr;
         if (sz) p_sz = *sz;
         else {p_sz.cx = (p_sz.cy = 0);}
@@ -72,7 +69,6 @@ public:
     }
     void get_character_logical_widths(int * p_array_out)
     {
-//        profiler(get_character_logical_widths);
         if (m_ssa)
             ScriptStringGetLogicalWidths(m_ssa, p_array_out);
     }
@@ -91,28 +87,21 @@ public:
 private:
     void initialise()
     {
-        {
-//            profiler(initialise_a);
-            m_scache = nullptr;
-            m_ssa = nullptr;
-            m_string_length = NULL;
-            memset(&m_sc, 0, sizeof(m_sc));
-            memset(&m_ss, 0, sizeof(m_ss));
-        }
+        m_scache = nullptr;
+        m_ssa = nullptr;
+        m_string_length = NULL;
+        memset(&m_sc, 0, sizeof(m_sc));
+        memset(&m_ss, 0, sizeof(m_ss));
 
+        if (!m_sdg_valid)
         {
-//            profiler(initialise_b);
-            if (!m_sdg_valid)
-            {
-                ScriptRecordDigitSubstitution(LOCALE_USER_DEFAULT, &m_sdg);
-                m_sdg_valid = true;
-            }
-            ScriptApplyDigitSubstitution(&m_sdg, &m_sc, &m_ss);
+            ScriptRecordDigitSubstitution(LOCALE_USER_DEFAULT, &m_sdg);
+            m_sdg_valid = true;
         }
+        ScriptApplyDigitSubstitution(&m_sdg, &m_sc, &m_ss);
     }
     void cleanup()
     {
-//        profiler(cleanup);
         if (m_ssa)
         {
             ScriptStringFree(&m_ssa);
@@ -121,6 +110,7 @@ private:
         if (m_scache)
         {
             ScriptFreeCache(&m_scache);
+            m_scache = nullptr;
         }
     }
 

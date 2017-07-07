@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
-SCRIPT_DIGITSUBSTITUTE uih::ScriptString_instance::m_sdg;
-bool uih::ScriptString_instance::m_sdg_valid;
+SCRIPT_DIGITSUBSTITUTE uih::UniscribeTextRenderer::m_sdg;
+bool uih::UniscribeTextRenderer::m_sdg_valid;
 
 #define ELLIPSIS "\xe2\x80\xa6"//"\x85"
 #define ELLIPSIS_LEN 3
@@ -26,7 +26,7 @@ BOOL _uExtTextOut(HDC dc,int x,int y,const RECT * rect,const char * text,UINT te
     BOOL ret = TRUE;
     //DrawTextEx(dc, const_cast<wchar_t*>(temp.get_ptr()), temp.length(), &rc, flags, NULL);
 
-    ScriptString_instance p_ScriptString(dc, temp.get_ptr(), temp.length(), NULL, NULL);
+    UniscribeTextRenderer p_ScriptString(dc, temp.get_ptr(), temp.length(), NULL, NULL);
     p_ScriptString.text_out(x, y, ETO_CLIPPED, rect);
 
     return ret;
@@ -93,7 +93,7 @@ BOOL uGetTextExtentExPoint_helper::run(HDC dc, const char * text, int length, in
 
         text_w.convert(src, length);
 #if 1
-        ScriptString_instance p_ScriptString;
+        UniscribeTextRenderer p_ScriptString;
         p_ScriptString.analyse(dc, text_w.get_ptr(), text_w.length(), max_width, max_chars != nullptr);
 
         {
@@ -183,7 +183,7 @@ BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width,
             t_size wlen = wstr.length();
 
 #if 1
-            ScriptString_instance p_ScriptString(dc, wstr, wlen, NULL, false);
+            UniscribeTextRenderer p_ScriptString(dc, wstr, wlen, NULL, false);
             p_ScriptString.get_output_size(sz);
 
 #elif 0
@@ -464,7 +464,7 @@ BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width,
         src = src_s.get_ptr();
         wLen = src_s.get_size();
 
-        pfc::array_staticsize_t<ScriptString_instance> scriptStrings(colourChangeCount);
+        pfc::array_staticsize_t<UniscribeTextRenderer> scriptStrings(colourChangeCount);
         pfc::array_staticsize_t<int> characterExtents (wLen);
 
         for (i=0; i<colourChangeCount; i++)
@@ -495,7 +495,7 @@ BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width,
         int position = clip.left;//item.left+BORDER;
 
 #if 1
-        //ScriptString_instance pScriptString(dc, src_c, len, -1, false);
+        //UniscribeTextRenderer pScriptString(dc, src_c, len, -1, false);
 #endif
 
         {
