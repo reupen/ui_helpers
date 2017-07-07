@@ -176,7 +176,7 @@ bool t_list_view::on_wm_notify_header(LPNMHDR lpnm, LRESULT & ret)
                         for (n=0; n<t; n++)
                         {
                             const char * str = get_item_text(n,realIndex);
-                            size = uih::get_text_width_color(dc, str, strlen(str));
+                            size = uih::get_text_width_colour(dc, str, strlen(str));
                             if (size > w) w=size;
                         }
                         w += 7;

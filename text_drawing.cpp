@@ -73,7 +73,7 @@ namespace uih
             w_utf8.convert(text_w.get_ptr(), *max_chars);
             *max_chars = trunc ? get_trunc_len(w_utf8, w_utf8.length()) : w_utf8.length();
             if (width_out)
-                *width_out = get_text_width_color(dc, w_utf8, *max_chars);
+                *width_out = get_text_width_colour(dc, w_utf8, *max_chars);
         }
         return TRUE;
     }
@@ -104,7 +104,7 @@ namespace uih
         return sz.cx;
     }
 
-    int get_text_width_color(HDC dc,const char * src,int len, bool b_ignore_tabs)
+    int get_text_width_colour(HDC dc,const char * src,int len, bool b_ignore_tabs)
     {
         if (!dc) return 0;
         int ptr = 0;

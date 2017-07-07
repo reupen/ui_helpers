@@ -330,7 +330,7 @@ bool t_list_view::is_item_clipped(t_size index, t_size column)
 
     pfc::string8 text = get_item_text(index,column);
     HFONT fnt_old = SelectFont(hdc, m_font);
-    t_size width = uih::get_text_width_color(hdc, text, text.length());
+    t_size width = uih::get_text_width_colour(hdc, text, text.length());
     SelectFont(hdc, fnt_old);
     ReleaseDC(get_wnd(), hdc);
     unsigned col_width = m_columns[column].m_display_size;
