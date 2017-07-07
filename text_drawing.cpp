@@ -424,7 +424,7 @@ BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width,
                         else
                         {
                             p_current++;
-                            new_colour = strtoul_n(p_current,min(6,wLen-(p_current-p_start)), 0x10);
+                            new_colour = mmh::strtoul_n(p_current,min(6,wLen-(p_current-p_start)), 0x10);
                             while(size_t(p_current-p_start)<wLen && p_current[0]!=3 && p_current[0]!='|')
                             {
                                 p_current++;
@@ -434,7 +434,7 @@ BOOL uGetTextExtentExPoint(HDC dc, const char * text, int length, int max_width,
                                 if (size_t(p_current-p_start)+1<wLen)
                                 {
                                     p_current++;
-                                    new_colour_selected = strtoul_n(p_current,min(6,wLen-(p_current-p_start)), 0x10);
+                                    new_colour_selected = mmh::strtoul_n(p_current,min(6,wLen-(p_current-p_start)), 0x10);
                                     have_selected = true;
                                 }
                                 else
