@@ -140,7 +140,7 @@ enum alignment
     ALIGN_CENTRE,
     ALIGN_RIGHT,
 };
-bool is_rect_null(const RECT * r);
+bool is_rect_null_or_reversed(const RECT* r);
 void get_text_size(HDC dc,const char * src,int len, SIZE & sz);
 int get_text_width(HDC dc,const char * src,int len);
 int get_text_width_color(HDC dc,const char * src,int len, bool b_ignore_tabs = false);

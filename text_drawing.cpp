@@ -117,7 +117,7 @@ BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int 
         return FALSE;
     }
 
-    bool is_rect_null(const RECT * r)
+    bool is_rect_null_or_reversed(const RECT * r)
     {
         return r->right <= r->left || r->bottom <= r->top;
     }
@@ -274,7 +274,7 @@ BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int 
 
         if (base_clip)
         {
-            if (is_rect_null(base_clip) || base_clip->right<=base_clip->left+x_offset || base_clip->bottom<=pos_y) return TRUE;
+            if (is_rect_null_or_reversed(base_clip) || base_clip->right<=base_clip->left+x_offset || base_clip->bottom<=pos_y) return TRUE;
         }
 
 
@@ -497,7 +497,7 @@ BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int 
 
         RECT clip = *base_clip;
 
-        if (is_rect_null(&clip)) return TRUE;
+        if (is_rect_null_or_reversed(&clip)) return TRUE;
 
         int extra = (clip.bottom-clip.top - uih::get_dc_font_height(dc));
 
@@ -591,7 +591,7 @@ BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int 
 
         RECT clip = *base_clip;
 
-        if (is_rect_null(&clip)) return TRUE;
+        if (is_rect_null_or_reversed(&clip)) return TRUE;
 
         int extra = (clip.bottom-clip.top - uGetTextHeight(dc));
 
