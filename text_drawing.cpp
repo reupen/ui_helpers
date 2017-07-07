@@ -8,79 +8,48 @@ bool uih::UniscribeTextRenderer::m_sdg_valid;
 
 namespace uih
 {
-BOOL _uExtTextOut(HDC dc,int x,int y,const RECT * rect,const char * text,UINT text_length,bool b_ellipsis = false, alignment p_align = ALIGN_LEFT)
-{
-    pfc::stringcvt::string_os_from_utf8 temp(text,text_length);
-    RECT rc = *rect;
-    rc.left = x;
-    rc.top = y;
-    UINT flags = DT_SINGLELINE|DT_TOP|DT_NOPREFIX;
-    if (b_ellipsis)
-        flags |= DT_WORD_ELLIPSIS;
-    if (p_align == ALIGN_LEFT)
-        flags |= DT_LEFT;
-    else if (p_align == ALIGN_LEFT)
-        flags |= DT_CENTER;
-    else if (p_align == ALIGN_RIGHT)
-        flags |= DT_RIGHT;
-    BOOL ret = TRUE;
-    //DrawTextEx(dc, const_cast<wchar_t*>(temp.get_ptr()), temp.length(), &rc, flags, NULL);
 
-    UniscribeTextRenderer p_ScriptString(dc, temp.get_ptr(), temp.length(), NULL, NULL);
-    p_ScriptString.text_out(x, y, ETO_CLIPPED, rect);
-
-    return ret;
-
-#if 0
-    return ExtTextOut(dc,x,y,flags,rect,temp,pfc::downcast_guarded<int>(_tcslen(temp)),lpdx);
-    Gdiplus::Graphics  graphics(dc);
-    COLORREF cr = GetTextColor(dc);
-    graphics.SetTextRenderingHint(Gdiplus::TextRenderingHintSystemDefault);
-    return Gdiplus::Ok == graphics.DrawString(temp.get_ptr(), temp.length(), &Gdiplus::Font(dc), Gdiplus::RectF(max(x,rect->left), max(rect->top,y), RECT_CX((*rect)), RECT_CY((*rect))), &Gdiplus::StringFormat(), &Gdiplus::SolidBrush(Gdiplus::Color(0,0,0)));
-#endif
-}
-
-static bool check_colour_marks(const char * src, unsigned int len = -1)
-{
-    const char * ptr = src;
-    while(*ptr && (unsigned)(ptr-src) < len)
+    bool check_colour_marks(const char * src, unsigned int len = -1)
     {
-        if (*ptr==3)
+        const char * ptr = src;
+        while(*ptr && (unsigned)(ptr-src) < len)
         {
-            return true;
+            if (*ptr==3)
+            {
+                return true;
+            }
+            ptr++;
         }
-        ptr++;
+        return false;
     }
-    return false;
-}
 
-void remove_color_marks(const char * src, pfc::string_base& out, t_size len)
-{
-    out.reset();
-    const char * ptr = src;
-    while(*src && static_cast<t_size>(src - ptr) < len)
+    void remove_color_marks(const char * src, pfc::string_base& out, t_size len)
     {
-        if (*src==3)
+        out.reset();
+        const char * ptr = src;
+        while(*src && static_cast<t_size>(src - ptr) < len)
         {
-            src++;
-            while(*src && *src!=3) src++;
-            if (*src==3) src++;
+            if (*src==3)
+            {
+                src++;
+                while(*src && *src!=3) src++;
+                if (*src==3) src++;
+            }
+            else out.add_byte(*src++);
         }
-        else out.add_byte(*src++);
     }
-}
 
-unsigned get_trunc_len(const char * src, unsigned len)
-{
-    unsigned rv = len;
+    unsigned get_trunc_len(const char * src, unsigned len)
+    {
+        unsigned rv = len;
 
-    const char * ptr = src;
-    ptr += len-1;
-    while (ptr>src && (*ptr == ' ' || *ptr == '.')) {ptr --;rv--;}
-    return rv;
-}
+        const char * ptr = src;
+        ptr += len-1;
+        while (ptr>src && (*ptr == ' ' || *ptr == '.')) {ptr --;rv--;}
+        return rv;
+    }
 
-BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int max_width, LPINT max_chars, LPINT width_array, LPSIZE sz, unsigned * width_out, bool trunc)
+    BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int max_width, LPINT max_chars, LPINT width_array, LPSIZE sz, unsigned * width_out, bool trunc)
     {
         const char * src = text;
 
@@ -92,29 +61,21 @@ BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int 
         }
 
         text_w.convert(src, length);
-#if 1
         UniscribeTextRenderer p_ScriptString;
         p_ScriptString.analyse(dc, text_w.get_ptr(), text_w.length(), max_width, max_chars != nullptr);
 
+        int _max_chars = p_ScriptString.get_output_character_count();
+        if (width_array)
+            p_ScriptString.get_character_logical_extents(width_array);
+        if (max_chars) *max_chars = _max_chars;
+        if (trunc || width_out)
         {
-            int _max_chars = p_ScriptString.get_output_character_count();
-            if (width_array)
-                p_ScriptString.get_character_logical_extents(width_array);
-            if (max_chars) *max_chars = _max_chars;
-#else
-        if (GetTextExtentExPointW(dc, text_w.get_ptr(), text_w.length(), max_width, max_chars, width_array, sz))
-        {
-#endif
-            if (trunc || width_out)
-            {
-                w_utf8.convert(text_w.get_ptr(), *max_chars);
-                *max_chars = trunc ? get_trunc_len(w_utf8, w_utf8.length()) : w_utf8.length();
-                if (width_out)
-                    *width_out = get_text_width_color(dc, w_utf8, *max_chars);
-            }
-            return TRUE;
+            w_utf8.convert(text_w.get_ptr(), *max_chars);
+            *max_chars = trunc ? get_trunc_len(w_utf8, w_utf8.length()) : w_utf8.length();
+            if (width_out)
+                *width_out = get_text_width_color(dc, w_utf8, *max_chars);
         }
-        return FALSE;
+        return TRUE;
     }
 
     bool is_rect_null_or_reversed(const RECT * r)
@@ -128,42 +89,12 @@ BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int 
         sz.cy = 0;
         if (!dc) return;
         if (len<=0) return;
-        else
-        {
-            //uGetTextExtentPoint32(dc,src,len,&sz);
-            pfc::stringcvt::string_wide_from_utf8 wstr(src, len);
-            t_size wlen = wstr.length();
 
-#if 1
-            UniscribeTextRenderer p_ScriptString(dc, wstr, wlen, NULL, false);
-            p_ScriptString.get_output_size(sz);
+        pfc::stringcvt::string_wide_from_utf8 wstr(src, len);
+        t_size wlen = wstr.length();
 
-#elif 0
-            //BOOL ret2 = GetTextExtentPoint32(dc,wstr,wlen,&sz);
-            RECT rc = {0};
-            /*DRAWTEXTPARAMS dtp;
-            memset(&dtp, 0, sizeof(dtp));
-            dtp.cbSize = sizeof(dtp);*/
-            DrawTextEx(dc, const_cast<wchar_t*>(wstr.get_ptr()), wlen, &rc, DT_CALCRECT|DT_SINGLELINE|DT_TOP|DT_NOPREFIX, NULL/*&dtp*/);
-            sz.cx = rc.right;
-            sz.cy = rc.bottom;
-#elif 0
-            pfc::array_staticsize_t<INT> widths(wlen);
-            pfc::array_staticsize_t<char> classes(wlen);
-            /*GetTextExtentExPoint(dc, wstr, wlen, NULL, NULL, widths.get_ptr(), &sz);
-            if (wlen) sz.cx = widths[wlen-1];*/
-            GCP_RESULTS gcp;
-            memset(&gcp, 0, sizeof(gcp));
-            gcp.lStructSize = sizeof(gcp);
-            gcp.lpDx = widths.get_ptr();
-            gcp.lpClass = classes.get_ptr();
-            gcp.nGlyphs = wlen;
-            BOOL b_ret = GetCharacterPlacement (dc, wstr, wlen, NULL, &gcp, GCP_DIACRITIC|GCP_GLYPHSHAPE|GCP_DISPLAYZWG);
-            DWORD err = GetLastError();
-            int cx = HIWORD(b_ret), cy = LOWORD(b_ret);
-            if (wlen) sz.cx = LOWORD(b_ret);//widths[wlen-1];
-#endif
-        }
+        UniscribeTextRenderer p_ScriptString(dc, wstr, wlen, NULL, false);
+        p_ScriptString.get_output_size(sz);
     }
 
     int get_text_width(HDC dc,const char * src,int len)
@@ -173,7 +104,6 @@ BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int 
         return sz.cx;
     }
 
-    //GetTextExtentPoint32 wrapper, removes color marks
     int get_text_width_color(HDC dc,const char * src,int len, bool b_ignore_tabs)
     {
         if (!dc) return 0;
@@ -201,34 +131,6 @@ BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int 
         rv += get_text_width(dc,src+start,ptr-start);
         return rv;
     }
-
-    /*int get_text_max_chars(HDC dc,const char * src,int len, unsigned width, unsigned & new_width)
-    {
-    if (!dc) return 0;
-    int ptr = 0;
-    int start = 0;
-    int rv = 0;
-    if (len<0) len = strlen(src);
-    int used = 0;
-    while(ptr<len && used<width)
-    {
-    if (src[ptr]==3)
-    {
-    //        rv += get_text_width(dc,src+start,ptr-start);
-    ptr++;
-    while(ptr<len && src[ptr]!=3) ptr++;
-    if (ptr<len) ptr++;
-    //    start = ptr;
-    }
-    int cw = get_text_width(dc,src+ptr,1);
-    if (used+cw < width) {rv++;used+=cw;}
-    ptr++;
-    }
-    new_width = used;
-    //    rv += get_text_width(dc,src+start,ptr-start);
-
-    return (rv != len ? rv : -1);
-    }*/
 
     int strlen_utf8_colour(const char * src,int len=-1)
     {
@@ -265,7 +167,6 @@ BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int 
         pfc::stringcvt::string_wide_from_utf8 wstr(src_c, src_c_len);
 
         pfc::array_t<wchar_t> src_s;
-        //src_s.append_fromptr(wstr.get_ptr(), wstr.length());
         const wchar_t * src = wstr.get_ptr();
 
         t_size wLen = wstr.length();
@@ -398,69 +299,58 @@ BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int 
 
         int position = clip.left;//item.left+BORDER;
 
-#if 1
-        //UniscribeTextRenderer pScriptString(dc, src_c, len, -1, false);
-#endif
-
+        if (show_ellipsis)
         {
-
-#if 1
-            if (show_ellipsis)
+            if (widthTotal > availableWidth) 
             {
-                if (widthTotal > availableWidth) 
+                int ellipsis_width = get_text_width(dc, ELLIPSIS, ELLIPSIS_LEN)+2;
+                if (ellipsis_width <= clip.right - clip.left - x_offset)
                 {
-                    int ellipsis_width = get_text_width(dc, ELLIPSIS, ELLIPSIS_LEN)+2;
-                    if (ellipsis_width <= clip.right - clip.left - x_offset)
+                    for (i=wLen; i; i--)
                     {
-                        for (i=wLen; i; i--)
+                        if (colourChangeCount && colourChanges[colourChangeCount-1].length == 0)
                         {
-                            if (colourChangeCount && colourChanges[colourChangeCount-1].length == 0)
+                            colourChangeCount--;
+                        }
+                        else if ( (i > 2 && characterExtents[i-2] + ellipsis_width <= availableWidth) || i == 1)
+                        {
+                            src_s[i-1] = 0x2026;
+                            src_s.set_size(i);
+                            src = src_s.get_ptr();
+                            wLen = i;
+                            if (colourChangeCount)
                             {
-                                colourChangeCount--;
+                                widthTotal -= scriptStrings[colourChangeCount-1].get_output_width();
+                                scriptStrings[colourChangeCount-1].analyse(dc, &src[colourChanges[colourChangeCount-1].index], colourChanges[colourChangeCount-1].length, -1, false);
+                                widthTotal += scriptStrings[colourChangeCount-1].get_output_width();
                             }
-                            else if ( (i > 2 && characterExtents[i-2] + ellipsis_width <= availableWidth) || i == 1)
-                            {
-                                src_s[i-1] = 0x2026;
-                                src_s.set_size(i);
-                                src = src_s.get_ptr();
-                                wLen = i;
-                                if (colourChangeCount)
-                                {
-                                    widthTotal -= scriptStrings[colourChangeCount-1].get_output_width();
-                                    scriptStrings[colourChangeCount-1].analyse(dc, &src[colourChanges[colourChangeCount-1].index], colourChanges[colourChangeCount-1].length, -1, false);
-                                    widthTotal += scriptStrings[colourChangeCount-1].get_output_width();
-                                }
-                                break;
-                            }
-                            else if (colourChangeCount && colourChanges[colourChangeCount-1].index == i-1)
-                            {
-                                colourChangeCount--;
-                                widthTotal -= scriptStrings[colourChangeCount].get_output_width();
-                            }
-                            else if (colourChangeCount)
-                            {
-                                colourChanges[colourChangeCount-1].length = i - colourChanges[colourChangeCount-1].index - 1;
-                            }
+                            break;
+                        }
+                        else if (colourChangeCount && colourChanges[colourChangeCount-1].index == i-1)
+                        {
+                            colourChangeCount--;
+                            widthTotal -= scriptStrings[colourChangeCount].get_output_width();
+                        }
+                        else if (colourChangeCount)
+                        {
+                            colourChanges[colourChangeCount-1].length = i - colourChanges[colourChangeCount-1].index - 1;
                         }
                     }
                 }
             }
-#endif
         }
-        //    if (!need_ellipsis)
+
+        if (align == ALIGN_CENTRE)
         {
-            if (align == ALIGN_CENTRE)
-            {
-                position += (clip.right - clip.left - widthTotal)/2;
-            }
-            else if (align == ALIGN_RIGHT)
-            {
-                position += (clip.right - clip.left - widthTotal - x_offset);
-            }
-            else 
-            { 
-                position+=x_offset;
-            }
+            position += (clip.right - clip.left - widthTotal)/2;
+        }
+        else if (align == ALIGN_RIGHT)
+        {
+            position += (clip.right - clip.left - widthTotal - x_offset);
+        }
+        else 
+        { 
+            position+=x_offset;
         }
 
         if (p_width) *p_width = NULL;
@@ -474,13 +364,6 @@ BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int 
         }
 
         if (p_position) *p_position = position;
-
-
-        /*    if (need_ellipsis)
-        {
-        SetTextColor(dc,default_color);
-        uExtTextOut(dc,ellipsis.left+1,pos_y,ETO_CLIPPED,&ellipsis,ELLIPSIS,ELLIPSIS_LEN,0);
-        }*/
 
         if (b_set_default_colours)
             SetTextColor(dc, cr_old);
@@ -555,8 +438,6 @@ BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int 
             {
                 t_clip.right -= border;
 
-                //int t_width = get_text_width_color(dc,t_string,t_length) + border*2 + left_offset;
-
                 if (tab_ptr)
                     t_clip.left = clip.right - MulDiv(tab_ptr,tab_total,n_tabs) + border;
                 
@@ -580,122 +461,4 @@ BOOL CharacterExtentsCalculator::run(HDC dc, const char * text, int length, int 
 
         return TRUE;
     }
-
-
-
-#if 0
-    BOOL text_out_colours_tab_v1(HDC dc,const char * display,int display_len,int left_offset,int border,const RECT * base_clip,bool selected,DWORD default_color,bool columns,bool use_tab,bool show_ellipsis,alignment align, unsigned * p_width, bool b_set_default_colours, bool b_vertical_align_centre)
-    {
-
-        if (!base_clip) return FALSE;
-
-        RECT clip = *base_clip;
-
-        if (is_rect_null_or_reversed(&clip)) return TRUE;
-
-        int extra = (clip.bottom-clip.top - uGetTextHeight(dc));
-
-        int pos_y = clip.top + (b_vertical_align_centre ? (extra/2) : extra);
-
-        int n_tabs = 0;
-        int total_width = 0;
-
-        if (use_tab)
-        {
-            int start = 0;
-            int n;
-            for(n=0;n<display_len;n++)
-            {
-                if (display[n]=='\t')
-                {
-                    if (start<n) total_width += get_text_width_color(dc,display+start,n-start) + 2*border;
-                    start = n+1;
-                    n_tabs++;
-                }
-            }
-            if (start<display_len)
-            {
-                //add width of rest of text after last tab
-                total_width += get_text_width_color(dc,display+start,display_len-start) + 2*border;
-            }
-        }
-
-        if (n_tabs == 0)
-        {
-            clip.left += border;
-            clip.right -= border;
-            return text_out_colours_ellipsis(dc, display, display_len, left_offset,pos_y,&clip,selected,show_ellipsis,default_color,align, p_width, b_set_default_colours);
-        }
-
-        if (p_width)
-            *p_width = clip.right;
-
-
-        int tab_total = clip.right - clip.left;
-        if (!columns) tab_total -= total_width;
-        int ptr = display_len;
-        int tab_ptr = 0;
-        int written = 0;
-        int clip_x = clip.right;
-        do
-        {
-            int ptr_end = ptr;
-            while(ptr>0 && display[ptr-1]!='\t') ptr--;
-            const char * t_string = display + ptr;
-            int t_length = ptr_end - ptr;
-            if (t_length>0)
-            {
-                int t_width = get_text_width_color(dc,t_string,t_length) + border*2 + left_offset;
-
-                int pos_x;
-                int pos_x_right;
-
-                if (!columns)
-                {
-                    pos_x_right = clip.right - MulDiv(tab_ptr,tab_total,n_tabs) - written/* - left_offset*/;
-                }
-                else
-                {
-                    if (tab_ptr==0) pos_x_right = clip.right/* - left_offset*/;
-                    else pos_x_right = clip.right - MulDiv(tab_ptr,tab_total,n_tabs) + t_width/* - left_offset*/;
-                }
-
-                if (ptr==0) 
-                {
-                    pos_x = left_offset + border;
-                }
-                else
-                {            
-                    pos_x = pos_x_right - t_width - clip.left + left_offset + border;
-                    //            if (pos_x<0) pos_x = clip.left+left_offset;
-                }
-
-                RECT t_clip = clip;
-
-                //console::printf(" tab %u, right %i   clip %i",tab_ptr,t_clip.right,clip_x);
-
-                if (t_clip.right > clip_x/* + clip.left*/) 
-                    t_clip.right = clip_x/* + clip.left*/;
-
-                text_out_colours_ellipsis(dc,t_string,t_length,pos_x,pos_y,&t_clip,selected,show_ellipsis,default_color,ALIGN_LEFT, 0, b_set_default_colours);
-
-                if (clip_x> (pos_x + clip.left - left_offset-border*2))
-                    clip_x = pos_x + clip.left - left_offset-border*2;
-
-                written += t_width;
-            }
-
-            if (ptr>0)
-            {
-                ptr--;//tab char
-                tab_ptr++;
-            }
-        }
-        while(ptr>0);
-
-        return TRUE;
-    }
-#endif
-
-
-};
+}
