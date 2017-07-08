@@ -7,407 +7,409 @@
 * \author musicmusic
 */
 
-BOOL TrackBarBase::create_tooltip(const TCHAR * text, POINT pt)
-{
-    destroy_tooltip();
+namespace uih {
 
-    DLLVERSIONINFO2 dvi;
-    bool b_comctl_6 = SUCCEEDED(uih::get_comctl32_version(dvi)) && dvi.info1.dwMajorVersion >= 6;
-
-    m_wnd_tooltip = CreateWindowEx(WS_EX_TOPMOST|(b_comctl_6?WS_EX_TRANSPARENT:0), TOOLTIPS_CLASS, nullptr, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, get_wnd(), nullptr, mmh::get_current_instance(), nullptr);
-
-    SetWindowPos(m_wnd_tooltip, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-
-    TOOLINFO ti;
-
-    memset(&ti,0,sizeof(ti));
-
-    ti.cbSize = TTTOOLINFO_V1_SIZE;
-    ti.uFlags = TTF_SUBCLASS|TTF_TRANSPARENT|TTF_TRACK|TTF_ABSOLUTE;
-    ti.hwnd = get_wnd();
-    ti.hinst = mmh::get_current_instance();
-    ti.lpszText = const_cast<TCHAR *>(text);
-
-    uih::tooltip_add_tool(m_wnd_tooltip, &ti);
-
-    SendMessage(m_wnd_tooltip, TTM_TRACKPOSITION, 0, MAKELONG(pt.x, pt.y+21));
-    SendMessage(m_wnd_tooltip, TTM_TRACKACTIVATE, TRUE, (LPARAM)  &ti);    
-
-    return TRUE;
-}
-
-void TrackBarBase::destroy_tooltip()
-{
-    if (m_wnd_tooltip) {DestroyWindow(m_wnd_tooltip); m_wnd_tooltip=nullptr;}
-}
-
-BOOL TrackBarBase::update_tooltip(POINT pt, const TCHAR* text)
-{
-    if (!m_wnd_tooltip) return FALSE;
-
-    SendMessage(m_wnd_tooltip, TTM_TRACKPOSITION, 0, MAKELONG(pt.x, pt.y+21));
-
-    TOOLINFO ti;
-    memset(&ti,0,sizeof(ti));
-
-    ti.cbSize = TTTOOLINFO_V1_SIZE;
-    ti.uFlags = TTF_SUBCLASS|TTF_TRANSPARENT|TTF_TRACK|TTF_ABSOLUTE;
-    ti.hwnd = get_wnd();
-    ti.hinst = mmh::get_current_instance();
-    ti.lpszText = const_cast<TCHAR*>(text);
-
-    uih::tooltip_update_tip_text(m_wnd_tooltip, &ti);
-
-    return TRUE;
-}
-
-void TrackBarBase::set_callback(TrackBarHost * p_host)
-{
-    m_host = p_host;
-}
-
-void TrackBarBase::set_show_tooltips(bool val)
-{
-    m_show_tooltips = val;
-    if (!val)
+    BOOL TrackbarBase::create_tooltip(const TCHAR * text, POINT pt)
+    {
         destroy_tooltip();
-}
 
-void TrackBarBase::set_position_internal(unsigned pos)
-{
-    if (!m_dragging)
-    {
-        POINT pt;
-        GetCursorPos(&pt);
-        ScreenToClient(get_wnd(), &pt);
-        update_hot_status(pt);
+        DLLVERSIONINFO2 dvi;
+        bool b_comctl_6 = SUCCEEDED(uih::get_comctl32_version(dvi)) && dvi.info1.dwMajorVersion >= 6;
+
+        m_wnd_tooltip = CreateWindowEx(WS_EX_TOPMOST | (b_comctl_6 ? WS_EX_TRANSPARENT : 0), TOOLTIPS_CLASS, nullptr, WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,
+            CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, get_wnd(), nullptr, mmh::get_current_instance(), nullptr);
+
+        SetWindowPos(m_wnd_tooltip, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+
+        TOOLINFO ti;
+
+        memset(&ti, 0, sizeof(ti));
+
+        ti.cbSize = TTTOOLINFO_V1_SIZE;
+        ti.uFlags = TTF_SUBCLASS | TTF_TRANSPARENT | TTF_TRACK | TTF_ABSOLUTE;
+        ti.hwnd = get_wnd();
+        ti.hinst = mmh::get_current_instance();
+        ti.lpszText = const_cast<TCHAR *>(text);
+
+        uih::tooltip_add_tool(m_wnd_tooltip, &ti);
+
+        SendMessage(m_wnd_tooltip, TTM_TRACKPOSITION, 0, MAKELONG(pt.x, pt.y + 21));
+        SendMessage(m_wnd_tooltip, TTM_TRACKACTIVATE, TRUE, (LPARAM)&ti);
+
+        return TRUE;
     }
 
-    RECT rc;
-    get_thumb_rect(&rc);
-    HRGN rgn_old = CreateRectRgnIndirect(&rc);
-    get_thumb_rect(pos, m_range, &rc);
-    HRGN rgn_new = CreateRectRgnIndirect(&rc);
-    CombineRgn(rgn_new, rgn_old, rgn_new, RGN_OR);
-    DeleteObject(rgn_old);
-    m_display_position = pos;
-    //InvalidateRgn(m_wnd, rgn_new, TRUE);
-    RedrawWindow(get_wnd(), nullptr, rgn_new, RDW_INVALIDATE|RDW_ERASE|RDW_UPDATENOW|RDW_ERASENOW);
-    DeleteObject(rgn_new);
-}
-
-void TrackBarBase::set_position(unsigned pos)
-{
-    m_position = pos;
-    if (!m_dragging)
+    void TrackbarBase::destroy_tooltip()
     {
-        set_position_internal(pos);
-    }
-}
-unsigned TrackBarBase::get_position() const
-{
-    return m_position;
-}
-
-void TrackBarBase::set_range(unsigned range)
-{
-    RECT rc;
-    get_thumb_rect(&rc);
-    HRGN rgn_old = CreateRectRgnIndirect(&rc);
-    get_thumb_rect(m_display_position, range, &rc);
-    HRGN rgn_new = CreateRectRgnIndirect(&rc);
-    CombineRgn(rgn_new, rgn_old, rgn_new, RGN_OR);
-    DeleteObject(rgn_old);
-    m_range = range;
-    RedrawWindow(get_wnd(), nullptr, rgn_new, RDW_INVALIDATE|RDW_ERASE|RDW_UPDATENOW|RDW_ERASENOW);
-    DeleteObject(rgn_new);
-}
-unsigned TrackBarBase::get_range() const
-{
-    return m_range;
-}
-
-void TrackBarBase::set_scroll_step(unsigned u_val)
-{
-    m_step = u_val;
-}
-
-unsigned TrackBarBase::get_scroll_step() const
-{
-    return m_step;
-}
-
-void TrackBarBase::set_orientation(bool b_vertical)
-{
-    m_vertical = b_vertical;
-    //TODO: write handler
-}
-
-bool TrackBarBase::get_orientation() const
-{
-    return m_vertical;
-}
-
-void TrackBarBase::set_auto_focus(bool b_state)
-{
-    m_auto_focus = b_state;
-}
-
-bool TrackBarBase::get_auto_focus() const
-{
-    return m_auto_focus;
-}
-
-void TrackBarBase::set_direction(bool b_reversed)
-{
-    m_reversed = b_reversed;
-}
-
-void TrackBarBase::set_mouse_wheel_direction(bool b_reversed)
-{
-    m_mouse_wheel_reversed = b_reversed;
-}
-
-bool TrackBarBase::get_direction() const
-{
-    return m_reversed;
-}
-
-void TrackBarBase::set_enabled(bool enabled)
-{
-    EnableWindow(get_wnd(), enabled);
-}
-
-bool TrackBarBase::get_enabled() const
-{
-    return IsWindowEnabled(get_wnd()) !=0;
-}
-
-void TrackBar::get_thumb_rect(unsigned pos, unsigned range, RECT * rc) const
-{
-    RECT rc_client;
-    GetClientRect(get_wnd(), &rc_client);
-
-    unsigned cx = calculate_thumb_size();
-    if (get_orientation())
-    {
-        rc->left = 2;
-        rc->right = rc_client.right - 2;
-        rc->top = range ? MulDiv(get_direction() ? range-pos : pos, rc_client.bottom-cx, range) : get_direction() ? rc_client.bottom-cx : 0;
-        rc->bottom = rc->top + cx;
-    }
-    else
-    {
-        rc->top = 2;
-        rc->bottom = rc_client.bottom - 2;
-        rc->left = range ? MulDiv(get_direction() ? range-pos : pos, rc_client.right-cx, range) : get_direction() ? rc_client.right-cx : 0;
-        rc->right = rc->left + cx;
+        if (m_wnd_tooltip) { DestroyWindow(m_wnd_tooltip); m_wnd_tooltip = nullptr; }
     }
 
-}
-
-void TrackBar::get_channel_rect(RECT * rc) const
-{
-    RECT rc_client;
-    GetClientRect(get_wnd(), &rc_client);
-    unsigned cx = calculate_thumb_size();
-
-    rc->left = get_orientation() ? rc_client.right/2-2 : rc_client.left + cx/2;
-    rc->right = get_orientation() ? rc_client.right/2+2 : rc_client.right - cx + cx/2;
-    rc->top = get_orientation() ? rc_client.top + cx/2 : rc_client.bottom/2-2;
-    rc->bottom = get_orientation() ? rc_client.bottom - cx + cx/2 : rc_client.bottom/2+2;
-}
-
-void TrackBarBase::get_thumb_rect(RECT * rc) const
-{
-    get_thumb_rect(m_display_position, m_range, rc);
-}
-
-bool TrackBarBase::get_hot() const
-{
-    return m_thumb_hot;
-}
-
-bool TrackBarBase::get_tracking() const
-{
-    return m_dragging;
-
-}
-void TrackBarBase::update_hot_status(POINT pt)
-{
-    RECT rc;
-    get_thumb_rect(&rc);
-    bool in_rect = PtInRect(&rc, pt) !=0;
-
-    POINT pts = pt;
-    MapWindowPoints(get_wnd(), HWND_DESKTOP, &pts, 1);
-
-    bool b_in_wnd = WindowFromPoint(pts) == get_wnd();
-    bool b_new_hot = in_rect && b_in_wnd;
-
-    if (m_thumb_hot != b_new_hot)
+    BOOL TrackbarBase::update_tooltip(POINT pt, const TCHAR* text)
     {
-        m_thumb_hot = b_new_hot;
-        if (m_thumb_hot)
-            SetCapture(get_wnd());
-        else if (GetCapture() == get_wnd() && !m_dragging)
-            ReleaseCapture();
-        RedrawWindow(get_wnd(), &rc, nullptr, RDW_INVALIDATE|/*RDW_ERASE|*/RDW_UPDATENOW/*|RDW_ERASENOW*/);
+        if (!m_wnd_tooltip) return FALSE;
+
+        SendMessage(m_wnd_tooltip, TTM_TRACKPOSITION, 0, MAKELONG(pt.x, pt.y + 21));
+
+        TOOLINFO ti;
+        memset(&ti, 0, sizeof(ti));
+
+        ti.cbSize = TTTOOLINFO_V1_SIZE;
+        ti.uFlags = TTF_SUBCLASS | TTF_TRANSPARENT | TTF_TRACK | TTF_ABSOLUTE;
+        ti.hwnd = get_wnd();
+        ti.hinst = mmh::get_current_instance();
+        ti.lpszText = const_cast<TCHAR*>(text);
+
+        uih::tooltip_update_tip_text(m_wnd_tooltip, &ti);
+
+        return TRUE;
     }
-}
 
-void TrackBar::draw_background (HDC dc, const RECT * rc) const
-{
-    HWND wnd_parent = GetParent(get_wnd());
-    POINT pt = {0, 0}, pt_old = {0,0};
-    MapWindowPoints(get_wnd(), wnd_parent, &pt, 1);
-    OffsetWindowOrgEx(dc, pt.x, pt.y, &pt_old);
-    if (SendMessage(wnd_parent, WM_ERASEBKGND, reinterpret_cast<WPARAM>(dc), 0) == FALSE)
-        SendMessage(wnd_parent, WM_PRINTCLIENT, reinterpret_cast<WPARAM>(dc), PRF_ERASEBKGND);
-    SetWindowOrgEx(dc, pt_old.x, pt_old.y, nullptr);
-}
-
-void TrackBar::draw_thumb (HDC dc, const RECT * rc) const
-{
-    if (get_theme_handle())
+    void TrackbarBase::set_callback(TrackbarCallback * p_host)
     {
-        const auto part_id = get_orientation() ? TKP_THUMBVERT : TKP_THUMB;
-        const auto state_id = get_enabled() ? (get_tracking() ? TUS_PRESSED : (get_hot() ? TUS_HOT : TUS_NORMAL)) : TUS_DISABLED;
-        DrawThemeBackground(get_theme_handle(), dc, part_id, state_id, rc, nullptr);
+        m_host = p_host;
     }
-    else
+
+    void TrackbarBase::set_show_tooltips(bool val)
     {
-        HPEN pn_highlight = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DHIGHLIGHT));
-        HPEN pn_light = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DLIGHT));
-        HPEN pn_dkshadow = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DDKSHADOW));
-        HPEN pn_shadow = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DSHADOW));
+        m_show_tooltips = val;
+        if (!val)
+            destroy_tooltip();
+    }
 
-        HPEN pn_old = SelectPen(dc, pn_highlight);
-
-        MoveToEx(dc, rc->left, rc->top, nullptr);
-        LineTo(dc, rc->right-1, rc->top);
-        SelectPen(dc, pn_dkshadow);
-        LineTo(dc, rc->right-1, rc->bottom-1);
-        SelectPen(dc, pn_highlight);
-        MoveToEx(dc, rc->left, rc->top, nullptr);
-        LineTo(dc, rc->left, rc->bottom-1);
-        SelectPen(dc, pn_dkshadow);
-        LineTo(dc, rc->right, rc->bottom-1);
-
-        SelectPen(dc, pn_light);
-        MoveToEx(dc, rc->left+1, rc->top+1, nullptr);
-        LineTo(dc, rc->right-2, rc->top+1);
-        MoveToEx(dc, rc->left+1, rc->top+1, nullptr);
-        LineTo(dc, rc->left+1, rc->bottom-2);
-
-        SelectPen(dc, pn_shadow);
-        LineTo(dc, rc->right-1, rc->bottom-2);
-        MoveToEx(dc, rc->right-2, rc->top+1, nullptr);
-        LineTo(dc, rc->right-2, rc->bottom-2);
-
-        SelectPen(dc, pn_old);
-
-        DeleteObject(pn_light);
-        DeleteObject(pn_highlight);
-        DeleteObject(pn_shadow);
-        DeleteObject(pn_dkshadow);
-
-        RECT rc_fill = *rc;
-
-        rc_fill.top+=2;
-        rc_fill.left+=2;
-        rc_fill.right-=2;
-        rc_fill.bottom-=2;
-
-        HBRUSH br = GetSysColorBrush(COLOR_BTNFACE);
-        FillRect(dc, &rc_fill, br);
-        if (!get_enabled())
+    void TrackbarBase::set_position_internal(unsigned pos)
+    {
+        if (!m_dragging)
         {
-            COLORREF cr_btnhighlight = GetSysColor(COLOR_BTNHIGHLIGHT);
-            for (int x=rc_fill.left; x<rc_fill.right; x++)
-                for (int y=rc_fill.top; y<rc_fill.bottom; y++)
-                    if ((x+y)%2)
-                        SetPixel(dc, x, y, cr_btnhighlight); //i dont have anything better than SetPixel
+            POINT pt;
+            GetCursorPos(&pt);
+            ScreenToClient(get_wnd(), &pt);
+            update_hot_status(pt);
+        }
+
+        RECT rc;
+        get_thumb_rect(&rc);
+        HRGN rgn_old = CreateRectRgnIndirect(&rc);
+        get_thumb_rect(pos, m_range, &rc);
+        HRGN rgn_new = CreateRectRgnIndirect(&rc);
+        CombineRgn(rgn_new, rgn_old, rgn_new, RGN_OR);
+        DeleteObject(rgn_old);
+        m_display_position = pos;
+        //InvalidateRgn(m_wnd, rgn_new, TRUE);
+        RedrawWindow(get_wnd(), nullptr, rgn_new, RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW | RDW_ERASENOW);
+        DeleteObject(rgn_new);
+    }
+
+    void TrackbarBase::set_position(unsigned pos)
+    {
+        m_position = pos;
+        if (!m_dragging)
+        {
+            set_position_internal(pos);
         }
     }
-}
-
-void TrackBar::draw_channel (HDC dc, const RECT * rc) const
-{
-    if (get_theme_handle())
+    unsigned TrackbarBase::get_position() const
     {
-        DrawThemeBackground(get_theme_handle(), dc, get_orientation() ? TKP_TRACKVERT : TKP_TRACK, TUTS_NORMAL, rc, nullptr);
-    }
-    else
-    {
-        RECT rc_temp = *rc;
-        DrawEdge (dc, &rc_temp, EDGE_SUNKEN, BF_RECT);
-    }
-}
-
-HTHEME TrackBarBase::get_theme_handle() const
-{
-    return m_theme;
-}
-
-bool TrackBarBase::on_hooked_message(uih::MessageHookType p_type, int code, WPARAM wp, LPARAM lp)
-{
-    auto lpkeyb = uih::GetKeyboardLParam(lp);
-    if (wp == VK_ESCAPE && !lpkeyb.transition_code && !lpkeyb.previous_key_state)
-    {
-        destroy_tooltip();
-        if (GetCapture() == get_wnd())
-            ReleaseCapture();
-        m_dragging = false;
-        set_position_internal(m_position);
-        uih::deregister_message_hook(uih::MessageHookType::type_keyboard, this);
-        m_hook_registered=false;
-        return true;
-    }
-    return false;
-}
-
-unsigned TrackBar::calculate_thumb_size() const
-{
-    RECT rc_client;
-    GetClientRect(get_wnd(), &rc_client);
-    return MulDiv(get_orientation() ? rc_client.right : rc_client.bottom,9,20);
-}
-
-unsigned TrackBarBase::calculate_position_from_point(const POINT & pt_client) const
-{
-    RECT rc_channel, rc_client;
-    GetClientRect(get_wnd(), &rc_client);
-    get_channel_rect(&rc_channel);
-    POINT pt = pt_client;
-
-    if (get_orientation())
-    {
-        pfc::swap_t(pt.x, pt.y);
-        pfc::swap_t(rc_channel.left, rc_channel.top);
-        pfc::swap_t(rc_channel.bottom, rc_channel.right);
-        pfc::swap_t(rc_client.left, rc_client.top);
-        pfc::swap_t(rc_client.bottom, rc_client.right);
+        return m_position;
     }
 
-    int cx = pt.x;
-
-    if (cx < rc_channel.left)
-        cx = rc_channel.left;
-    else if (cx > rc_channel.right)
-        cx = rc_channel.right;
-
-    return rc_channel.right-rc_channel.left ? MulDiv(m_reversed ? rc_channel.right - cx: cx - rc_channel.left, m_range, rc_channel.right-rc_channel.left) : 0;
-}
-
-LRESULT TrackBarBase::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
-{
-    switch(msg)
+    void TrackbarBase::set_range(unsigned range)
     {
-    case WM_NCCREATE:
-        break;
-    case WM_CREATE:
+        RECT rc;
+        get_thumb_rect(&rc);
+        HRGN rgn_old = CreateRectRgnIndirect(&rc);
+        get_thumb_rect(m_display_position, range, &rc);
+        HRGN rgn_new = CreateRectRgnIndirect(&rc);
+        CombineRgn(rgn_new, rgn_old, rgn_new, RGN_OR);
+        DeleteObject(rgn_old);
+        m_range = range;
+        RedrawWindow(get_wnd(), nullptr, rgn_new, RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW | RDW_ERASENOW);
+        DeleteObject(rgn_new);
+    }
+    unsigned TrackbarBase::get_range() const
+    {
+        return m_range;
+    }
+
+    void TrackbarBase::set_scroll_step(unsigned u_val)
+    {
+        m_step = u_val;
+    }
+
+    unsigned TrackbarBase::get_scroll_step() const
+    {
+        return m_step;
+    }
+
+    void TrackbarBase::set_orientation(bool b_vertical)
+    {
+        m_vertical = b_vertical;
+        //TODO: write handler
+    }
+
+    bool TrackbarBase::get_orientation() const
+    {
+        return m_vertical;
+    }
+
+    void TrackbarBase::set_auto_focus(bool b_state)
+    {
+        m_auto_focus = b_state;
+    }
+
+    bool TrackbarBase::get_auto_focus() const
+    {
+        return m_auto_focus;
+    }
+
+    void TrackbarBase::set_direction(bool b_reversed)
+    {
+        m_reversed = b_reversed;
+    }
+
+    void TrackbarBase::set_mouse_wheel_direction(bool b_reversed)
+    {
+        m_mouse_wheel_reversed = b_reversed;
+    }
+
+    bool TrackbarBase::get_direction() const
+    {
+        return m_reversed;
+    }
+
+    void TrackbarBase::set_enabled(bool enabled)
+    {
+        EnableWindow(get_wnd(), enabled);
+    }
+
+    bool TrackbarBase::get_enabled() const
+    {
+        return IsWindowEnabled(get_wnd()) != 0;
+    }
+
+    void Trackbar::get_thumb_rect(unsigned pos, unsigned range, RECT * rc) const
+    {
+        RECT rc_client;
+        GetClientRect(get_wnd(), &rc_client);
+
+        unsigned cx = calculate_thumb_size();
+        if (get_orientation())
+        {
+            rc->left = 2;
+            rc->right = rc_client.right - 2;
+            rc->top = range ? MulDiv(get_direction() ? range - pos : pos, rc_client.bottom - cx, range) : get_direction() ? rc_client.bottom - cx : 0;
+            rc->bottom = rc->top + cx;
+        }
+        else
+        {
+            rc->top = 2;
+            rc->bottom = rc_client.bottom - 2;
+            rc->left = range ? MulDiv(get_direction() ? range - pos : pos, rc_client.right - cx, range) : get_direction() ? rc_client.right - cx : 0;
+            rc->right = rc->left + cx;
+        }
+
+    }
+
+    void Trackbar::get_channel_rect(RECT * rc) const
+    {
+        RECT rc_client;
+        GetClientRect(get_wnd(), &rc_client);
+        unsigned cx = calculate_thumb_size();
+
+        rc->left = get_orientation() ? rc_client.right / 2 - 2 : rc_client.left + cx / 2;
+        rc->right = get_orientation() ? rc_client.right / 2 + 2 : rc_client.right - cx + cx / 2;
+        rc->top = get_orientation() ? rc_client.top + cx / 2 : rc_client.bottom / 2 - 2;
+        rc->bottom = get_orientation() ? rc_client.bottom - cx + cx / 2 : rc_client.bottom / 2 + 2;
+    }
+
+    void TrackbarBase::get_thumb_rect(RECT * rc) const
+    {
+        get_thumb_rect(m_display_position, m_range, rc);
+    }
+
+    bool TrackbarBase::get_hot() const
+    {
+        return m_thumb_hot;
+    }
+
+    bool TrackbarBase::get_tracking() const
+    {
+        return m_dragging;
+
+    }
+    void TrackbarBase::update_hot_status(POINT pt)
+    {
+        RECT rc;
+        get_thumb_rect(&rc);
+        bool in_rect = PtInRect(&rc, pt) != 0;
+
+        POINT pts = pt;
+        MapWindowPoints(get_wnd(), HWND_DESKTOP, &pts, 1);
+
+        bool b_in_wnd = WindowFromPoint(pts) == get_wnd();
+        bool b_new_hot = in_rect && b_in_wnd;
+
+        if (m_thumb_hot != b_new_hot)
+        {
+            m_thumb_hot = b_new_hot;
+            if (m_thumb_hot)
+                SetCapture(get_wnd());
+            else if (GetCapture() == get_wnd() && !m_dragging)
+                ReleaseCapture();
+            RedrawWindow(get_wnd(), &rc, nullptr, RDW_INVALIDATE |/*RDW_ERASE|*/RDW_UPDATENOW/*|RDW_ERASENOW*/);
+        }
+    }
+
+    void Trackbar::draw_background(HDC dc, const RECT * rc) const
+    {
+        HWND wnd_parent = GetParent(get_wnd());
+        POINT pt = {0, 0}, pt_old = {0,0};
+        MapWindowPoints(get_wnd(), wnd_parent, &pt, 1);
+        OffsetWindowOrgEx(dc, pt.x, pt.y, &pt_old);
+        if (SendMessage(wnd_parent, WM_ERASEBKGND, reinterpret_cast<WPARAM>(dc), 0) == FALSE)
+            SendMessage(wnd_parent, WM_PRINTCLIENT, reinterpret_cast<WPARAM>(dc), PRF_ERASEBKGND);
+        SetWindowOrgEx(dc, pt_old.x, pt_old.y, nullptr);
+    }
+
+    void Trackbar::draw_thumb(HDC dc, const RECT * rc) const
+    {
+        if (get_theme_handle())
+        {
+            const auto part_id = get_orientation() ? TKP_THUMBVERT : TKP_THUMB;
+            const auto state_id = get_enabled() ? (get_tracking() ? TUS_PRESSED : (get_hot() ? TUS_HOT : TUS_NORMAL)) : TUS_DISABLED;
+            DrawThemeBackground(get_theme_handle(), dc, part_id, state_id, rc, nullptr);
+        }
+        else
+        {
+            HPEN pn_highlight = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DHIGHLIGHT));
+            HPEN pn_light = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DLIGHT));
+            HPEN pn_dkshadow = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DDKSHADOW));
+            HPEN pn_shadow = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DSHADOW));
+
+            HPEN pn_old = SelectPen(dc, pn_highlight);
+
+            MoveToEx(dc, rc->left, rc->top, nullptr);
+            LineTo(dc, rc->right - 1, rc->top);
+            SelectPen(dc, pn_dkshadow);
+            LineTo(dc, rc->right - 1, rc->bottom - 1);
+            SelectPen(dc, pn_highlight);
+            MoveToEx(dc, rc->left, rc->top, nullptr);
+            LineTo(dc, rc->left, rc->bottom - 1);
+            SelectPen(dc, pn_dkshadow);
+            LineTo(dc, rc->right, rc->bottom - 1);
+
+            SelectPen(dc, pn_light);
+            MoveToEx(dc, rc->left + 1, rc->top + 1, nullptr);
+            LineTo(dc, rc->right - 2, rc->top + 1);
+            MoveToEx(dc, rc->left + 1, rc->top + 1, nullptr);
+            LineTo(dc, rc->left + 1, rc->bottom - 2);
+
+            SelectPen(dc, pn_shadow);
+            LineTo(dc, rc->right - 1, rc->bottom - 2);
+            MoveToEx(dc, rc->right - 2, rc->top + 1, nullptr);
+            LineTo(dc, rc->right - 2, rc->bottom - 2);
+
+            SelectPen(dc, pn_old);
+
+            DeleteObject(pn_light);
+            DeleteObject(pn_highlight);
+            DeleteObject(pn_shadow);
+            DeleteObject(pn_dkshadow);
+
+            RECT rc_fill = *rc;
+
+            rc_fill.top += 2;
+            rc_fill.left += 2;
+            rc_fill.right -= 2;
+            rc_fill.bottom -= 2;
+
+            HBRUSH br = GetSysColorBrush(COLOR_BTNFACE);
+            FillRect(dc, &rc_fill, br);
+            if (!get_enabled())
+            {
+                COLORREF cr_btnhighlight = GetSysColor(COLOR_BTNHIGHLIGHT);
+                for (int x = rc_fill.left; x < rc_fill.right; x++)
+                    for (int y = rc_fill.top; y < rc_fill.bottom; y++)
+                        if ((x + y) % 2)
+                            SetPixel(dc, x, y, cr_btnhighlight); //i dont have anything better than SetPixel
+            }
+        }
+    }
+
+    void Trackbar::draw_channel(HDC dc, const RECT * rc) const
+    {
+        if (get_theme_handle())
+        {
+            DrawThemeBackground(get_theme_handle(), dc, get_orientation() ? TKP_TRACKVERT : TKP_TRACK, TUTS_NORMAL, rc, nullptr);
+        }
+        else
+        {
+            RECT rc_temp = *rc;
+            DrawEdge(dc, &rc_temp, EDGE_SUNKEN, BF_RECT);
+        }
+    }
+
+    HTHEME TrackbarBase::get_theme_handle() const
+    {
+        return m_theme;
+    }
+
+    bool TrackbarBase::on_hooked_message(uih::MessageHookType p_type, int code, WPARAM wp, LPARAM lp)
+    {
+        auto lpkeyb = uih::GetKeyboardLParam(lp);
+        if (wp == VK_ESCAPE && !lpkeyb.transition_code && !lpkeyb.previous_key_state)
+        {
+            destroy_tooltip();
+            if (GetCapture() == get_wnd())
+                ReleaseCapture();
+            m_dragging = false;
+            set_position_internal(m_position);
+            uih::deregister_message_hook(uih::MessageHookType::type_keyboard, this);
+            m_hook_registered = false;
+            return true;
+        }
+        return false;
+    }
+
+    unsigned Trackbar::calculate_thumb_size() const
+    {
+        RECT rc_client;
+        GetClientRect(get_wnd(), &rc_client);
+        return MulDiv(get_orientation() ? rc_client.right : rc_client.bottom, 9, 20);
+    }
+
+    unsigned TrackbarBase::calculate_position_from_point(const POINT & pt_client) const
+    {
+        RECT rc_channel, rc_client;
+        GetClientRect(get_wnd(), &rc_client);
+        get_channel_rect(&rc_channel);
+        POINT pt = pt_client;
+
+        if (get_orientation())
+        {
+            pfc::swap_t(pt.x, pt.y);
+            pfc::swap_t(rc_channel.left, rc_channel.top);
+            pfc::swap_t(rc_channel.bottom, rc_channel.right);
+            pfc::swap_t(rc_client.left, rc_client.top);
+            pfc::swap_t(rc_client.bottom, rc_client.right);
+        }
+
+        int cx = pt.x;
+
+        if (cx < rc_channel.left)
+            cx = rc_channel.left;
+        else if (cx > rc_channel.right)
+            cx = rc_channel.right;
+
+        return rc_channel.right - rc_channel.left ? MulDiv(m_reversed ? rc_channel.right - cx : cx - rc_channel.left, m_range, rc_channel.right - rc_channel.left) : 0;
+    }
+
+    LRESULT TrackbarBase::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
+    {
+        switch (msg)
+        {
+        case WM_NCCREATE:
+            break;
+        case WM_CREATE:
         {
             if (IsThemeActive() && IsAppThemed())
             {
@@ -415,38 +417,38 @@ LRESULT TrackBarBase::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
             }
         }
         break;
-    case WM_THEMECHANGED:
+        case WM_THEMECHANGED:
         {
             {
                 if (m_theme)
                 {
                     CloseThemeData(m_theme);
-                    m_theme=nullptr;
+                    m_theme = nullptr;
                 }
                 if (IsThemeActive() && IsAppThemed())
                     m_theme = OpenThemeData(wnd, L"Trackbar");
             }
         }
         break;
-    case WM_DESTROY:
+        case WM_DESTROY:
         {
             if (m_hook_registered)
             {
                 uih::deregister_message_hook(uih::MessageHookType::type_keyboard, this);
-                m_hook_registered=false;
+                m_hook_registered = false;
             }
             {
                 if (m_theme) CloseThemeData(m_theme);
-                m_theme=nullptr;
+                m_theme = nullptr;
             }
         }
         break;
-    case WM_NCDESTROY:
-        break;
-    case WM_SIZE:
-        RedrawWindow(wnd, nullptr, nullptr, RDW_INVALIDATE|RDW_ERASE);
-        break;
-    case WM_MOUSEMOVE:
+        case WM_NCDESTROY:
+            break;
+        case WM_SIZE:
+            RedrawWindow(wnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE);
+            break;
+        case WM_MOUSEMOVE:
         {
 
             POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
@@ -454,7 +456,7 @@ LRESULT TrackBarBase::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
             {
                 if (!m_last_mousemove.m_valid || wp != m_last_mousemove.m_wp || lp != m_last_mousemove.m_lp)
                 {
-                    if (get_enabled()) 
+                    if (get_enabled())
                     {
                         unsigned pos = calculate_position_from_point(pt);
                         set_position_internal(pos);
@@ -462,7 +464,7 @@ LRESULT TrackBarBase::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
                         {
                             POINT pts = pt;
                             ClientToScreen(wnd, &pts);
-                            TrackBarString temp;
+                            TrackbarString temp;
                             m_host->get_tooltip_text(pos, temp);
                             update_tooltip(pts, temp.data());
                         }
@@ -480,18 +482,18 @@ LRESULT TrackBarBase::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
             }
         }
         break;
-    case WM_ENABLE:
+        case WM_ENABLE:
         {
             RECT rc;
             get_thumb_rect(&rc);
             InvalidateRect(wnd, &rc, TRUE);
         }
         break;
-    case WM_MBUTTONDOWN:
-    case WM_RBUTTONDOWN:
-    case WM_XBUTTONDOWN:
+        case WM_MBUTTONDOWN:
+        case WM_RBUTTONDOWN:
+        case WM_XBUTTONDOWN:
         {
-            if (get_enabled() && get_auto_focus() && GetFocus() != wnd) 
+            if (get_enabled() && get_auto_focus() && GetFocus() != wnd)
                 SetFocus(wnd);
 
             if (m_dragging)
@@ -500,21 +502,21 @@ LRESULT TrackBarBase::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
                 if (GetCapture() == wnd)
                     ReleaseCapture();
                 uih::deregister_message_hook(uih::MessageHookType::type_keyboard, this);
-                m_hook_registered=false;
+                m_hook_registered = false;
                 //SetFocus(IsWindow(m_wnd_prev) ? m_wnd_prev : uFindParentPopup(wnd));
                 m_dragging = false;
                 set_position_internal(m_position);
             }
         }
         break;
-    case WM_LBUTTONDOWN:
+        case WM_LBUTTONDOWN:
         {
-            if (get_enabled()) 
+            if (get_enabled())
             {
-                if (get_auto_focus() && GetFocus() != wnd) 
+                if (get_auto_focus() && GetFocus() != wnd)
                     SetFocus(wnd);
 
-                POINT pt; 
+                POINT pt;
 
                 pt.x = GET_X_LPARAM(lp);
                 pt.y = GET_Y_LPARAM(lp);
@@ -529,7 +531,7 @@ LRESULT TrackBarBase::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 
                     //SetFocus(wnd);
                     uih::register_message_hook(uih::MessageHookType::type_keyboard, this);
-                    m_hook_registered=true;
+                    m_hook_registered = true;
 
                     unsigned pos = calculate_position_from_point(pt);
                     set_position_internal(pos);
@@ -537,7 +539,7 @@ LRESULT TrackBarBase::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
                     ClientToScreen(wnd, &pts);
                     if (m_show_tooltips && m_host)
                     {
-                        TrackBarString temp;
+                        TrackbarString temp;
                         m_host->get_tooltip_text(pos, temp);
                         create_tooltip(temp.data(), pts);
                     }
@@ -546,7 +548,7 @@ LRESULT TrackBarBase::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
             }
         }
         return 0;
-    case WM_LBUTTONUP:
+        case WM_LBUTTONUP:
         {
             if (m_dragging)
             {
@@ -554,9 +556,9 @@ LRESULT TrackBarBase::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
                 if (GetCapture() == wnd)
                     ReleaseCapture();
                 m_dragging = false;
-                if (get_enabled()) 
+                if (get_enabled())
                 {
-                    POINT pt; 
+                    POINT pt;
 
                     pt.x = GET_X_LPARAM(lp);
                     pt.y = GET_Y_LPARAM(lp);
@@ -574,12 +576,12 @@ LRESULT TrackBarBase::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
             }
         }
         return 0;
-    case WM_KEYDOWN:
-    case WM_KEYUP:
+        case WM_KEYDOWN:
+        case WM_KEYUP:
         {
             if ((wp == VK_ESCAPE || wp == VK_RETURN) && m_host && m_host->on_key(wp, lp))
                 return 0;
-            if ( !(lp & (1<<31)) && (wp == VK_LEFT || wp == VK_DOWN || wp == VK_RIGHT || wp == VK_UP))
+            if (!(lp & (1 << 31)) && (wp == VK_LEFT || wp == VK_DOWN || wp == VK_RIGHT || wp == VK_UP))
             {
                 bool down = (wp == VK_LEFT || wp == VK_UP) == false;//!get_direction();
                 unsigned newpos = m_position;
@@ -596,7 +598,7 @@ LRESULT TrackBarBase::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
                         m_host->on_position_change(m_position, false);
                 }
             }
-            if ( !(lp & (1<<31)) && (wp == VK_HOME || wp == VK_END))
+            if (!(lp & (1 << 31)) && (wp == VK_HOME || wp == VK_END))
             {
                 bool down = (wp == VK_END) == false;//!get_direction();
                 unsigned newpos;
@@ -611,9 +613,9 @@ LRESULT TrackBarBase::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
             }
         }
         break;
-    case WM_MOUSEWHEEL:
+        case WM_MOUSEWHEEL:
         {
-            UINT ucNumLines=3;  // 3 is the default
+            UINT ucNumLines = 3;  // 3 is the default
             SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &ucNumLines, 0);
             short zDelta = GET_WHEEL_DELTA_WPARAM(wp);
             if (ucNumLines == WHEEL_PAGESCROLL)
@@ -623,7 +625,7 @@ LRESULT TrackBarBase::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
             //if (get_direction()) down = down == false;
             if (!get_orientation()) down = down == false;
             if (m_mouse_wheel_reversed)
-                 down = down == false;
+                down = down == false;
             unsigned offset = abs(delta);
 
             unsigned newpos = m_position;
@@ -642,28 +644,28 @@ LRESULT TrackBarBase::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
         }
         return 0;
 #if 0
-    case WM_KEYDOWN:
-        if (wp == VK_ESCAPE)
-        {
-            destroy_tooltip();
-            if (GetCapture() == wnd)
-                ReleaseCapture();
-            SetFocus(IsWindow(m_wnd_prev) ? m_wnd_prev : uFindParentPopup(wnd));
-            m_dragging = false;
-            set_position_internal(m_position);
-            return 0;
-        }
-        break;
-    case WM_SETFOCUS:
-        m_wnd_prev = (HWND)wp;
-        break;
+        case WM_KEYDOWN:
+            if (wp == VK_ESCAPE)
+            {
+                destroy_tooltip();
+                if (GetCapture() == wnd)
+                    ReleaseCapture();
+                SetFocus(IsWindow(m_wnd_prev) ? m_wnd_prev : uFindParentPopup(wnd));
+                m_dragging = false;
+                set_position_internal(m_position);
+                return 0;
+            }
+            break;
+        case WM_SETFOCUS:
+            m_wnd_prev = (HWND)wp;
+            break;
 #endif
-    case WM_MOVE:
-        RedrawWindow(wnd, nullptr, nullptr, RDW_ERASE|RDW_INVALIDATE);
-        break;
-    case WM_ERASEBKGND:
-        return FALSE;
-    case WM_PAINT:
+        case WM_MOVE:
+            RedrawWindow(wnd, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE);
+            break;
+        case WM_ERASEBKGND:
+            return FALSE;
+        case WM_PAINT:
         {
             RECT rc_client;
             GetClientRect(wnd, &rc_client);
@@ -705,6 +707,8 @@ LRESULT TrackBarBase::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
         }
         return 0;
 
+        }
+        return DefWindowProc(wnd, msg, wp, lp);
     }
-    return DefWindowProc(wnd, msg, wp, lp);
+
 }
