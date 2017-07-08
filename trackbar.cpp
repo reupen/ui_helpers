@@ -7,7 +7,7 @@
 * \author musicmusic
 */
 
-BOOL track_bar::create_tooltip(const TCHAR * text, POINT pt)
+BOOL TrackBarBase::create_tooltip(const TCHAR * text, POINT pt)
 {
     destroy_tooltip();
 
@@ -37,12 +37,12 @@ BOOL track_bar::create_tooltip(const TCHAR * text, POINT pt)
     return TRUE;
 }
 
-void track_bar::destroy_tooltip()
+void TrackBarBase::destroy_tooltip()
 {
     if (m_wnd_tooltip) {DestroyWindow(m_wnd_tooltip); m_wnd_tooltip=nullptr;}
 }
 
-BOOL track_bar::update_tooltip(POINT pt, const TCHAR* text)
+BOOL TrackBarBase::update_tooltip(POINT pt, const TCHAR* text)
 {
     if (!m_wnd_tooltip) return FALSE;
 
@@ -62,19 +62,19 @@ BOOL track_bar::update_tooltip(POINT pt, const TCHAR* text)
     return TRUE;
 }
 
-void track_bar::set_callback(track_bar_host * p_host)
+void TrackBarBase::set_callback(TrackBarHost * p_host)
 {
     m_host = p_host;
 }
 
-void track_bar::set_show_tooltips(bool val)
+void TrackBarBase::set_show_tooltips(bool val)
 {
     m_show_tooltips = val;
     if (!val)
         destroy_tooltip();
 }
 
-void track_bar::set_position_internal(unsigned pos)
+void TrackBarBase::set_position_internal(unsigned pos)
 {
     if (!m_dragging)
     {
@@ -97,7 +97,7 @@ void track_bar::set_position_internal(unsigned pos)
     DeleteObject(rgn_new);
 }
 
-void track_bar::set_position(unsigned pos)
+void TrackBarBase::set_position(unsigned pos)
 {
     m_position = pos;
     if (!m_dragging)
@@ -105,12 +105,12 @@ void track_bar::set_position(unsigned pos)
         set_position_internal(pos);
     }
 }
-unsigned track_bar::get_position() const
+unsigned TrackBarBase::get_position() const
 {
     return m_position;
 }
 
-void track_bar::set_range(unsigned range)
+void TrackBarBase::set_range(unsigned range)
 {
     RECT rc;
     get_thumb_rect(&rc);
@@ -123,68 +123,68 @@ void track_bar::set_range(unsigned range)
     RedrawWindow(get_wnd(), nullptr, rgn_new, RDW_INVALIDATE|RDW_ERASE|RDW_UPDATENOW|RDW_ERASENOW);
     DeleteObject(rgn_new);
 }
-unsigned track_bar::get_range() const
+unsigned TrackBarBase::get_range() const
 {
     return m_range;
 }
 
-void track_bar::set_scroll_step(unsigned u_val)
+void TrackBarBase::set_scroll_step(unsigned u_val)
 {
     m_step = u_val;
 }
 
-unsigned track_bar::get_scroll_step() const
+unsigned TrackBarBase::get_scroll_step() const
 {
     return m_step;
 }
 
-void track_bar::set_orientation(bool b_vertical)
+void TrackBarBase::set_orientation(bool b_vertical)
 {
     m_vertical = b_vertical;
     //TODO: write handler
 }
 
-bool track_bar::get_orientation() const
+bool TrackBarBase::get_orientation() const
 {
     return m_vertical;
 }
 
-void track_bar::set_auto_focus(bool b_state)
+void TrackBarBase::set_auto_focus(bool b_state)
 {
     m_auto_focus = b_state;
 }
 
-bool track_bar::get_auto_focus() const
+bool TrackBarBase::get_auto_focus() const
 {
     return m_auto_focus;
 }
 
-void track_bar::set_direction(bool b_reversed)
+void TrackBarBase::set_direction(bool b_reversed)
 {
     m_reversed = b_reversed;
 }
 
-void track_bar::set_mouse_wheel_direction(bool b_reversed)
+void TrackBarBase::set_mouse_wheel_direction(bool b_reversed)
 {
     m_mouse_wheel_reversed = b_reversed;
 }
 
-bool track_bar::get_direction() const
+bool TrackBarBase::get_direction() const
 {
     return m_reversed;
 }
 
-void track_bar::set_enabled(bool enabled)
+void TrackBarBase::set_enabled(bool enabled)
 {
     EnableWindow(get_wnd(), enabled);
 }
 
-bool track_bar::get_enabled() const
+bool TrackBarBase::get_enabled() const
 {
     return IsWindowEnabled(get_wnd()) !=0;
 }
 
-void track_bar_impl::get_thumb_rect(unsigned pos, unsigned range, RECT * rc) const
+void TrackBar::get_thumb_rect(unsigned pos, unsigned range, RECT * rc) const
 {
     RECT rc_client;
     GetClientRect(get_wnd(), &rc_client);
@@ -207,7 +207,7 @@ void track_bar_impl::get_thumb_rect(unsigned pos, unsigned range, RECT * rc) con
 
 }
 
-void track_bar_impl::get_channel_rect(RECT * rc) const
+void TrackBar::get_channel_rect(RECT * rc) const
 {
     RECT rc_client;
     GetClientRect(get_wnd(), &rc_client);
@@ -219,22 +219,22 @@ void track_bar_impl::get_channel_rect(RECT * rc) const
     rc->bottom = get_orientation() ? rc_client.bottom - cx + cx/2 : rc_client.bottom/2+2;
 }
 
-void track_bar::get_thumb_rect(RECT * rc) const
+void TrackBarBase::get_thumb_rect(RECT * rc) const
 {
     get_thumb_rect(m_display_position, m_range, rc);
 }
 
-bool track_bar::get_hot() const
+bool TrackBarBase::get_hot() const
 {
     return m_thumb_hot;
 }
 
-bool track_bar::get_tracking() const
+bool TrackBarBase::get_tracking() const
 {
     return m_dragging;
 
 }
-void track_bar::update_hot_status(POINT pt)
+void TrackBarBase::update_hot_status(POINT pt)
 {
     RECT rc;
     get_thumb_rect(&rc);
@@ -257,7 +257,7 @@ void track_bar::update_hot_status(POINT pt)
     }
 }
 
-void track_bar_impl::draw_background (HDC dc, const RECT * rc) const
+void TrackBar::draw_background (HDC dc, const RECT * rc) const
 {
     HWND wnd_parent = GetParent(get_wnd());
     POINT pt = {0, 0}, pt_old = {0,0};
@@ -268,7 +268,7 @@ void track_bar_impl::draw_background (HDC dc, const RECT * rc) const
     SetWindowOrgEx(dc, pt_old.x, pt_old.y, nullptr);
 }
 
-void track_bar_impl::draw_thumb (HDC dc, const RECT * rc) const
+void TrackBar::draw_thumb (HDC dc, const RECT * rc) const
 {
     if (get_theme_handle())
     {
@@ -333,7 +333,7 @@ void track_bar_impl::draw_thumb (HDC dc, const RECT * rc) const
     }
 }
 
-void track_bar_impl::draw_channel (HDC dc, const RECT * rc) const
+void TrackBar::draw_channel (HDC dc, const RECT * rc) const
 {
     if (get_theme_handle())
     {
@@ -346,12 +346,12 @@ void track_bar_impl::draw_channel (HDC dc, const RECT * rc) const
     }
 }
 
-HTHEME track_bar::get_theme_handle() const
+HTHEME TrackBarBase::get_theme_handle() const
 {
     return m_theme;
 }
 
-bool track_bar::on_hooked_message(uih::MessageHookType p_type, int code, WPARAM wp, LPARAM lp)
+bool TrackBarBase::on_hooked_message(uih::MessageHookType p_type, int code, WPARAM wp, LPARAM lp)
 {
     auto lpkeyb = uih::GetKeyboardLParam(lp);
     if (wp == VK_ESCAPE && !lpkeyb.transition_code && !lpkeyb.previous_key_state)
@@ -368,14 +368,14 @@ bool track_bar::on_hooked_message(uih::MessageHookType p_type, int code, WPARAM 
     return false;
 }
 
-unsigned track_bar_impl::calculate_thumb_size() const
+unsigned TrackBar::calculate_thumb_size() const
 {
     RECT rc_client;
     GetClientRect(get_wnd(), &rc_client);
     return MulDiv(get_orientation() ? rc_client.right : rc_client.bottom,9,20);
 }
 
-unsigned track_bar::calculate_position_from_point(const POINT & pt_client) const
+unsigned TrackBarBase::calculate_position_from_point(const POINT & pt_client) const
 {
     RECT rc_channel, rc_client;
     GetClientRect(get_wnd(), &rc_client);
@@ -401,7 +401,7 @@ unsigned track_bar::calculate_position_from_point(const POINT & pt_client) const
     return rc_channel.right-rc_channel.left ? MulDiv(m_reversed ? rc_channel.right - cx: cx - rc_channel.left, m_range, rc_channel.right-rc_channel.left) : 0;
 }
 
-LRESULT track_bar::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
+LRESULT TrackBarBase::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 {
     switch(msg)
     {
@@ -462,7 +462,7 @@ LRESULT track_bar::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
                         {
                             POINT pts = pt;
                             ClientToScreen(wnd, &pts);
-                            track_bar_string temp;
+                            TrackBarString temp;
                             m_host->get_tooltip_text(pos, temp);
                             update_tooltip(pts, temp.data());
                         }
@@ -537,7 +537,7 @@ LRESULT track_bar::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
                     ClientToScreen(wnd, &pts);
                     if (m_show_tooltips && m_host)
                     {
-                        track_bar_string temp;
+                        TrackBarString temp;
                         m_host->get_tooltip_text(pos, temp);
                         create_tooltip(temp.data(), pts);
                     }

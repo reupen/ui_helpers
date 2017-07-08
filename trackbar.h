@@ -8,43 +8,43 @@
 * \author musicmusic
 */
 
-typedef std::basic_string<TCHAR> track_bar_string;
+using TrackBarString = std::basic_string<TCHAR>;
 
 /**
 * Class for host of trackbar control to (optionally) implement to recieve callbacks.
-* \see track_bar::set_callback
+* \see TrackBarBase::set_callback
 */
-class NOVTABLE track_bar_host
+class NOVTABLE TrackBarHost
 {
 public:
     /**
     * Called when thumb position changes.
     *
-    * \param [in]    pos            Contains new position of track bar thumb
-    * \param [in]    b_tracking    Specifies that the user is dragging the thumb if true
+    * \param [in]    pos        Contains new position of track bar thumb
+    * \param [in]    b_tracking Specifies that the user is dragging the thumb if true
     *
-    * \see track_bar::set_range
+    * \see TrackBarBase::set_range
     */
     virtual void on_position_change(unsigned pos, bool b_tracking) {};
 
     /**
     * Called to retrieve tooltip text when tracking
     *
-    * \param [in]    pos            Contains position of track bar thumb
-    * \param [out]    p_out        Recieves tooltip text, utf-8 encoded
+    * \param [in]     pos       Contains position of track bar thumb
+    * \param [out]    p_out     Recieves tooltip text, utf-8 encoded
     *
-    * \see track_bar::set_range, track_bar::set_show_tooltips
+    * \see TrackBarBase::set_range, TrackBarBase::set_show_tooltips
     */
-    virtual void get_tooltip_text(unsigned pos, track_bar_string & p_out) {};
+    virtual void get_tooltip_text(unsigned pos, TrackBarString & p_out) {};
 
     /**
     * Called when the escape or return key changes state whilst the
     * track bar has the keyboard focus
     *
-    * \param [in]    wp            Specifies the virtual-key code of the nonsystem key
-    * \param [in]    lp            Specifies the repeat count, scan code, extended-key flag, 
-    *                            context code, previous key-state flag, and transition-state flag
-    *                            (see MSDN)
+    * \param [in]    wp         Specifies the virtual-key code of the nonsystem key
+    * \param [in]    lp         Specifies the repeat count, scan code, extended-key flag, 
+    *                           context code, previous key-state flag, and transition-state flag
+    *                           (see MSDN)
     *
     * \return                    whether you processed the key state change
     */
@@ -56,7 +56,7 @@ public:
 *
 * Implemented by trackbar clients, used by host.
 */
-class track_bar : uih::MessageHook
+class TrackBarBase : uih::MessageHook
 {
 public:
     /**
@@ -94,7 +94,7 @@ public:
     *
     * \note    No range checking is done!
     *
-    * \see track_bar::set_range
+    * \see TrackBarBase::set_range
     */
     void set_position(unsigned pos);
 
@@ -103,7 +103,7 @@ public:
     *
     * \return                    Position of track bar thumb
     *
-    * \see track_bar::set_range
+    * \see TrackBarBase::set_range
     */
     unsigned get_position() const;
 
@@ -151,7 +151,7 @@ public:
     /**
     * Retrieves orientation of track bar control
     *
-    * \return                    Vertically orientated track bar state
+    * \return                       Vertically orientated track bar state
     *
     * \note    Not vertically orientated implies horizontally orientated.
     */
@@ -160,7 +160,7 @@ public:
     /**
     * Sets take focus on mouse button down state
     *
-    * \param [in]    b_auto_focus    New auto focus state
+    * \param [in]    b_auto_focus   New auto focus state
     *
     * \note    Default state is false
     */
@@ -169,7 +169,7 @@ public:
     /**
     * Gets take focus on mouse button down state
     *
-    * \return                    Auto focus state
+    * \return                       Auto focus state
     *
     * \note    Default state is false
     */
@@ -299,7 +299,7 @@ public:
     * \note The pointer must be valid until the track bar is destroyed, or until a
     * subsequent call to this function
     */
-    void set_callback(track_bar_host * p_host);
+    void set_callback(TrackBarHost * p_host);
 
     /**
     * Sets whether tooltips are shown
@@ -311,9 +311,9 @@ public:
     void set_show_tooltips(bool b_show);
 
     /**
-    * Default constructor for track_bar class
+    * Default constructor for TrackBarBase class
     */
-    track_bar()
+    TrackBarBase()
     {
         auto window_config = uih::ContainerWindowConfig{L"ui_extension_track_bar"};
         m_container_window = std::make_unique<uih::ContainerWindow>(
@@ -322,7 +322,7 @@ public:
             );
     }
 
-    virtual ~track_bar() = default;
+    virtual ~TrackBarBase() = default;
 protected:
     /**
     * Retreives a handle to the theme context to be used for calling uxtheme APIs
@@ -480,7 +480,7 @@ private:
     /**
     * Pointer to host interface.
     */
-    track_bar_host * m_host;
+    TrackBarHost * m_host;
 
     /**
      * \brief The underlying container window.
@@ -491,9 +491,9 @@ private:
 /**
 * Track bar implementation, providing standard Windows rendering.
 *
-* \see track_bar, container_window::create, container_window::destroy
+* \see TrackBarBase, container_window::create, container_window::destroy
 */
-class track_bar_impl : public track_bar
+class TrackBar : public TrackBarBase
 {
 protected:
     void get_thumb_rect(unsigned pos, unsigned range, RECT * rc) const override;
