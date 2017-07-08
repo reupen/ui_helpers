@@ -63,8 +63,8 @@
 #include "info_box.h"
 #include "menu.h"
 
-#include "ole/DataObj.h"
-#include "ole/EnumFE.h"
+#include "ole/data_object.h"
+#include "ole/enum_format_etc.h"
 
 
 #ifdef _UI_HELPERS_OLD_MAX_

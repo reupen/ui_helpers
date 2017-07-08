@@ -155,8 +155,8 @@
     <ClInclude Include="handle.h" />
     <ClInclude Include="list_view\list_view.h" />
     <ClInclude Include="ole.h" />
-    <ClInclude Include="ole\DataObj.h" />
-    <ClInclude Include="ole\Enumfe.h" />
+    <ClInclude Include="OLE\data_object.h" />
+    <ClInclude Include="ole\enum_format_etc.h" />
     <ClInclude Include="gdi.h" />
     <ClInclude Include="menu.h" />
     <ClInclude Include="message_hook.h" />
@@ -255,13 +255,13 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="ole.cpp" />
-    <ClCompile Include="ole\DataObj.Cpp">
+    <ClCompile Include="ole\data_object.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="ole\Enumfe.Cpp">
+    <ClCompile Include="ole\enum_format_etc.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>

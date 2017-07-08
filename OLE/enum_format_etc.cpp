@@ -23,7 +23,7 @@
 
 #include <windows.h>
 #include <shlobj.h>
-#include "EnumFE.h"
+#include "enum_format_etc.h"
 
 /**************************************************************************
 

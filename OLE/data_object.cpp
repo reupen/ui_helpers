@@ -21,8 +21,8 @@ Description:
 #include statements
 **************************************************************************/
 
-#include "DataObj.h"
-#include "EnumFE.h"
+#include "data_object.h"
+#include "enum_format_etc.h"
 //#include "Render.h"
 #include <shlobj.h>
 
