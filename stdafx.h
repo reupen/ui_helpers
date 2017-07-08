@@ -58,13 +58,13 @@
 
 #include "gdi.h"
 #include "text_drawing.h"
-#include "List View/list_view.h"
+#include "list_view/list_view.h"
 #include "drag_image.h"
 #include "info_box.h"
 #include "menu.h"
 
-#include "OLE/DataObj.h"
-#include "OLE/EnumFE.h"
+#include "ole/DataObj.h"
+#include "ole/EnumFE.h"
 
 
 #ifdef _UI_HELPERS_OLD_MAX_

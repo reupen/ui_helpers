@@ -9,9 +9,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="List View\list_view.h">
-      <Filter>List View</Filter>
-    </ClInclude>
     <ClInclude Include="OLE\DataObj.h">
       <Filter>Data Object</Filter>
     </ClInclude>
@@ -31,47 +28,11 @@
     <ClInclude Include="handle.h" />
     <ClInclude Include="container_window.h" />
     <ClInclude Include="info_box.h" />
+    <ClInclude Include="list_view\list_view.h">
+      <Filter>List View</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="List View\list_view_columns.cpp">
-      <Filter>List View</Filter>
-    </ClCompile>
-    <ClCompile Include="List View\list_view_header.cpp">
-      <Filter>List View</Filter>
-    </ClCompile>
-    <ClCompile Include="List View\list_view_hittest.cpp">
-      <Filter>List View</Filter>
-    </ClCompile>
-    <ClCompile Include="List View\list_view_inline_edit.cpp">
-      <Filter>List View</Filter>
-    </ClCompile>
-    <ClCompile Include="List View\list_view_item_state.cpp">
-      <Filter>List View</Filter>
-    </ClCompile>
-    <ClCompile Include="List View\list_view_items.cpp">
-      <Filter>List View</Filter>
-    </ClCompile>
-    <ClCompile Include="List View\list_view_keyboard.cpp">
-      <Filter>List View</Filter>
-    </ClCompile>
-    <ClCompile Include="List View\list_view_misc.cpp">
-      <Filter>List View</Filter>
-    </ClCompile>
-    <ClCompile Include="List View\list_view_msgproc.cpp">
-      <Filter>List View</Filter>
-    </ClCompile>
-    <ClCompile Include="List View\list_view_renderer.cpp">
-      <Filter>List View</Filter>
-    </ClCompile>
-    <ClCompile Include="List View\list_view_scroll.cpp">
-      <Filter>List View</Filter>
-    </ClCompile>
-    <ClCompile Include="List View\list_view_search.cpp">
-      <Filter>List View</Filter>
-    </ClCompile>
-    <ClCompile Include="List View\list_view_tooltip.cpp">
-      <Filter>List View</Filter>
-    </ClCompile>
     <ClCompile Include="OLE\DataObj.Cpp">
       <Filter>Data Object</Filter>
     </ClCompile>
@@ -84,12 +45,51 @@
     <ClCompile Include="text_drawing.cpp" />
     <ClCompile Include="trackbar.cpp" />
     <ClCompile Include="win32_helpers.cpp" />
-    <ClCompile Include="List View\list_view_drag_image.cpp">
-      <Filter>List View</Filter>
-    </ClCompile>
     <ClCompile Include="ole.cpp" />
     <ClCompile Include="drag_image.cpp" />
     <ClCompile Include="container_window.cpp" />
+    <ClCompile Include="list_view\list_view_columns.cpp">
+      <Filter>List View</Filter>
+    </ClCompile>
+    <ClCompile Include="list_view\list_view_drag_image.cpp">
+      <Filter>List View</Filter>
+    </ClCompile>
+    <ClCompile Include="list_view\list_view_header.cpp">
+      <Filter>List View</Filter>
+    </ClCompile>
+    <ClCompile Include="list_view\list_view_hittest.cpp">
+      <Filter>List View</Filter>
+    </ClCompile>
+    <ClCompile Include="list_view\list_view_inline_edit.cpp">
+      <Filter>List View</Filter>
+    </ClCompile>
+    <ClCompile Include="list_view\list_view_item_state.cpp">
+      <Filter>List View</Filter>
+    </ClCompile>
+    <ClCompile Include="list_view\list_view_items.cpp">
+      <Filter>List View</Filter>
+    </ClCompile>
+    <ClCompile Include="list_view\list_view_keyboard.cpp">
+      <Filter>List View</Filter>
+    </ClCompile>
+    <ClCompile Include="list_view\list_view_misc.cpp">
+      <Filter>List View</Filter>
+    </ClCompile>
+    <ClCompile Include="list_view\list_view_msgproc.cpp">
+      <Filter>List View</Filter>
+    </ClCompile>
+    <ClCompile Include="list_view\list_view_renderer.cpp">
+      <Filter>List View</Filter>
+    </ClCompile>
+    <ClCompile Include="list_view\list_view_scroll.cpp">
+      <Filter>List View</Filter>
+    </ClCompile>
+    <ClCompile Include="list_view\list_view_search.cpp">
+      <Filter>List View</Filter>
+    </ClCompile>
+    <ClCompile Include="list_view\list_view_tooltip.cpp">
+      <Filter>List View</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
