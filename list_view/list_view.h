@@ -1,5 +1,4 @@
-#ifndef _LIST_PVT_H_
-#define _LIST_PVT_H_
+#pragma once
 
 class t_list_view  {
 public:
@@ -373,10 +372,6 @@ public:
         return ret;
     }
 
-    /*void get_subitem_text_rect(t_size index, t_size columns, const RECT * prc)
-    {
-    }*/
-
     void clear_all_items()
     {
         m_items.remove_all();
@@ -387,22 +382,6 @@ public:
         t_size ret = 0;
         if (index < m_items.get_count())
             ret = m_items[index]->m_display_position;
-        /*t_size ret = m_items[index]->m_display_index * m_item_height - (b_include_headers ? get_item_display_group_count(index)*m_item_height : 0);
-        if (get_show_group_info_area() && m_group_count)
-        {
-            t_size group_cy = get_group_info_area_size();
-            t_size i = 0;
-            while (i < index)
-            {
-                t_size gstart=i, gcount=0;
-                get_item_group(i, m_group_count-1, gstart, gcount);
-                t_size gheight = gcount*m_item_height;
-                if (index >= i+gcount && gheight < group_cy)
-                    ret += group_cy - gheight;
-                i+= gcount;
-
-            }
-        }*/
         return ret;
     }
 
@@ -860,7 +839,6 @@ private:
     LRESULT on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 
     void render_items(HDC dc, const RECT& rc_update, t_size cx);
-    void __insert_items_v2(t_size index_start, const pfc::list_base_const_t<t_item_insert>& items);
     void __insert_items_v3(t_size index_start, t_size count, const t_item_insert* items);
     void __replace_items_v2(t_size index_start, t_size count, const t_item_insert* items);
     void __remove_item(t_size index);
@@ -1006,5 +984,3 @@ private:
     */
     std::unique_ptr<uih::ContainerWindow> m_container_window;
 };
-
-#endif //_LIST_PVT_H_
