@@ -11,6 +11,8 @@
 #include <vector>
 #include <unordered_map>
 
+#include <ppl.h>
+
 #include <windows.h>
 #include <WindowsX.h>
 #include <SHLWAPI.H>

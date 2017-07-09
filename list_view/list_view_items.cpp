@@ -197,7 +197,7 @@ void t_list_view::__replace_items_v2(t_size index_start, t_size countl, const t_
 
 void t_list_view::__insert_items_v3(t_size index_start, t_size pcountitems, const t_item_insert * items)
 {
-    t_size l, countl = pcountitems;
+    t_size countl = pcountitems;
     {
         pfc::list_t<t_item_ptr> itemsinsert;
         itemsinsert.set_count(countl);
@@ -226,28 +226,36 @@ void t_list_view::__insert_items_v3(t_size index_start, t_size pcountitems, cons
     }
 
 // Determine grouping
+
     {
         t_item_ptr * p_items = m_items.get_ptr();
-        for (l=0; l<countl; l++)
+
+        concurrency::parallel_for(size_t{0}, countl, [&](size_t l)
+        {
+            t_size count = m_group_count;
+            t_size index = l + index_start;
+            t_item * item;
+            item = storage_create_item();
+            p_items[index] = item;
+            item->m_subitems = items[l].m_subitems;
+            item->m_groups.set_size(count);
+        });
+
+        for (size_t l = 0; l < countl; l++)
         {
             t_size i, count = m_group_count;
             t_size index = l + index_start;
-            t_item * item;
-            {
-                item = storage_create_item();
-                p_items[index] = item;
-                item->m_subitems = items[l].m_subitems;
-                item->m_display_index = index ? p_items[index-1]->m_display_index + 1 : 0;
-                item->m_groups.set_size(count);
-                if (m_variable_height_items) 
-                {
-                    if (item->m_subitems.get_count() != get_column_count())
-                        update_item_data(index);
-                    item->update_line_count();
-                }
-            }
-            bool b_new = false;
+            t_item* item = p_items[index].get_ptr();
 
+            item->m_display_index = index ? p_items[index - 1]->m_display_index + 1 : 0;
+            if (m_variable_height_items)
+            {
+                if (item->m_subitems.get_count() != get_column_count())
+                    update_item_data(index);
+                item->update_line_count();
+            }
+
+            bool b_new = false;
             bool b_left_same_above = true;
             bool b_right_same_above = true;
             for (i=0; i<count; i++)
@@ -295,7 +303,6 @@ void t_list_view::__insert_items_v3(t_size index_start, t_size pcountitems, cons
 
             }
         }
-
     }
     {
         t_size index = index_start + countl;
@@ -328,7 +335,7 @@ void t_list_view::__insert_items_v3(t_size index_start, t_size pcountitems, cons
 // Determine new group count
     {
         t_size countl2 = index_start + countl < countitems ? countl+1 : countl;
-        for (l=0; l<countl2; l++)
+        for (size_t l=0; l<countl2; l++)
         {
             t_size i, count = m_group_count;
             t_size index = l + index_start;
