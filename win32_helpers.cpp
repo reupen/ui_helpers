@@ -470,17 +470,17 @@ namespace uih {
 
     bool get_window_text(HWND wnd, pfc::string_base& out)
     {
-        auto buffer_size = GetWindowTextLength(wnd);
+        const auto buffer_size = GetWindowTextLength(wnd) + 1;
         if (buffer_size <= 0)
             return false;
 
         pfc::array_staticsize_t<wchar_t> buffer(buffer_size);
         pfc::fill_array_t(buffer, 0);
-        auto chars_written = GetWindowText(wnd, buffer.get_ptr(), buffer_size);
+        const auto chars_written = GetWindowText(wnd, buffer.get_ptr(), buffer_size);
         if (chars_written <= 0)
             return false;
 
-        auto utf8_size = pfc::stringcvt::estimate_wide_to_utf8(buffer.get_ptr(), chars_written);
+        const auto utf8_size = pfc::stringcvt::estimate_wide_to_utf8(buffer.get_ptr(), chars_written);
         auto utf8_buffer = pfc::string_buffer(out, utf8_size);
         pfc::stringcvt::convert_wide_to_utf8(utf8_buffer, utf8_size, buffer.get_ptr(), chars_written);
         return true;
