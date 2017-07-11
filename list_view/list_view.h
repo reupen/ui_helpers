@@ -856,7 +856,7 @@ private:
         return false;
     };
 
-    virtual bool notify_create_inline_edit(const pfc::list_base_const_t<t_size>& indices, unsigned column, pfc::string_base& p_test, t_size& p_flags, mmh::comptr_t<IUnknown>& pAutocompleteEntries)
+    virtual bool notify_create_inline_edit(const pfc::list_base_const_t<t_size>& indices, unsigned column, pfc::string_base& p_test, t_size& p_flags, mmh::ComPtr<IUnknown>& pAutocompleteEntries)
     {
         return true;
     };
@@ -898,8 +898,8 @@ private:
     bool m_inline_edit_prevent_kill{false};
     t_size m_inline_edit_column{std::numeric_limits<t_size>::max()};
     pfc::list_t<t_size> m_inline_edit_indices;
-    //mmh::comptr_t<IUnknown> m_inline_edit_autocomplete_entries;
-    mmh::comptr_t<IAutoComplete> m_inline_edit_autocomplete;
+    //mmh::ComPtr<IUnknown> m_inline_edit_autocomplete_entries;
+    mmh::ComPtr<IAutoComplete> m_inline_edit_autocomplete;
 
     LOGFONT m_lf_items{0};
     LOGFONT m_lf_header{0};

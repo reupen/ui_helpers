@@ -175,7 +175,7 @@ namespace uih {
             if (preferredEffect)
                 SetPreferredDropEffect(pDataObject, preferredEffect);
 
-            mmh::comptr_t<IDropSource> pDropSource;
+            mmh::ComPtr<IDropSource> pDropSource;
             //if (!IsVistaOrNewer())
             pDropSource = new uih::ole::IDropSourceGeneric(wnd, pDataObject, initialKeyState, true, lpsdi);
             return SHDoDragDrop(wnd, pDataObject, pDropSource, dwEffect, pdwEffect);
@@ -261,7 +261,7 @@ namespace uih {
             {
                 if (SUCCEEDED(m_drag_source_helper.instantiate(CLSID_DragDropHelper, nullptr, CLSCTX_INPROC_SERVER)))
                 {
-                    mmh::comptr_t<IDragSourceHelper2> pDragSourceHelper2 = m_drag_source_helper;
+                    mmh::ComPtr<IDragSourceHelper2> pDragSourceHelper2 = m_drag_source_helper;
                     if (pDragSourceHelper2.is_valid())
                     {
                         hr = pDragSourceHelper2->SetFlags(DSH_ALLOWDROPDESCRIPTIONTEXT);

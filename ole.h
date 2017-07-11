@@ -26,8 +26,8 @@ namespace uih {
             long m_refcount;
             DWORD m_initial_key_state;
             bool m_prev_is_showing_layered;
-            mmh::comptr_t<IDragSourceHelper> m_drag_source_helper;
-            mmh::comptr_t<IDataObject> m_data_object;
+            mmh::ComPtr<IDragSourceHelper> m_drag_source_helper;
+            mmh::ComPtr<IDataObject> m_data_object;
         };
 
     }

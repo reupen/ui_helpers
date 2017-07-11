@@ -291,7 +291,7 @@ void t_list_view::create_inline_edit(const pfc::list_base_const_t<t_size> & indi
 
     pfc::string8 text;
     t_size flags = 0;
-    mmh::comptr_t<IUnknown> pAutoCompleteEntries;
+    mmh::ComPtr<IUnknown> pAutoCompleteEntries;
     if (!notify_create_inline_edit(indices, column, text, flags, pAutoCompleteEntries))
     {
         m_inline_edit_save = false;
@@ -317,8 +317,8 @@ void t_list_view::create_inline_edit(const pfc::list_base_const_t<t_size> & indi
                 if (pAutoCompleteEntries.is_valid())
                     m_inline_edit_autocomplete->Init(m_wnd_inline_edit, pAutoCompleteEntries, nullptr, nullptr);
 
-                mmh::comptr_t<IAutoComplete2> pA2 = m_inline_edit_autocomplete;
-                mmh::comptr_t<IAutoCompleteDropDown> pAutoCompleteDropDown = m_inline_edit_autocomplete;
+                mmh::ComPtr<IAutoComplete2> pA2 = m_inline_edit_autocomplete;
+                mmh::ComPtr<IAutoCompleteDropDown> pAutoCompleteDropDown = m_inline_edit_autocomplete;
                 if (pA2.is_valid())
                 {
                     pA2->SetOptions(ACO_AUTOSUGGEST|ACO_UPDOWNKEYDROPSLIST);
