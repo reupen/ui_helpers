@@ -25,10 +25,10 @@ namespace uih {
 
     void list_view_set_explorer_theme(HWND wnd)
     {
-        if (mmh::osversion::is_windows_vista_or_newer())
+        if (mmh::is_windows_vista_or_newer())
         {
             ListView_SetExtendedListViewStyleEx(wnd, 0x00010000 | LVS_EX_FULLROWSELECT, 0x00010000 | LVS_EX_FULLROWSELECT);
-            if (mmh::osversion::is_windows_7_or_newer())
+            if (mmh::is_windows_7_or_newer())
             {
                 SetWindowTheme(wnd, L"ItemsView", nullptr);
                 //SetWindowTheme(ListView_GetHeader (wnd), L"ItemsView", NULL);
@@ -62,7 +62,7 @@ namespace uih {
 
     void tree_view_set_explorer_theme(HWND wnd, bool b_reduce_indent)
     {
-        if (mmh::osversion::is_windows_vista_or_newer())
+        if (mmh::is_windows_vista_or_newer())
         {
             UINT_PTR stylesex = /*TVS_EX_FADEINOUTEXPANDOS|*/TVS_EX_DOUBLEBUFFER | TVS_EX_AUTOHSCROLL;
             UINT_PTR styles = NULL;//TVS_TRACKSELECT;
@@ -78,7 +78,7 @@ namespace uih {
 
     void tree_view_remove_explorer_theme(HWND wnd)
     {
-        if (mmh::osversion::is_windows_vista_or_newer())
+        if (mmh::is_windows_vista_or_newer())
         {
             UINT_PTR stylesex = /*TVS_EX_FADEINOUTEXPANDOS|*/TVS_EX_DOUBLEBUFFER;
             UINT_PTR styles = NULL;//TVS_TRACKSELECT;

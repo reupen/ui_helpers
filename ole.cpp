@@ -120,7 +120,7 @@ namespace uih {
 
         HRESULT set_drop_description(IDataObject *pdtobj, DROPIMAGETYPE dit, const char * msg, const char * insert)
         {
-            if (mmh::osversion::is_windows_vista_or_newer())
+            if (mmh::is_windows_vista_or_newer())
             {
                 DROPDESCRIPTION dd_prev;
                 memset(&dd_prev, 0, sizeof(dd_prev));
