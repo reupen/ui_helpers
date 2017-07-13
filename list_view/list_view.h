@@ -79,7 +79,7 @@ public:
     };
 
 protected:
-    enum edge_style_t {
+    enum EdgeStyle {
         edge_none,
         edge_sunken,
         edge_grey,
@@ -955,7 +955,7 @@ private:
     bool m_show_sort_indicators{true};
     t_size m_sort_column_index{std::numeric_limits<t_size>::max()};
     bool m_sort_direction{false};
-    edge_style_t m_edge_style{edge_grey};
+    EdgeStyle m_edge_style{edge_grey};
     bool m_sizing{false};
 
     bool m_single_selection{false};

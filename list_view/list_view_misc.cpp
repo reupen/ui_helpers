@@ -615,7 +615,7 @@ void ListView::set_show_sort_indicators(bool b_val)
 
 void ListView::set_edge_style(t_size b_val)
 {
-    m_edge_style = (edge_style_t)b_val;
+    m_edge_style = (EdgeStyle)b_val;
     if (get_wnd()) {
         SetWindowLongPtr(get_wnd(), GWL_EXSTYLE,
             (GetWindowLongPtr(get_wnd(), GWL_EXSTYLE) & ~(WS_EX_STATICEDGE | WS_EX_CLIENTEDGE))
