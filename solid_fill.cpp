@@ -1,15 +1,16 @@
 #include "stdafx.h"
 
-LRESULT TranslucentFillWindow::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
-{
-    switch (msg)
+namespace uih {
+    LRESULT TranslucentFillWindow::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     {
-    case WM_CREATE:
-        SetLayeredWindowAttributes(wnd, 0, 255/2, LWA_ALPHA);
-        return 0;
-    case WM_ERASEBKGND:
-        return FALSE;
-    case WM_PAINT:
+        switch (msg)
+        {
+        case WM_CREATE:
+            SetLayeredWindowAttributes(wnd, 0, 255 / 2, LWA_ALPHA);
+            return 0;
+        case WM_ERASEBKGND:
+            return FALSE;
+        case WM_PAINT:
         {
             PAINTSTRUCT ps;
             HDC dc = BeginPaint(wnd, &ps);
@@ -42,6 +43,7 @@ LRESULT TranslucentFillWindow::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
             EndPaint(wnd, &ps);
             return 0;
         }
+        }
+        return DefWindowProc(wnd, msg, wp, lp);
     }
-    return DefWindowProc(wnd, msg, wp, lp);
-};
+}
