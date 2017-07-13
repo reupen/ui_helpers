@@ -36,7 +36,7 @@ uih::alignment ListView::get_column_alignment(t_size index)
     return ret;
 }
 
-void ListView::set_columns(const pfc::list_base_const_t<t_column> & columns)
+void ListView::set_columns(const pfc::list_base_const_t<Column> & columns)
 {
     reset_columns();
     m_columns.add_items(columns);
@@ -66,7 +66,7 @@ void ListView::set_column_widths(const pfc::list_base_const_t<t_size> & widths)
     RedrawWindow(get_wnd(), nullptr,nullptr,RDW_ALLCHILDREN|RDW_UPDATENOW);
 }
 
-void ListView::get_column_sizes (pfc::list_t<t_column> & p_out)
+void ListView::get_column_sizes (pfc::list_t<Column> & p_out)
 {
     //console::formatter() << "get_column_sizes";
     RECT rc;

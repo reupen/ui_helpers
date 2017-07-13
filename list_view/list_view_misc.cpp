@@ -174,7 +174,7 @@ void ListView::reset_columns()
     m_columns.remove_all();
 }
 
-/*void ListView::add_column(const t_column & col)
+/*void ListView::add_column(const Column & col)
 {
     m_columns.add_item(col);
 }*/

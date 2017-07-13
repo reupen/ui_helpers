@@ -36,7 +36,7 @@ public:
 
     };
 
-    class t_column {
+    class Column {
     public:
         pfc::string8 m_title;
         t_size m_size;
@@ -44,11 +44,11 @@ public:
         t_size m_autosize_weight;
         uih::alignment m_alignment;
 
-        t_column(const char* title, t_size cx, t_size p_autosize_weight = 1, uih::alignment alignment = uih::ALIGN_LEFT)
+        Column(const char* title, t_size cx, t_size p_autosize_weight = 1, uih::alignment alignment = uih::ALIGN_LEFT)
             : m_title(title), m_size(cx), m_display_size(cx), m_autosize_weight(p_autosize_weight),
               m_alignment(alignment) {};
 
-        t_column() : m_size(0), m_display_size(0), m_autosize_weight(1), m_alignment(uih::ALIGN_LEFT) {};
+        Column() : m_size(0), m_display_size(0), m_autosize_weight(1), m_alignment(uih::ALIGN_LEFT) {};
     };
 
     using string_array = pfc::array_t<pfc::string_simple>;
@@ -195,7 +195,7 @@ public:
     }
 
     unsigned calculate_header_height();
-    void set_columns(const pfc::list_base_const_t<t_column>& columns);
+    void set_columns(const pfc::list_base_const_t<Column>& columns);
     void set_column_widths(const pfc::list_base_const_t<t_size>& widths);
     void set_group_count(t_size count, bool b_update_columns = true);
 
@@ -259,7 +259,7 @@ public:
 
     void reposition_header();
 
-    void get_column_sizes(pfc::list_t<t_column>& p_out);
+    void get_column_sizes(pfc::list_t<Column>& p_out);
     void update_column_sizes();
 
     //void insert_item(t_size index, const t_string_list_const_fast & text, const t_string_list_const_fast & p_groups, t_size size);
@@ -977,7 +977,7 @@ private:
     bool m_group_level_indentation_enabled{true};
 
     pfc::list_t<t_item_ptr, pfc::alloc_fast> m_items;
-    pfc::list_t<t_column> m_columns;
+    pfc::list_t<Column> m_columns;
 
     /**
     * \brief The underlying container window.
