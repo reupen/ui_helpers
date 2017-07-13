@@ -273,7 +273,7 @@ void ListView::update_items(t_size index, t_size count, bool b_update_display)
 void ListView::reorder_items_partial(size_t base, const size_t * order, size_t count, bool update_focus_item, bool update_display)
 {
     m_items.reorder_partial(base, order, count);
-    pfc::list_t<t_item_insert> insert_items;
+    pfc::list_t<InsertItem> insert_items;
     insert_items.set_size(count);
     replace_items(base, insert_items, update_display);
 

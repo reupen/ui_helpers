@@ -13,7 +13,7 @@ const char * ListView::get_item_text(t_size index, t_size column)
     return m_items[index]->m_subitems[column];
 }
 
-void ListView::insert_items(t_size index_start, t_size count, const t_item_insert * items, bool b_update_display)
+void ListView::insert_items(t_size index_start, t_size count, const InsertItem * items, bool b_update_display)
 {
     __insert_items_v3(index_start, count, items);
     __calculate_item_positions(index_start);
@@ -22,7 +22,7 @@ void ListView::insert_items(t_size index_start, t_size count, const t_item_inser
     if (b_update_display)
         RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
 }
-void ListView::replace_items(t_size index_start, t_size count, const t_item_insert* items, bool b_update_display)
+void ListView::replace_items(t_size index_start, t_size count, const InsertItem* items, bool b_update_display)
 {
     __replace_items_v2(index_start, count, items);
     __calculate_item_positions(index_start);
@@ -46,7 +46,7 @@ void ListView::remove_items(const bit_array & p_mask, bool b_update_display)
         RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
 }
 
-void ListView::__replace_items_v2(t_size index_start, t_size countl, const t_item_insert* items)
+void ListView::__replace_items_v2(t_size index_start, t_size countl, const InsertItem* items)
 {
     pfc::list_t<t_item_ptr> items_prev(m_items);
     t_size l, countitems = m_items.get_count();
@@ -195,7 +195,7 @@ void ListView::__replace_items_v2(t_size index_start, t_size countl, const t_ite
 }
 
 
-void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const t_item_insert * items)
+void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const InsertItem * items)
 {
     t_size countl = pcountitems;
     {

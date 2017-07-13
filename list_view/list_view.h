@@ -53,19 +53,19 @@ public:
 
     using string_array = pfc::array_t<pfc::string_simple>;
 
-    class t_item_insert {
+    class InsertItem {
     public:
         string_array m_subitems;
         string_array m_groups;
 
-        t_item_insert() {};
+        InsertItem() {};
 
-        t_item_insert(const string_array& text, const string_array& p_groups)
+        InsertItem(const string_array& text, const string_array& p_groups)
         {
             m_subitems = text;
             m_groups = p_groups;
         };
-        t_item_insert(size_t subitem_count, size_t group_count)
+        InsertItem(size_t subitem_count, size_t group_count)
         {
             m_subitems.set_size(subitem_count);
             m_groups.set_size(group_count);
@@ -73,9 +73,9 @@ public:
     };
 
     template<size_t subitem_count, size_t group_count>
-    class t_item_insert_sized : public t_item_insert {
+    class SizedInsertItem : public InsertItem {
     public:
-        t_item_insert_sized() : t_item_insert(subitem_count, group_count) {}
+        SizedInsertItem() : InsertItem(subitem_count, group_count) {}
     };
 
 protected:
@@ -263,15 +263,15 @@ public:
     void update_column_sizes();
 
     //void insert_item(t_size index, const t_string_list_const_fast & text, const t_string_list_const_fast & p_groups, t_size size);
-    //void insert_items(t_size index_start, const pfc::list_base_const_t<t_item_insert> & items, bool b_update_display = true);
-    void insert_items(t_size index_start, t_size count, const t_item_insert* items, bool b_update_display = true);
+    //void insert_items(t_size index_start, const pfc::list_base_const_t<InsertItem> & items, bool b_update_display = true);
+    void insert_items(t_size index_start, t_size count, const InsertItem* items, bool b_update_display = true);
 
     template<class TItems>
     void replace_items(t_size index_start, const TItems& items, bool b_update_display = true)
     {
         replace_items(index_start, items.get_size(), items.get_ptr(), b_update_display);
     }
-    void replace_items(t_size index_start, t_size count, const t_item_insert* items, bool b_update_display = true);
+    void replace_items(t_size index_start, t_size count, const InsertItem* items, bool b_update_display = true);
     void remove_item(t_size index);
     void remove_items(const bit_array& p_mask, bool b_update_display = true);
 
@@ -627,8 +627,8 @@ protected:
     virtual bool storage_get_item_selected(t_size index);
     virtual t_size storage_get_selection_count(t_size max);
 
-    /*virtual void storage_insert_items(t_size index_start, const pfc::list_base_const_t<t_item_insert> & items);
-    virtual void storage_replace_items(t_size index_start, const pfc::list_base_const_t<t_item_insert> & items);
+    /*virtual void storage_insert_items(t_size index_start, const pfc::list_base_const_t<InsertItem> & items);
+    virtual void storage_replace_items(t_size index_start, const pfc::list_base_const_t<InsertItem> & items);
     virtual void storage_remove_items(const bit_array & p_mask);
     virtual void storaget_set_item_subitems(t_size index, t_string_list_cref_fast p_subitems);
     virtual t_string_list_cref_fast storaget_get_item_subitems(t_size index);*/
@@ -839,8 +839,8 @@ private:
     LRESULT on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 
     void render_items(HDC dc, const RECT& rc_update, t_size cx);
-    void __insert_items_v3(t_size index_start, t_size count, const t_item_insert* items);
-    void __replace_items_v2(t_size index_start, t_size count, const t_item_insert* items);
+    void __insert_items_v3(t_size index_start, t_size count, const InsertItem* items);
+    void __replace_items_v2(t_size index_start, t_size count, const InsertItem* items);
     void __remove_item(t_size index);
     void __calculate_item_positions(t_size index_start = 0);
 
