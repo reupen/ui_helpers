@@ -87,18 +87,18 @@ protected:
     };
 
     class Item;
-    class t_group;
+    class Group;
 
-    typedef pfc::refcounted_object_ptr_t<t_group> t_group_ptr;
+    typedef pfc::refcounted_object_ptr_t<Group> t_group_ptr;
     typedef pfc::refcounted_object_ptr_t<Item> t_item_ptr;
 
-    class t_group : public pfc::refcounted_object_root {
+    class Group : public pfc::refcounted_object_root {
     public:
         pfc::string8 m_text;
 
-        t_group(const char* p_text) : m_text(p_text) {};
+        Group(const char* p_text) : m_text(p_text) {}
 
-        t_group() {};
+        Group() {}
 
     private:
     };
@@ -638,9 +638,9 @@ protected:
         return new Item;
     }
 
-    virtual t_group* storage_create_group()
+    virtual Group* storage_create_group()
     {
-        return new t_group;
+        return new Group;
     }
 
     Item* get_item(t_size index)
