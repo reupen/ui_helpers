@@ -1,6 +1,6 @@
 #include "../stdafx.h"
 
-bool t_list_view::on_wm_keydown(WPARAM wp, LPARAM lp, LRESULT & ret, bool & b_processed)
+bool ListView::on_wm_keydown(WPARAM wp, LPARAM lp, LRESULT & ret, bool & b_processed)
 {
     b_processed = false;
     ret = 0;

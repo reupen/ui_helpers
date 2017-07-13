@@ -1,6 +1,6 @@
 #include "../stdafx.h"
 
-void t_list_view::hit_test_ex(POINT pt_client, t_list_view::t_hit_test_result & result)
+void ListView::hit_test_ex(POINT pt_client, ListView::t_hit_test_result & result)
 {
     result.column = pfc_infinite;
     t_ssize x_left_items=-m_horizontal_scroll_position+get_total_indentation();
@@ -102,7 +102,7 @@ void t_list_view::hit_test_ex(POINT pt_client, t_list_view::t_hit_test_result & 
     }
     result.result = hit_test_nowhere;
 }
-bool t_list_view::is_visible(t_size index)
+bool ListView::is_visible(t_size index)
 {
     if (index < m_items.get_count())
     {
@@ -113,7 +113,7 @@ bool t_list_view::is_visible(t_size index)
     }
     return false;
 }
-t_size t_list_view::get_last_viewable_item()
+t_size ListView::get_last_viewable_item()
 {
     RECT rc;
     get_items_size(&rc);
@@ -121,14 +121,14 @@ t_size t_list_view::get_last_viewable_item()
     if (get_item_position(ret)+get_item_height(ret) > (t_size)rc.bottom+ m_scroll_position) ret--;
     return ret;
 }
-t_size t_list_view::get_last_item()
+t_size ListView::get_last_item()
 {
     RECT rc;
     get_items_size(&rc);
     t_size ret = get_previous_item(rc.bottom + m_scroll_position);
     return ret;
 }
-t_size t_list_view::get_previous_item(t_size y, bool b_include_headers)
+t_size ListView::get_previous_item(t_size y, bool b_include_headers)
 {
     {
         t_size max = m_items.get_count();
@@ -151,7 +151,7 @@ t_size t_list_view::get_previous_item(t_size y, bool b_include_headers)
         //return true;
     }
 }
-t_size t_list_view::get_next_item(t_size y, bool b_include_headers)
+t_size ListView::get_next_item(t_size y, bool b_include_headers)
 {
     {
         t_size max = m_items.get_count();

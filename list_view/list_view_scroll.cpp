@@ -1,6 +1,6 @@
 #include "../stdafx.h"
 
-void t_list_view::ensure_visible(t_size index)
+void ListView::ensure_visible(t_size index)
 {
     if (index < m_items.get_count() && !is_visible(index))
     {
@@ -9,7 +9,7 @@ void t_list_view::ensure_visible(t_size index)
         scroll(false, get_item_position(index) - (RECT_CY(rc)/2) + (get_item_height(index)/2));
     }
 }
-void t_list_view::scroll(bool b_sb, int val, bool b_horizontal)
+void ListView::scroll(bool b_sb, int val, bool b_horizontal)
 {
     INT sb = b_horizontal ? SB_HORZ : SB_VERT;
     int & p_scroll_position = b_horizontal ? m_horizontal_scroll_position : m_scroll_position;
@@ -70,7 +70,7 @@ void t_list_view::scroll(bool b_sb, int val, bool b_horizontal)
     }
 }
 
-void t_list_view::_update_scroll_info_vertical()
+void ListView::_update_scroll_info_vertical()
 {
         RECT rc;
         get_items_rect(&rc);
@@ -95,7 +95,7 @@ void t_list_view::_update_scroll_info_vertical()
             invalidate_all(false);
 }
 
-void t_list_view::_update_scroll_info_horizontal()
+void ListView::_update_scroll_info_horizontal()
 {
         RECT rc;
         get_items_rect(&rc);
@@ -134,7 +134,7 @@ void t_list_view::_update_scroll_info_horizontal()
         }
 }
 
-void t_list_view::update_scroll_info(bool b_update, bool b_vertical, bool b_horizontal)
+void ListView::update_scroll_info(bool b_update, bool b_vertical, bool b_horizontal)
 {
     //god this is a bit complicated when showing h scrollbar causes need for v scrollbar (and vv)
 
@@ -150,7 +150,7 @@ void t_list_view::update_scroll_info(bool b_update, bool b_vertical, bool b_hori
     if (b_update)
         UpdateWindow(get_wnd());
 }
-void t_list_view::create_timer_scroll_up()
+void ListView::create_timer_scroll_up()
 {
     if (!m_timer_scroll_up)
     {
@@ -158,7 +158,7 @@ void t_list_view::create_timer_scroll_up()
         m_timer_scroll_up = true;
     }
 }
-void t_list_view::create_timer_scroll_down()
+void ListView::create_timer_scroll_down()
 {
     if (!m_timer_scroll_down)
     {
@@ -166,7 +166,7 @@ void t_list_view::create_timer_scroll_down()
         m_timer_scroll_down = true;
     }
 }
-void t_list_view::destroy_timer_scroll_up()
+void ListView::destroy_timer_scroll_up()
 {
     if (m_timer_scroll_up)
     {
@@ -174,7 +174,7 @@ void t_list_view::destroy_timer_scroll_up()
         m_timer_scroll_up = false;
     }
 }
-void t_list_view::destroy_timer_scroll_down()
+void ListView::destroy_timer_scroll_down()
 {
     if (m_timer_scroll_down)
     {

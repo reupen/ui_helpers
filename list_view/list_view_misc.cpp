@@ -1,6 +1,6 @@
 #include "../stdafx.h"
 
-bool t_list_view::copy_selected_items_as_text(t_size default_single_item_column)
+bool ListView::copy_selected_items_as_text(t_size default_single_item_column)
 {
     pfc::string8 text, cleanedText;
     t_size selected_count = get_selection_count(2);
@@ -33,7 +33,7 @@ bool t_list_view::copy_selected_items_as_text(t_size default_single_item_column)
     return selected_count > 0;
 }
 
-void t_list_view::set_sort_column (t_size index, bool b_direction)
+void ListView::set_sort_column (t_size index, bool b_direction)
 {
     m_sort_column_index = index;
     m_sort_direction = b_direction;
@@ -62,7 +62,7 @@ void t_list_view::set_sort_column (t_size index, bool b_direction)
     RedrawWindow(m_wnd_header, nullptr, nullptr, RDW_UPDATENOW|RDW_INVALIDATE);
 }
 
-void t_list_view::set_autosize (bool b_val) 
+void ListView::set_autosize (bool b_val) 
 {
     m_autosize=b_val;
     if (m_initialised)
@@ -79,20 +79,20 @@ void t_list_view::set_autosize (bool b_val)
         update_scroll_info();
     }
 }
-void t_list_view::set_always_show_focus (bool b_val) 
+void ListView::set_always_show_focus (bool b_val) 
 {
     m_always_show_focus=b_val;
     if (m_initialised)
         invalidate_all();
 }
-void t_list_view::on_size(bool b_update, bool b_update_scroll)
+void ListView::on_size(bool b_update, bool b_update_scroll)
 {
     RECT rc;
     GetClientRect(get_wnd(), &rc);
     on_size(RECT_CX(rc), RECT_CY(rc), b_update, b_update_scroll);
 }
 
-void t_list_view::on_size(int cxd, int cyd, bool b_update, bool b_update_scroll)
+void ListView::on_size(int cxd, int cyd, bool b_update, bool b_update_scroll)
 {
     if (!m_sizing)
     {
@@ -150,7 +150,7 @@ void t_list_view::on_size(int cxd, int cyd, bool b_update, bool b_update_scroll)
     }
 }
 
-void t_list_view::get_items_rect(LPRECT rc)
+void ListView::get_items_rect(LPRECT rc)
 {
     GetClientRect(get_wnd(), rc);
     rc->top += get_header_height();
@@ -159,7 +159,7 @@ void t_list_view::get_items_rect(LPRECT rc)
     if (rc->bottom < rc->top)
         rc->bottom = rc->top;
 }
-void t_list_view::get_items_size(LPRECT rc)
+void ListView::get_items_size(LPRECT rc)
 {
     GetClientRect(get_wnd(), rc);
     rc->bottom -= get_header_height();
@@ -167,22 +167,22 @@ void t_list_view::get_items_size(LPRECT rc)
     if (rc->bottom < rc->top)
         rc->bottom = rc->top;
 }
-void t_list_view::reset_columns()
+void ListView::reset_columns()
 {
     //assert (m_items.get_count() == 0);
     //m_items.remove_all();
     m_columns.remove_all();
 }
 
-/*void t_list_view::add_column(const t_column & col)
+/*void ListView::add_column(const t_column & col)
 {
     m_columns.add_item(col);
 }*/
-/*void t_list_view::add_item(const t_string_list_const_fast & text, const t_string_list_const_fast & p_groups, t_size size)
+/*void ListView::add_item(const t_string_list_const_fast & text, const t_string_list_const_fast & p_groups, t_size size)
 {
     insert_item(m_items.get_count(), text, p_groups, size);
 }*/
-void t_list_view::set_group_count(t_size count, bool b_update_columns)
+void ListView::set_group_count(t_size count, bool b_update_columns)
 {
     m_group_count = count;
     if (m_initialised && b_update_columns)
@@ -192,7 +192,7 @@ void t_list_view::set_group_count(t_size count, bool b_update_columns)
         //update_header();
     }
 }
-void t_list_view::process_keydown(int offset, bool alt_down, bool repeat)
+void ListView::process_keydown(int offset, bool alt_down, bool repeat)
 {
     int focus = get_focus_item();
     int count = m_items.get_count();
@@ -234,20 +234,20 @@ void t_list_view::process_keydown(int offset, bool alt_down, bool repeat)
     }
 }
 
-int t_list_view::get_default_item_height()
+int ListView::get_default_item_height()
 {
     int ret = uih::get_font_height(m_font) + m_vertical_item_padding;
     if (ret < 1) ret = 1;
     return ret;
 }
 
-int t_list_view::get_default_group_height()
+int ListView::get_default_group_height()
 {
     int ret = uih::get_font_height(m_group_font) + m_vertical_item_padding;
     if (ret < 1) ret = 1;
     return ret;
 }
-void t_list_view::on_focus_change(t_size index_prev, t_size index_new, bool b_update_display)
+void ListView::on_focus_change(t_size index_prev, t_size index_new, bool b_update_display)
 {
     t_size count = m_items.get_count();
     if (index_prev < count)
@@ -255,14 +255,14 @@ void t_list_view::on_focus_change(t_size index_prev, t_size index_new, bool b_up
     if (index_new < count)
         invalidate_items(index_new, 1, b_update_display);
 }
-void t_list_view::invalidate_all(bool b_update, bool b_children)
+void ListView::invalidate_all(bool b_update, bool b_children)
 {
     RECT rc;
     get_items_rect(&rc);
     RedrawWindow(get_wnd(), b_children || true ? nullptr : &rc, nullptr, RDW_INVALIDATE|(b_update?RDW_UPDATENOW:0)|(b_children?RDW_ALLCHILDREN:0));
 }
 
-void t_list_view::update_items(t_size index, t_size count, bool b_update_display)
+void ListView::update_items(t_size index, t_size count, bool b_update_display)
 {
     t_size i;
     for (i=0;i<count;i++)
@@ -270,7 +270,7 @@ void t_list_view::update_items(t_size index, t_size count, bool b_update_display
     invalidate_items(index, count, b_update_display);
 }
 
-void t_list_view::reorder_items_partial(size_t base, const size_t * order, size_t count, bool update_focus_item, bool update_display)
+void ListView::reorder_items_partial(size_t base, const size_t * order, size_t count, bool update_focus_item, bool update_display)
 {
     m_items.reorder_partial(base, order, count);
     pfc::list_t<t_item_insert> insert_items;
@@ -286,12 +286,12 @@ void t_list_view::reorder_items_partial(size_t base, const size_t * order, size_
     }
 }
 
-void t_list_view::update_all_items(bool b_update_display)
+void ListView::update_all_items(bool b_update_display)
 {
     update_items(0, m_items.get_count(), b_update_display);
 }
 
-void t_list_view::invalidate_items(t_size index, t_size count, bool b_update_display)
+void ListView::invalidate_items(t_size index, t_size count, bool b_update_display)
 {
 #if 0
         RedrawWindow(get_wnd(), NULL, NULL, RDW_INVALIDATE|(b_update_display?RDW_UPDATENOW:0));
@@ -316,7 +316,7 @@ void t_list_view::invalidate_items(t_size index, t_size count, bool b_update_dis
 #endif
 }
 
-void t_list_view::invalidate_items(const bit_array& mask, bool b_update_display)
+void ListView::invalidate_items(const bit_array& mask, bool b_update_display)
 {
     t_size i, start, count = get_item_count();
     for (i = 0; i < count; i++) {
@@ -330,7 +330,7 @@ void t_list_view::invalidate_items(const bit_array& mask, bool b_update_display)
     }
 }
 
-void t_list_view::invalidate_item_group_info_area(t_size index, bool b_update_display)
+void ListView::invalidate_item_group_info_area(t_size index, bool b_update_display)
 {
     t_size count = 0;
     get_item_group(index, m_group_count ? m_group_count - 1 : 0, index, count);
@@ -358,7 +358,7 @@ void t_list_view::invalidate_item_group_info_area(t_size index, bool b_update_di
 
 
 
-void t_list_view::get_item_group(t_size index, t_size level, t_size & index_start, t_size & count)
+void ListView::get_item_group(t_size index, t_size level, t_size & index_start, t_size & count)
 {
     if (m_group_count == 0)
     {
@@ -383,7 +383,7 @@ void t_list_view::get_item_group(t_size index, t_size level, t_size & index_star
     }
 }
 
-void t_list_view::set_highlight_item(t_size index)
+void ListView::set_highlight_item(t_size index)
 {
     if (m_highlight_item_index != index)
     {
@@ -392,7 +392,7 @@ void t_list_view::set_highlight_item(t_size index)
     }
 }
 
-void t_list_view::remove_highlight_item()
+void ListView::remove_highlight_item()
 {
     if (m_highlight_item_index != pfc_infinite)
     {
@@ -401,7 +401,7 @@ void t_list_view::remove_highlight_item()
     }
 }
 
-void t_list_view::set_highlight_selected_item(t_size index)
+void ListView::set_highlight_selected_item(t_size index)
 {
     if (m_highlight_selected_item_index != index)
     {
@@ -410,7 +410,7 @@ void t_list_view::set_highlight_selected_item(t_size index)
     }
 }
 
-void t_list_view::remove_highlight_selected_item()
+void ListView::remove_highlight_selected_item()
 {
     if (m_highlight_selected_item_index != pfc_infinite)
     {
@@ -419,7 +419,7 @@ void t_list_view::remove_highlight_selected_item()
     }
 }
 
-void t_list_view::set_insert_mark(t_size index)
+void ListView::set_insert_mark(t_size index)
 {
     if (m_insert_mark_index != index)
     {
@@ -427,7 +427,7 @@ void t_list_view::set_insert_mark(t_size index)
         invalidate_all();
     }
 }
-void t_list_view::remove_insert_mark()
+void ListView::remove_insert_mark()
 {
     if (m_insert_mark_index != pfc_infinite)
     {
@@ -436,7 +436,7 @@ void t_list_view::remove_insert_mark()
     }
 }
 
-bool t_list_view::disable_redrawing()
+bool ListView::disable_redrawing()
 {
     if (IsWindowVisible(get_wnd()))
     {
@@ -445,7 +445,7 @@ bool t_list_view::disable_redrawing()
     }
     return false;
 }
-void t_list_view::enable_redrawing()
+void ListView::enable_redrawing()
 {
     //if (IsWindowVisible(get_wnd()))
     {
@@ -454,7 +454,7 @@ void t_list_view::enable_redrawing()
     }
 }
 
-void t_list_view::create_timer_search()
+void ListView::create_timer_search()
 {
     destroy_timer_search();
     if (!m_timer_search)
@@ -463,7 +463,7 @@ void t_list_view::create_timer_search()
         m_timer_search = true;
     }
 }
-void t_list_view::destroy_timer_search()
+void ListView::destroy_timer_search()
 {
     if (m_timer_search)
     {
@@ -472,7 +472,7 @@ void t_list_view::destroy_timer_search()
     }
 }
 
-void t_list_view::on_search_string_change(WCHAR c)
+void ListView::on_search_string_change(WCHAR c)
 {
     bool b_all_same = true;
     pfc::string8 temp;
@@ -538,7 +538,7 @@ void t_list_view::on_search_string_change(WCHAR c)
     }
 }
 
-void t_list_view::set_vertical_item_padding(int val)
+void ListView::set_vertical_item_padding(int val)
 {
     m_vertical_item_padding = val;
     if (m_initialised) {
@@ -551,7 +551,7 @@ void t_list_view::set_vertical_item_padding(int val)
     }
 }
 
-void t_list_view::set_font(const LPLOGFONT lplf)
+void ListView::set_font(const LPLOGFONT lplf)
 {
     m_lf_items = *lplf;
     m_lf_items_valid = true;
@@ -569,7 +569,7 @@ void t_list_view::set_font(const LPLOGFONT lplf)
     }
 }
 
-void t_list_view::set_group_font(const LPLOGFONT lplf)
+void ListView::set_group_font(const LPLOGFONT lplf)
 {
     m_lf_group_header = *lplf;
     m_lf_group_header_valid = true;
@@ -582,7 +582,7 @@ void t_list_view::set_group_font(const LPLOGFONT lplf)
     }
 }
 
-void t_list_view::set_header_font(const LPLOGFONT lplf)
+void ListView::set_header_font(const LPLOGFONT lplf)
 {
     m_lf_header = *lplf;
     m_lf_header_valid = true;
@@ -595,7 +595,7 @@ void t_list_view::set_header_font(const LPLOGFONT lplf)
     }
 }
 
-void t_list_view::set_sorting_enabled(bool b_val)
+void ListView::set_sorting_enabled(bool b_val)
 {
     m_sorting_enabled = b_val;
     if (m_initialised && m_wnd_header) {
@@ -605,7 +605,7 @@ void t_list_view::set_sorting_enabled(bool b_val)
     }
 }
 
-void t_list_view::set_show_sort_indicators(bool b_val)
+void ListView::set_show_sort_indicators(bool b_val)
 {
     m_show_sort_indicators = b_val;
     if (m_initialised && m_wnd_header) {
@@ -613,7 +613,7 @@ void t_list_view::set_show_sort_indicators(bool b_val)
     }
 }
 
-void t_list_view::set_edge_style(t_size b_val)
+void ListView::set_edge_style(t_size b_val)
 {
     m_edge_style = (edge_style_t)b_val;
     if (get_wnd()) {

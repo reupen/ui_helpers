@@ -1,6 +1,6 @@
 #include "../stdafx.h"
 
-bool t_list_view::render_drag_image(LPSHDRAGIMAGE lpsdi)
+bool ListView::render_drag_image(LPSHDRAGIMAGE lpsdi)
 {
     colour_data_t p_data;
     render_get_colour_data(p_data);
@@ -18,7 +18,7 @@ bool t_list_view::render_drag_image(LPSHDRAGIMAGE lpsdi)
     return uih::create_drag_image(get_wnd(), true, m_dd_theme, p_data.m_selection_background, p_data.m_selection_text, icon, &lf, show_text, drag_text, lpsdi) != 0;
 }
 
-bool t_list_view::format_drag_text(t_size selection_count, pfc::string8 & p_out)
+bool ListView::format_drag_text(t_size selection_count, pfc::string8 & p_out)
 {
     auto show_text = should_show_drag_text(selection_count);
     if (show_text)

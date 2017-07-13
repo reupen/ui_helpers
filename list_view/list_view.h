@@ -1,6 +1,6 @@
 #pragma once
 
-class t_list_view  {
+class ListView  {
 public:
     enum {
         IDC_HEADER = 1001,
@@ -149,7 +149,7 @@ protected:
     };
 
 public:
-    t_list_view()
+    ListView()
     {
         m_dragging_initial_point.x = 0;
         m_dragging_initial_point.y = 0;

@@ -1,9 +1,9 @@
 #include "../stdafx.h"
 
-bool t_list_view::is_search_box_open() {return m_search_editbox != nullptr;}
-void t_list_view::focus_search_box() {if (m_search_editbox) SetFocus(m_search_editbox);}
+bool ListView::is_search_box_open() {return m_search_editbox != nullptr;}
+void ListView::focus_search_box() {if (m_search_editbox) SetFocus(m_search_editbox);}
 
-void t_list_view::show_search_box(const char * label, bool b_focus)
+void ListView::show_search_box(const char * label, bool b_focus)
 {
     if (!m_search_editbox)
     {
@@ -57,7 +57,7 @@ void t_list_view::show_search_box(const char * label, bool b_focus)
 #endif
     }
 }
-void t_list_view::close_search_box(bool b_notify)
+void ListView::close_search_box(bool b_notify)
 {
     if (m_search_editbox)
     {
@@ -75,7 +75,7 @@ void t_list_view::close_search_box(bool b_notify)
         notify_on_search_box_close();
 }
 
-void t_list_view::get_search_box_rect(LPRECT rc)
+void ListView::get_search_box_rect(LPRECT rc)
 {
     if (m_search_editbox)
     {
@@ -89,7 +89,7 @@ void t_list_view::get_search_box_rect(LPRECT rc)
         rc->top = rc->bottom;
     }
 }
-unsigned t_list_view::get_search_box_height()
+unsigned ListView::get_search_box_height()
 {
     unsigned ret = 0;
     if (m_search_editbox)
@@ -101,19 +101,19 @@ unsigned t_list_view::get_search_box_height()
     return ret;
 }
 
-LRESULT WINAPI t_list_view::g_on_search_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
+LRESULT WINAPI ListView::g_on_search_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 {
-    t_list_view * p_this;
+    ListView * p_this;
     LRESULT rv;
 
-    p_this = reinterpret_cast<t_list_view*>(GetWindowLongPtr(wnd,GWL_USERDATA));
+    p_this = reinterpret_cast<ListView*>(GetWindowLongPtr(wnd,GWL_USERDATA));
     
     rv = p_this ? p_this->on_search_edit_message(wnd,msg,wp,lp) : DefWindowProc(wnd, msg, wp, lp);;
     
     return rv;
 }
 
-LRESULT t_list_view::on_search_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
+LRESULT ListView::on_search_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 {
     switch(msg)
     {
@@ -173,7 +173,7 @@ LRESULT t_list_view::on_search_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM l
     return CallWindowProc(m_proc_search_edit,wnd,msg,wp,lp);
 }
 
-void t_list_view::__search_box_update_hot_status(const POINT & pt)
+void ListView::__search_box_update_hot_status(const POINT & pt)
 {
     POINT pts = pt;
     MapWindowPoints(get_wnd(), HWND_DESKTOP, &pts, 1);

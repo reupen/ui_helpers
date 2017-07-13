@@ -2,7 +2,7 @@
 
 const t_size _level_spacing_size = 3;
 
-t_size t_list_view::get_item_indentation()
+t_size ListView::get_item_indentation()
 {
     RECT rc; get_items_rect(&rc); 
     t_size ret = rc.left;
@@ -10,7 +10,7 @@ t_size t_list_view::get_item_indentation()
         ret += get_default_indentation_step()*m_group_count;
     return ret;
 }
-t_size t_list_view::get_default_indentation_step()
+t_size ListView::get_default_indentation_step()
 {
     t_size ret = 0;
     if (m_group_level_indentation_enabled)
@@ -25,7 +25,7 @@ t_size t_list_view::get_default_indentation_step()
     return ret;
 }
 
-void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
+void ListView::render_items(HDC dc, const RECT & rc_update, t_size cx)
 {
     colour_data_t p_data;
     render_get_colour_data(p_data);
@@ -172,7 +172,7 @@ void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
     }
     //OffsetWindowOrgEx(dc, -m_horizontal_scroll_position, 0, NULL);
 }
-    void t_list_view::render_get_colour_data(colour_data_t & p_out)
+    void ListView::render_get_colour_data(colour_data_t & p_out)
     {
         p_out.m_themed = true;
         p_out.m_use_custom_active_item_frame = false;
@@ -186,7 +186,7 @@ void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
         p_out.m_group_text = get_group_text_colour_default();
         p_out.m_group_background = p_out.m_background;
     }
-    void t_list_view::render_group_line_default(const colour_data_t & p_data, HDC dc, const RECT * rc)
+    void ListView::render_group_line_default(const colour_data_t & p_data, HDC dc, const RECT * rc)
     {
         if (m_theme && IsThemePartDefined(m_theme, LVP_GROUPHEADERLINE, NULL) && SUCCEEDED(DrawThemeBackground(m_theme, dc, LVP_GROUPHEADERLINE, LVGH_OPEN, rc, nullptr)))
         {
@@ -201,25 +201,25 @@ void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
             SelectPen(dc, pen_old);
         }
     }
-    void t_list_view::render_group_background_default(const colour_data_t & p_data, HDC dc, const RECT * rc)
+    void ListView::render_group_background_default(const colour_data_t & p_data, HDC dc, const RECT * rc)
     {
         FillRect(dc, rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(p_data.m_group_background)));
     }
-    COLORREF t_list_view::get_group_text_colour_default()
+    COLORREF ListView::get_group_text_colour_default()
     {
         COLORREF cr = NULL;
         if (!(m_theme && IsThemePartDefined(m_theme, LVP_GROUPHEADER, NULL) && SUCCEEDED(GetThemeColor(m_theme, LVP_GROUPHEADER, LVGH_OPEN, TMT_HEADING1TEXTCOLOR, &cr))))
             cr = GetSysColor(COLOR_WINDOWTEXT);
         return cr;
     }
-    bool t_list_view::get_group_text_colour_default(COLORREF & cr)
+    bool ListView::get_group_text_colour_default(COLORREF & cr)
     {
         cr = NULL;
         if (!(m_theme && IsThemePartDefined(m_theme, LVP_GROUPHEADER, NULL) && SUCCEEDED(GetThemeColor(m_theme, LVP_GROUPHEADER, LVGH_OPEN, TMT_HEADING1TEXTCOLOR, &cr))))
             return false;
         return true;
     }
-    void t_list_view::render_group_default(const colour_data_t & p_data, HDC dc, const char * text, t_size indentation, t_size level, const RECT & rc)
+    void ListView::render_group_default(const colour_data_t & p_data, HDC dc, const char * text, t_size indentation, t_size level, const RECT & rc)
     {
         COLORREF cr = p_data.m_group_text;
 
@@ -237,7 +237,7 @@ void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
             render_group_line_default(p_data, dc, &rc_line);
         }
     }
-    void t_list_view::render_item_default(const colour_data_t & p_data, HDC dc, t_size index, t_size indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT * rc)
+    void ListView::render_item_default(const colour_data_t & p_data, HDC dc, t_size index, t_size indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT * rc)
     {
         t_item_ptr item = m_items[index];
         int theme_state = NULL;
@@ -284,31 +284,31 @@ void t_list_view::render_items(HDC dc, const RECT & rc_update, t_size cx)
                 DrawFocusRect(dc, &rc_focus);
         }
     }
-    void t_list_view::render_background_default(const colour_data_t & p_data, HDC dc, const RECT * rc)
+    void ListView::render_background_default(const colour_data_t & p_data, HDC dc, const RECT * rc)
     {
         FillRect(dc, rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(p_data.m_background)));
     }
 
-void t_list_view::render_group(HDC dc, t_size index, t_size group, const char * text, t_size indentation, t_size level, const RECT & rc)
+void ListView::render_group(HDC dc, t_size index, t_size group, const char * text, t_size indentation, t_size level, const RECT & rc)
 {
     colour_data_t p_data;
     render_get_colour_data(p_data);
     render_group_default(p_data, dc, text, indentation, level, rc);
 }
-void t_list_view::render_item(HDC dc, t_size index, t_size indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT * rc)
+void ListView::render_item(HDC dc, t_size index, t_size indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT * rc)
 {
     colour_data_t p_data;
     render_get_colour_data(p_data);
     render_item_default(p_data, dc, index, indentation, b_selected, b_window_focused, b_highlight, b_focused, rc);
 }
-void t_list_view::render_background(HDC dc, const RECT * rc)
+void ListView::render_background(HDC dc, const RECT * rc)
 {
     colour_data_t p_data;
     render_get_colour_data(p_data);
     render_background_default(p_data, dc, rc);
 }
 
-t_size t_list_view::get_text_width(const char * text, t_size length)
+t_size ListView::get_text_width(const char * text, t_size length)
 {
     t_size ret = 0;
     HDC hdc = GetDC(get_wnd());
@@ -323,7 +323,7 @@ t_size t_list_view::get_text_width(const char * text, t_size length)
 }
 
 
-bool t_list_view::is_item_clipped(t_size index, t_size column)
+bool ListView::is_item_clipped(t_size index, t_size column)
 {
     HDC hdc = GetDC(get_wnd());
     if (!hdc) return false;

@@ -2,7 +2,7 @@
 
 #define GROUP_STRING_COMPARE strcmp
 
-const char * t_list_view::get_item_text(t_size index, t_size column)
+const char * ListView::get_item_text(t_size index, t_size column)
 {
     if (index >= m_items.get_count())
         return "";
@@ -13,7 +13,7 @@ const char * t_list_view::get_item_text(t_size index, t_size column)
     return m_items[index]->m_subitems[column];
 }
 
-void t_list_view::insert_items(t_size index_start, t_size count, const t_item_insert * items, bool b_update_display)
+void ListView::insert_items(t_size index_start, t_size count, const t_item_insert * items, bool b_update_display)
 {
     __insert_items_v3(index_start, count, items);
     __calculate_item_positions(index_start);
@@ -22,7 +22,7 @@ void t_list_view::insert_items(t_size index_start, t_size count, const t_item_in
     if (b_update_display)
         RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
 }
-void t_list_view::replace_items(t_size index_start, t_size count, const t_item_insert* items, bool b_update_display)
+void ListView::replace_items(t_size index_start, t_size count, const t_item_insert* items, bool b_update_display)
 {
     __replace_items_v2(index_start, count, items);
     __calculate_item_positions(index_start);
@@ -30,7 +30,7 @@ void t_list_view::replace_items(t_size index_start, t_size count, const t_item_i
     if (b_update_display)
         RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
 }
-void t_list_view::remove_items(const bit_array & p_mask, bool b_update_display)
+void ListView::remove_items(const bit_array & p_mask, bool b_update_display)
 {
     if (m_timer_inline_edit)
         exit_inline_edit();
@@ -46,7 +46,7 @@ void t_list_view::remove_items(const bit_array & p_mask, bool b_update_display)
         RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
 }
 
-void t_list_view::__replace_items_v2(t_size index_start, t_size countl, const t_item_insert* items)
+void ListView::__replace_items_v2(t_size index_start, t_size countl, const t_item_insert* items)
 {
     pfc::list_t<t_item_ptr> items_prev(m_items);
     t_size l, countitems = m_items.get_count();
@@ -195,7 +195,7 @@ void t_list_view::__replace_items_v2(t_size index_start, t_size countl, const t_
 }
 
 
-void t_list_view::__insert_items_v3(t_size index_start, t_size pcountitems, const t_item_insert * items)
+void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const t_item_insert * items)
 {
     t_size countl = pcountitems;
     {
@@ -363,7 +363,7 @@ void t_list_view::__insert_items_v3(t_size index_start, t_size pcountitems, cons
     }
 }
 
-void t_list_view::__calculate_item_positions(t_size index_start)
+void ListView::__calculate_item_positions(t_size index_start)
 {
     if (index_start >= get_item_count()) return;
 
@@ -396,7 +396,7 @@ void t_list_view::__calculate_item_positions(t_size index_start)
     }
 }
 
-void t_list_view::remove_item(t_size index)
+void ListView::remove_item(t_size index)
 {
     if (m_timer_inline_edit)
         exit_inline_edit();
@@ -405,7 +405,7 @@ void t_list_view::remove_item(t_size index)
     update_scroll_info();
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE|RDW_UPDATENOW);
 }
-void t_list_view::__remove_item(t_size index)
+void ListView::__remove_item(t_size index)
 {
     t_size gc = 0, k, count2 = m_items[index]->m_groups.get_count();
     

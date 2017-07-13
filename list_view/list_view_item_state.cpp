@@ -1,11 +1,11 @@
 #include "../stdafx.h"
 
-void t_list_view::get_selection_state(bit_array_var & out)
+void ListView::get_selection_state(bit_array_var & out)
 {
     storage_get_selection_state(out);
 }
 
-void t_list_view::set_selection_state(const bit_array & p_affected,const bit_array & p_status, bool b_notify, bool b_update_display, notification_source_t p_notification_source) 
+void ListView::set_selection_state(const bit_array & p_affected,const bit_array & p_status, bool b_notify, bool b_update_display, notification_source_t p_notification_source) 
 {
     bit_array_bittable p_changed(get_item_count());
     if (storage_set_selection_state(p_affected,p_status, &p_changed))
@@ -17,9 +17,9 @@ void t_list_view::set_selection_state(const bit_array & p_affected,const bit_arr
     }
 }
 
-t_size t_list_view::get_focus_item() {t_size ret = storage_get_focus_item(); if (ret >= get_item_count()) ret = pfc_infinite; return ret;}
+t_size ListView::get_focus_item() {t_size ret = storage_get_focus_item(); if (ret >= get_item_count()) ret = pfc_infinite; return ret;}
 
-void t_list_view::set_focus_item(t_size index, bool b_notify, bool b_update_display) 
+void ListView::set_focus_item(t_size index, bool b_notify, bool b_update_display) 
 {
     t_size old = storage_get_focus_item();
     if (old != index)
@@ -31,18 +31,18 @@ void t_list_view::set_focus_item(t_size index, bool b_notify, bool b_update_disp
     }
 };
 
-bool t_list_view::get_item_selected(t_size index)
+bool ListView::get_item_selected(t_size index)
 {
     return storage_get_item_selected(index);
 }
 
-t_size t_list_view::get_selection_count(t_size max)
+t_size ListView::get_selection_count(t_size max)
 {
     return storage_get_selection_count(max);
 }
 
 
-t_size t_list_view::storage_get_selection_count(t_size max)
+t_size ListView::storage_get_selection_count(t_size max)
 {
     t_size i, count = m_items.get_count(), ret = 0;;
     for (i=0; i<count; i++)
@@ -56,14 +56,14 @@ t_size t_list_view::storage_get_selection_count(t_size max)
 
 }
 
-void t_list_view::set_item_selected(t_size index, bool b_state)
+void ListView::set_item_selected(t_size index, bool b_state)
 {
     if (b_state)
         set_selection_state(bit_array_one(index), bit_array_one(index));
     else
         set_selection_state(bit_array_one(index), bit_array_false());
 }
-void t_list_view::set_item_selected_single(t_size index, bool b_notify, notification_source_t p_notification_source)
+void ListView::set_item_selected_single(t_size index, bool b_notify, notification_source_t p_notification_source)
 {
     if (index < m_items.get_count())
     {
@@ -75,21 +75,21 @@ void t_list_view::set_item_selected_single(t_size index, bool b_notify, notifica
 }
 
 //DEFAULT STORAGE
-t_size t_list_view::storage_get_focus_item() {return m_focus_index;}
+t_size ListView::storage_get_focus_item() {return m_focus_index;}
 
-void t_list_view::storage_set_focus_item(t_size index) 
+void ListView::storage_set_focus_item(t_size index) 
 {
     m_focus_index = index;
 };
 
-void t_list_view::storage_get_selection_state(bit_array_var & out) //storage
+void ListView::storage_get_selection_state(bit_array_var & out) //storage
 {
     t_size i, count = m_items.get_count();
     for (i=0; i<count; i++)
         out.set(i,m_items[i]->m_selected);
 }
 
-bool t_list_view::storage_set_selection_state(const bit_array & p_affected,const bit_array & p_status, bit_array_var * p_changed) //storage, returns hint if sel actually changed
+bool ListView::storage_set_selection_state(const bit_array & p_affected,const bit_array & p_status, bit_array_var * p_changed) //storage, returns hint if sel actually changed
 {
     bool b_changed = false;
     t_size i, count = m_items.get_count();
@@ -105,7 +105,7 @@ bool t_list_view::storage_set_selection_state(const bit_array & p_affected,const
     return b_changed;
 }
 
-bool t_list_view::storage_get_item_selected(t_size index)
+bool ListView::storage_get_item_selected(t_size index)
 {
     return m_items[index]->m_selected;
 }

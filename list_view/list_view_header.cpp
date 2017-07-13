@@ -1,6 +1,6 @@
 #include "../stdafx.h"
 
-void t_list_view::destroy_header()
+void ListView::destroy_header()
 {
     if (m_wnd_header)
     {
@@ -10,7 +10,7 @@ void t_list_view::destroy_header()
     }
 }
 
-void t_list_view::create_header()
+void ListView::create_header()
 {
     //if (m_show_header)
     {
@@ -32,7 +32,7 @@ void t_list_view::create_header()
     }
 }
 
-void t_list_view::set_show_header (bool b_val)
+void ListView::set_show_header (bool b_val)
 {
     if (b_val != m_show_header)
     {
@@ -48,7 +48,7 @@ void t_list_view::set_show_header (bool b_val)
     }
 }
 
-void t_list_view::reposition_header()
+void ListView::reposition_header()
 {
     RECT rc;
     GetClientRect(get_wnd(), &rc);
@@ -58,7 +58,7 @@ void t_list_view::reposition_header()
     SetWindowPos(m_wnd_header, nullptr, -m_horizontal_scroll_position, 0, cx + m_horizontal_scroll_position, RECT_CY(rc_header), SWP_NOZORDER);
 }
 
-void t_list_view::build_header()
+void ListView::build_header()
 {
     if (m_wnd_header)
     {
@@ -116,7 +116,7 @@ void t_list_view::build_header()
     }
 }
 
-bool t_list_view::on_wm_notify_header(LPNMHDR lpnm, LRESULT & ret)
+bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT & ret)
 {
     switch (lpnm->code)
     {
@@ -316,7 +316,7 @@ bool t_list_view::on_wm_notify_header(LPNMHDR lpnm, LRESULT & ret)
     return false;
 }
 
-void t_list_view::get_header_rect(LPRECT rc)
+void ListView::get_header_rect(LPRECT rc)
 {
     if (m_wnd_header)
         *rc = uih::get_relative_rect(m_wnd_header, get_wnd());
@@ -327,7 +327,7 @@ void t_list_view::get_header_rect(LPRECT rc)
     }
 }
 
-unsigned t_list_view::get_header_height()
+unsigned ListView::get_header_height()
 {
     unsigned ret = 0;
     if (m_wnd_header)
@@ -338,7 +338,7 @@ unsigned t_list_view::get_header_height()
     }
     return ret;
 }
-unsigned t_list_view::calculate_header_height()
+unsigned ListView::calculate_header_height()
 {
     unsigned rv = 0;
     if (m_wnd_header)
@@ -349,7 +349,7 @@ unsigned t_list_view::calculate_header_height()
     return rv;
 }
 
-void t_list_view::update_header(bool b_update)
+void ListView::update_header(bool b_update)
 {
     if (m_wnd_header)
     {

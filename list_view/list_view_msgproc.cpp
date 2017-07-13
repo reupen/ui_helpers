@@ -1,6 +1,6 @@
 #include "../stdafx.h"
 
-LRESULT t_list_view::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
+LRESULT ListView::on_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 {
 #if 1
     static const UINT MSG_DI_GETDRAGIMAGE = RegisterWindowMessage(DI_GETDRAGIMAGE);

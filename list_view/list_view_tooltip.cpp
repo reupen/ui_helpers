@@ -1,16 +1,16 @@
 #include "../stdafx.h"
 
-void t_list_view::set_show_tooltips (bool b_val) 
+void ListView::set_show_tooltips (bool b_val) 
 {
     m_show_tooltips = b_val;
 }
 
-void t_list_view::set_limit_tooltips_to_clipped_items (bool b_val)
+void ListView::set_limit_tooltips_to_clipped_items (bool b_val)
 {
     m_limit_tooltips_to_clipped_items = b_val;
 }
 
-void t_list_view::create_tooltip(/*t_size index, t_size column, */const char * str)
+void ListView::create_tooltip(/*t_size index, t_size column, */const char * str)
 {
     destroy_tooltip();
 
@@ -38,7 +38,7 @@ void t_list_view::create_tooltip(/*t_size index, t_size column, */const char * s
 
     uih::tooltip_add_tool(m_wnd_tooltip, &ti);
 }
-void t_list_view::destroy_tooltip()
+void ListView::destroy_tooltip()
 {
     if (m_wnd_tooltip)
     {

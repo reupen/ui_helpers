@@ -1,20 +1,20 @@
 #include "../stdafx.h"
 
-t_size t_list_view::get_columns_width()
+t_size ListView::get_columns_width()
 {
     t_size i, count = m_columns.get_count(), ret = 0;
     for (i=0; i<count; i++)
         ret += m_columns[i].m_size;
     return ret;
 }
-t_size t_list_view::get_columns_display_width()
+t_size ListView::get_columns_display_width()
 {
     t_size i, count = m_columns.get_count(), ret = 0;
     for (i=0; i<count; i++)
         ret += m_columns[i].m_display_size;
     return ret;
 }
-t_size t_list_view::get_column_display_width(t_size index)
+t_size ListView::get_column_display_width(t_size index)
 {
     t_size ret = 0;
     assert(index < get_column_count());
@@ -22,12 +22,12 @@ t_size t_list_view::get_column_display_width(t_size index)
         ret = m_columns[index].m_display_size;
     return ret;
 }
-t_size t_list_view::get_column_count()
+t_size ListView::get_column_count()
 {
     return m_columns.get_count();
 }
 
-uih::alignment t_list_view::get_column_alignment(t_size index)
+uih::alignment ListView::get_column_alignment(t_size index)
 {
     uih::alignment  ret = uih::ALIGN_LEFT;
     assert(index < get_column_count());
@@ -36,7 +36,7 @@ uih::alignment t_list_view::get_column_alignment(t_size index)
     return ret;
 }
 
-void t_list_view::set_columns(const pfc::list_base_const_t<t_column> & columns)
+void ListView::set_columns(const pfc::list_base_const_t<t_column> & columns)
 {
     reset_columns();
     m_columns.add_items(columns);
@@ -50,7 +50,7 @@ void t_list_view::set_columns(const pfc::list_base_const_t<t_column> & columns)
     }
 }
 
-void t_list_view::set_column_widths(const pfc::list_base_const_t<t_size> & widths)
+void ListView::set_column_widths(const pfc::list_base_const_t<t_size> & widths)
 {
     t_size i, count = m_columns.get_count();
     for (i=0; i<count; i++)
@@ -66,7 +66,7 @@ void t_list_view::set_column_widths(const pfc::list_base_const_t<t_size> & width
     RedrawWindow(get_wnd(), nullptr,nullptr,RDW_ALLCHILDREN|RDW_UPDATENOW);
 }
 
-void t_list_view::get_column_sizes (pfc::list_t<t_column> & p_out)
+void ListView::get_column_sizes (pfc::list_t<t_column> & p_out)
 {
     //console::formatter() << "get_column_sizes";
     RECT rc;
@@ -136,7 +136,7 @@ void t_list_view::get_column_sizes (pfc::list_t<t_column> & p_out)
     //if (count)
     //    p_out[0].m_display_size += indent;
 }
-void t_list_view::update_column_sizes()
+void ListView::update_column_sizes()
 {
     {
         get_column_sizes(m_columns);

@@ -1,6 +1,6 @@
 #include "../stdafx.h"
 
-void t_list_view::activate_inline_editing(t_size column_start)
+void ListView::activate_inline_editing(t_size column_start)
 {
     unsigned count = m_columns.get_count();
     if (count)
@@ -32,7 +32,7 @@ void t_list_view::activate_inline_editing(t_size column_start)
     }
 }
 
-void t_list_view::activate_inline_editing(const pfc::list_base_const_t<t_size> & indices, t_size column)
+void ListView::activate_inline_editing(const pfc::list_base_const_t<t_size> & indices, t_size column)
 {
     unsigned count = m_columns.get_count();
     if (column < count)
@@ -45,24 +45,24 @@ void t_list_view::activate_inline_editing(const pfc::list_base_const_t<t_size> &
         }
     }
 }
-void t_list_view::activate_inline_editing(t_size index, t_size column)
+void ListView::activate_inline_editing(t_size index, t_size column)
 {
     activate_inline_editing(pfc::list_single_ref_t<t_size>(index), column);
 }
 
-LRESULT WINAPI t_list_view::g_on_inline_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
+LRESULT WINAPI ListView::g_on_inline_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 {
-    t_list_view * p_this;
+    ListView * p_this;
     LRESULT rv;
 
-    p_this = reinterpret_cast<t_list_view*>(GetWindowLongPtr(wnd,GWL_USERDATA));
+    p_this = reinterpret_cast<ListView*>(GetWindowLongPtr(wnd,GWL_USERDATA));
     
     rv = p_this ? p_this->on_inline_edit_message(wnd,msg,wp,lp) : DefWindowProc(wnd, msg, wp, lp);;
     
     return rv;
 }
 
-LRESULT t_list_view::on_inline_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
+LRESULT ListView::on_inline_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM lp)
 {
     switch(msg)
     {
@@ -183,7 +183,7 @@ LRESULT t_list_view::on_inline_edit_message(HWND wnd,UINT msg,WPARAM wp,LPARAM l
     return CallWindowProc(m_proc_inline_edit,wnd,msg,wp,lp);
 }
 
-void t_list_view::create_inline_edit(const pfc::list_base_const_t<t_size> & indices, unsigned column)
+void ListView::create_inline_edit(const pfc::list_base_const_t<t_size> & indices, unsigned column)
 {
     t_size indices_count = indices.get_count();
     if (!indices_count) return;
@@ -351,7 +351,7 @@ void t_list_view::create_inline_edit(const pfc::list_base_const_t<t_size> & indi
     m_inline_edit_column = column;
 }
 
-void t_list_view::save_inline_edit()
+void ListView::save_inline_edit()
 {
     if (m_inline_edit_save && !m_inline_edit_saving)
     {
@@ -366,7 +366,7 @@ void t_list_view::save_inline_edit()
     m_inline_edit_save = true;
 }
 
-void t_list_view::exit_inline_edit()
+void ListView::exit_inline_edit()
 {
     //m_inline_edit_autocomplete_entries.release();
     m_inline_edit_autocomplete.release();
