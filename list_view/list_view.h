@@ -86,11 +86,11 @@ protected:
         edge_solid,
     };
 
-    class t_item;
+    class Item;
     class t_group;
 
     typedef pfc::refcounted_object_ptr_t<t_group> t_group_ptr;
-    typedef pfc::refcounted_object_ptr_t<t_item> t_item_ptr;
+    typedef pfc::refcounted_object_ptr_t<Item> t_item_ptr;
 
     class t_group : public pfc::refcounted_object_root {
     public:
@@ -103,7 +103,7 @@ protected:
     private:
     };
 
-    class t_item : public pfc::refcounted_object_root {
+    class Item : public pfc::refcounted_object_root {
     public:
         //pfc::list_t<string_array> m_subitems_v2;
         t_uint8 m_line_count;
@@ -132,18 +132,18 @@ protected:
             }
         }
 
-        /*t_item(const t_string_list_const_fast & p_text)
+        /*Item(const t_string_list_const_fast & p_text)
             : m_position(0), m_selected(false) 
             {
                 m_subitems.add_items(p_text);
             };
-        t_item(const t_string_list_const_fast & p_text, t_size group_count)
+        Item(const t_string_list_const_fast & p_text, t_size group_count)
             : m_position(0), m_selected(false) 
             {
                 m_subitems.add_items(p_text);
                 m_groups.set_count(group_count);
             };*/
-        t_item() : /*m_position(0), */m_line_count(1) , m_display_index(0), m_display_position(0), m_selected(false) { };
+        Item() : /*m_position(0), */m_line_count(1) , m_display_index(0), m_display_position(0), m_selected(false) { };
 
     private:
     };
@@ -583,7 +583,7 @@ public:
     {
         return m_items[index]->m_subitems;
     } //hmmm
-    //const t_item * get_item(t_size index) {return m_items[index].get_ptr();} 
+    //const Item * get_item(t_size index) {return m_items[index].get_ptr();} 
     virtual void notify_update_item_data(t_size index) {};
 
     virtual t_size get_highlight_item()
@@ -633,9 +633,9 @@ protected:
     virtual void storaget_set_item_subitems(t_size index, t_string_list_cref_fast p_subitems);
     virtual t_string_list_cref_fast storaget_get_item_subitems(t_size index);*/
 
-    virtual t_item* storage_create_item()
+    virtual Item* storage_create_item()
     {
-        return new t_item;
+        return new Item;
     }
 
     virtual t_group* storage_create_group()
@@ -643,7 +643,7 @@ protected:
         return new t_group;
     }
 
-    t_item* get_item(t_size index)
+    Item* get_item(t_size index)
     {
         return m_items[index].get_ptr();
     }

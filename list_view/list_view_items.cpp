@@ -234,7 +234,7 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
         {
             t_size count = m_group_count;
             t_size index = l + index_start;
-            t_item * item;
+            Item* item;
             item = storage_create_item();
             p_items[index] = item;
             item->m_subitems = items[l].m_subitems;
@@ -245,7 +245,7 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
         {
             t_size i, count = m_group_count;
             t_size index = l + index_start;
-            t_item* item = p_items[index].get_ptr();
+            Item* item = p_items[index].get_ptr();
 
             item->m_display_index = index ? p_items[index - 1]->m_display_index + 1 : 0;
             if (m_variable_height_items)
