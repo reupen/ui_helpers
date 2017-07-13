@@ -20,7 +20,7 @@ public:
         MSG_KILL_INLINE_EDIT = WM_USER + 3
     };
 
-    struct colour_data_t {
+    struct ColourData {
         bool m_themed;
         bool m_use_custom_active_item_frame;
         COLORREF
@@ -749,16 +749,16 @@ protected:
         return get_item_indentation() + get_group_info_area_total_width();
     }
 
-    virtual void render_get_colour_data(colour_data_t& p_out);
+    virtual void render_get_colour_data(ColourData& p_out);
 
-    void render_group_line_default(const colour_data_t& p_data, HDC dc, const RECT* rc);
-    void render_group_background_default(const colour_data_t& p_data, HDC dc, const RECT* rc);
+    void render_group_line_default(const ColourData& p_data, HDC dc, const RECT* rc);
+    void render_group_background_default(const ColourData& p_data, HDC dc, const RECT* rc);
     COLORREF get_group_text_colour_default();
     bool get_group_text_colour_default(COLORREF& cr);
 
-    void render_group_default(const colour_data_t& p_data, HDC dc, const char* text, t_size indentation, t_size level, const RECT& rc);
-    void render_item_default(const colour_data_t& p_data, HDC dc, t_size index, t_size indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT* rc);
-    void render_background_default(const colour_data_t& p_data, HDC dc, const RECT* rc);
+    void render_group_default(const ColourData& p_data, HDC dc, const char* text, t_size indentation, t_size level, const RECT& rc);
+    void render_item_default(const ColourData& p_data, HDC dc, t_size index, t_size indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT* rc);
+    void render_background_default(const ColourData& p_data, HDC dc, const RECT* rc);
 
     virtual void render_group_info(HDC dc, t_size index, t_size group_count, const RECT& rc) {};
 

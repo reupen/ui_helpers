@@ -27,7 +27,7 @@ t_size ListView::get_default_indentation_step()
 
 void ListView::render_items(HDC dc, const RECT & rc_update, t_size cx)
 {
-    colour_data_t p_data;
+    ColourData p_data;
     render_get_colour_data(p_data);
 
     const t_size level_spacing_size = m_group_level_indentation_enabled ? _level_spacing_size : 0;
@@ -172,7 +172,7 @@ void ListView::render_items(HDC dc, const RECT & rc_update, t_size cx)
     }
     //OffsetWindowOrgEx(dc, -m_horizontal_scroll_position, 0, NULL);
 }
-    void ListView::render_get_colour_data(colour_data_t & p_out)
+    void ListView::render_get_colour_data(ColourData & p_out)
     {
         p_out.m_themed = true;
         p_out.m_use_custom_active_item_frame = false;
@@ -186,7 +186,7 @@ void ListView::render_items(HDC dc, const RECT & rc_update, t_size cx)
         p_out.m_group_text = get_group_text_colour_default();
         p_out.m_group_background = p_out.m_background;
     }
-    void ListView::render_group_line_default(const colour_data_t & p_data, HDC dc, const RECT * rc)
+    void ListView::render_group_line_default(const ColourData & p_data, HDC dc, const RECT * rc)
     {
         if (m_theme && IsThemePartDefined(m_theme, LVP_GROUPHEADERLINE, NULL) && SUCCEEDED(DrawThemeBackground(m_theme, dc, LVP_GROUPHEADERLINE, LVGH_OPEN, rc, nullptr)))
         {
@@ -201,7 +201,7 @@ void ListView::render_items(HDC dc, const RECT & rc_update, t_size cx)
             SelectPen(dc, pen_old);
         }
     }
-    void ListView::render_group_background_default(const colour_data_t & p_data, HDC dc, const RECT * rc)
+    void ListView::render_group_background_default(const ColourData & p_data, HDC dc, const RECT * rc)
     {
         FillRect(dc, rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(p_data.m_group_background)));
     }
@@ -219,7 +219,7 @@ void ListView::render_items(HDC dc, const RECT & rc_update, t_size cx)
             return false;
         return true;
     }
-    void ListView::render_group_default(const colour_data_t & p_data, HDC dc, const char * text, t_size indentation, t_size level, const RECT & rc)
+    void ListView::render_group_default(const ColourData & p_data, HDC dc, const char * text, t_size indentation, t_size level, const RECT & rc)
     {
         COLORREF cr = p_data.m_group_text;
 
@@ -237,7 +237,7 @@ void ListView::render_items(HDC dc, const RECT & rc_update, t_size cx)
             render_group_line_default(p_data, dc, &rc_line);
         }
     }
-    void ListView::render_item_default(const colour_data_t & p_data, HDC dc, t_size index, t_size indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT * rc)
+    void ListView::render_item_default(const ColourData & p_data, HDC dc, t_size index, t_size indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT * rc)
     {
         t_item_ptr item = m_items[index];
         int theme_state = NULL;
@@ -284,26 +284,26 @@ void ListView::render_items(HDC dc, const RECT & rc_update, t_size cx)
                 DrawFocusRect(dc, &rc_focus);
         }
     }
-    void ListView::render_background_default(const colour_data_t & p_data, HDC dc, const RECT * rc)
+    void ListView::render_background_default(const ColourData & p_data, HDC dc, const RECT * rc)
     {
         FillRect(dc, rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(p_data.m_background)));
     }
 
 void ListView::render_group(HDC dc, t_size index, t_size group, const char * text, t_size indentation, t_size level, const RECT & rc)
 {
-    colour_data_t p_data;
+    ColourData p_data;
     render_get_colour_data(p_data);
     render_group_default(p_data, dc, text, indentation, level, rc);
 }
 void ListView::render_item(HDC dc, t_size index, t_size indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT * rc)
 {
-    colour_data_t p_data;
+    ColourData p_data;
     render_get_colour_data(p_data);
     render_item_default(p_data, dc, index, indentation, b_selected, b_window_focused, b_highlight, b_focused, rc);
 }
 void ListView::render_background(HDC dc, const RECT * rc)
 {
-    colour_data_t p_data;
+    ColourData p_data;
     render_get_colour_data(p_data);
     render_background_default(p_data, dc, rc);
 }

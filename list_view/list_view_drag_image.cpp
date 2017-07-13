@@ -2,7 +2,7 @@
 
 bool ListView::render_drag_image(LPSHDRAGIMAGE lpsdi)
 {
-    colour_data_t p_data;
+    ColourData p_data;
     render_get_colour_data(p_data);
 
     pfc::string8 drag_text;
