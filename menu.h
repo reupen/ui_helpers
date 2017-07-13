@@ -2,21 +2,21 @@
 
 namespace uih
 {
-    class menu
+    class Menu
     {
     public:
-        enum flags
+        enum Flags
         {
             flag_checked=(1<<0),
             flag_radiochecked=(1<<1),
             flag_default=(1<<2)
         };
 
-        menu() 
+        Menu() 
         {
             m_handle = CreatePopupMenu();
         }
-        ~menu()
+        ~Menu()
         {
             if (m_handle)
             {
