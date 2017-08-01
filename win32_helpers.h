@@ -53,6 +53,8 @@ namespace uih {
         DWORD state = TVIS_EXPANDED, HTREEITEM ti_parent = TVI_ROOT, HTREEITEM ti_after = TVI_LAST,
         bool b_image = false, UINT image = NULL, UINT integral_height = 1);
     t_size tree_view_get_child_index(HWND wnd_tv, HTREEITEM ti);
+    void tree_view_collapse_other_nodes(HWND wnd, HTREEITEM ti);
+
 
     int combo_box_add_string_data(HWND wnd, const TCHAR * str, LPARAM data);
     int combo_box_find_item_by_data(HWND wnd, t_size id);

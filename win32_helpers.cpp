@@ -154,6 +154,22 @@ namespace uih {
         return n;
     }
 
+    void tree_view_collapse_other_nodes(HWND wnd, HTREEITEM ti)
+    {
+        auto child = ti;
+        do {
+            auto sibling = child;
+            while ((sibling = TreeView_GetPrevSibling(wnd, sibling))) {
+                TreeView_Expand(wnd, sibling, TVE_COLLAPSE);
+            }
+            sibling = child;
+            while ((sibling = TreeView_GetNextSibling(wnd, sibling))) {
+                TreeView_Expand(wnd, sibling, TVE_COLLAPSE);
+            }
+        }
+        while ((child = TreeView_GetParent(wnd, child)));
+    }
+
     BOOL
         FileTimeToLocalFileTime2(
             __in  CONST FILETIME *lpFileTime,
