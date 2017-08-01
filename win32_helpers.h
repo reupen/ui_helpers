@@ -88,6 +88,8 @@ namespace uih {
      */
     RECT get_relative_rect(HWND wnd, HWND wnd_parent);
     bool get_window_text(HWND wnd, pfc::string_base& out);
+    void set_window_font(HWND wnd, HFONT font, bool redraw = true);
+    HFONT get_window_font(HWND wnd);
 
     HFONT create_icon_font();
     int get_font_height(HFONT font);

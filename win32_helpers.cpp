@@ -486,6 +486,16 @@ namespace uih {
         return true;
     }
 
+    void set_window_font(HWND wnd, HFONT font, bool redraw)
+    {
+        SendMessage(wnd, WM_SETFONT, reinterpret_cast<WPARAM>(font), MAKELPARAM(redraw, 0));
+    }
+
+    HFONT get_window_font(HWND wnd)
+    {
+        return reinterpret_cast<HFONT>(SendMessage(wnd, WM_GETFONT, 0, 0));
+    }
+
     HFONT create_icon_font()
     {
         LOGFONT lf;
