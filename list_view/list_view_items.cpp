@@ -232,7 +232,7 @@ namespace uih {
         {
             t_item_ptr * p_items = m_items.get_ptr();
 
-            concurrency::parallel_for(size_t{0}, countl, [&](size_t l)
+            concurrency::parallel_for(size_t{0}, countl, [this, p_items, index_start, items](size_t l)
             {
                 t_size count = m_group_count;
                 t_size index = l + index_start;
