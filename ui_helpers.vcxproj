@@ -97,6 +97,7 @@
       <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ConformanceMode>true</ConformanceMode>
+      <DiagnosticsFormat>Caret</DiagnosticsFormat>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -114,6 +115,7 @@
       <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ConformanceMode>true</ConformanceMode>
+      <DiagnosticsFormat>Caret</DiagnosticsFormat>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -131,6 +133,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ConformanceMode>true</ConformanceMode>
+      <DiagnosticsFormat>Caret</DiagnosticsFormat>
     </ClCompile>
     <Lib>
       <SubSystem>Windows</SubSystem>
@@ -152,6 +155,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ConformanceMode>true</ConformanceMode>
+      <DiagnosticsFormat>Caret</DiagnosticsFormat>
     </ClCompile>
     <Lib>
       <SubSystem>Windows</SubSystem>
