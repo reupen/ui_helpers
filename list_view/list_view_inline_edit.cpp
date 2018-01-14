@@ -11,7 +11,7 @@ namespace uih {
             if (focus != pfc_infinite)
             {
                 t_size i, pcount = m_items.get_count();
-                bit_array_bittable sel(pcount);
+                pfc::bit_array_bittable sel(pcount);
                 get_selection_state(sel);
 
                 pfc::list_t<t_size> indices;

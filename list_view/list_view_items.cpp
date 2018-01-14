@@ -32,7 +32,7 @@ namespace uih {
         if (b_update_display)
             RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
     }
-    void ListView::remove_items(const bit_array & p_mask, bool b_update_display)
+    void ListView::remove_items(const pfc::bit_array & p_mask, bool b_update_display)
     {
         if (m_timer_inline_edit)
             exit_inline_edit();

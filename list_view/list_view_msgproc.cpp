@@ -202,7 +202,7 @@ namespace uih {
                     {
                         t_size focus = get_focus_item();
                         t_size start = m_alternate_selection ? focus : m_shift_start;
-                        bit_array_range br(min(start, hit_result.index), abs(t_ssize(start - hit_result.index))+1);
+                        pfc::bit_array_range br(min(start, hit_result.index), abs(t_ssize(start - hit_result.index))+1);
                         if (m_lbutton_down_ctrl && !m_alternate_selection)
                         {
                             set_selection_state(br,
@@ -211,11 +211,11 @@ namespace uih {
                         else
                         {
                             if (m_alternate_selection && !get_item_selected(focus))
-                                set_selection_state(br, bit_array_not(br), true, false);
+                                set_selection_state(br, pfc::bit_array_not(br), true, false);
                             else if (m_alternate_selection)
                                 set_selection_state(br, br, true, false);
                             else
-                                set_selection_state(bit_array_true(), br, true, false);
+                                set_selection_state(pfc::bit_array_true(), br, true, false);
                         }
                         set_focus_item(hit_result.index, true, false);
                         UpdateWindow(get_wnd());
@@ -245,7 +245,7 @@ namespace uih {
                         if (!m_lbutton_down_ctrl)
                         {
                             get_item_group(hit_result.index, hit_result.group_level, index, count);
-                            set_selection_state(bit_array_true(), bit_array_range(index, count));
+                            set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
                             if (count)
                                 set_focus_item(index);
                         }
@@ -254,7 +254,7 @@ namespace uih {
                 else //if (hit_result.result != hit_test_)
                 {
                     if (!m_single_selection)
-                        set_selection_state(bit_array_true(), bit_array_false());
+                        set_selection_state(pfc::bit_array_true(), pfc::bit_array_false());
                 }
                 //console::formatter() << hit_result.result ;
             }
@@ -315,7 +315,7 @@ namespace uih {
                                 get_item_group(hit_result.index, hit_result.group_level, index, count);
                                 if (count)
                                 {
-                                    set_selection_state(bit_array_range(index, count), bit_array_range(index, count, !is_range_selected(index, count)), true, false);
+                                    set_selection_state(pfc::bit_array_range(index, count), pfc::bit_array_range(index, count, !is_range_selected(index, count)), true, false);
                                     set_focus_item(index);
                                 }
                             }
@@ -372,7 +372,7 @@ namespace uih {
                 {
                     t_size index=0, count=0;
                     get_item_group(hit_result.index, hit_result.group_level, index, count);
-                    set_selection_state(bit_array_true(), bit_array_range(index, count));
+                    set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
                     if (count)
                         set_focus_item(index);
                 }
@@ -532,7 +532,7 @@ namespace uih {
                                                 scroll(false,get_item_position(hit_result.index));
                                         }
                                     
-                                        set_selection_state(bit_array_true(), bit_array_range(min(hit_result.index, m_selecting_start), (t_size)abs(int(m_selecting_start-hit_result.index))+1));
+                                        set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(min(hit_result.index, m_selecting_start), (t_size)abs(int(m_selecting_start-hit_result.index))+1));
                                         set_focus_item(hit_result.index);
                                     }
                                 }
@@ -656,7 +656,7 @@ namespace uih {
                         if (wp == 1) //Ctrl-A
                         {
                             if (!m_single_selection)
-                                set_selection_state(bit_array_true(), bit_array_true());
+                                set_selection_state(pfc::bit_array_true(), pfc::bit_array_true());
                             return 0;
                         }
                         else if (wp == 26) //Ctrl-Z

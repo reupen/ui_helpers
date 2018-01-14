@@ -18,7 +18,7 @@ namespace uih {
         else
         {
             t_size column_count = get_column_count(), item_count = get_item_count();
-            bit_array_bittable mask_selected(get_item_count());
+            pfc::bit_array_bittable mask_selected(get_item_count());
             get_selection_state(mask_selected);
             bool b_first = true;
             for (t_size i = 0; i < item_count; i++)
@@ -219,13 +219,13 @@ namespace uih {
             else if (!m_single_selection && (GetKeyState(VK_SHIFT) & KF_UP))
             {
                 t_size start = m_alternate_selection ? focus : m_shift_start;
-                bit_array_range array_select(min(start, t_size(focus + offset)), abs(int(start - (focus + offset))) + 1);
+                pfc::bit_array_range array_select(min(start, t_size(focus + offset)), abs(int(start - (focus + offset))) + 1);
                 if (m_alternate_selection && !focus_sel)
-                    set_selection_state(array_select, bit_array_not(array_select), true, false);
+                    set_selection_state(array_select, pfc::bit_array_not(array_select), true, false);
                 else if (m_alternate_selection)
                     set_selection_state(array_select, array_select, true, false);
                 else
-                    set_selection_state(bit_array_true(), array_select, true, false);
+                    set_selection_state(pfc::bit_array_true(), array_select, true, false);
                 set_focus_item(focus + offset, true, false);
                 UpdateWindow(get_wnd());
             }
@@ -318,7 +318,7 @@ namespace uih {
 #endif
     }
 
-    void ListView::invalidate_items(const bit_array& mask, bool b_update_display)
+    void ListView::invalidate_items(const pfc::bit_array& mask, bool b_update_display)
     {
         t_size i, start, count = get_item_count();
         for (i = 0; i < count; i++) {
