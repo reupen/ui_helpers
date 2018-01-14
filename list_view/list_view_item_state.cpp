@@ -2,14 +2,14 @@
 
 namespace uih {
 
-    void ListView::get_selection_state(bit_array_var & out)
+    void ListView::get_selection_state(pfc::bit_array_var & out)
     {
         storage_get_selection_state(out);
     }
 
-    void ListView::set_selection_state(const bit_array & p_affected, const bit_array & p_status, bool b_notify, bool b_update_display, notification_source_t p_notification_source)
+    void ListView::set_selection_state(const pfc::bit_array & p_affected, const pfc::bit_array & p_status, bool b_notify, bool b_update_display, notification_source_t p_notification_source)
     {
-        bit_array_bittable p_changed(get_item_count());
+        pfc::bit_array_bittable p_changed(get_item_count());
         if (storage_set_selection_state(p_affected, p_status, &p_changed))
         {
             invalidate_items(p_changed, b_update_display);
@@ -61,15 +61,15 @@ namespace uih {
     void ListView::set_item_selected(t_size index, bool b_state)
     {
         if (b_state)
-            set_selection_state(bit_array_one(index), bit_array_one(index));
+            set_selection_state(pfc::bit_array_one(index), pfc::bit_array_one(index));
         else
-            set_selection_state(bit_array_one(index), bit_array_false());
+            set_selection_state(pfc::bit_array_one(index), pfc::bit_array_false());
     }
     void ListView::set_item_selected_single(t_size index, bool b_notify, notification_source_t p_notification_source)
     {
         if (index < m_items.get_count())
         {
-            set_selection_state(bit_array_true(), bit_array_one(index), b_notify, false, p_notification_source);
+            set_selection_state(pfc::bit_array_true(), pfc::bit_array_one(index), b_notify, false, p_notification_source);
             set_focus_item(index, b_notify, false);
             UpdateWindow(get_wnd());
             //ensure_visible(index);
@@ -84,14 +84,14 @@ namespace uih {
         m_focus_index = index;
     };
 
-    void ListView::storage_get_selection_state(bit_array_var & out) //storage
+    void ListView::storage_get_selection_state(pfc::bit_array_var & out) //storage
     {
         t_size i, count = m_items.get_count();
         for (i = 0; i < count; i++)
             out.set(i, m_items[i]->m_selected);
     }
 
-    bool ListView::storage_set_selection_state(const bit_array & p_affected, const bit_array & p_status, bit_array_var * p_changed) //storage, returns hint if sel actually changed
+    bool ListView::storage_set_selection_state(const pfc::bit_array & p_affected, const pfc::bit_array & p_status, pfc::bit_array_var * p_changed) //storage, returns hint if sel actually changed
     {
         bool b_changed = false;
         t_size i, count = m_items.get_count();

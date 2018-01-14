@@ -13,6 +13,9 @@
 
 #include <ppl.h>
 
+// Included before windows.h, because pfc.h includes winsock2.h
+#include "../pfc/pfc.h"
+
 #include <windows.h>
 #include <WindowsX.h>
 #include <SHLWAPI.H>
@@ -38,7 +41,6 @@
 #undef min
 #endif
 
-#include "../pfc/pfc.h"
 #include "../mmh/stdafx.h"
 
 #ifndef RECT_CX

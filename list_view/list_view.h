@@ -275,7 +275,7 @@ namespace uih {
         }
         void replace_items(t_size index_start, t_size count, const InsertItem* items, bool b_update_display = true);
         void remove_item(t_size index);
-        void remove_items(const bit_array& p_mask, bool b_update_display = true);
+        void remove_items(const pfc::bit_array& p_mask, bool b_update_display = true);
 
         enum t_hit_test_value {
             hit_test_nowhere,
@@ -342,7 +342,7 @@ namespace uih {
         void invalidate_all(bool b_update = true, bool b_children = false);
         void invalidate_items(t_size index, t_size count, bool b_update_display = true);
 
-        void invalidate_items(const bit_array& mask, bool b_update_display = true);
+        void invalidate_items(const pfc::bit_array& mask, bool b_update_display = true);
         void invalidate_item_group_info_area(t_size index, bool b_update_display = true);
 
         void update_items(t_size index, t_size count, bool b_update_display = true);
@@ -431,8 +431,8 @@ namespace uih {
         bool copy_selected_items_as_text(t_size default_single_item_column = pfc_infinite);
 
         //CLIENT FUNCTIONS
-        void get_selection_state(bit_array_var& out);
-        void set_selection_state(const bit_array& p_affected, const bit_array& p_status, bool b_notify = true, bool b_update_display = true, notification_source_t p_notification_source = notification_source_unknown);
+        void get_selection_state(pfc::bit_array_var& out);
+        void set_selection_state(const pfc::bit_array& p_affected, const pfc::bit_array& p_status, bool b_notify = true, bool b_update_display = true, notification_source_t p_notification_source = notification_source_unknown);
         t_size get_focus_item();
         void set_focus_item(t_size index, bool b_notify = true, bool b_update_display = true);
         bool get_item_selected(t_size index);
@@ -452,7 +452,7 @@ namespace uih {
         {
             t_size numSelected = get_selection_count(2), index = 0;
             if (numSelected == 1) {
-                bit_array_bittable mask(get_item_count());
+                pfc::bit_array_bittable mask(get_item_count());
                 get_selection_state(mask);
                 t_size count = get_item_count();
                 while (index < count) {
@@ -492,7 +492,7 @@ namespace uih {
         void set_item_selected_single(t_size index, bool b_notify = true, notification_source_t p_notification_source = notification_source_unknown);
 
         //CLIENT NOTIFICATION
-        virtual void notify_on_selection_change(const bit_array& p_affected, const bit_array& p_status, notification_source_t p_notification_source) {};
+        virtual void notify_on_selection_change(const pfc::bit_array& p_affected, const pfc::bit_array& p_status, notification_source_t p_notification_source) {};
 
         virtual void notify_on_focus_item_change(t_size new_index) {};
 
@@ -625,14 +625,14 @@ namespace uih {
         //STORAGE
         virtual t_size storage_get_focus_item();
         virtual void storage_set_focus_item(t_size index);
-        virtual void storage_get_selection_state(bit_array_var& out);
-        virtual bool storage_set_selection_state(const bit_array& p_affected, const bit_array& p_status, bit_array_var* p_changed = nullptr); //return: hint if sel didnt change
+        virtual void storage_get_selection_state(pfc::bit_array_var& out);
+        virtual bool storage_set_selection_state(const pfc::bit_array& p_affected, const pfc::bit_array& p_status, pfc::bit_array_var* p_changed = nullptr); //return: hint if sel didnt change
         virtual bool storage_get_item_selected(t_size index);
         virtual t_size storage_get_selection_count(t_size max);
 
         /*virtual void storage_insert_items(t_size index_start, const pfc::list_base_const_t<InsertItem> & items);
         virtual void storage_replace_items(t_size index_start, const pfc::list_base_const_t<InsertItem> & items);
-        virtual void storage_remove_items(const bit_array & p_mask);
+        virtual void storage_remove_items(const pfc::bit_array & p_mask);
         virtual void storaget_set_item_subitems(t_size index, t_string_list_cref_fast p_subitems);
         virtual t_string_list_cref_fast storaget_get_item_subitems(t_size index);*/
 
