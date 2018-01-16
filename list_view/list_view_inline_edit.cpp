@@ -57,7 +57,7 @@ namespace uih {
         ListView * p_this;
         LRESULT rv;
 
-        p_this = reinterpret_cast<ListView*>(GetWindowLongPtr(wnd, GWL_USERDATA));
+        p_this = reinterpret_cast<ListView*>(GetWindowLongPtr(wnd, GWLP_USERDATA));
 
         rv = p_this ? p_this->on_inline_edit_message(wnd, msg, wp, lp) : DefWindowProc(wnd, msg, wp, lp);;
 
@@ -236,8 +236,8 @@ namespace uih {
             }
             else
             {
-                target = get_item_position(indices[0]) > (t_size)m_scroll_position ? indices[indices_count - 1] : indices[0];
-                scroll(false, get_item_position(target) - (get_item_position(target) > (t_size)m_scroll_position ? (si.nPage > 1 ? si.nPage - 1 : 0) - m_item_height : 0));
+                target = get_item_position(indices[0]) > m_scroll_position ? indices[indices_count - 1] : indices[0];
+                scroll(false, get_item_position(target) - (get_item_position(target) > m_scroll_position ? (si.nPage > 1 ? si.nPage - 1 : 0) - m_item_height : 0));
             }
         }
 
@@ -330,8 +330,8 @@ namespace uih {
                 }
             }
 
-            SetWindowLongPtr(m_wnd_inline_edit, GWL_USERDATA, reinterpret_cast<LPARAM>(this));
-            m_proc_inline_edit = reinterpret_cast<WNDPROC>(SetWindowLongPtr(m_wnd_inline_edit, GWL_WNDPROC, reinterpret_cast<LPARAM>(g_on_inline_edit_message)));
+            SetWindowLongPtr(m_wnd_inline_edit, GWLP_USERDATA, reinterpret_cast<LPARAM>(this));
+            m_proc_inline_edit = reinterpret_cast<WNDPROC>(SetWindowLongPtr(m_wnd_inline_edit, GWLP_WNDPROC, reinterpret_cast<LPARAM>(g_on_inline_edit_message)));
 
             SetWindowPos(m_wnd_inline_edit, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 

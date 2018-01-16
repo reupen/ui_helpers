@@ -81,7 +81,7 @@ namespace uih {
 
             {
                 int n,t=m_columns.get_count(),i=0;
-                t_size indentation = get_total_indentation();
+                const auto indentation = get_total_indentation();
                 if (indentation/*m_group_count*/)
                 {
                     hdi.fmt = HDF_STRING | HDF_LEFT ; 

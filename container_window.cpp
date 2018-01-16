@@ -51,12 +51,12 @@ namespace uih {
         if (msg == WM_NCCREATE) {
             auto create_params = reinterpret_cast<LPVOID *>(reinterpret_cast<CREATESTRUCT *>(lp)->lpCreateParams);
             p_this = reinterpret_cast<ContainerWindow*>(create_params[0]);
-            SetWindowLongPtr(wnd, GWL_USERDATA, reinterpret_cast<LPARAM>(p_this));
+            SetWindowLongPtr(wnd, GWLP_USERDATA, reinterpret_cast<LPARAM>(p_this));
         } else
-            p_this = reinterpret_cast<ContainerWindow*>(GetWindowLongPtr(wnd, GWL_USERDATA));
+            p_this = reinterpret_cast<ContainerWindow*>(GetWindowLongPtr(wnd, GWLP_USERDATA));
 
         if (msg == WM_NCDESTROY)
-        SetWindowLongPtr(wnd, GWL_USERDATA, reinterpret_cast<LPARAM>(nullptr));
+        SetWindowLongPtr(wnd, GWLP_USERDATA, reinterpret_cast<LPARAM>(nullptr));
 
         return p_this ? p_this->on_message(wnd, msg, wp, lp) : DefWindowProc(wnd, msg, wp, lp);
     }

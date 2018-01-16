@@ -41,12 +41,12 @@ namespace uih {
         class Column {
         public:
             pfc::string8 m_title;
-            t_size m_size;
-            t_size m_display_size;
-            t_size m_autosize_weight;
+            int m_size;
+            int m_display_size;
+            int m_autosize_weight;
             uih::alignment m_alignment;
 
-            Column(const char* title, t_size cx, t_size p_autosize_weight = 1, uih::alignment alignment = uih::ALIGN_LEFT)
+            Column(const char* title, int cx, int p_autosize_weight = 1, uih::alignment alignment = uih::ALIGN_LEFT)
                 : m_title(title), m_size(cx), m_display_size(cx), m_autosize_weight(p_autosize_weight),
                 m_alignment(alignment) {};
 
@@ -198,7 +198,7 @@ namespace uih {
 
         unsigned calculate_header_height();
         void set_columns(const pfc::list_base_const_t<Column>& columns);
-        void set_column_widths(const pfc::list_base_const_t<t_size>& widths);
+        void set_column_widths(const pfc::list_base_const_t<int>& widths);
         void set_group_count(t_size count, bool b_update_columns = true);
 
         t_size get_group_count() const
@@ -206,18 +206,18 @@ namespace uih {
             return m_group_count;
         }
 
-        t_size get_columns_width();
-        t_size get_columns_display_width();
-        t_size get_column_display_width(t_size index);
+        int get_columns_width();
+        int get_columns_display_width();
+        int get_column_display_width(t_size index);
         uih::alignment get_column_alignment(t_size index);
         t_size get_column_count();
 
-        void _set_scroll_position(t_size val)
+        void _set_scroll_position(int val)
         {
             m_scroll_position = val;
         }
 
-        t_size _get_scroll_position() const
+        int _get_scroll_position() const
         {
             return m_scroll_position;
         }
@@ -329,7 +329,7 @@ namespace uih {
         void get_items_rect(LPRECT rc);
         void get_items_size(LPRECT rc);
 
-        t_size get_items_top()
+        int get_items_top()
         {
             RECT rc;
             get_items_rect(&rc);
@@ -352,21 +352,21 @@ namespace uih {
         void reorder_items_partial(size_t base, const size_t * order, size_t count, bool update_focus_item = true,
             bool update_display = true);
 
-        t_size get_previous_item(t_size y, bool b_include_headers = false);
-        t_size get_next_item(t_size y, bool b_include_headers = false);
+        t_size get_previous_item(int y, bool b_include_headers = false);
+        t_size get_next_item(int y, bool b_include_headers = false);
         t_size get_last_viewable_item();
         t_size get_last_item();
         int get_default_item_height();
         int get_default_group_height();
 
-        t_size get_item_height() const
+        int get_item_height() const
         {
             return m_item_height;
         }
 
-        t_size get_item_height(t_size index) const
+        int get_item_height(t_size index) const
         {
-            t_size ret = 1;
+            int ret = 1;
             if (m_variable_height_items && index < m_items.get_count())
                 ret = m_items[index]->m_line_count * get_item_height();
             else
@@ -379,36 +379,36 @@ namespace uih {
             m_items.remove_all();
         }
 
-        t_size get_item_position(t_size index, bool b_include_headers = false)
+        int get_item_position(t_size index, bool b_include_headers = false)
         {
-            t_size ret = 0;
+            int ret = 0;
             if (index < m_items.get_count())
                 ret = m_items[index]->m_display_position;
             return ret;
         }
 
-        t_size get_item_position_bottom(t_size index, bool b_include_headers = false)
+        int get_item_position_bottom(t_size index, bool b_include_headers = false)
         {
             return get_item_position(index, b_include_headers) + get_item_height(index);
         }
 
-        t_size get_group_minimum_inner_height()
+        int get_group_minimum_inner_height()
         {
             return get_show_group_info_area() ? get_group_info_area_total_height() : 0;
         }
 
-        t_size get_item_group_bottom(t_size index, bool b_include_headers = false)
+        int get_item_group_bottom(t_size index, bool b_include_headers = false)
         {
             t_size gstart = index, gcount = 0;
             get_item_group(index, m_group_count ? m_group_count - 1 : 0, gstart, gcount);
-            t_size ret = 0;
+            int ret = 0;
             if (gcount)
                 index = gstart + gcount - 1;
             ret += get_item_position(index, b_include_headers);
             ret += m_item_height - 1;
             if (get_show_group_info_area() && m_group_count) {
-                t_size gheight = gcount * m_item_height;
-                t_size group_cy = get_group_info_area_total_height();
+                int gheight = gcount * m_item_height;
+                int group_cy = get_group_info_area_total_height();
                 if (gheight < group_cy)
                     ret += group_cy - gheight;
             }
@@ -576,7 +576,7 @@ namespace uih {
 
         virtual void notify_on_kill_focus(HWND wnd_receiving) {};
 
-        virtual void notify_on_column_size_change(t_size index, t_size new_width) {};
+        virtual void notify_on_column_size_change(t_size index, int new_width) {};
 
         virtual void notify_on_group_info_area_size_change(t_size new_width) {};
 
@@ -679,10 +679,10 @@ namespace uih {
             //FIXME set after creation?
         }
 
-        t_size get_item_indentation();
-        t_size get_default_indentation_step();
+        int get_item_indentation();
+        int get_default_indentation_step();
 
-        void set_group_info_area_size(t_size width, t_size height)
+        void set_group_info_area_size(int width, int height)
         {
             m_group_info_area_width = width;
             m_group_info_area_height = height;
@@ -693,22 +693,22 @@ namespace uih {
             }
         }
 
-        t_size get_group_info_area_width()
+        int get_group_info_area_width()
         {
             return get_show_group_info_area() ? m_group_info_area_width : 0;
         }
 
-        t_size get_group_info_area_height()
+        int get_group_info_area_height()
         {
             return get_show_group_info_area() ? m_group_info_area_height : 0;
         }
 
-        t_size get_group_info_area_total_width()
+        int get_group_info_area_total_width()
         {
             return get_show_group_info_area() ? m_group_info_area_width + get_default_indentation_step() : 0;
         }
 
-        t_size get_group_info_area_total_height()
+        int get_group_info_area_total_height()
         {
             return get_show_group_info_area() ? m_group_info_area_height + get_default_indentation_step() : 0;
         }
@@ -747,7 +747,7 @@ namespace uih {
             return m_group_count ? m_show_group_info_area : false;
         }
 
-        t_size get_total_indentation()
+        int get_total_indentation()
         {
             return get_item_indentation() + get_group_info_area_total_width();
         }
@@ -759,14 +759,14 @@ namespace uih {
         COLORREF get_group_text_colour_default();
         bool get_group_text_colour_default(COLORREF& cr);
 
-        void render_group_default(const ColourData& p_data, HDC dc, const char* text, t_size indentation, t_size level, const RECT& rc);
-        void render_item_default(const ColourData& p_data, HDC dc, t_size index, t_size indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT* rc);
+        void render_group_default(const ColourData& p_data, HDC dc, const char* text, int indentation, t_size level, const RECT& rc);
+        void render_item_default(const ColourData& p_data, HDC dc, t_size index, int indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT* rc);
         void render_background_default(const ColourData& p_data, HDC dc, const RECT* rc);
 
         virtual void render_group_info(HDC dc, t_size index, t_size group_count, const RECT& rc) {};
 
-        virtual void render_group(HDC dc, t_size index, t_size group, const char* text, t_size indentation, t_size level, const RECT& rc);
-        virtual void render_item(HDC dc, t_size index, t_size indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT* rc);
+        virtual void render_group(HDC dc, t_size index, t_size group, const char* text, int indentation, t_size level, const RECT& rc);
+        virtual void render_item(HDC dc, t_size index, int indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT* rc);
         virtual void render_background(HDC dc, const RECT* rc);
         virtual bool render_drag_image(LPSHDRAGIMAGE lpsdi);
 
@@ -841,7 +841,7 @@ namespace uih {
 
         LRESULT on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 
-        void render_items(HDC dc, const RECT& rc_update, t_size cx);
+        void render_items(HDC dc, const RECT& rc_update, int cx);
         void __insert_items_v3(t_size index_start, t_size count, const InsertItem* items);
         void __replace_items_v2(t_size index_start, t_size count, const InsertItem* items);
         void __remove_item(t_size index);
@@ -883,7 +883,7 @@ namespace uih {
         void create_tooltip(/*t_size index, t_size column, */const char* str);
         void destroy_tooltip();
         bool is_item_clipped(t_size index, t_size column);
-        t_size get_text_width(const char* text, t_size length);
+        int get_text_width(const char* text, t_size length);
 
         gdi_object_t<HFONT>::ptr_t m_font, m_font_header, m_group_font;
 
@@ -921,8 +921,8 @@ namespace uih {
         int m_scroll_position{0};
         int m_horizontal_scroll_position{0};
         t_size m_group_count{0};
-        t_size m_item_height{1};
-        t_size m_group_height{1};
+        int m_item_height{1};
+        int m_group_height{1};
         t_size m_shift_start{std::numeric_limits<t_size>::max()};
         bool m_timer_scroll_up{false};
         bool m_timer_scroll_down{false};
@@ -965,8 +965,8 @@ namespace uih {
         bool m_alternate_selection{false};
         bool m_allow_header_rearrange{false};
 
-        t_size m_group_info_area_width{0};
-        t_size m_group_info_area_height{0};
+        int m_group_info_area_width{0};
+        int m_group_info_area_height{0};
         bool m_show_group_info_area{false};
         bool m_have_indent_column{false};
 
