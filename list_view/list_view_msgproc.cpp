@@ -384,7 +384,7 @@ namespace uih {
                 POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
                 if (!m_selecting)
                 {
-                    if (m_show_tooltips && ( pt.y >=0 && (t_size)pt.y > get_items_top()))
+                    if (m_show_tooltips && ( pt.y >=0 && pt.y > get_items_top()))
                     {
                         t_hit_test_result hit_result;
                         hit_test_ex(pt, hit_result);

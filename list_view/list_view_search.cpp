@@ -15,8 +15,8 @@ namespace uih {
 
             m_search_label = label;
 
-            SetWindowLongPtr(m_search_editbox, GWL_USERDATA, (LPARAM)(this));
-            m_proc_search_edit = (WNDPROC)SetWindowLongPtr(m_search_editbox, GWL_WNDPROC, (LPARAM)(g_on_search_edit_message));
+            SetWindowLongPtr(m_search_editbox, GWLP_USERDATA, (LPARAM)(this));
+            m_proc_search_edit = (WNDPROC)SetWindowLongPtr(m_search_editbox, GWLP_WNDPROC, (LPARAM)(g_on_search_edit_message));
             //SetWindowPos(m_wnd_inline_edit,HWND_TOP,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);
             SendMessage(m_search_editbox, WM_SETFONT, (WPARAM)m_font.get(), MAKELONG(TRUE, 0));
             SetWindowTheme(m_search_editbox, L"SearchBoxEdit", nullptr);
@@ -108,7 +108,7 @@ namespace uih {
         ListView * p_this;
         LRESULT rv;
 
-        p_this = reinterpret_cast<ListView*>(GetWindowLongPtr(wnd, GWL_USERDATA));
+        p_this = reinterpret_cast<ListView*>(GetWindowLongPtr(wnd, GWLP_USERDATA));
 
         rv = p_this ? p_this->on_search_edit_message(wnd, msg, wp, lp) : DefWindowProc(wnd, msg, wp, lp);;
 

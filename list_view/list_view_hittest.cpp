@@ -9,7 +9,7 @@ namespace uih {
         t_size k, kcount = m_columns.get_count(); t_ssize colcu = x_left_items;
         for (k = 0; k < kcount; k++)
         {
-            t_size end = colcu + m_columns[k].m_display_size;
+            int end = colcu + m_columns[k].m_display_size;
             if (pt_client.x >= colcu && pt_client.x < end)
                 result.column = k;
             colcu = end;
@@ -120,7 +120,7 @@ namespace uih {
         RECT rc;
         get_items_size(&rc);
         t_size ret = get_previous_item(rc.bottom + m_scroll_position);
-        if (get_item_position(ret) + get_item_height(ret) > (t_size)rc.bottom + m_scroll_position) ret--;
+        if (get_item_position(ret) + get_item_height(ret) > rc.bottom + m_scroll_position) ret--;
         return ret;
     }
     t_size ListView::get_last_item()
@@ -130,7 +130,7 @@ namespace uih {
         t_size ret = get_previous_item(rc.bottom + m_scroll_position);
         return ret;
     }
-    t_size ListView::get_previous_item(t_size y, bool b_include_headers)
+    t_size ListView::get_previous_item(int y, bool b_include_headers)
     {
         {
             t_size max = m_items.get_count();
@@ -153,7 +153,7 @@ namespace uih {
             //return true;
         }
     }
-    t_size ListView::get_next_item(t_size y, bool b_include_headers)
+    t_size ListView::get_next_item(int y, bool b_include_headers)
     {
         {
             t_size max = m_items.get_count();

@@ -2,23 +2,25 @@
 
 namespace uih {
 
-    t_size ListView::get_columns_width()
+    int ListView::get_columns_width()
     {
-        t_size i, count = m_columns.get_count(), ret = 0;
+        t_size i, count = m_columns.get_count();
+        int ret = 0;
         for (i = 0; i < count; i++)
             ret += m_columns[i].m_size;
         return ret;
     }
-    t_size ListView::get_columns_display_width()
+    int ListView::get_columns_display_width()
     {
-        t_size i, count = m_columns.get_count(), ret = 0;
+        t_size i, count = m_columns.get_count();
+        int ret = 0;
         for (i = 0; i < count; i++)
             ret += m_columns[i].m_display_size;
         return ret;
     }
-    t_size ListView::get_column_display_width(t_size index)
+    int ListView::get_column_display_width(t_size index)
     {
-        t_size ret = 0;
+        int ret = 0;
         assert(index < get_column_count());
         if (index < get_column_count())
             ret = m_columns[index].m_display_size;
@@ -52,7 +54,7 @@ namespace uih {
         }
     }
 
-    void ListView::set_column_widths(const pfc::list_base_const_t<t_size> & widths)
+    void ListView::set_column_widths(const pfc::list_base_const_t<int> & widths)
     {
         t_size i, count = m_columns.get_count();
         for (i = 0; i < count; i++)
@@ -73,7 +75,7 @@ namespace uih {
         //console::formatter() << "get_column_sizes";
         RECT rc;
         get_items_rect(&rc);
-        t_size display_width = RECT_CX(rc), width = get_columns_width(), total_weight = 0, indent = get_total_indentation();
+        int display_width = RECT_CX(rc), width = get_columns_width(), total_weight = 0, indent = get_total_indentation();
         if (display_width > indent) display_width -= indent;
         else display_width = 0;
         t_size i, count = p_out.get_count();
@@ -98,7 +100,7 @@ namespace uih {
             {
                 //console::formatter() << "width_difference: " << width_difference << " total_weight: " << total_weight << " sized_count: " << sized_count;
                 t_ssize width_difference_local = width_difference;
-                t_size total_weight_local = total_weight;
+                int total_weight_local = total_weight;
                 for (i = 0; i < count; i++)
                 {
                     if (!sized[i] && total_weight_local)

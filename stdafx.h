@@ -13,6 +13,8 @@
 
 #include <ppl.h>
 
+#include <gsl/gsl>
+
 // Included before windows.h, because pfc.h includes winsock2.h
 #include "../pfc/pfc.h"
 

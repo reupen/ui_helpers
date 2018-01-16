@@ -303,7 +303,7 @@ namespace uih {
             //t_size header_height = get_header_height();
             RECT rc_client;
             get_items_rect(&rc_client);
-            t_size groups = get_item_display_group_count(index);
+            const auto groups = gsl::narrow<int>(get_item_display_group_count(index));
             RECT rc_invalidate = {
                 0,
                 get_item_position(index) - m_scroll_position + rc_client.top - groups*m_group_height,
@@ -339,15 +339,15 @@ namespace uih {
         {
             RECT rc_client;
             get_items_rect(&rc_client);
-            t_size groups = get_item_display_group_count(index);
-            t_size item_y = get_item_position(index);
-            t_size items_cy = count * m_item_height, group_area_cy = get_group_info_area_height();
+            const auto group_item_count = gsl::narrow<int>(get_item_display_group_count(index));
+            const auto item_y = get_item_position(index);
+            int items_cy = gsl::narrow<int>(count) * m_item_height, group_area_cy = get_group_info_area_height();
             if (get_show_group_info_area() && items_cy < group_area_cy)
                 items_cy = group_area_cy;
 
             RECT rc_invalidate = {
                 0,
-                item_y - m_scroll_position + rc_client.top - groups * m_item_height,
+                item_y - m_scroll_position + rc_client.top - group_item_count * m_item_height,
                 RECT_CX(rc_client),
                 item_y + group_area_cy - m_scroll_position + rc_client.top
             };

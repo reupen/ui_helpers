@@ -2,24 +2,24 @@
 
 namespace uih {
 
-    const t_size _level_spacing_size = 3;
+    const int _level_spacing_size = 3;
 
-    t_size ListView::get_item_indentation()
+    int ListView::get_item_indentation()
     {
         RECT rc; get_items_rect(&rc);
-        t_size ret = rc.left;
+        int ret = rc.left;
         if (m_group_count)
             ret += get_default_indentation_step()*m_group_count;
         return ret;
     }
-    t_size ListView::get_default_indentation_step()
+    int ListView::get_default_indentation_step()
     {
-        t_size ret = 0;
+        int ret = 0;
         if (m_group_level_indentation_enabled)
         {
             HDC dc = GetDC(get_wnd());
             HFONT font_old = SelectFont(dc, m_font);
-            const t_size cx_space = uih::get_text_width(dc, " ", 1);
+            const int cx_space = uih::get_text_width(dc, " ", 1);
             SelectFont(dc, font_old);
             ReleaseDC(get_wnd(), dc);
             ret = cx_space*_level_spacing_size;
@@ -27,7 +27,7 @@ namespace uih {
         return ret;
     }
 
-    void ListView::render_items(HDC dc, const RECT & rc_update, t_size cx)
+    void ListView::render_items(HDC dc, const RECT & rc_update, int cx)
     {
         ColourData p_data;
         render_get_colour_data(p_data);
@@ -49,9 +49,9 @@ namespace uih {
             return;
 
         t_size i, count = m_items.get_count();
-        const t_size cx_space = uih::get_text_width(dc, " ", 1);
-        const t_size item_preindentation = cx_space*level_spacing_size*m_group_count + rc_items.left;
-        const t_size item_indentation = item_preindentation + get_group_info_area_total_width();
+        const int cx_space = uih::get_text_width(dc, " ", 1);
+        const int item_preindentation = cx_space*level_spacing_size*m_group_count + rc_items.left;
+        const int item_indentation = item_preindentation + get_group_info_area_total_width();
         cx = get_columns_display_width() + item_indentation;
 
         bool b_show_group_info_area = get_show_group_info_area();
@@ -73,8 +73,8 @@ namespace uih {
                 if (!i || m_items[i]->m_groups[j] != m_items[i - 1]->m_groups[j])
                 {
                     t_group_ptr p_group = m_items[i]->m_groups[j];
-                    t_size y = get_item_position(i) - m_scroll_position - m_group_height*(countj - j) + rc_items.top;
-                    t_size x = -m_horizontal_scroll_position + rc_items.left;
+                    int y = get_item_position(i) - m_scroll_position - m_group_height*(countj - j) + rc_items.top;
+                    int x = -m_horizontal_scroll_position + rc_items.left;
                     //y += counter*m_item_height;
                     RECT rc = {x, y, x + cx, y + m_group_height};
 
@@ -93,7 +93,7 @@ namespace uih {
 
             if (b_show_group_info_area && (i == i_start || i == item_group_start))
             {
-                t_size height = max(m_item_height*item_group_count, get_group_info_area_height());
+                int height = (std::max)(m_item_height*gsl::narrow<int>(item_group_count), get_group_info_area_height());
                 int gx = 0 - m_horizontal_scroll_position + item_preindentation;
                 int gy = get_item_position(item_group_start) - m_scroll_position + rc_items.top;
                 int gcx = get_group_info_area_width();
@@ -221,7 +221,7 @@ namespace uih {
             return false;
         return true;
     }
-    void ListView::render_group_default(const ColourData & p_data, HDC dc, const char * text, t_size indentation, t_size level, const RECT & rc)
+    void ListView::render_group_default(const ColourData & p_data, HDC dc, const char * text, int indentation, t_size level, const RECT & rc)
     {
         COLORREF cr = p_data.m_group_text;
 
@@ -230,7 +230,7 @@ namespace uih {
         render_group_background_default(p_data, dc, &rc);
         uih::text_out_colours_tab(dc, text, strlen(text), 2 + indentation*level, 2, &rc, false, cr, false, false, true, uih::ALIGN_LEFT, nullptr, true, true, &text_width);
 
-        t_size cx = text_width;
+        int cx = text_width;
 
         RECT rc_line = {cx + 7, rc.top + RECT_CY(rc) / 2, rc.right - 4, rc.top + RECT_CY(rc) / 2 + 1};
 
@@ -239,7 +239,7 @@ namespace uih {
             render_group_line_default(p_data, dc, &rc_line);
         }
     }
-    void ListView::render_item_default(const ColourData & p_data, HDC dc, t_size index, t_size indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT * rc)
+    void ListView::render_item_default(const ColourData & p_data, HDC dc, t_size index, int indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT * rc)
     {
         t_item_ptr item = m_items[index];
         int theme_state = NULL;
@@ -291,13 +291,13 @@ namespace uih {
         FillRect(dc, rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(p_data.m_background)));
     }
 
-    void ListView::render_group(HDC dc, t_size index, t_size group, const char * text, t_size indentation, t_size level, const RECT & rc)
+    void ListView::render_group(HDC dc, t_size index, t_size group, const char * text, int indentation, t_size level, const RECT & rc)
     {
         ColourData p_data;
         render_get_colour_data(p_data);
         render_group_default(p_data, dc, text, indentation, level, rc);
     }
-    void ListView::render_item(HDC dc, t_size index, t_size indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT * rc)
+    void ListView::render_item(HDC dc, t_size index, int indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool b_focused, const RECT * rc)
     {
         ColourData p_data;
         render_get_colour_data(p_data);
@@ -310,9 +310,9 @@ namespace uih {
         render_background_default(p_data, dc, rc);
     }
 
-    t_size ListView::get_text_width(const char * text, t_size length)
+    int ListView::get_text_width(const char * text, t_size length)
     {
-        t_size ret = 0;
+        int ret = 0;
         HDC hdc = GetDC(get_wnd());
         if (hdc)
         {
@@ -332,10 +332,10 @@ namespace uih {
 
         pfc::string8 text = get_item_text(index, column);
         HFONT fnt_old = SelectFont(hdc, m_font);
-        t_size width = uih::get_text_width_colour(hdc, text, text.length());
+        int width = uih::get_text_width_colour(hdc, text, text.length());
         SelectFont(hdc, fnt_old);
         ReleaseDC(get_wnd(), hdc);
-        unsigned col_width = m_columns[column].m_display_size;
+        const auto col_width = m_columns[column].m_display_size;
         //if (column == 0) width += get_total_indentation();
 
         return (width + 7 > col_width);
