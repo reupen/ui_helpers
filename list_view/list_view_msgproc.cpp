@@ -376,6 +376,10 @@ namespace uih {
                     if (count)
                         set_focus_item(index);
                 }
+                else if (!m_single_selection)
+                {
+                    set_selection_state(pfc::bit_array_true(), pfc::bit_array_false());
+                }
             }
 
             break;
