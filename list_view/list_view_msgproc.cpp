@@ -839,11 +839,12 @@ namespace uih {
         case WM_CONTEXTMENU:
             {
                 POINT pt = {GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};
+                const auto from_keyboard = pt.x == -1 && pt.y == -1;
                 if (get_wnd() == (HWND)wp)
                 {
                     POINT px;
                     {
-                        if (pt.x == -1 && pt.y == -1)
+                        if (from_keyboard)
                         {
                             t_size focus = get_focus_item();
                             unsigned last = get_last_viewable_item();
@@ -873,7 +874,7 @@ namespace uih {
                         }
 
                     }
-                    if (notify_on_contextmenu(pt))
+                    if (notify_on_contextmenu(pt, from_keyboard))
                         return 0;
                 }
                 else if (m_wnd_header && (HWND)wp == m_wnd_header)
