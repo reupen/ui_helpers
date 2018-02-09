@@ -510,7 +510,7 @@ namespace uih {
             return false;
         };
 
-        virtual bool notify_on_contextmenu(const POINT& pt)
+        virtual bool notify_on_contextmenu(const POINT& pt, bool from_keyboard)
         {
             return false;
         };
