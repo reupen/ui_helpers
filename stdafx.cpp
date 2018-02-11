@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
- /**
+/**
  * \section class_sec Custom controls
  * \subsection TrackbarBase Track bar
  * The main API of the custom track bar is defined in \link ui_extension::track_bar TrackbarBase\endlink.
@@ -8,7 +8,7 @@
  * \link ui_extension::track_bar_impl Trackbar\endlink.
  * \n\n
  * Hosts should implement \link ui_extension::track_bar_host TrackbarCallback\endlink.
- * 
+ *
  * \section misc_sec Misc helpers
  * \subsection ss_uxtheme Uxtheme API wrapper
  * See uxtheme_handle.
