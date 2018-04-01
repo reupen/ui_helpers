@@ -83,9 +83,13 @@ private:
         }
 
         SetWindowText(m_wnd_edit, pfc::stringcvt::string_wide_from_utf8(buffer));
-        HICON icon = static_cast<HICON>(
-            LoadImage(nullptr, MAKEINTRESOURCE(oem_icon), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
-        SendMessage(m_wnd_static, STM_SETIMAGE, IMAGE_ICON, LPARAM(icon));
+
+        HICON icon{};
+        const HRESULT hr = LoadIconMetric(nullptr, MAKEINTRESOURCE(oem_icon), LIM_LARGE, &icon);
+        if (SUCCEEDED(hr)) {
+            m_icon = icon;
+            SendMessage(m_wnd_static, STM_SETIMAGE, IMAGE_ICON, reinterpret_cast<LPARAM>(icon));
+        }
 
         cy = std::min(calc_height(), std::max(static_cast<int>(RECT_CY(rc)), uih::scale_dpi_value(150)));
         int y = (rc.top + (RECT_CY(rc) - cy) / 2);
@@ -227,6 +231,7 @@ private:
 
     HWND m_wnd_edit, m_wnd_button, m_wnd_static;
     gdi_object_t<HFONT>::ptr_t m_font;
+    icon_ptr m_icon;
     std::function<void(HWND)> m_on_creation;
     std::function<void(HWND)> m_on_destruction;
     std::unique_ptr<uih::ContainerWindow> m_container_window;
