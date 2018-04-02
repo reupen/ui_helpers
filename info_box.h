@@ -36,7 +36,7 @@ public:
         GetWindowRect(m_wnd_button, &rc);
         GetWindowRect(m_container_window->get_wnd(), &rcw);
         GetClientRect(m_container_window->get_wnd(), &rcwc);
-        return get_large_padding() * 4 + uih::scale_dpi_value(1) + RECT_CY(rc) + (RECT_CY(rcw) - RECT_CY(rcwc))
+        return get_large_padding() * 6 + uih::scale_dpi_value(1) + RECT_CY(rc) + (RECT_CY(rcw) - RECT_CY(rcwc))
             + std::max((t_size)get_text_height(), (t_size)get_icon_height());
     }
 
@@ -61,8 +61,8 @@ private:
     {
         RECT rc;
         GetWindowRect(wnd_parent, &rc);
-        int cx = uih::scale_dpi_value(400);
-        int cy = uih::scale_dpi_value(150);
+        int cx = uih::scale_dpi_value(470);
+        int cy = uih::scale_dpi_value(175);
 
         HWND wnd = m_container_window->create(wnd_parent,
             uih::WindowPosition((rc.left + (RECT_CX(rc) - cx) / 2), (rc.top + (RECT_CY(rc) - cy) / 2), cx, cy));
@@ -120,12 +120,12 @@ private:
             HDWP dwp = BeginDeferWindowPos(3);
 
             const uih::WindowPosition edit_position{get_large_padding() * 2 + get_small_padding() + RECT_CX(rcicon),
-                get_large_padding(), LOWORD(lp) - get_large_padding() * 4 - get_small_padding() - RECT_CX(rcicon),
-                HIWORD(lp) - get_large_padding() * 4 - cy_button};
+                get_large_padding() * 2, LOWORD(lp) - get_large_padding() * 4 - get_small_padding() - RECT_CX(rcicon),
+                HIWORD(lp) - get_large_padding() * 6 - cy_button};
             const uih::WindowPosition button_position{LOWORD(lp) - get_large_padding() * 2 - get_button_width(),
                 HIWORD(lp) - get_large_padding() - cy_button, get_button_width(), cy_button};
             const uih::WindowPosition static_position{
-                get_large_padding() * 2, get_large_padding(), RECT_CX(rcicon), RECT_CY(rcicon)};
+                get_large_padding() * 2, get_large_padding() * 2, RECT_CX(rcicon), RECT_CY(rcicon)};
             dwp = DeferWindowPos(dwp, m_wnd_edit, nullptr, edit_position.x, edit_position.y, edit_position.cx,
                 edit_position.cy, SWP_NOZORDER);
             dwp = DeferWindowPos(dwp, m_wnd_button, nullptr, button_position.x, button_position.y, button_position.cx,
