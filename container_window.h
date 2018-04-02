@@ -6,7 +6,7 @@ constexpr const uint32_t style_child_default = WS_CHILD | WS_CLIPCHILDREN | WS_C
 constexpr const uint32_t ex_style_child_default = WS_EX_CONTROLPARENT;
 
 constexpr const uint32_t style_popup_default
-    = WS_SYSMENU | WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_CAPTION | WS_THICKFRAME;
+    = WS_SYSMENU | WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_CAPTION;
 constexpr const uint32_t ex_style_popup_default = WS_EX_DLGMODALFRAME;
 } // namespace window_styles
 
