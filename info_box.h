@@ -1,14 +1,18 @@
 #pragma once
 
+#include <utility>
+
 namespace uih {
 class InfoBox {
 public:
-    InfoBox(std::function<void(HWND)> on_creation = nullptr, std::function<void(HWND)> on_destruction = nullptr)
+    InfoBox(std::function<void(HWND)> on_creation = nullptr, std::function<void(HWND)> on_destruction = nullptr,
+        alignment text_alignment = ALIGN_LEFT)
         : m_wnd_edit(nullptr)
         , m_wnd_button(nullptr)
         , m_wnd_static(nullptr)
-        , m_on_creation(on_creation)
-        , m_on_destruction(on_destruction)
+        , m_text_alignment{text_alignment}
+        , m_on_creation(std::move(on_creation))
+        , m_on_destruction(std::move(on_destruction))
     {
         auto window_config = uih::ContainerWindowConfig{L"uih_message_window"};
         window_config.window_styles = uih::window_styles::style_popup_default;
@@ -18,9 +22,10 @@ public:
     }
 
     static void g_run(HWND wnd_parent, const char* p_title, const char* p_text, INT icon = OIC_INFORMATION,
-        std::function<void(HWND)> on_creation = nullptr, std::function<void(HWND)> on_destruction = nullptr)
+        std::function<void(HWND)> on_creation = nullptr, std::function<void(HWND)> on_destruction = nullptr,
+        alignment text_alignment = ALIGN_LEFT)
     {
-        auto message_window = std::make_unique<InfoBox>(on_creation, on_destruction);
+        auto message_window = std::make_unique<InfoBox>(on_creation, on_destruction, text_alignment);
         message_window->create(wnd_parent, p_title, p_text, icon);
         message_window.release();
     }
@@ -146,11 +151,16 @@ private:
             return 0;
         case WM_CREATE: {
             m_font = uih::create_icon_font();
+
+            auto edit_styles
+                = WS_CHILD | WS_VISIBLE | WS_GROUP | ES_READONLY | ES_MULTILINE | ES_AUTOVSCROLL;
+
+            edit_styles |= get_edit_alignment_style();
+
             RECT rc;
             GetClientRect(wnd, &rc);
-            m_wnd_edit = CreateWindowEx(0, WC_EDIT, L"",
-                WS_CHILD | WS_VISIBLE | WS_GROUP | ES_READONLY | ES_CENTER | ES_MULTILINE | ES_AUTOVSCROLL,
-                get_large_padding(), get_large_padding(), RECT_CX(rc) - get_large_padding() * 2,
+            m_wnd_edit = CreateWindowEx(0, WC_EDIT, L"", edit_styles, get_large_padding(), 
+                get_large_padding(), RECT_CX(rc) - get_large_padding() * 2,
                 RECT_CY(rc) - get_large_padding() * 2, wnd, reinterpret_cast<HMENU>(1001), mmh::get_current_instance(),
                 nullptr);
             SendMessage(m_wnd_edit, WM_SETFONT, reinterpret_cast<WPARAM>(m_font.get()), MAKELPARAM(FALSE, 0));
@@ -229,7 +239,21 @@ private:
         return DefWindowProc(wnd, msg, wp, lp);
     }
 
+    DWORD get_edit_alignment_style() const
+    {
+        switch (m_text_alignment) {
+        case ALIGN_LEFT:
+        default:
+            return ES_LEFT;
+        case ALIGN_CENTRE:
+            return ES_CENTER;
+        case ALIGN_RIGHT:
+            return ES_RIGHT;
+        }
+    }
+
     HWND m_wnd_edit, m_wnd_button, m_wnd_static;
+    alignment m_text_alignment{ALIGN_LEFT};
     gdi_object_t<HFONT>::ptr_t m_font;
     icon_ptr m_icon;
     std::function<void(HWND)> m_on_creation;
