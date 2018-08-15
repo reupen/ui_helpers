@@ -527,49 +527,57 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         if (notify_on_middleclick(hit_result.result == hit_test_on, hit_result.index))
             return 0;
     } break;
+    case WM_MOUSEHWHEEL:
     case WM_MOUSEWHEEL: {
-        LONG_PTR style = GetWindowLongPtr(get_wnd(), GWL_STYLE);
-        bool b_horz = (!(style & WS_VSCROLL) || ((wp & MK_CONTROL))) && (style & WS_HSCROLL);
+        const auto style = GetWindowLongPtr(get_wnd(), GWL_STYLE);
+        const auto has_vscroll = (style & WS_VSCROLL) != 0;
+        const auto has_hscroll = (style & WS_HSCROLL) != 0;
+        const auto ctrl_down = (wp & MK_CONTROL) != 0;
+        const auto is_vert_mousewheel = msg == WM_MOUSEWHEEL;
+        const auto is_horz_mousewheel = msg == WM_MOUSEHWHEEL;
+        const bool scroll_horizontally = is_horz_mousewheel || ((!has_vscroll || ctrl_down) && has_hscroll);
 
-        SCROLLINFO si;
-        memset(&si, 0, sizeof(SCROLLINFO));
+        SCROLLINFO si{};
         si.cbSize = sizeof(SCROLLINFO);
         si.fMask = SIF_POS | SIF_TRACKPOS | SIF_PAGE | SIF_RANGE;
-        GetScrollInfo(get_wnd(), b_horz ? SB_HORZ : SB_VERT, &si);
+        GetScrollInfo(get_wnd(), scroll_horizontally ? SB_HORZ : SB_VERT, &si);
 
-        UINT scroll_lines = 3; // 3 is default
-        SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &scroll_lines, 0); // we don't support Win9X
+        UINT system_scroll_lines = 3; // 3 is default
+        SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &system_scroll_lines, 0);
 
         if (!si.nPage)
             si.nPage++;
 
-        if (scroll_lines == -1)
-            scroll_lines = si.nPage - 1;
+        int scroll_unit{};
+
+        if (system_scroll_lines == -1)
+            scroll_unit = si.nPage - 1;
         else
-            scroll_lines *= m_item_height;
+            scroll_unit = system_scroll_lines * m_item_height;
 
-        int zDelta = short(HIWORD(wp));
+        if (scroll_unit == 0)
+            scroll_unit = 1;
 
-        if (scroll_lines == 0)
-            scroll_lines = 1;
+        int wheel_delta = GET_WHEEL_DELTA_WPARAM(wp);
+        if (is_vert_mousewheel)
+            wheel_delta *= -1;
 
-        // console::formatter() << zDelta;
-
-        int delta = -MulDiv(zDelta, scroll_lines, 120);
+        int scroll_delta = MulDiv(wheel_delta, scroll_unit, 120);
 
         // Limit scrolling to one page ?!?!?! It was in Columns Playlist code...
-        if (delta < 0 && (UINT)(delta * -1) > si.nPage) {
-            delta = si.nPage * -1;
-            if (delta < -1)
-                delta++;
-        } else if (delta > 0 && (UINT)delta > si.nPage) {
-            delta = si.nPage;
-            if (delta > 1)
-                delta--;
+        if (scroll_delta < 0 && static_cast<UINT>(-scroll_delta) > si.nPage) {
+            scroll_delta = si.nPage * -1;
+            if (scroll_delta < -1)
+                scroll_delta++;
+        } else if (scroll_delta > 0 && static_cast<UINT>(scroll_delta) > si.nPage) {
+            scroll_delta = si.nPage;
+            if (scroll_delta > 1)
+                scroll_delta--;
         }
 
         exit_inline_edit();
-        scroll(false, delta + (b_horz ? m_horizontal_scroll_position : m_scroll_position), b_horz);
+        scroll(false, scroll_delta + (scroll_horizontally ? m_horizontal_scroll_position : m_scroll_position),
+            scroll_horizontally);
     }
         return 0;
     case WM_GETDLGCODE:
