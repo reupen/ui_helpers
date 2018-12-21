@@ -147,6 +147,7 @@ public:
         m_dragging_rmb_initial_point.y = 0;
 
         auto window_config = uih::ContainerWindowConfig{L"NGLV"};
+        window_config.window_ex_styles = 0u;
         window_config.window_styles = WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_TABSTOP | WS_BORDER;
         window_config.class_styles = CS_DBLCLKS | CS_HREDRAW;
         m_container_window = std::make_unique<uih::ContainerWindow>(
