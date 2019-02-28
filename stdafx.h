@@ -6,10 +6,11 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 #include <ppl.h>
 

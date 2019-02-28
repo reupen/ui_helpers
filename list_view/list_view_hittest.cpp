@@ -108,32 +108,48 @@ void ListView::hit_test_ex(POINT pt_client, ListView::t_hit_test_result& result)
     }
     result.result = hit_test_nowhere;
 }
-bool ListView::is_visible(t_size index)
+std::optional<ListView::IsVisibleResult> ListView::is_partially_visible(t_size index)
 {
-    if (index < m_items.get_count()) {
-        RECT rc;
-        get_items_size(&rc);
-        t_size position = get_item_position(index);
-        return int(position - m_scroll_position) >= (rc.top)
-            && int(position - m_scroll_position + get_item_height(index)) <= rc.bottom;
+    if (index >= m_items.get_count())
+        return {};
+
+    const auto item_area_height = get_item_area_height();
+    const auto item_start_position = get_item_position(index);
+    const auto item_end_position = get_item_position_bottom(index);
+
+    if (item_end_position < m_scroll_position || item_start_position > m_scroll_position + item_area_height)
+        return {};
+
+    // The case where both the top and bottom of the item is obscured is ignored as it has little practical use
+    if (item_start_position < m_scroll_position) {
+        return {IsVisibleResult::ObscuredAbove};
     }
-    return false;
+
+    if (item_end_position >= m_scroll_position + item_area_height) {
+        return {IsVisibleResult::ObscuredBelow};
+    }
+
+    return {IsVisibleResult::FullyVisible};
 }
+
+bool ListView::is_fully_visible(t_size index)
+{
+    const auto is_visible_result = is_partially_visible(index);
+    return is_visible_result && *is_visible_result == IsVisibleResult::FullyVisible;
+}
+
 t_size ListView::get_last_viewable_item()
 {
-    RECT rc;
-    get_items_size(&rc);
-    t_size ret = get_previous_item(rc.bottom + m_scroll_position);
-    if (get_item_position(ret) + get_item_height(ret) > rc.bottom + m_scroll_position)
-        ret--;
-    return ret;
+    const auto item_area_height = get_item_area_height();
+    const auto last_item = get_last_item();
+    if (get_item_position_bottom(last_item) > m_scroll_position + item_area_height)
+        return last_item - 1;
+    return last_item;
 }
 t_size ListView::get_last_item()
 {
-    RECT rc;
-    get_items_size(&rc);
-    t_size ret = get_previous_item(rc.bottom + m_scroll_position);
-    return ret;
+    const auto item_area_height = get_item_area_height();
+    return get_previous_item(m_scroll_position + item_area_height);
 }
 t_size ListView::get_previous_item(int y, bool b_include_headers)
 {

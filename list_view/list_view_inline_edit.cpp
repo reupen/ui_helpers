@@ -183,9 +183,9 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
         }
     }
 
-    t_size indices_spread = indices[indices_count - 1] - indices[0] + 1;
-    t_size items_top = get_item_position(indices[0]);
-    t_size items_bottom = get_item_position_bottom(indices[indices_count - 1]);
+    const auto indices_spread = indices[indices_count - 1] - indices[0] + 1;
+    const auto items_top = get_item_position(indices[0]);
+    const auto items_bottom = get_item_position_bottom(indices[indices_count - 1]);
     int indices_total_height = min(items_bottom - items_top, MAXLONG);
 
     if (m_timer_inline_edit) {
@@ -193,28 +193,25 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
         m_timer_inline_edit = false;
     }
 
-    t_size median = indices[0] + indices_spread / 2; // indices[(indices_count/2)];
-
-    bool start_visible = is_visible(indices[0]);
-    bool end_visible = is_visible(indices[indices_count - 1]);
+    const auto start_visible = is_fully_visible(indices[0]);
+    const auto end_visible = is_fully_visible(indices[indices_count - 1]);
 
     if (!start_visible || !end_visible) {
-        SCROLLINFO si;
-        memset(&si, 0, sizeof(SCROLLINFO));
-        si.cbSize = sizeof(si);
-        si.fMask = SIF_POS | SIF_TRACKPOS | SIF_PAGE | SIF_RANGE;
-        GetScrollInfo(get_wnd(), SB_VERT, &si);
-        t_size target;
-        if (indices_count > si.nPage) {
-            target = median;
-            scroll(false, get_item_position(target) + m_item_height / 2 - ((si.nPage > 1 ? si.nPage - 1 : 0) / 2));
+        const auto item_area_height = get_item_area_height();
+        int new_scroll_position{};
+
+        if (items_bottom - items_top > item_area_height) {
+            const auto mid_point = indices[0] + indices_spread / 2;
+            new_scroll_position
+                = get_item_position(mid_point) + (get_item_height(mid_point) - get_item_area_height()) / 2;
+        } else if (get_item_position(indices[0]) > m_scroll_position) {
+            const auto last_index = indices[indices_count - 1];
+            new_scroll_position = get_item_position_bottom(last_index) - get_item_area_height();
         } else {
-            target = get_item_position(indices[0]) > m_scroll_position ? indices[indices_count - 1] : indices[0];
-            scroll(false,
-                get_item_position(target)
-                    - (get_item_position(target) > m_scroll_position ? (si.nPage > 1 ? si.nPage - 1 : 0) - m_item_height
-                                                                     : 0));
+            new_scroll_position = get_item_position(indices[0]);
         }
+
+        scroll(new_scroll_position);
     }
 
     int x;
@@ -245,10 +242,10 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
     if (!m_autosize
         && ((x - m_horizontal_scroll_position < 0) || x + cx - m_horizontal_scroll_position > rc_items.right)) {
         if (x - m_horizontal_scroll_position < 0) {
-            scroll(false, x, true);
+            scroll(x, true);
         } else if (x + cx - m_horizontal_scroll_position > rc_items.right) {
             const int x_right = x + cx - rc_items.right;
-            scroll(false, cx > rc_items.right ? x : x_right, true);
+            scroll(cx > rc_items.right ? x : x_right, true);
         }
     }
 

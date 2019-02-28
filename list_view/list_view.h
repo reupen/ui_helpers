@@ -268,13 +268,21 @@ public:
             : index(NULL), insertion_index(NULL), group_level(NULL), column(NULL), result(hit_test_nowhere){};
     };
 
+    enum class IsVisibleResult {
+        FullyVisible = 1,
+        ObscuredAbove = 2,
+        ObscuredBelow = 3,
+    };
+
     void hit_test_ex(POINT pt_client, t_hit_test_result& result);
     void update_scroll_info(bool b_update = true, bool b_vertical = true, bool b_horizontal = true);
     void _update_scroll_info_vertical();
     void _update_scroll_info_horizontal();
-    bool is_visible(t_size index);
+    std::optional<IsVisibleResult> is_partially_visible(t_size index);
+    bool is_fully_visible(t_size index);
     void ensure_visible(t_size index);
-    void scroll(bool b_sb, int val, bool b_horizontal = false);
+    void scroll(int position, bool b_horizontal = false);
+    void scroll_from_scroll_bar(short scroll_bar_command, bool b_horizontal = false);
 
     void get_item_group(t_size index, t_size level, t_size& index_start, t_size& count);
     void set_insert_mark(t_size index);
@@ -286,22 +294,22 @@ public:
     void remove_highlight_selected_item();
 
     /** Rect relative to main window client area */
-    void get_header_rect(LPRECT rc);
+    void get_header_rect(LPRECT rc) const;
 
     /** Current height*/
-    unsigned get_header_height();
-    void get_items_rect(LPRECT rc);
-    void get_items_size(LPRECT rc);
+    unsigned get_header_height() const;
+    void get_items_rect(LPRECT rc) const;
+    int get_item_area_height() const;
 
-    int get_items_top()
+    int get_items_top() const
     {
         RECT rc;
         get_items_rect(&rc);
         return rc.top;
     }
 
-    void get_search_box_rect(LPRECT rc);
-    unsigned get_search_box_height();
+    void get_search_box_rect(LPRECT rc) const;
+    unsigned get_search_box_height() const;
 
     void invalidate_all(bool b_update = true, bool b_children = false);
     void invalidate_items(t_size index, t_size count, bool b_update_display = true);

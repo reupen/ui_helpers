@@ -278,7 +278,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
     return false;
 }
 
-void ListView::get_header_rect(LPRECT rc)
+void ListView::get_header_rect(LPRECT rc) const
 {
     if (m_wnd_header)
         *rc = uih::get_relative_rect(m_wnd_header, get_wnd());
@@ -288,7 +288,7 @@ void ListView::get_header_rect(LPRECT rc)
     }
 }
 
-unsigned ListView::get_header_height()
+unsigned ListView::get_header_height() const
 {
     unsigned ret = 0;
     if (m_wnd_header) {

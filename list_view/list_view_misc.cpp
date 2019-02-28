@@ -145,23 +145,22 @@ void ListView::on_size(int cxd, int cyd, bool b_update, bool b_update_scroll)
     }
 }
 
-void ListView::get_items_rect(LPRECT rc)
+void ListView::get_items_rect(LPRECT rc) const
 {
     GetClientRect(get_wnd(), rc);
     rc->top += get_header_height();
     rc->top += get_search_box_height();
-    // InflateRect(rc, -1, -1);
+
     if (rc->bottom < rc->top)
         rc->bottom = rc->top;
 }
-void ListView::get_items_size(LPRECT rc)
+int ListView::get_item_area_height() const
 {
-    GetClientRect(get_wnd(), rc);
-    rc->bottom -= get_header_height();
-    rc->bottom -= get_search_box_height();
-    if (rc->bottom < rc->top)
-        rc->bottom = rc->top;
+    RECT rc{};
+    get_items_rect(&rc);
+    return RECT_CY(rc);
 }
+
 void ListView::reset_columns()
 {
     // assert (m_items.get_count() == 0);
@@ -492,8 +491,8 @@ void ListView::on_search_string_change(WCHAR c)
 
         if ((b_all_same && !mmh::compare_string_partial_case_insensitive(p_compare, temp))
             || !mmh::compare_string_partial_case_insensitive(p_compare, m_search_string)) {
-            if (!is_visible(j)) {
-                scroll(false, get_item_position(j));
+            if (!is_partially_visible(j)) {
+                scroll(get_item_position(j));
             }
             set_item_selected_single(j);
             break;
