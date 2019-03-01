@@ -84,7 +84,7 @@ void ListView::close_search_box(bool b_notify)
         notify_on_search_box_close();
 }
 
-void ListView::get_search_box_rect(LPRECT rc)
+void ListView::get_search_box_rect(LPRECT rc) const
 {
     if (m_search_editbox) {
         *rc = uih::get_relative_rect(m_search_editbox, get_wnd());
@@ -95,7 +95,7 @@ void ListView::get_search_box_rect(LPRECT rc)
         rc->top = rc->bottom;
     }
 }
-unsigned ListView::get_search_box_height()
+unsigned ListView::get_search_box_height() const
 {
     unsigned ret = 0;
     if (m_search_editbox) {

@@ -1,70 +1,93 @@
 #include "../stdafx.h"
+#include "../../foobar2000/SDK/foobar2000.h"
 
 namespace uih {
 
 void ListView::ensure_visible(t_size index)
 {
-    if (index < m_items.get_count() && !is_visible(index)) {
-        RECT rc;
-        get_items_rect(&rc);
-        scroll(false, get_item_position(index) - (RECT_CY(rc) / 2) + (get_item_height(index) / 2));
+    if (index > m_items.get_count())
+        return;
+
+    auto is_visible_result = is_partially_visible(index);
+
+    if (is_visible_result && *is_visible_result == IsVisibleResult::FullyVisible)
+        return;
+
+    const auto item_area_height = get_item_area_height();
+    const auto item_height = get_item_height(index);
+    const auto item_start_position = get_item_position(index);
+    const auto item_end_position = get_item_position_bottom(index);
+
+    if (*is_visible_result == IsVisibleResult::ObscuredAbove) {
+        scroll(item_start_position);
+    } else if (*is_visible_result == IsVisibleResult::ObscuredBelow) {
+        scroll(item_end_position - item_area_height);
+    } else {
+        scroll(item_start_position - (item_area_height + item_height) / 2);
     }
 }
-void ListView::scroll(bool b_sb, int val, bool b_horizontal)
-{
-    INT sb = b_horizontal ? SB_HORZ : SB_VERT;
-    int& p_scroll_position = b_horizontal ? m_horizontal_scroll_position : m_scroll_position;
-    const int original_scroll_position = p_scroll_position;
 
-    SCROLLINFO si;
-    memset(&si, 0, sizeof(SCROLLINFO));
+void ListView::scroll(int position, bool b_horizontal)
+{
+    const INT scroll_bar_type = b_horizontal ? SB_HORZ : SB_VERT;
+    int& scroll_position = b_horizontal ? m_horizontal_scroll_position : m_scroll_position;
+    const int original_scroll_position = scroll_position;
+
+    SCROLLINFO scroll_info{};
+    scroll_info.cbSize = sizeof(SCROLLINFO);
+    scroll_info.fMask = SIF_POS;
+    scroll_info.nPos = position;
+
+    if (scroll_position == scroll_info.nPos)
+        return;
+
+    destroy_tooltip();
+    scroll_position = SetScrollInfo(get_wnd(), scroll_bar_type, &scroll_info, true);
+
+    RECT playlist{};
+    get_items_rect(&playlist);
+    int dx = 0;
+    int dy = 0;
+    (b_horizontal ? dx : dy) = original_scroll_position - scroll_position;
+
+    ScrollWindowEx(get_wnd(), dx, dy, &playlist, &playlist, nullptr, nullptr, SW_INVALIDATE);
+    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_UPDATENOW);
+
+    if (b_horizontal)
+        reposition_header();
+}
+
+void ListView::scroll_from_scroll_bar(short scroll_bar_command, bool b_horizontal)
+{
+    const int scroll_bar_type = b_horizontal ? SB_HORZ : SB_VERT;
+    int& scroll_position = b_horizontal ? m_horizontal_scroll_position : m_scroll_position;
+
+    SCROLLINFO si{};
     si.cbSize = sizeof(SCROLLINFO);
     si.fMask = SIF_ALL;
-    GetScrollInfo(get_wnd(), sb, &si);
+    GetScrollInfo(get_wnd(), scroll_bar_type, &si);
 
-    int pos = p_scroll_position;
-    SCROLLINFO scroll2;
-    memset(&scroll2, 0, sizeof(SCROLLINFO));
-    scroll2.cbSize = sizeof(SCROLLINFO);
-    scroll2.fMask = SIF_POS;
-    if (b_sb) {
-        if (val == SB_LINEDOWN && p_scroll_position < si.nMax)
-            pos = p_scroll_position + m_item_height;
-        else if (val == SB_LINEUP && p_scroll_position > si.nMin)
-            pos = p_scroll_position - m_item_height;
-        else if (val == SB_PAGEUP)
-            pos = p_scroll_position - si.nPage;
-        else if (val == SB_PAGEDOWN)
-            pos = p_scroll_position + si.nPage;
-        else if (val == SB_THUMBTRACK)
-            pos = si.nTrackPos;
-        else if (val == SB_THUMBPOSITION)
-            pos = si.nTrackPos;
-        else if (val == SB_BOTTOM)
-            pos = si.nMax;
-        else if (val == SB_TOP)
-            pos = si.nMin;
-    } else
-        pos = val;
-    scroll2.nPos = pos;
+    int pos{};
+    if (scroll_bar_command == SB_LINEDOWN)
+        pos = (std::min)(scroll_position + m_item_height, si.nMax);
+    else if (scroll_bar_command == SB_LINEUP)
+        pos = (std::max)(scroll_position - m_item_height, si.nMin);
+    else if (scroll_bar_command == SB_PAGEUP)
+        pos = scroll_position - si.nPage;
+    else if (scroll_bar_command == SB_PAGEDOWN)
+        pos = scroll_position + si.nPage;
+    else if (scroll_bar_command == SB_THUMBTRACK)
+        pos = si.nTrackPos;
+    else if (scroll_bar_command == SB_THUMBPOSITION)
+        pos = si.nTrackPos;
+    else if (scroll_bar_command == SB_BOTTOM)
+        pos = si.nMax;
+    else if (scroll_bar_command == SB_TOP)
+        pos = si.nMin;
+    else // SB_ENDSCROLL
+        return;
 
-    if (p_scroll_position != scroll2.nPos) {
-        destroy_tooltip();
-        // exit_inline_edit();
-        p_scroll_position = SetScrollInfo(get_wnd(), sb, &scroll2, true);
-        {
-            RECT playlist;
-            get_items_rect(&playlist);
-            int dx = 0;
-            int dy = 0;
-            (b_horizontal ? dx : dy) = (original_scroll_position - p_scroll_position);
-            ScrollWindowEx(get_wnd(), dx, dy, &playlist, &playlist, nullptr, nullptr, SW_INVALIDATE);
-            RedrawWindow(get_wnd(), nullptr, nullptr, RDW_UPDATENOW);
-            if (b_horizontal)
-                reposition_header();
-        }
-        // RedrawWindow(get_wnd(), NULL, NULL, RDW_INVALIDATE|RDW_UPDATENOW);
-    }
+    scroll(pos, b_horizontal);
 }
 
 void ListView::_update_scroll_info_vertical()

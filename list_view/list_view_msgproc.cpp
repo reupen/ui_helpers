@@ -187,9 +187,9 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 m_inline_edit_prevent
                     = !((get_item_selected(hit_result.index) && !m_wnd_inline_edit && (get_selection_count(2) == 1)));
             if (hit_result.result == hit_test_obscured_below)
-                scroll(true, SB_LINEDOWN);
+                ensure_visible(hit_result.index);
             if (hit_result.result == hit_test_obscured_above)
-                scroll(true, SB_LINEUP);
+                ensure_visible(hit_result.index);
 
             m_dragging_initial_point = pt;
             /*if (b_shift_down && m_lbutton_down_ctrl)
@@ -321,10 +321,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             m_dragging_rmb = true;
             m_dragging_rmb_initial_point = pt;
 
-            if (hit_result.result == hit_test_obscured_below)
-                scroll(true, SB_LINEDOWN);
-            if (hit_result.result == hit_test_obscured_above)
-                scroll(true, SB_LINEUP);
+            if (hit_result.result == hit_test_obscured_below || hit_result.result == hit_test_obscured_above)
+                ensure_visible(hit_result.index);
 
             if (!get_item_selected(hit_result.index)) {
                 if (m_single_selection) {
@@ -452,10 +450,9 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                         } else
                             destroy_timer_scroll_up();
 
-                        if (hit_result.result == hit_test_obscured_below)
-                            scroll(true, SB_LINEDOWN);
-                        if (hit_result.result == hit_test_obscured_above)
-                            scroll(true, SB_LINEUP);
+                        if (hit_result.result == hit_test_obscured_below
+                            || hit_result.result == hit_test_obscured_above)
+                            ensure_visible(hit_result.index);
 
                         if (hit_result.result == hit_test_on_group) {
                             if (hit_result.index > m_selecting_start)
@@ -477,14 +474,11 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                         else*/
                         {
                             if (get_focus_item() != hit_result.index) {
-                                if (!is_visible(hit_result.index)) {
-                                    RECT rc;
-                                    get_items_rect(&rc);
+                                if (!is_partially_visible(hit_result.index)) {
                                     if (hit_result.index > get_last_viewable_item())
-                                        scroll(
-                                            false, get_item_position(hit_result.index) - RECT_CY(rc) + m_item_height);
+                                        scroll(get_item_position_bottom(hit_result.index) - get_item_area_height());
                                     else
-                                        scroll(false, get_item_position(hit_result.index));
+                                        scroll(get_item_position(hit_result.index));
                                 }
 
                                 set_selection_state(pfc::bit_array_true(),
@@ -576,7 +570,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         }
 
         exit_inline_edit();
-        scroll(false, scroll_delta + (scroll_horizontally ? m_horizontal_scroll_position : m_scroll_position),
+        scroll(scroll_delta + (scroll_horizontally ? m_horizontal_scroll_position : m_scroll_position),
             scroll_horizontally);
     }
         return 0;
@@ -641,17 +635,13 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         if (notify_on_keyboard_keydown_filter(WM_SYSKEYDOWN, wp, lp, m_prevent_wm_char_processing))
             return 0;
     } break;
-    case WM_VSCROLL: {
-        int val = LOWORD(wp);
+    case WM_VSCROLL:
         exit_inline_edit();
-        scroll(true, LOWORD(wp));
-    }
+        scroll_from_scroll_bar(LOWORD(wp));
         return 0;
-    case WM_HSCROLL: {
-        int val = LOWORD(wp);
+    case WM_HSCROLL:
         exit_inline_edit();
-        scroll(true, LOWORD(wp), true);
-    }
+        scroll_from_scroll_bar(LOWORD(wp), true);
         return 0;
     case WM_COMMAND:
         switch (LOWORD(wp)) {
@@ -734,10 +724,10 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         }
             return 0;
         case TIMER_SCROLL_UP:
-            scroll(true, SB_LINEUP);
+            scroll_from_scroll_bar(SB_LINEUP);
             return 0;
         case TIMER_SCROLL_DOWN:
-            scroll(true, SB_LINEDOWN);
+            scroll_from_scroll_bar(SB_LINEDOWN);
             return 0;
         case EDIT_TIMER_ID: {
             create_inline_edit(pfc::list_t<t_size>(m_inline_edit_indices), m_inline_edit_column);
