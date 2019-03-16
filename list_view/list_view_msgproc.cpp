@@ -17,8 +17,9 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     switch (msg) {
     case WM_CREATE: {
         m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, L"ListView") : nullptr;
+        m_items_view_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, L"ItemsView") : nullptr;
         m_dd_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, VSCLASS_DRAGDROP) : nullptr;
-        SetWindowTheme(wnd, L"Explorer", nullptr);
+        SetWindowTheme(wnd, L"ItemsView", nullptr);
     }
         notify_on_initialisation();
         m_font = m_lf_items_valid ? CreateFontIndirect(&m_lf_items) : uih::create_icon_font();
@@ -45,9 +46,14 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             if (m_theme)
                 CloseThemeData(m_theme);
             m_theme = nullptr;
+
             if (m_dd_theme)
                 CloseThemeData(m_dd_theme);
             m_dd_theme = nullptr;
+
+            if (m_items_view_theme)
+                CloseThemeData(m_items_view_theme);
+            m_items_view_theme = nullptr;
         }
         m_font.release();
         notify_on_destroy();
@@ -84,9 +90,14 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         if (m_theme)
             CloseThemeData(m_theme);
         m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, L"ListView") : nullptr;
+
         if (m_dd_theme)
             CloseThemeData(m_dd_theme);
         m_dd_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, VSCLASS_DRAGDROP) : nullptr;
+
+        if (m_items_view_theme)
+            CloseThemeData(m_items_view_theme);
+        m_items_view_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, L"ItemsView") : nullptr;
     } break;
     case WM_TIMECHANGE:
         notify_on_time_change();

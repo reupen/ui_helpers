@@ -62,6 +62,7 @@
 #include "message_hook.h"
 #include "trackbar.h"
 #include "solid_fill.h"
+#include "theming.h"
 
 #include "gdi.h"
 #include "text_drawing.h"
