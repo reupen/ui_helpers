@@ -296,7 +296,7 @@ void ListView::render_item_default(const ColourData& p_data, HDC dc, t_size inde
 
 void ListView::render_focus_rect_default(const ColourData& p_data, HDC dc, bool should_hide_focus, RECT rc) const
 {
-    const auto use_themed_rect = !p_data.m_use_custom_active_item_frame && m_items_view_theme
+    const auto use_themed_rect = p_data.m_themed && !p_data.m_use_custom_active_item_frame && m_items_view_theme
         && IsThemePartDefined(
                m_items_view_theme, theming::items_view_part_focus_rect, theming::items_view_state_focus_rect_normal);
 
@@ -307,7 +307,7 @@ void ListView::render_focus_rect_default(const ColourData& p_data, HDC dc, bool 
         return;
     }
 
-    if (m_theme && IsThemePartDefined(m_theme, LVP_LISTITEM, LISS_SELECTED)) {
+    if (p_data.m_themed && m_theme && IsThemePartDefined(m_theme, LVP_LISTITEM, LISS_SELECTED)) {
         MARGINS margins{};
 
         auto hr = GetThemeMargins(m_theme, dc, LVP_LISTITEM, LISS_SELECTED, TMT_CONTENTMARGINS, nullptr, &margins);
