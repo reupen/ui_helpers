@@ -70,4 +70,7 @@ private:
     bool m_active;
     HWND m_wnd;
 };
+
+void draw_rect_outline(HDC dc, const RECT& rc, COLORREF colour, int width);
+
 } // namespace uih

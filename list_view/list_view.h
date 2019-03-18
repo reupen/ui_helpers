@@ -654,7 +654,8 @@ protected:
     void render_group_default(
         const ColourData& p_data, HDC dc, const char* text, int indentation, t_size level, const RECT& rc);
     void render_item_default(const ColourData& p_data, HDC dc, t_size index, int indentation, bool b_selected,
-        bool b_window_focused, bool b_highlight, bool b_focused, const RECT* rc);
+        bool b_window_focused, bool b_highlight, bool should_hide_focus, bool b_focused, const RECT* rc);
+    void render_focus_rect_default(const ColourData& p_data, HDC dc, bool should_hide_focus, RECT rc) const;
     void render_background_default(const ColourData& p_data, HDC dc, const RECT* rc);
 
     virtual void render_group_info(HDC dc, t_size index, t_size group_count, const RECT& rc){};
@@ -662,7 +663,7 @@ protected:
     virtual void render_group(
         HDC dc, t_size index, t_size group, const char* text, int indentation, t_size level, const RECT& rc);
     virtual void render_item(HDC dc, t_size index, int indentation, bool b_selected, bool b_window_focused,
-        bool b_highlight, bool b_focused, const RECT* rc);
+        bool b_highlight, bool should_hide_focus, bool b_focused, const RECT* rc);
     virtual void render_background(HDC dc, const RECT* rc);
     virtual bool render_drag_image(LPSHDRAGIMAGE lpsdi);
 
@@ -766,6 +767,7 @@ private:
 
     HTHEME m_theme{nullptr};
     HTHEME m_dd_theme{nullptr};
+    HTHEME m_items_view_theme{nullptr};
 
     HWND m_wnd_header{nullptr};
     HWND m_wnd_inline_edit{nullptr};

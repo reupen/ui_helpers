@@ -102,7 +102,7 @@ void ListView::on_size(int cxd, int cyd, bool b_update, bool b_update_scroll)
         int cy = RECT_CY(rc);
 
         t_size old_search_height = get_search_box_height();
-        t_size new_search_height = m_search_editbox ? m_item_height + 4 : 0;
+        t_size new_search_height = m_search_editbox ? m_item_height + scale_dpi_value(4) : 0;
 
         if (m_search_editbox) {
             SetWindowPos(m_search_editbox, nullptr, 0, 0, cx, new_search_height, SWP_NOZORDER);

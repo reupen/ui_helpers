@@ -31,6 +31,7 @@
     <ClInclude Include="ole\enum_format_etc.h">
       <Filter>Data Object</Filter>
     </ClInclude>
+    <ClInclude Include="theming.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="message_hook.cpp" />
@@ -90,6 +91,7 @@
     <ClCompile Include="ole\enum_format_etc.cpp">
       <Filter>Data Object</Filter>
     </ClCompile>
+    <ClCompile Include="gdi.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />

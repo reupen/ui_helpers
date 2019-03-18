@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -174,12 +174,14 @@
     <ClInclude Include="solid_fill.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="text_drawing.h" />
+    <ClInclude Include="theming.h" />
     <ClInclude Include="trackbar.h" />
     <ClInclude Include="win32_helpers.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="container_window.cpp" />
     <ClCompile Include="drag_image.cpp" />
+    <ClCompile Include="gdi.cpp" />
     <ClCompile Include="list_view\list_view_columns.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\stdafx.h</PrecompiledHeaderFile>

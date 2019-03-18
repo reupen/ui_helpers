@@ -168,7 +168,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
                         if (size > w)
                             w = size;
                     }
-                    w += 7;
+                    w += uih::scale_dpi_value(3) * 2 + scale_dpi_value(1);
 
                     SelectFont(dc, fnt_old);
                     ReleaseDC(get_wnd(), dc);
@@ -303,7 +303,7 @@ unsigned ListView::calculate_header_height()
     unsigned rv = 0;
     if (m_wnd_header) {
         HFONT font = (HFONT)SendMessage(m_wnd_header, WM_GETFONT, 0, 0);
-        rv = uih::get_font_height(font) + 7; // padding + 3
+        rv = uih::get_font_height(font) + scale_dpi_value(7);
     }
     return rv;
 }
