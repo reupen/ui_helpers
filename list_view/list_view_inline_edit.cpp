@@ -301,14 +301,24 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
         SendMessage(m_wnd_inline_edit, WM_SETFONT, reinterpret_cast<WPARAM>(m_font.get()), MAKELONG(TRUE, 0));
     }
 
-    RECT rc;
-    rc.left = x + 2;
-    rc.top = y + (cy - font_height) / 2;
-    rc.right = x + (cx > 0 ? cx - 2 : 0);
-    rc.bottom = rc.top + font_height;
-    MapWindowPoints(get_wnd(), m_wnd_inline_edit, reinterpret_cast<LPPOINT>(&rc), 2);
+    // Edit_SetRect makes the rectangle passed to it slightly smaller to
+    // accomodate the control's border
+    // So, we have to work out what that adjustment is, and make our rectangle
+    // slightly larger to compensate for it
+    RECT rc_client{};
+    GetClientRect(m_wnd_inline_edit, &rc_client);
+    Edit_SetRectNoPaint(m_wnd_inline_edit, &rc_client);
 
-    SendMessage(m_wnd_inline_edit, EM_SETRECT, NULL, reinterpret_cast<LPARAM>(&rc));
+    RECT rc_client_adjusted{};
+    Edit_GetRect(m_wnd_inline_edit, &rc_client_adjusted);
+
+    RECT rc{};
+    rc.left = scale_dpi_value(3) + scale_dpi_value(1) - rc_client_adjusted.left + rc_client.left;
+    rc.top = (cy - font_height) / 2;
+    rc.right = rc_client.right - scale_dpi_value(3) + rc_client.right - rc_client_adjusted.right - 1;
+    rc.bottom = rc.top + font_height;
+
+    Edit_SetRect(m_wnd_inline_edit, &rc);
 
     SendMessage(m_wnd_inline_edit, EM_SETSEL, 0, -1);
     SetFocus(m_wnd_inline_edit);

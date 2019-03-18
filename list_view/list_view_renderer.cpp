@@ -156,7 +156,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
         }
         rc_line.top = yPos;
         rc_line.right = cx;
-        rc_line.bottom = yPos + 2;
+        rc_line.bottom = yPos + scale_dpi_value(2);
         if (IntersectRect(&rc_dummy, &rc_line, &rc_update)) {
             gdi_object_t<HBRUSH>::ptr_t br = CreateSolidBrush(p_data.m_text);
             FillRect(dc, &rc_line, br);
@@ -189,7 +189,7 @@ void ListView::render_group_line_default(const ColourData& p_data, HDC dc, const
         && SUCCEEDED(DrawThemeBackground(m_theme, dc, LVP_GROUPHEADERLINE, LVGH_OPEN, rc, nullptr))) {
     } else {
         COLORREF cr = p_data.m_group_text; // get_group_text_colour_default();
-        gdi_object_t<HPEN>::ptr_t pen = CreatePen(PS_SOLID, 1, cr);
+        gdi_object_t<HPEN>::ptr_t pen = CreatePen(PS_SOLID, uih::scale_dpi_value(1), cr);
         HPEN pen_old = SelectPen(dc, pen);
         MoveToEx(dc, rc->left, rc->top, nullptr);
         LineTo(dc, rc->right, rc->top);
@@ -224,12 +224,19 @@ void ListView::render_group_default(
     int text_width = NULL;
 
     render_group_background_default(p_data, dc, &rc);
-    uih::text_out_colours_tab(dc, text, strlen(text), 2 + indentation * level, 2, &rc, false, cr, false, false, true,
-        uih::ALIGN_LEFT, nullptr, true, true, &text_width);
+    uih::text_out_colours_tab(dc, text, strlen(text), 2 + indentation * level, uih::scale_dpi_value(2), &rc, false, cr,
+        false, false, true, uih::ALIGN_LEFT, nullptr, true, true, &text_width);
 
     int cx = text_width;
 
-    RECT rc_line = {cx + 7, rc.top + RECT_CY(rc) / 2, rc.right - 4, rc.top + RECT_CY(rc) / 2 + 1};
+    auto line_height = scale_dpi_value(1);
+    auto line_top = rc.top + RECT_CY(rc) / 2 - line_height / 2;
+    RECT rc_line = {
+        cx + scale_dpi_value(7),
+        line_top,
+        rc.right - scale_dpi_value(4),
+        line_top + line_height,
+    };
 
     if (rc_line.right > rc_line.left) {
         render_group_line_default(p_data, dc, &rc_line);
@@ -276,9 +283,9 @@ void ListView::render_item_default(const ColourData& p_data, HDC dc, t_size inde
 
     for (k = 0; k < countk; k++) {
         rc_subitem.right = rc_subitem.left + m_columns[k].m_display_size;
-        uih::text_out_colours_tab(dc, get_item_text(index, k), strlen(get_item_text(index, k)),
-            1 + (k == 0 ? indentation : 0), 3, &rc_subitem, b_selected, cr_text, true, true, true,
-            m_columns[k].m_alignment);
+        text_out_colours_tab(dc, get_item_text(index, k), strlen(get_item_text(index, k)),
+            scale_dpi_value(1) + (k == 0 ? indentation : 0), scale_dpi_value(3), &rc_subitem, b_selected, cr_text, true,
+            true, true, m_columns[k].m_alignment);
         rc_subitem.left = rc_subitem.right;
     }
 
@@ -313,7 +320,7 @@ void ListView::render_focus_rect_default(const ColourData& p_data, HDC dc, bool 
     }
 
     if (p_data.m_use_custom_active_item_frame) {
-        draw_rect_outline(dc, rc, p_data.m_active_item_frame, 1);
+        draw_rect_outline(dc, rc, p_data.m_active_item_frame, scale_dpi_value(1));
     } else if (!should_hide_focus) {
         // We only obey should_hide_focus for traditional dotted focus rectangles, similar to how
         // Windows behaves
@@ -375,7 +382,7 @@ bool ListView::is_item_clipped(t_size index, t_size column)
     const auto col_width = m_columns[column].m_display_size;
     // if (column == 0) width += get_total_indentation();
 
-    return (width + 7 > col_width);
+    return (width + scale_dpi_value(3) * 2 + scale_dpi_value(1) > col_width);
     // return (width+2+(columns[col]->align == ALIGN_LEFT ? 2 : columns[col]->align == ALIGN_RIGHT ? 1 : 0) >
     // col_width);//we use 3 for the spacing, 1 for column divider
 }
