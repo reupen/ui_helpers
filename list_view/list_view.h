@@ -281,7 +281,8 @@ public:
     std::optional<IsVisibleResult> is_partially_visible(t_size index);
     bool is_fully_visible(t_size index);
     void ensure_visible(t_size index);
-    void scroll(int position, bool b_horizontal = false);
+
+    void scroll(int position, bool b_horizontal = false, bool update_display = true);
     void scroll_from_scroll_bar(short scroll_bar_command, bool b_horizontal = false);
 
     void get_item_group(t_size index, t_size level, t_size& index_start, t_size& count);
@@ -324,8 +325,8 @@ public:
     void reorder_items_partial(
         size_t base, const size_t* order, size_t count, bool update_focus_item = true, bool update_display = true);
 
-    t_size get_previous_item(int y, bool b_include_headers = false);
-    t_size get_next_item(int y, bool b_include_headers = false);
+    t_size get_previous_item(int y, bool b_include_headers = false) const;
+    t_size get_next_item(int y, bool b_include_headers = false) const;
     t_size get_last_viewable_item();
     t_size get_last_item();
     int get_default_item_height();
@@ -345,7 +346,7 @@ public:
 
     void clear_all_items() { m_items.remove_all(); }
 
-    int get_item_position(t_size index, bool b_include_headers = false)
+    int get_item_position(t_size index, bool b_include_headers = false) const
     {
         int ret = 0;
         if (index < m_items.get_count())
@@ -378,13 +379,7 @@ public:
         return ret;
     }
 
-    void refresh_item_positions(bool b_update_display = true)
-    {
-        __calculate_item_positions();
-        update_scroll_info();
-        if (b_update_display)
-            RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
-    }
+    void refresh_item_positions(bool b_update_display = true);
 
     enum notification_source_t {
         notification_source_unknown,

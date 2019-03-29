@@ -2,6 +2,35 @@
 
 namespace uih {
 
+void ListView::refresh_item_positions(bool b_update_display)
+{
+    // Work out where the scroll position is proportionally between the first fully viewable item
+    // and the item before it
+    const auto previous_item_index = get_next_item(m_scroll_position);
+    const auto next_item_index = get_previous_item(m_scroll_position);
+    const auto next_item_top = get_item_position(next_item_index);
+    const auto previous_item_bottom = get_item_position(previous_item_index);
+    // If next_item_top == previous_item_bottom == 0, there are probably no items
+    const auto proportional_position = next_item_top != previous_item_bottom
+        ? static_cast<double>(m_scroll_position - previous_item_bottom)
+            / static_cast<double>(next_item_top - previous_item_bottom)
+        : 0.0;
+
+    __calculate_item_positions();
+    update_scroll_info();
+
+    // Restore the scroll position
+    const auto new_next_item_top = get_item_position(next_item_index);
+    const auto new_previous_item_bottom = get_item_position(previous_item_index);
+    const auto new_position = proportional_position * static_cast<double>(new_next_item_top - new_previous_item_bottom)
+        + new_previous_item_bottom;
+    const auto new_position_rounded = gsl::narrow<int>(std::lround(new_position));
+    scroll(new_position_rounded, false, false);
+
+    if (b_update_display)
+        RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+}
+
 bool ListView::copy_selected_items_as_text(t_size default_single_item_column)
 {
     pfc::string8 text, cleanedText;
@@ -504,12 +533,14 @@ void ListView::set_vertical_item_padding(int val)
 {
     m_vertical_item_padding = val;
     if (m_initialised) {
+        disable_redrawing();
+
         m_item_height = get_default_item_height();
         m_group_height = get_default_group_height();
-        refresh_item_positions();
-        // invalidate_all(false);
-        // update_scroll_info();
-        // UpdateWindow(get_wnd());
+        on_size(false, false);
+        refresh_item_positions(false);
+
+        enable_redrawing();
     }
 }
 
@@ -522,9 +553,6 @@ void ListView::set_font(const LPLOGFONT lplf)
         destroy_tooltip();
         m_font = CreateFontIndirect(lplf);
         m_item_height = get_default_item_height();
-        // invalidate_all(false);
-        // update_scroll_info();
-        // UpdateWindow(get_wnd());
         if (m_group_count)
             update_header();
         refresh_item_positions();

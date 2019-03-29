@@ -151,30 +151,14 @@ t_size ListView::get_last_item()
     const auto item_area_height = get_item_area_height();
     return get_previous_item(m_scroll_position + item_area_height);
 }
-t_size ListView::get_previous_item(int y, bool b_include_headers)
+
+t_size ListView::get_previous_item(int y, bool b_include_headers) const
 {
-    {
-        t_size max = m_items.get_count();
-        t_size min = 0;
-        t_size ptr;
-        // if (max && y < m_items[0]->m_position)
-        //    return 0;
-        while (min < max) {
-            ptr = min + ((max - min) >> 1);
-            if (y > get_item_position(ptr, b_include_headers))
-                min = ptr + 1;
-            else if (y < get_item_position(ptr, b_include_headers))
-                max = ptr;
-            else {
-                return ptr;
-                // return true;
-            }
-        }
-        return min ? min - 1 : min;
-        // return true;
-    }
+    const auto next_item = get_next_item(y, b_include_headers);
+    return next_item > 0 ? next_item - 1 : next_item;
 }
-t_size ListView::get_next_item(int y, bool b_include_headers)
+
+t_size ListView::get_next_item(int y, bool b_include_headers) const
 {
     {
         t_size max = m_items.get_count();
@@ -193,7 +177,7 @@ t_size ListView::get_next_item(int y, bool b_include_headers)
                 // return true;
             }
         }
-        if (min == m_items.get_count())
+        if (min > 0 && min == m_items.get_count())
             min--;
         return min;
         // return true;
