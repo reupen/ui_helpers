@@ -303,7 +303,7 @@ unsigned ListView::calculate_header_height()
     unsigned rv = 0;
     if (m_wnd_header) {
         HFONT font = (HFONT)SendMessage(m_wnd_header, WM_GETFONT, 0, 0);
-        rv = uih::get_font_height(font) + scale_dpi_value(7);
+        rv = uih::get_font_height(font) + m_vertical_item_padding + scale_dpi_value(2);
     }
     return rv;
 }

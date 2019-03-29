@@ -533,12 +533,14 @@ void ListView::set_vertical_item_padding(int val)
 {
     m_vertical_item_padding = val;
     if (m_initialised) {
+        disable_redrawing();
+
         m_item_height = get_default_item_height();
         m_group_height = get_default_group_height();
-        refresh_item_positions();
-        // invalidate_all(false);
-        // update_scroll_info();
-        // UpdateWindow(get_wnd());
+        on_size(false, false);
+        refresh_item_positions(false);
+
+        enable_redrawing();
     }
 }
 
@@ -551,9 +553,6 @@ void ListView::set_font(const LPLOGFONT lplf)
         destroy_tooltip();
         m_font = CreateFontIndirect(lplf);
         m_item_height = get_default_item_height();
-        // invalidate_all(false);
-        // update_scroll_info();
-        // UpdateWindow(get_wnd());
         if (m_group_count)
             update_header();
         refresh_item_positions();
