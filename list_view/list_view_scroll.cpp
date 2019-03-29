@@ -27,7 +27,7 @@ void ListView::ensure_visible(t_size index)
     }
 }
 
-void ListView::scroll(int position, bool b_horizontal)
+void ListView::scroll(int position, bool b_horizontal, bool update_display)
 {
     const INT scroll_bar_type = b_horizontal ? SB_HORZ : SB_VERT;
     int& scroll_position = b_horizontal ? m_horizontal_scroll_position : m_scroll_position;
@@ -50,8 +50,10 @@ void ListView::scroll(int position, bool b_horizontal)
     int dy = 0;
     (b_horizontal ? dx : dy) = original_scroll_position - scroll_position;
 
-    ScrollWindowEx(get_wnd(), dx, dy, &playlist, &playlist, nullptr, nullptr, SW_INVALIDATE);
-    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_UPDATENOW);
+    if (update_display) {
+        ScrollWindowEx(get_wnd(), dx, dy, &playlist, &playlist, nullptr, nullptr, SW_INVALIDATE);
+        RedrawWindow(get_wnd(), nullptr, nullptr, RDW_UPDATENOW);
+    }
 
     if (b_horizontal)
         reposition_header();
