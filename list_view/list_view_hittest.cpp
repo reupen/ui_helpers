@@ -154,11 +154,11 @@ t_size ListView::get_last_item()
 
 t_size ListView::get_previous_item(int y, bool b_include_headers) const
 {
-    const auto next_item = get_next_item(y, b_include_headers);
+    const auto next_item = get_next_item(y, b_include_headers, true);
     return next_item > 0 ? next_item - 1 : next_item;
 }
 
-t_size ListView::get_next_item(int y, bool b_include_headers) const
+t_size ListView::get_next_item(int y, bool b_include_headers, bool include_after_end) const
 {
     {
         t_size max = m_items.get_count();
@@ -177,7 +177,7 @@ t_size ListView::get_next_item(int y, bool b_include_headers) const
                 // return true;
             }
         }
-        if (min > 0 && min == m_items.get_count())
+        if (!include_after_end && min > 0 && min == m_items.get_count())
             min--;
         return min;
         // return true;
