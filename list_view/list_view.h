@@ -326,7 +326,7 @@ public:
         size_t base, const size_t* order, size_t count, bool update_focus_item = true, bool update_display = true);
 
     t_size get_previous_item(int y, bool b_include_headers = false) const;
-    t_size get_next_item(int y, bool b_include_headers = false) const;
+    t_size get_next_item(int y, bool b_include_headers = false, bool include_after_end = false) const;
     t_size get_last_viewable_item();
     t_size get_last_item();
     int get_default_item_height();
