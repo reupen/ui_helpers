@@ -108,34 +108,42 @@ void ListView::hit_test_ex(POINT pt_client, ListView::t_hit_test_result& result)
     }
     result.result = hit_test_nowhere;
 }
-std::optional<ListView::IsVisibleResult> ListView::is_partially_visible(t_size index)
-{
-    if (index >= m_items.get_count())
-        return {};
 
+ListView::ItemVisibility ListView::get_item_visibility(t_size index)
+{
     const auto item_area_height = get_item_area_height();
     const auto item_start_position = get_item_position(index);
     const auto item_end_position = get_item_position_bottom(index);
 
-    if (item_end_position < m_scroll_position || item_start_position > m_scroll_position + item_area_height)
-        return {};
+    if (item_end_position < m_scroll_position)
+        return ItemVisibility::AboveViewport;
+
+    if (item_start_position >= m_scroll_position + item_area_height)
+        return ItemVisibility::BelowViewport;
 
     // The case where both the top and bottom of the item is obscured is ignored as it has little practical use
     if (item_start_position < m_scroll_position) {
-        return {IsVisibleResult::ObscuredAbove};
+        return ItemVisibility::ObscuredAbove;
     }
 
     if (item_end_position >= m_scroll_position + item_area_height) {
-        return {IsVisibleResult::ObscuredBelow};
+        return ItemVisibility::ObscuredBelow;
     }
 
-    return {IsVisibleResult::FullyVisible};
+    return ItemVisibility::FullyVisible;
+}
+
+bool ListView::is_partially_visible(t_size index)
+{
+    const auto item_visibility = get_item_visibility(index);
+
+    return item_visibility == ItemVisibility::FullyVisible || item_visibility == ItemVisibility::ObscuredAbove
+        || item_visibility == ItemVisibility::ObscuredBelow;
 }
 
 bool ListView::is_fully_visible(t_size index)
 {
-    const auto is_visible_result = is_partially_visible(index);
-    return is_visible_result && *is_visible_result == IsVisibleResult::FullyVisible;
+    return get_item_visibility(index) == ItemVisibility::FullyVisible;
 }
 
 t_size ListView::get_last_viewable_item()

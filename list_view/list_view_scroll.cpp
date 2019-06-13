@@ -8,9 +8,9 @@ void ListView::ensure_visible(t_size index)
     if (index > m_items.get_count())
         return;
 
-    auto is_visible_result = is_partially_visible(index);
+    const auto item_visibility = get_item_visibility(index);
 
-    if (is_visible_result && *is_visible_result == IsVisibleResult::FullyVisible)
+    if (item_visibility == ItemVisibility::FullyVisible)
         return;
 
     const auto item_area_height = get_item_area_height();
@@ -18,9 +18,9 @@ void ListView::ensure_visible(t_size index)
     const auto item_start_position = get_item_position(index);
     const auto item_end_position = get_item_position_bottom(index);
 
-    if (*is_visible_result == IsVisibleResult::ObscuredAbove) {
+    if (item_visibility == ItemVisibility::ObscuredAbove) {
         scroll(item_start_position);
-    } else if (*is_visible_result == IsVisibleResult::ObscuredBelow) {
+    } else if (item_visibility == ItemVisibility::ObscuredBelow) {
         scroll(item_end_position - item_area_height);
     } else {
         scroll(item_start_position - (item_area_height + item_height) / 2);

@@ -268,17 +268,20 @@ public:
             : index(NULL), insertion_index(NULL), group_level(NULL), column(NULL), result(hit_test_nowhere){};
     };
 
-    enum class IsVisibleResult {
+    enum class ItemVisibility {
         FullyVisible = 1,
-        ObscuredAbove = 2,
-        ObscuredBelow = 3,
+        ObscuredAbove,
+        ObscuredBelow,
+        AboveViewport,
+        BelowViewport,
     };
 
     void hit_test_ex(POINT pt_client, t_hit_test_result& result);
     void update_scroll_info(bool b_update = true, bool b_vertical = true, bool b_horizontal = true);
     void _update_scroll_info_vertical();
     void _update_scroll_info_horizontal();
-    std::optional<IsVisibleResult> is_partially_visible(t_size index);
+    ItemVisibility get_item_visibility(t_size index);
+    bool is_partially_visible(t_size index);
     bool is_fully_visible(t_size index);
     void ensure_visible(t_size index);
 
