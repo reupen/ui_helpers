@@ -3,27 +3,46 @@
 
 namespace uih {
 
-void ListView::ensure_visible(t_size index)
+void ListView::ensure_visible(t_size index, EnsureVisibleMode mode)
 {
     if (index > m_items.get_count())
         return;
 
-    auto is_visible_result = is_partially_visible(index);
-
-    if (is_visible_result && *is_visible_result == IsVisibleResult::FullyVisible)
-        return;
+    const auto item_visibility = get_item_visibility(index);
 
     const auto item_area_height = get_item_area_height();
     const auto item_height = get_item_height(index);
     const auto item_start_position = get_item_position(index);
     const auto item_end_position = get_item_position_bottom(index);
 
-    if (*is_visible_result == IsVisibleResult::ObscuredAbove) {
-        scroll(item_start_position);
-    } else if (*is_visible_result == IsVisibleResult::ObscuredBelow) {
-        scroll(item_end_position - item_area_height);
-    } else {
-        scroll(item_start_position - (item_area_height + item_height) / 2);
+    switch (mode) {
+    case EnsureVisibleMode::PreferCentringItem:
+        switch (item_visibility) {
+        case ItemVisibility::ObscuredAbove:
+            scroll(item_start_position);
+            break;
+        case ItemVisibility::ObscuredBelow:
+            scroll(item_end_position - item_area_height);
+            break;
+        case ItemVisibility::FullyVisible:
+            break;
+        default:
+            scroll(item_start_position - (item_area_height + item_height) / 2);
+        }
+        break;
+    case EnsureVisibleMode::PreferMinimalScrolling:
+        switch (item_visibility) {
+        case ItemVisibility::ObscuredAbove:
+        case ItemVisibility::AboveViewport:
+            scroll(item_start_position);
+            break;
+        case ItemVisibility::ObscuredBelow:
+        case ItemVisibility::BelowViewport:
+            scroll(item_end_position - item_area_height);
+            break;
+        case ItemVisibility::FullyVisible:
+            break;
+        }
     }
 }
 

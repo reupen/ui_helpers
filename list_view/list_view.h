@@ -268,19 +268,28 @@ public:
             : index(NULL), insertion_index(NULL), group_level(NULL), column(NULL), result(hit_test_nowhere){};
     };
 
-    enum class IsVisibleResult {
+    enum class ItemVisibility {
         FullyVisible = 1,
-        ObscuredAbove = 2,
-        ObscuredBelow = 3,
+        ObscuredAbove,
+        ObscuredBelow,
+        AboveViewport,
+        BelowViewport,
     };
 
     void hit_test_ex(POINT pt_client, t_hit_test_result& result);
     void update_scroll_info(bool b_update = true, bool b_vertical = true, bool b_horizontal = true);
     void _update_scroll_info_vertical();
     void _update_scroll_info_horizontal();
-    std::optional<IsVisibleResult> is_partially_visible(t_size index);
+    ItemVisibility get_item_visibility(t_size index);
+    bool is_partially_visible(t_size index);
     bool is_fully_visible(t_size index);
-    void ensure_visible(t_size index);
+
+    enum class EnsureVisibleMode {
+        PreferCentringItem = 1,
+        PreferMinimalScrolling = 2,
+    };
+
+    void ensure_visible(t_size index, EnsureVisibleMode mode = EnsureVisibleMode::PreferCentringItem);
 
     void scroll(int position, bool b_horizontal = false, bool update_display = true);
     void scroll_from_scroll_bar(short scroll_bar_command, bool b_horizontal = false);
@@ -706,9 +715,9 @@ private:
     void create_timer_search();
     void destroy_timer_search();
 
-    void process_keydown(int offset, bool alt_down, bool repeat);
+    void process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat);
     bool on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret);
-    bool on_wm_keydown(WPARAM wp, LPARAM lp, LRESULT& ret, bool& b_processed);
+    bool on_wm_keydown(WPARAM wp, LPARAM lp, LRESULT& ret);
 
     LRESULT on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 
