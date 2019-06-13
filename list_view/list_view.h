@@ -283,7 +283,13 @@ public:
     ItemVisibility get_item_visibility(t_size index);
     bool is_partially_visible(t_size index);
     bool is_fully_visible(t_size index);
-    void ensure_visible(t_size index);
+
+    enum class EnsureVisibleMode {
+        PreferCentringItem = 1,
+        PreferMinimalScrolling = 2,
+    };
+
+    void ensure_visible(t_size index, EnsureVisibleMode mode = EnsureVisibleMode::PreferCentringItem);
 
     void scroll(int position, bool b_horizontal = false, bool update_display = true);
     void scroll_from_scroll_bar(short scroll_bar_command, bool b_horizontal = false);
@@ -709,9 +715,9 @@ private:
     void create_timer_search();
     void destroy_timer_search();
 
-    void process_keydown(int offset, bool alt_down, bool repeat);
+    void process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat);
     bool on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret);
-    bool on_wm_keydown(WPARAM wp, LPARAM lp, LRESULT& ret, bool& b_processed);
+    bool on_wm_keydown(WPARAM wp, LPARAM lp, LRESULT& ret);
 
     LRESULT on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 

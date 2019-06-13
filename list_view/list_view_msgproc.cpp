@@ -598,7 +598,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_KEYDOWN: {
         // console::formatter() << "WM_KEYDOWN: " << (t_size)wp << " " << (t_size)lp;
         LRESULT ret = 0;
-        if (on_wm_keydown(wp, lp, ret, m_prevent_wm_char_processing))
+        if ((m_prevent_wm_char_processing = on_wm_keydown(wp, lp, ret)))
             return ret;
     } break;
     case WM_CHAR:

@@ -214,42 +214,82 @@ void ListView::set_group_count(t_size count, bool b_update_columns)
         // update_header();
     }
 }
-void ListView::process_keydown(int offset, bool alt_down, bool repeat)
+void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
 {
-    int focus = get_focus_item();
-    int count = m_items.get_count();
+    auto focus = static_cast<int>(get_focus_item());
+    const auto total = gsl::narrow<int>(m_items.get_count());
+
+    if (!total)
+        return;
 
     if (focus == pfc_infinite)
         focus = 0;
+    else if (focus >= total)
+        focus = total - 1;
 
-    if (count) {
-        if ((focus + offset) < 0)
-            offset -= (focus + offset);
-        if ((focus + offset) >= count)
-            offset = (count - 1 - focus);
+    SCROLLINFO si{};
+    si.cbSize = sizeof(si);
 
-        bool focus_sel = get_item_selected(focus);
+    si.fMask = SIF_RANGE | SIF_PAGE | SIF_POS;
+    GetScrollInfo(get_wnd(), SB_VERT, &si);
 
-        if ((GetKeyState(VK_SHIFT) & KF_UP) && (GetKeyState(VK_CONTROL) & KF_UP)) {
-            // if (!repeat) playlist_api->activeplaylist_undo_backup();
-            move_selection(offset);
-        } else if ((GetKeyState(VK_CONTROL) & KF_UP))
-            set_focus_item(focus + offset);
-        else if (!m_single_selection && (GetKeyState(VK_SHIFT) & KF_UP)) {
-            t_size start = m_alternate_selection ? focus : m_shift_start;
-            pfc::bit_array_range array_select(
-                min(start, t_size(focus + offset)), abs(int(start - (focus + offset))) + 1);
-            if (m_alternate_selection && !focus_sel)
-                set_selection_state(array_select, pfc::bit_array_not(array_select), true, false);
-            else if (m_alternate_selection)
-                set_selection_state(array_select, array_select, true, false);
-            else
-                set_selection_state(pfc::bit_array_true(), array_select, true, false);
-            set_focus_item(focus + offset, true, false);
-            UpdateWindow(get_wnd());
-        } else {
-            set_item_selected_single(focus + offset);
-        }
+    const auto focused_item_is_visible = is_partially_visible(focus);
+
+    const auto first_visible_item = gsl::narrow<int>(get_next_item(m_scroll_position));
+    const auto last_visible_item = gsl::narrow<int>(get_last_viewable_item());
+    const auto focus_top = get_item_position(focus);
+
+    int target_item{};
+
+    switch (wp) {
+    case VK_HOME:
+        target_item = 0;
+        break;
+    case VK_END:
+        target_item = total - 1;
+        break;
+    case VK_PRIOR:
+        if (focused_item_is_visible && focus > first_visible_item)
+            target_item = first_visible_item;
+        else
+            target_item = get_next_item(focus_top - gsl::narrow<int>(si.nPage));
+        break;
+    case VK_NEXT:
+        if (focused_item_is_visible && focus < last_visible_item)
+            target_item = last_visible_item;
+        else
+            target_item = get_next_item(focus_top + gsl::narrow<int>(si.nPage));
+        break;
+    case VK_UP:
+        target_item = (std::max)(0, focus - 1);
+        break;
+    case VK_DOWN:
+        target_item = (std::min)(focus + 1, total - 1);
+        break;
+    }
+
+    ensure_visible(target_item, EnsureVisibleMode::PreferMinimalScrolling);
+
+    bool focus_sel = get_item_selected(focus);
+
+    if ((GetKeyState(VK_SHIFT) & KF_UP) && (GetKeyState(VK_CONTROL) & KF_UP)) {
+        // if (!repeat) playlist_api->activeplaylist_undo_backup();
+        move_selection(target_item - focus);
+    } else if ((GetKeyState(VK_CONTROL) & KF_UP)) {
+        set_focus_item(target_item);
+    } else if (!m_single_selection && (GetKeyState(VK_SHIFT) & KF_UP)) {
+        const t_size start = m_alternate_selection ? focus : m_shift_start;
+        const pfc::bit_array_range array_select(min(start, t_size(target_item)), abs(int(start - (target_item))) + 1);
+        if (m_alternate_selection && !focus_sel)
+            set_selection_state(array_select, pfc::bit_array_not(array_select), true, false);
+        else if (m_alternate_selection)
+            set_selection_state(array_select, array_select, true, false);
+        else
+            set_selection_state(pfc::bit_array_true(), array_select, true, false);
+        set_focus_item(target_item, true, false);
+        UpdateWindow(get_wnd());
+    } else {
+        set_item_selected_single(target_item);
     }
 }
 
