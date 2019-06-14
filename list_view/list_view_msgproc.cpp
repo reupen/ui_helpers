@@ -596,54 +596,16 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         }
         break;
     case WM_KEYDOWN: {
-        // console::formatter() << "WM_KEYDOWN: " << (t_size)wp << " " << (t_size)lp;
-        LRESULT ret = 0;
-        if ((m_prevent_wm_char_processing = on_wm_keydown(wp, lp, ret)))
-            return ret;
+        if ((m_prevent_wm_char_processing = on_wm_keydown(wp, lp)))
+            return 0;
     } break;
     case WM_CHAR:
-        // console::formatter() << "WM_CHAR: " << (t_size)wp << " " << (t_size)lp;
-        if (!m_prevent_wm_char_processing) {
-            // if (!(HIWORD(lp) & KF_REPEAT))
-            {
-                if ((GetKeyState(VK_CONTROL) & KF_UP)) {
-                    if (wp == 1) // Ctrl-A
-                    {
-                        if (!m_single_selection)
-                            set_selection_state(pfc::bit_array_true(), pfc::bit_array_true());
-                        return 0;
-                    } else if (wp == 26) // Ctrl-Z
-                    {
-                        if (notify_on_keyboard_keydown_undo())
-                            return 0;
-                    } else if (wp == 25) // Ctrl-Y
-                    {
-                        if (notify_on_keyboard_keydown_redo())
-                            return 0;
-                    } else if (wp == 24) // Ctrl-X
-                    {
-                        if (notify_on_keyboard_keydown_cut())
-                            return 0;
-                    } else if (wp == 3) // Ctrl-C
-                    {
-                        if (notify_on_keyboard_keydown_copy())
-                            return 0;
-                    } else if (wp == 6) // Ctrl-F
-                    {
-                        if (notify_on_keyboard_keydown_search())
-                            return 0;
-                    } else if (wp == 22) // Ctrl-V
-                    {
-                        if (notify_on_keyboard_keydown_paste())
-                            return 0;
-                    }
-                }
-            }
+        // Values below 32, and 127, are special values (e.g. Ctrl-A and Ctrl-Backspace)
+        if (!m_prevent_wm_char_processing && wp >= 32u && wp != 127u)
             on_search_string_change(wp);
-        }
         break;
     case WM_SYSKEYDOWN: {
-        if (notify_on_keyboard_keydown_filter(WM_SYSKEYDOWN, wp, lp, m_prevent_wm_char_processing))
+        if ((m_prevent_wm_char_processing = notify_on_keyboard_keydown_filter(WM_SYSKEYDOWN, wp, lp)))
             return 0;
     } break;
     case WM_VSCROLL:

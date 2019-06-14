@@ -469,7 +469,7 @@ public:
     virtual void notify_on_create(){}; // populate list here
     virtual void notify_on_destroy(){};
 
-    virtual bool notify_on_keyboard_keydown_filter(UINT msg, WPARAM wp, LPARAM lp, bool& b_processed) { return false; };
+    virtual bool notify_on_keyboard_keydown_filter(UINT msg, WPARAM wp, LPARAM lp) { return false; };
 
     virtual bool notify_on_contextmenu_header(const POINT& pt, const HDHITTESTINFO& ht) { return false; };
 
@@ -717,7 +717,7 @@ private:
 
     void process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat);
     bool on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret);
-    bool on_wm_keydown(WPARAM wp, LPARAM lp, LRESULT& ret);
+    bool on_wm_keydown(WPARAM wp, LPARAM lp);
 
     LRESULT on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 
