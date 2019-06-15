@@ -2,15 +2,16 @@
 
 namespace uih {
 
-bool ListView::on_wm_keydown(WPARAM wp, LPARAM lp, LRESULT& ret)
+bool ListView::on_wm_keydown(WPARAM wp, LPARAM lp)
 {
     SendMessage(get_wnd(), WM_CHANGEUISTATE, MAKEWPARAM(UIS_CLEAR, UISF_HIDEFOCUS), NULL);
 
-    bool unused{};
-    if (notify_on_keyboard_keydown_filter(WM_KEYDOWN, wp, lp, unused))
+    if (notify_on_keyboard_keydown_filter(WM_KEYDOWN, wp, lp))
         return true;
 
-    ret = 0;
+    const auto is_alt_down = (HIWORD(lp) & KF_ALTDOWN) != 0;
+    const auto is_ctrl_down = (GetKeyState(VK_CONTROL) & KF_UP) != 0;
+    const auto process_ctrl_char_shortcuts = is_ctrl_down && !is_alt_down;
 
     switch (wp) {
     case VK_TAB:
@@ -60,8 +61,26 @@ bool ListView::on_wm_keydown(WPARAM wp, LPARAM lp, LRESULT& ret)
         return notify_on_keyboard_keydown_remove();
     case VK_F3:
         return notify_on_keyboard_keydown_search();
+    case 'A':
+        if (process_ctrl_char_shortcuts && !m_single_selection) {
+            set_selection_state(pfc::bit_array_true(), pfc::bit_array_true());
+            return true;
+        }
+        return false;
+    case 'C':
+        return process_ctrl_char_shortcuts && notify_on_keyboard_keydown_copy();
+    case 'F':
+        return process_ctrl_char_shortcuts && notify_on_keyboard_keydown_search();
+    case 'V':
+        return process_ctrl_char_shortcuts && notify_on_keyboard_keydown_paste();
+    case 'X':
+        return process_ctrl_char_shortcuts && notify_on_keyboard_keydown_cut();
+    case 'Y':
+        return process_ctrl_char_shortcuts && notify_on_keyboard_keydown_redo();
+    case 'Z':
+        return process_ctrl_char_shortcuts && notify_on_keyboard_keydown_undo();
+    default:
+        return false;
     }
-
-    return false;
 }
 } // namespace uih
