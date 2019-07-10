@@ -221,18 +221,16 @@ void ListView::render_group_default(
 {
     COLORREF cr = p_data.m_group_text;
 
-    int text_width = NULL;
+    int text_right = NULL;
 
     render_group_background_default(p_data, dc, &rc);
-    uih::text_out_colours_tab(dc, text, strlen(text), 2 + indentation * level, uih::scale_dpi_value(2), &rc, false, cr,
-        false, false, true, uih::ALIGN_LEFT, nullptr, true, true, &text_width);
-
-    int cx = text_width;
+    uih::text_out_colours_tab(dc, text, strlen(text), uih::scale_dpi_value(1) + indentation * gsl::narrow<int>(level),
+        uih::scale_dpi_value(3), &rc, false, cr, false, false, true, uih::ALIGN_LEFT, nullptr, true, true, &text_right);
 
     auto line_height = scale_dpi_value(1);
     auto line_top = rc.top + RECT_CY(rc) / 2 - line_height / 2;
     RECT rc_line = {
-        cx + scale_dpi_value(7),
+        text_right + scale_dpi_value(7),
         line_top,
         rc.right - scale_dpi_value(4),
         line_top + line_height,
