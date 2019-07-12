@@ -568,7 +568,7 @@ bool set_clipboard_text(const char* text, HWND wnd)
         return false;
 
     auto succeeded = false;
-    const auto buffer_size = wstr.length() * sizeof(WCHAR) + 1;
+    const auto buffer_size = wstr.length() * sizeof(WCHAR) + 2;
     HGLOBAL mem = GlobalAlloc(GMEM_MOVEABLE, buffer_size);
     if (mem) {
         auto buffer = GlobalLock(mem);
