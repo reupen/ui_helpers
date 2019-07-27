@@ -20,7 +20,7 @@ void ListView::insert_items(t_size index_start, t_size count, const InsertItem* 
     __insert_items_v3(index_start, count, items);
     __calculate_item_positions(index_start);
     // profiler(pvt_render);
-    update_scroll_info();
+    update_scroll_info(b_update_display);
     if (b_update_display)
         RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
 }
@@ -28,10 +28,11 @@ void ListView::replace_items(t_size index_start, t_size count, const InsertItem*
 {
     __replace_items_v2(index_start, count, items);
     __calculate_item_positions(index_start);
-    update_scroll_info();
+    update_scroll_info(b_update_display);
     if (b_update_display)
         RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
 }
+
 void ListView::remove_items(const pfc::bit_array& p_mask, bool b_update_display)
 {
     if (m_timer_inline_edit)
@@ -42,7 +43,7 @@ void ListView::remove_items(const pfc::bit_array& p_mask, bool b_update_display)
             __remove_item(i - 1);
     }
     __calculate_item_positions();
-    update_scroll_info();
+    update_scroll_info(b_update_display);
     if (b_update_display)
         RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
 }

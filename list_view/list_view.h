@@ -843,6 +843,7 @@ private:
     bool m_sort_direction{false};
     EdgeStyle m_edge_style{edge_grey};
     bool m_sizing{false};
+    bool m_suppress_wm_size_window_updating{false};
 
     bool m_single_selection{false};
     bool m_alternate_selection{false};
