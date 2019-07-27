@@ -17,7 +17,7 @@ void ListView::refresh_item_positions(bool b_update_display)
         : 0.0;
 
     __calculate_item_positions();
-    update_scroll_info();
+    update_scroll_info(b_update_display);
 
     // Restore the scroll position
     const auto new_next_item_top = get_item_position(next_item_index);

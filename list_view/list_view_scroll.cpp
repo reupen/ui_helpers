@@ -180,13 +180,17 @@ void ListView::update_scroll_info(bool b_update, bool b_vertical, bool b_horizon
 {
     // god this is a bit complicated when showing h scrollbar causes need for v scrollbar (and vv)
 
-    // bool b_scroll_shown = (GetWindowLongPtr(get_wnd(), GWL_STYLE) & WS_VSCROLL) != 0;
+    m_suppress_wm_size_window_updating = true;
+
     if (b_vertical) {
         _update_scroll_info_vertical();
     }
     if (b_horizontal) {
         _update_scroll_info_horizontal();
     }
+
+    m_suppress_wm_size_window_updating = false;
+
     if (b_update)
         UpdateWindow(get_wnd());
 }

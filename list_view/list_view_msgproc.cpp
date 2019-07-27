@@ -77,7 +77,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         }
         return 0;*/
     case WM_SIZE:
-        on_size(LOWORD(lp), HIWORD(lp));
+        on_size(LOWORD(lp), HIWORD(lp), !m_suppress_wm_size_window_updating);
         break;
     /*case WM_STYLECHANGING:
         {
