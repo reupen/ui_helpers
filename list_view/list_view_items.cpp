@@ -48,6 +48,18 @@ void ListView::remove_items(const pfc::bit_array& p_mask, bool b_update_display)
         RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
+void ListView::remove_all_items(bool b_update_display)
+{
+    if (m_timer_inline_edit)
+        exit_inline_edit();
+
+    m_items.remove_all();
+	update_scroll_info(b_update_display);
+    
+    if (b_update_display)
+        RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+}
+
 void ListView::__replace_items_v2(t_size index_start, t_size countl, const InsertItem* items)
 {
     pfc::list_t<t_item_ptr> items_prev(m_items);

@@ -239,6 +239,7 @@ public:
     void replace_items(t_size index_start, t_size count, const InsertItem* items, bool b_update_display = true);
     void remove_item(t_size index);
     void remove_items(const pfc::bit_array& p_mask, bool b_update_display = true);
+    void remove_all_items(bool b_update_display = true);
 
     enum t_hit_test_value {
         hit_test_nowhere,
