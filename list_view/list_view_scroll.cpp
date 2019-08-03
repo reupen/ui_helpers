@@ -27,7 +27,7 @@ void ListView::ensure_visible(t_size index, EnsureVisibleMode mode)
         case ItemVisibility::FullyVisible:
             break;
         default:
-            scroll(item_start_position - (item_area_height + item_height) / 2);
+            scroll(item_start_position - (item_area_height - item_height) / 2);
         }
         break;
     case EnsureVisibleMode::PreferMinimalScrolling:
