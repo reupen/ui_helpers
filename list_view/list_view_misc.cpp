@@ -6,8 +6,8 @@ void ListView::refresh_item_positions(bool b_update_display)
 {
     // Work out where the scroll position is proportionally between the first fully viewable item
     // and the item before it
-    const auto previous_item_index = get_next_item(m_scroll_position);
-    const auto next_item_index = get_previous_item(m_scroll_position);
+    const auto previous_item_index = get_item_at_or_before(m_scroll_position);
+    const auto next_item_index = get_item_at_or_after(m_scroll_position);
     const auto next_item_top = get_item_position(next_item_index);
     const auto previous_item_bottom = get_item_position(previous_item_index);
     // If next_item_top == previous_item_bottom == 0, there are probably no items
@@ -174,15 +174,20 @@ void ListView::on_size(int cxd, int cyd, bool b_update, bool b_update_scroll)
     }
 }
 
-void ListView::get_items_rect(LPRECT rc) const
+RECT ListView::get_items_rect() const
 {
-    GetClientRect(get_wnd(), rc);
-    rc->top += get_header_height();
-    rc->top += get_search_box_height();
+    RECT rc{};
 
-    if (rc->bottom < rc->top)
-        rc->bottom = rc->top;
+    GetClientRect(get_wnd(), &rc);
+    rc.top += get_header_height();
+    rc.top += get_search_box_height();
+
+    if (rc.bottom < rc.top)
+        rc.bottom = rc.top;
+
+    return rc;
 }
+
 int ListView::get_item_area_height() const
 {
     RECT rc{};
@@ -235,8 +240,8 @@ void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
 
     const auto focused_item_is_visible = is_partially_visible(focus);
 
-    const auto first_visible_item = gsl::narrow<int>(get_next_item(m_scroll_position));
-    const auto last_visible_item = gsl::narrow<int>(get_last_viewable_item());
+    const auto first_visible_item = get_first_viewable_item();
+    const auto last_visible_item = get_last_viewable_item();
     const auto focus_top = get_item_position(focus);
 
     int target_item{};
@@ -252,13 +257,13 @@ void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
         if (focused_item_is_visible && focus > first_visible_item)
             target_item = first_visible_item;
         else
-            target_item = get_next_item(focus_top - gsl::narrow<int>(si.nPage));
+            target_item = get_item_at_or_after(focus_top - gsl::narrow<int>(si.nPage));
         break;
     case VK_NEXT:
         if (focused_item_is_visible && focus < last_visible_item)
             target_item = last_visible_item;
         else
-            target_item = get_next_item(focus_top + gsl::narrow<int>(si.nPage));
+            target_item = get_item_at_or_before(focus_top + gsl::narrow<int>(si.nPage));
         break;
     case VK_UP:
         target_item = (std::max)(0, focus - 1);

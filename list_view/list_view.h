@@ -241,32 +241,26 @@ public:
     void remove_items(const pfc::bit_array& p_mask, bool b_update_display = true);
     void remove_all_items(bool b_update_display = true);
 
-    enum t_hit_test_value {
-        hit_test_nowhere,
-        hit_test_on,
-        hit_test_above,
-        hit_test_below,
-        hit_test_obscured_above,
-        hit_test_obscured_below,
-        hit_test_below_items,
-        hit_test_on_group,
-        hit_test_right_of_item,
-        hit_test_left_of_item,
-        hit_test_right_of_group,
-        hit_test_left_of_group
+    enum class HitTestCategory {
+        NotOnItem,
+        AboveViewport,
+        BelowViewport,
+        OnUnobscuredItem,
+        OnItemObscuredAbove,
+        OnItemObscuredBelow,
+        LeftOfItem,
+        RightOfItem,
+        OnGroupHeader,
+        LeftOfGroupHeader,
+        RightOfGroupHeader,
     };
 
-    struct t_hit_test_result {
-        t_size index;
-        t_size insertion_index;
-        t_size group_level;
-        t_size column;
-        // t_size index_visible;
-        // t_size index_partially_obscured;
-        t_hit_test_value result;
-
-        t_hit_test_result()
-            : index(NULL), insertion_index(NULL), group_level(NULL), column(NULL), result(hit_test_nowhere){};
+    struct HitTestResult {
+        HitTestCategory category{};
+        t_size index{};
+        t_size insertion_index{};
+        t_size group_level{};
+        t_size column{};
     };
 
     enum class ItemVisibility {
@@ -277,7 +271,7 @@ public:
         BelowViewport,
     };
 
-    void hit_test_ex(POINT pt_client, t_hit_test_result& result);
+    void hit_test_ex(POINT pt_client, HitTestResult& result);
     void update_scroll_info(bool b_update = true, bool b_vertical = true, bool b_horizontal = true);
     void _update_scroll_info_vertical();
     void _update_scroll_info_horizontal();
@@ -309,7 +303,8 @@ public:
 
     /** Current height*/
     unsigned get_header_height() const;
-    void get_items_rect(LPRECT rc) const;
+    [[nodiscard]] RECT get_items_rect() const;
+    [[deprecated]] void get_items_rect(LPRECT rc) const { *rc = get_items_rect(); };
     int get_item_area_height() const;
 
     int get_items_top() const
@@ -335,10 +330,36 @@ public:
     void reorder_items_partial(
         size_t base, const size_t* order, size_t count, bool update_focus_item = true, bool update_display = true);
 
-    t_size get_previous_item(int y, bool b_include_headers = false) const;
-    t_size get_next_item(int y, bool b_include_headers = false, bool include_after_end = false) const;
-    t_size get_last_viewable_item();
-    t_size get_last_item();
+    enum class VerticalPositionCategory {
+        OnItem,
+        OnGroupHeader,
+        BetweenItems,
+        NoItems,
+    };
+
+    struct VerticalHitTestResult {
+        VerticalPositionCategory position_category{};
+        /** The item at the y-position if position_category == OnItem, or the item before it if position_category ==
+         * BetweenItems */
+        int item_leftmost{};
+        /** The item at the y-position if position_category == OnItem, or the item after it if position_category ==
+         * BetweenItems */
+        int item_rightmost{};
+    };
+
+    [[nodiscard]] VerticalHitTestResult vertical_hit_test(int y) const;
+
+    [[nodiscard]] size_t get_item_at_or_before(int y_position) const
+    {
+        return vertical_hit_test(y_position).item_leftmost;
+    }
+    [[nodiscard]] size_t get_item_at_or_after(int y_position) const
+    {
+        return vertical_hit_test(y_position).item_rightmost;
+    }
+
+    int get_first_viewable_item();
+    int get_last_viewable_item();
     int get_default_item_height();
     int get_default_group_height();
 
@@ -356,18 +377,28 @@ public:
 
     void clear_all_items() { m_items.remove_all(); }
 
-    int get_item_position(t_size index, bool b_include_headers = false) const
+    int get_item_group_header_total_height(size_t index) const
     {
-        int ret = 0;
-        if (index < m_items.get_count())
-            ret = m_items[index]->m_display_position;
-        return ret;
+        if (index >= m_items.get_count())
+            return 0;
+
+        return gsl::narrow<int>(get_item_display_group_count(index)) * m_group_height;
     }
 
-    int get_item_position_bottom(t_size index, bool b_include_headers = false)
+    int get_item_position(t_size index, bool b_include_headers = false) const
     {
-        return get_item_position(index, b_include_headers) + get_item_height(index);
+        if (index >= m_items.get_count())
+            return 0;
+
+        const int position = m_items[index]->m_display_position;
+
+        if (b_include_headers)
+            return position - get_item_group_header_total_height(index);
+
+        return position;
     }
+
+    int get_item_position_bottom(t_size index) const { return get_item_position(index) + get_item_height(index); }
 
     int get_group_minimum_inner_height() { return get_show_group_info_area() ? get_group_info_area_total_height() : 0; }
 
@@ -565,7 +596,7 @@ protected:
 
     t_size get_item_display_index(t_size index) { return m_items[index]->m_display_index; }
 
-    t_size get_item_display_group_count(t_size index)
+    t_size get_item_display_group_count(t_size index) const
     {
         if (index == 0)
             return m_group_count;
@@ -801,7 +832,7 @@ private:
     bool m_dragging_rmb{false};
     t_size m_selecting_start{std::numeric_limits<t_size>::max()};
     t_size m_selecting_start_column{std::numeric_limits<t_size>::max()};
-    t_hit_test_result m_lbutton_down_hittest;
+    HitTestResult m_lbutton_down_hittest;
     int m_scroll_position{0};
     int m_horizontal_scroll_position{0};
     t_size m_group_count{0};
