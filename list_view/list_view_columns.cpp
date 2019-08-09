@@ -72,8 +72,7 @@ void ListView::set_column_widths(const pfc::list_base_const_t<int>& widths)
 void ListView::get_column_sizes(pfc::list_t<Column>& p_out)
 {
     // console::formatter() << "get_column_sizes";
-    RECT rc;
-    get_items_rect(&rc);
+    const auto rc = get_items_rect();
     int display_width = RECT_CX(rc), width = get_columns_width(), total_weight = 0, indent = get_total_indentation();
     if (display_width > indent)
         display_width -= indent;

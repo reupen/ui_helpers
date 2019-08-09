@@ -63,8 +63,7 @@ void ListView::scroll(int position, bool b_horizontal, bool update_display)
     destroy_tooltip();
     scroll_position = SetScrollInfo(get_wnd(), scroll_bar_type, &scroll_info, true);
 
-    RECT playlist{};
-    get_items_rect(&playlist);
+    const auto playlist = get_items_rect();
     int dx = 0;
     int dy = 0;
     (b_horizontal ? dx : dy) = original_scroll_position - scroll_position;
@@ -113,8 +112,7 @@ void ListView::scroll_from_scroll_bar(short scroll_bar_command, bool b_horizonta
 
 void ListView::_update_scroll_info_vertical()
 {
-    RECT rc;
-    get_items_rect(&rc);
+    const auto rc = get_items_rect();
 
     t_size old_scroll_position = m_scroll_position;
     SCROLLINFO scroll;
@@ -139,8 +137,7 @@ void ListView::_update_scroll_info_vertical()
 
 void ListView::_update_scroll_info_horizontal()
 {
-    RECT rc;
-    get_items_rect(&rc);
+    auto rc = get_items_rect();
 
     t_size old_scroll_position = m_horizontal_scroll_position;
     t_size cx = get_columns_display_width() + get_total_indentation();
@@ -167,7 +164,7 @@ void ListView::_update_scroll_info_horizontal()
     if (m_horizontal_scroll_position != old_scroll_position /* || b_old_show != b_show*/)
         invalidate_all(false);
     if (b_old_show != b_show) {
-        get_items_rect(&rc);
+        rc = get_items_rect();
         memset(&scroll, 0, sizeof(SCROLLINFO));
         scroll.cbSize = sizeof(SCROLLINFO);
         scroll.fMask = SIF_PAGE;

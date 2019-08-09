@@ -130,9 +130,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         return FALSE;
     case WM_PAINT: {
         // console::formatter() << "WM_PAINT";
-        RECT rc_client;
+        const auto rc_client = get_items_rect();
         // GetClientRect(wnd, &rc_client);
-        get_items_rect(&rc_client);
         // GetUpdateRect(wnd, &rc2, FALSE);
 
         PAINTSTRUCT ps;
@@ -743,8 +742,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                         px.x = 0;
                         px.y = 0;
                     } else {
-                        RECT rc;
-                        get_items_rect(&rc);
+                        const auto rc = get_items_rect();
                         px.x = 0;
                         px.y = (get_item_position(focus) - m_scroll_position) + m_item_height / 2 + rc.top;
                     }

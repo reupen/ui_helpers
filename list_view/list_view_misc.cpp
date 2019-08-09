@@ -190,8 +190,7 @@ RECT ListView::get_items_rect() const
 
 int ListView::get_item_area_height() const
 {
-    RECT rc{};
-    get_items_rect(&rc);
+    const auto rc = get_items_rect();
     return RECT_CY(rc);
 }
 
@@ -323,8 +322,7 @@ void ListView::on_focus_change(t_size index_prev, t_size index_new, bool b_updat
 }
 void ListView::invalidate_all(bool b_update, bool b_children)
 {
-    RECT rc;
-    get_items_rect(&rc);
+    const auto rc = get_items_rect();
     RedrawWindow(get_wnd(), b_children || true ? nullptr : &rc, nullptr,
         RDW_INVALIDATE | (b_update ? RDW_UPDATENOW : 0) | (b_children ? RDW_ALLCHILDREN : 0));
 }
@@ -366,8 +364,7 @@ void ListView::invalidate_items(t_size index, t_size count, bool b_update_displa
 #else
     if (count) {
         // t_size header_height = get_header_height();
-        RECT rc_client;
-        get_items_rect(&rc_client);
+        const auto rc_client = get_items_rect();
         const auto groups = gsl::narrow<int>(get_item_display_group_count(index));
         RECT rc_invalidate = {0, get_item_position(index) - m_scroll_position + rc_client.top - groups * m_group_height,
             RECT_CX(rc_client),
@@ -399,8 +396,7 @@ void ListView::invalidate_item_group_info_area(t_size index, bool b_update_displ
     t_size count = 0;
     get_item_group(index, m_group_count ? m_group_count - 1 : 0, index, count);
     {
-        RECT rc_client;
-        get_items_rect(&rc_client);
+        const auto rc_client = get_items_rect();
         const auto group_item_count = gsl::narrow<int>(get_item_display_group_count(index));
         const auto item_y = get_item_position(index);
         int items_cy = gsl::narrow<int>(count) * m_item_height, group_area_cy = get_group_info_area_height();

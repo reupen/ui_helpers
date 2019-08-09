@@ -6,8 +6,7 @@ const int _level_spacing_size = 3;
 
 int ListView::get_item_indentation()
 {
-    RECT rc;
-    get_items_rect(&rc);
+    const auto rc = get_items_rect();
     int ret = rc.left;
     if (m_group_count)
         ret += get_default_indentation_step() * m_group_count;
@@ -43,8 +42,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
     bool b_window_focused = (wnd_focus == get_wnd()) || IsChild(get_wnd(), wnd_focus);
 
     render_background(dc, &rc_update);
-    RECT rc_items;
-    get_items_rect(&rc_items);
+    const auto rc_items = get_items_rect();
 
     if (rc_update.bottom <= rc_update.top || rc_update.bottom < rc_items.top)
         return;

@@ -304,14 +304,11 @@ public:
     /** Current height*/
     unsigned get_header_height() const;
     [[nodiscard]] RECT get_items_rect() const;
-    [[deprecated]] void get_items_rect(LPRECT rc) const { *rc = get_items_rect(); };
     int get_item_area_height() const;
 
     int get_items_top() const
     {
-        RECT rc;
-        get_items_rect(&rc);
-        return rc.top;
+        return get_items_rect().top;
     }
 
     void get_search_box_rect(LPRECT rc) const;
