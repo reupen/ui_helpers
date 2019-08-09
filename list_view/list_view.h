@@ -395,7 +395,13 @@ public:
         return position;
     }
 
-    int get_item_position_bottom(t_size index) const { return get_item_position(index) + get_item_height(index); }
+    int get_item_position_bottom(t_size index) const
+    {
+        if (index >= m_items.get_count())
+            return 0;
+
+        return get_item_position(index) + get_item_height(index);
+    }
 
     int get_group_minimum_inner_height() { return get_show_group_info_area() ? get_group_info_area_total_height() : 0; }
 

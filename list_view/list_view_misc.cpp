@@ -4,26 +4,27 @@ namespace uih {
 
 void ListView::refresh_item_positions(bool b_update_display)
 {
-    // Work out where the scroll position is proportionally between the first fully viewable item
-    // and the item before it
+    // Work out where the scroll position is proportionally in the item at the
+    // scroll position, or between the previous and next items if the scroll
+    // position is between items
     const auto previous_item_index = get_item_at_or_before(m_scroll_position);
     const auto next_item_index = get_item_at_or_after(m_scroll_position);
-    const auto next_item_top = get_item_position(next_item_index);
-    const auto previous_item_bottom = get_item_position(previous_item_index);
-    // If next_item_top == previous_item_bottom == 0, there are probably no items
-    const auto proportional_position = next_item_top != previous_item_bottom
-        ? static_cast<double>(m_scroll_position - previous_item_bottom)
-            / static_cast<double>(next_item_top - previous_item_bottom)
+    const auto next_item_bottom = get_item_position_bottom(next_item_index);
+    const auto previous_item_top = get_item_position(previous_item_index);
+    // If next_item_bottom == previous_item_bottom == 0, there are probably no items
+    const auto proportional_position = next_item_bottom != previous_item_top
+        ? static_cast<double>(m_scroll_position - previous_item_top)
+            / static_cast<double>(next_item_bottom - previous_item_top)
         : 0.0;
 
     __calculate_item_positions();
     update_scroll_info(b_update_display);
 
     // Restore the scroll position
-    const auto new_next_item_top = get_item_position(next_item_index);
-    const auto new_previous_item_bottom = get_item_position(previous_item_index);
-    const auto new_position = proportional_position * static_cast<double>(new_next_item_top - new_previous_item_bottom)
-        + new_previous_item_bottom;
+    const auto new_next_item_bottom = get_item_position_bottom(next_item_index);
+    const auto new_previous_item_top = get_item_position(previous_item_index);
+    const auto new_position = proportional_position * static_cast<double>(new_next_item_bottom - new_previous_item_top)
+        + new_previous_item_top;
     const auto new_position_rounded = gsl::narrow<int>(std::lround(new_position));
     scroll(new_position_rounded, false, false);
 
