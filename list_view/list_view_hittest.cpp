@@ -2,111 +2,91 @@
 
 namespace uih {
 
-void ListView::hit_test_ex(POINT pt_client, ListView::t_hit_test_result& result)
+void ListView::hit_test_ex(POINT pt_client, ListView::HitTestResult& result)
 {
+    const RECT rc_item_area = get_items_rect();
+
     result.column = pfc_infinite;
-    t_ssize x_left_items = -m_horizontal_scroll_position + get_total_indentation();
-    t_size k, kcount = m_columns.get_count();
-    t_ssize colcu = x_left_items;
-    for (k = 0; k < kcount; k++) {
-        int end = colcu + m_columns[k].m_display_size;
-        if (pt_client.x >= colcu && pt_client.x < end)
-            result.column = k;
-        colcu = end;
+    const t_ssize first_column_left = -m_horizontal_scroll_position + get_total_indentation();
+    const t_size column_count = m_columns.get_count();
+    t_ssize last_column_right = first_column_left;
+
+    for (size_t column_index{0}; column_index < column_count; column_index++) {
+        const int left = last_column_right;
+        const int right = last_column_right + m_columns[column_index].m_display_size;
+
+        if (pt_client.x >= left && pt_client.x < right)
+            result.column = column_index;
+
+        last_column_right = right;
     }
-    RECT rc;
-    get_items_rect(&rc);
-    if (pt_client.y < rc.top) {
-        result.index = get_next_item(m_scroll_position);
+
+    if (pt_client.y < rc_item_area.top) {
+        result.index = get_first_viewable_item();
         result.insertion_index = result.index;
-        // result.index_partially_obscured = get_previous_item(m_scroll_position);
-        result.result = hit_test_above;
+        result.category = HitTestCategory::AboveViewport;
         return;
     }
-    if (pt_client.y > rc.bottom) {
+
+    if (pt_client.y >= rc_item_area.bottom) {
         result.index = get_last_viewable_item();
         result.insertion_index = result.index;
-        // result.index_partially_obscured = get_last_item(m_scroll_position);
-        result.result = hit_test_below;
+        result.category = HitTestCategory::BelowViewport;
         return;
     }
-    t_size header_height = rc.top; // get_header_height();
-    t_size i, count = m_items.get_count();
-    for (i = get_previous_item(pt_client.y - header_height + m_scroll_position); i < count; i++) {
-        int start = get_item_position(i)
-            + header_height; // m_entries[i].m_position + (m_entries[i].m_new_group ? m_entries[i].m_height : 0);
-        int end = start + get_item_height(i); // m_items[i].m_height;
-        if (start <= pt_client.y + m_scroll_position && pt_client.y + m_scroll_position < end) {
-            result.index = i;
-            result.insertion_index = result.index;
-            result.result = hit_test_on;
-            if (pt_client.x < x_left_items)
-                result.result = hit_test_left_of_item;
-            else if (pt_client.x >= colcu)
-                result.result = hit_test_right_of_item;
-            else if (start - m_scroll_position < rc.top)
-                result.result = hit_test_obscured_above;
-            else if (end - m_scroll_position > rc.bottom)
-                result.result = hit_test_obscured_below;
 
-            if (result.result == hit_test_on) {
-                if (get_item_height(i) >= 2 && (pt_client.y + m_scroll_position) >= (start + get_item_height(i) / 2)) {
-                    result.insertion_index++;
-                }
-            }
-            return;
-        }
-        if (pt_client.y + m_scroll_position < start) {
-            if (pt_client.y + m_scroll_position >= 0 && i == 0) {
-                result.result = hit_test_on_group;
-                result.index = i; // get_next_item(pt_client.y - header_height + m_scroll_position);
-                result.insertion_index = result.index;
-                result.group_level = m_group_count
-                    ? (m_group_count
-                          - (get_item_position(result.index) - (pt_client.y - header_height + m_scroll_position) - 1)
-                              / m_group_height
-                          - 1)
-                    : 0;
-                if (pt_client.x < 0)
-                    result.result = hit_test_left_of_group;
-                else if (pt_client.x >= colcu)
-                    result.result = hit_test_right_of_group;
-                return;
-            }
-        }
-        if (pt_client.y + m_scroll_position >= end) {
-            if (i + 1 < count
-                && t_size(pt_client.y + m_scroll_position)
-                    >= get_item_position(i + 1) - get_item_display_group_count(i + 1) * m_group_height + header_height
-                && t_size(pt_client.y + m_scroll_position) < get_item_position(i + 1) + header_height)
-            // if (i+1 < count && t_size(pt_client.y + m_scroll_position) > get_item_group_bottom(i) + header_height &&
-            // t_size(pt_client.y + m_scroll_position) < get_item_position(i+1) + header_height)
-            {
-                result.result = hit_test_on_group;
-                result.index = i + 1;
-                result.insertion_index = result.index;
-                result.group_level = m_group_count
-                    ? (m_group_count
-                          - (get_item_position(result.index) - (pt_client.y - header_height + m_scroll_position) - 1)
-                              / m_group_height
-                          - 1)
-                    : 0;
-                if (pt_client.x < 0)
-                    result.result = hit_test_left_of_group;
-                else if (pt_client.x >= colcu)
-                    result.result = hit_test_right_of_group;
-            } else // if (i+1 == count)
-            {
-                result.index = i;
-                result.insertion_index = i + 1;
-                result.result = hit_test_below_items;
-            }
-            // else
-            //    result.result = hit_test_nowhere;
-            return;
-        }
+    const int header_height = rc_item_area.top;
+    const int y_position = pt_client.y - header_height + m_scroll_position;
+    const auto vertical_hit_test_result = vertical_hit_test(y_position);
+
+    if (vertical_hit_test_result.position_category == VerticalPositionCategory::OnItem) {
+        const int item_top = get_item_position(vertical_hit_test_result.item_leftmost);
+        const int item_bottom = get_item_position_bottom(vertical_hit_test_result.item_leftmost);
+        const int item_height = get_item_height(result.index);
+
+        result.index = vertical_hit_test_result.item_leftmost;
+        result.insertion_index = result.index;
+
+        if (pt_client.x < first_column_left)
+            result.category = HitTestCategory::LeftOfItem;
+        else if (pt_client.x >= last_column_right)
+            result.category = HitTestCategory::RightOfItem;
+        else if (item_top - m_scroll_position < rc_item_area.top)
+            result.category = HitTestCategory::OnItemObscuredAbove;
+        else if (item_bottom - m_scroll_position > rc_item_area.bottom)
+            result.category = HitTestCategory::OnItemObscuredBelow;
+        else
+            result.category = HitTestCategory::OnUnobscuredItem;
+
+        if (item_height >= 2 && y_position - item_top >= item_height / 2)
+            result.insertion_index++;
+
+        return;
+    } 
+
+    if (vertical_hit_test_result.position_category == VerticalPositionCategory::OnGroupHeader) {
+        assert(m_group_count > 0);
+
+        const int item_top = get_item_position(vertical_hit_test_result.item_leftmost);
+
+        result.category = HitTestCategory::OnGroupHeader;
+        result.index = vertical_hit_test_result.item_leftmost;
+        result.insertion_index = result.index;
+        result.group_level = m_group_count - (item_top - 1 - y_position) / m_group_height - 1;
+
+        assert(result.group_level < m_group_count);
+
+        if (pt_client.x < 0)
+            result.category = HitTestCategory::LeftOfGroupHeader;
+        else if (pt_client.x >= last_column_right)
+            result.category = HitTestCategory::RightOfGroupHeader;
+
+        return;
     }
-    result.result = hit_test_nowhere;
+
+    result.index = vertical_hit_test_result.item_leftmost;
+    result.insertion_index = vertical_hit_test_result.item_rightmost;
+    result.category = HitTestCategory::NotOnItem;
 }
 
 ListView::ItemVisibility ListView::get_item_visibility(t_size index)
@@ -126,7 +106,7 @@ ListView::ItemVisibility ListView::get_item_visibility(t_size index)
         return ItemVisibility::ObscuredAbove;
     }
 
-    if (item_end_position >= m_scroll_position + item_area_height) {
+    if (item_end_position > m_scroll_position + item_area_height) {
         return ItemVisibility::ObscuredBelow;
     }
 
@@ -146,49 +126,74 @@ bool ListView::is_fully_visible(t_size index)
     return get_item_visibility(index) == ItemVisibility::FullyVisible;
 }
 
-t_size ListView::get_last_viewable_item()
+int ListView::get_last_viewable_item()
 {
+    if (!m_items.get_count())
+        return 0;
+
+    const auto rc_items = get_items_rect();
+
     const auto item_area_height = get_item_area_height();
-    const auto last_item = get_last_item();
-    if (get_item_position_bottom(last_item) > m_scroll_position + item_area_height)
-        return last_item - 1;
-    return last_item;
-}
-t_size ListView::get_last_item()
-{
-    const auto item_area_height = get_item_area_height();
-    return get_previous_item(m_scroll_position + item_area_height);
+    const auto vertical_hit_test_result = vertical_hit_test(m_scroll_position + item_area_height);
+
+    const int index = vertical_hit_test_result.item_leftmost;
+    const auto item_visibility = get_item_visibility(index);
+
+    if (item_visibility == ItemVisibility::BelowViewport || item_visibility == ItemVisibility::ObscuredBelow)
+        return (std::max)(0, index - 1);
+
+    return index;
 }
 
-t_size ListView::get_previous_item(int y, bool b_include_headers) const
+int ListView::get_first_viewable_item()
 {
-    const auto next_item = get_next_item(y, b_include_headers, true);
-    return next_item > 0 ? next_item - 1 : next_item;
+    const auto item_count = gsl::narrow<int>(m_items.get_count());
+    if (item_count == 0)
+        return 0;
+
+    const auto rc_items = get_items_rect();
+
+    const auto item_area_height = get_item_area_height();
+    const auto vertical_hit_test_result = vertical_hit_test(m_scroll_position);
+
+    const int index = vertical_hit_test_result.item_rightmost;
+    const auto item_visibility = get_item_visibility(index);
+
+    if (item_visibility == ItemVisibility::AboveViewport || item_visibility == ItemVisibility::ObscuredAbove)
+        return (std::min)(index + 1, item_count);
+
+    return index;
 }
 
-t_size ListView::get_next_item(int y, bool b_include_headers, bool include_after_end) const
+ListView::VerticalHitTestResult ListView::vertical_hit_test(int y) const
 {
-    {
-        t_size max = m_items.get_count();
-        t_size min = 0;
-        t_size ptr;
-        // if (max && y < m_items[0]->m_position)
-        //    return 0;
-        while (min < max) {
-            ptr = min + ((max - min) >> 1);
-            if (y > get_item_position(ptr, b_include_headers))
-                min = ptr + 1;
-            else if (y < get_item_position(ptr, b_include_headers))
-                max = ptr;
-            else {
-                return ptr;
-                // return true;
-            }
-        }
-        if (!include_after_end && min > 0 && min == m_items.get_count())
-            min--;
-        return min;
-        // return true;
+    const auto item_count = gsl::narrow<int>(m_items.get_count());
+
+    if (item_count == 0)
+        return {VerticalPositionCategory::NoItems};
+
+    auto max = item_count;
+    auto min = 0;
+
+    while (min <= max) {
+        const auto middle = (min + max) / 2;
+        const auto item_group_headers_top = get_item_position(middle, true);
+        const auto item_top = get_item_position(middle);
+        const auto item_bottom = get_item_position_bottom(middle);
+        if (y >= item_bottom)
+            min = middle + 1;
+        else if (y < item_group_headers_top)
+            max = middle - 1;
+        else if (y < item_top)
+            return {VerticalPositionCategory::OnGroupHeader, middle, middle};
+        else
+            return {VerticalPositionCategory::OnItem, middle, middle};
     }
+
+    const int index_before = std::clamp(max, 0, item_count - 1);
+    const int index_after = std::clamp(min, 0, item_count);
+
+    return {VerticalPositionCategory::BetweenItems, index_before, index_after};
 }
+
 } // namespace uih

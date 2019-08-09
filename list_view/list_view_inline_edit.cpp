@@ -224,9 +224,9 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
         }
     }
 
-    RECT rc_playlist, rc_items;
+    RECT rc_playlist;
     GetClientRect(get_wnd(), &rc_playlist);
-    get_items_rect(&rc_items);
+    const auto rc_items = get_items_rect();
 
     int font_height = uih::get_font_height(m_font);
     int header_height = rc_items.top;

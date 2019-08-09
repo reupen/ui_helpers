@@ -4,26 +4,27 @@ namespace uih {
 
 void ListView::refresh_item_positions(bool b_update_display)
 {
-    // Work out where the scroll position is proportionally between the first fully viewable item
-    // and the item before it
-    const auto previous_item_index = get_next_item(m_scroll_position);
-    const auto next_item_index = get_previous_item(m_scroll_position);
-    const auto next_item_top = get_item_position(next_item_index);
-    const auto previous_item_bottom = get_item_position(previous_item_index);
-    // If next_item_top == previous_item_bottom == 0, there are probably no items
-    const auto proportional_position = next_item_top != previous_item_bottom
-        ? static_cast<double>(m_scroll_position - previous_item_bottom)
-            / static_cast<double>(next_item_top - previous_item_bottom)
+    // Work out where the scroll position is proportionally in the item at the
+    // scroll position, or between the previous and next items if the scroll
+    // position is between items
+    const auto previous_item_index = get_item_at_or_before(m_scroll_position);
+    const auto next_item_index = get_item_at_or_after(m_scroll_position);
+    const auto next_item_bottom = get_item_position_bottom(next_item_index);
+    const auto previous_item_top = get_item_position(previous_item_index);
+    // If next_item_bottom == previous_item_bottom == 0, there are probably no items
+    const auto proportional_position = next_item_bottom != previous_item_top
+        ? static_cast<double>(m_scroll_position - previous_item_top)
+            / static_cast<double>(next_item_bottom - previous_item_top)
         : 0.0;
 
     __calculate_item_positions();
     update_scroll_info(b_update_display);
 
     // Restore the scroll position
-    const auto new_next_item_top = get_item_position(next_item_index);
-    const auto new_previous_item_bottom = get_item_position(previous_item_index);
-    const auto new_position = proportional_position * static_cast<double>(new_next_item_top - new_previous_item_bottom)
-        + new_previous_item_bottom;
+    const auto new_next_item_bottom = get_item_position_bottom(next_item_index);
+    const auto new_previous_item_top = get_item_position(previous_item_index);
+    const auto new_position = proportional_position * static_cast<double>(new_next_item_bottom - new_previous_item_top)
+        + new_previous_item_top;
     const auto new_position_rounded = gsl::narrow<int>(std::lround(new_position));
     scroll(new_position_rounded, false, false);
 
@@ -174,19 +175,23 @@ void ListView::on_size(int cxd, int cyd, bool b_update, bool b_update_scroll)
     }
 }
 
-void ListView::get_items_rect(LPRECT rc) const
-{
-    GetClientRect(get_wnd(), rc);
-    rc->top += get_header_height();
-    rc->top += get_search_box_height();
-
-    if (rc->bottom < rc->top)
-        rc->bottom = rc->top;
-}
-int ListView::get_item_area_height() const
+RECT ListView::get_items_rect() const
 {
     RECT rc{};
-    get_items_rect(&rc);
+
+    GetClientRect(get_wnd(), &rc);
+    rc.top += get_header_height();
+    rc.top += get_search_box_height();
+
+    if (rc.bottom < rc.top)
+        rc.bottom = rc.top;
+
+    return rc;
+}
+
+int ListView::get_item_area_height() const
+{
+    const auto rc = get_items_rect();
     return RECT_CY(rc);
 }
 
@@ -235,8 +240,8 @@ void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
 
     const auto focused_item_is_visible = is_partially_visible(focus);
 
-    const auto first_visible_item = gsl::narrow<int>(get_next_item(m_scroll_position));
-    const auto last_visible_item = gsl::narrow<int>(get_last_viewable_item());
+    const auto first_visible_item = get_first_viewable_item();
+    const auto last_visible_item = get_last_viewable_item();
     const auto focus_top = get_item_position(focus);
 
     int target_item{};
@@ -252,13 +257,13 @@ void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
         if (focused_item_is_visible && focus > first_visible_item)
             target_item = first_visible_item;
         else
-            target_item = get_next_item(focus_top - gsl::narrow<int>(si.nPage));
+            target_item = get_item_at_or_after(focus_top - gsl::narrow<int>(si.nPage));
         break;
     case VK_NEXT:
         if (focused_item_is_visible && focus < last_visible_item)
             target_item = last_visible_item;
         else
-            target_item = get_next_item(focus_top + gsl::narrow<int>(si.nPage));
+            target_item = get_item_at_or_before(focus_top + gsl::narrow<int>(si.nPage));
         break;
     case VK_UP:
         target_item = (std::max)(0, focus - 1);
@@ -318,8 +323,7 @@ void ListView::on_focus_change(t_size index_prev, t_size index_new, bool b_updat
 }
 void ListView::invalidate_all(bool b_update, bool b_children)
 {
-    RECT rc;
-    get_items_rect(&rc);
+    const auto rc = get_items_rect();
     RedrawWindow(get_wnd(), b_children || true ? nullptr : &rc, nullptr,
         RDW_INVALIDATE | (b_update ? RDW_UPDATENOW : 0) | (b_children ? RDW_ALLCHILDREN : 0));
 }
@@ -361,8 +365,7 @@ void ListView::invalidate_items(t_size index, t_size count, bool b_update_displa
 #else
     if (count) {
         // t_size header_height = get_header_height();
-        RECT rc_client;
-        get_items_rect(&rc_client);
+        const auto rc_client = get_items_rect();
         const auto groups = gsl::narrow<int>(get_item_display_group_count(index));
         RECT rc_invalidate = {0, get_item_position(index) - m_scroll_position + rc_client.top - groups * m_group_height,
             RECT_CX(rc_client),
@@ -394,8 +397,7 @@ void ListView::invalidate_item_group_info_area(t_size index, bool b_update_displ
     t_size count = 0;
     get_item_group(index, m_group_count ? m_group_count - 1 : 0, index, count);
     {
-        RECT rc_client;
-        get_items_rect(&rc_client);
+        const auto rc_client = get_items_rect();
         const auto group_item_count = gsl::narrow<int>(get_item_display_group_count(index));
         const auto item_y = get_item_position(index);
         int items_cy = gsl::narrow<int>(count) * m_item_height, group_area_cy = get_group_info_area_height();

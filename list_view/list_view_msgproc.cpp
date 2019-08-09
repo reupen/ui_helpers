@@ -130,9 +130,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         return FALSE;
     case WM_PAINT: {
         // console::formatter() << "WM_PAINT";
-        RECT rc_client;
+        const auto rc_client = get_items_rect();
         // GetClientRect(wnd, &rc_client);
-        get_items_rect(&rc_client);
         // GetUpdateRect(wnd, &rc2, FALSE);
 
         PAINTSTRUCT ps;
@@ -186,20 +185,21 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         exit_inline_edit();
         SetFocus(wnd);
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
-        t_hit_test_result hit_result;
+        HitTestResult hit_result;
         hit_test_ex(pt, hit_result);
         m_lbutton_down_hittest = hit_result;
         bool b_shift_down = (wp & MK_SHIFT) != 0;
         m_lbutton_down_ctrl = (wp & MK_CONTROL) != 0 && !m_single_selection; // Cheat.
 
-        if (hit_result.result == hit_test_on || hit_result.result == hit_test_obscured_below
-            || hit_result.result == hit_test_obscured_above) {
+        if (hit_result.category == HitTestCategory::OnUnobscuredItem
+            || hit_result.category == HitTestCategory::OnItemObscuredBelow
+            || hit_result.category == HitTestCategory::OnItemObscuredAbove) {
             if (!m_inline_edit_prevent)
                 m_inline_edit_prevent
                     = !((get_item_selected(hit_result.index) && !m_wnd_inline_edit && (get_selection_count(2) == 1)));
-            if (hit_result.result == hit_test_obscured_below)
+            if (hit_result.category == HitTestCategory::OnItemObscuredBelow)
                 ensure_visible(hit_result.index);
-            if (hit_result.result == hit_test_obscured_above)
+            if (hit_result.category == HitTestCategory::OnItemObscuredAbove)
                 ensure_visible(hit_result.index);
 
             m_dragging_initial_point = pt;
@@ -238,7 +238,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 }
             }
             SetCapture(wnd);
-        } else if (hit_result.result == hit_test_on_group) {
+        } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
             if (!m_single_selection) {
                 t_size index = 0, count = 0;
                 if (!m_lbutton_down_ctrl) {
@@ -284,15 +284,16 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             destroy_timer_scroll_down();
             destroy_timer_scroll_up();
         } else if (m_lbutton_down_ctrl) {
-            const t_hit_test_result& hit_result = m_lbutton_down_hittest;
+            const HitTestResult& hit_result = m_lbutton_down_hittest;
             if (wp & MK_CONTROL) {
-                if (hit_result.result == hit_test_on || hit_result.result == hit_test_obscured_below
-                    || hit_result.result == hit_test_obscured_above) {
+                if (hit_result.category == HitTestCategory::OnUnobscuredItem
+                    || hit_result.category == HitTestCategory::OnItemObscuredBelow
+                    || hit_result.category == HitTestCategory::OnItemObscuredAbove) {
                     if (m_selecting_start < m_items.get_count()) {
                         set_item_selected(m_selecting_start, !get_item_selected(m_selecting_start));
                         set_focus_item(m_selecting_start);
                     }
-                } else if (hit_result.result == hit_test_on_group) {
+                } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
                     if (hit_result.index < m_items.get_count() && hit_result.group_level < m_group_count) {
                         t_size index = 0, count = 0;
                         get_item_group(hit_result.index, hit_result.group_level, index, count);
@@ -325,14 +326,16 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         SetFocus(wnd);
 
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
-        t_hit_test_result hit_result;
+        HitTestResult hit_result;
         hit_test_ex(pt, hit_result);
-        if (hit_result.result == hit_test_on || hit_result.result == hit_test_obscured_below
-            || hit_result.result == hit_test_obscured_above) {
+        if (hit_result.category == HitTestCategory::OnUnobscuredItem
+            || hit_result.category == HitTestCategory::OnItemObscuredBelow
+            || hit_result.category == HitTestCategory::OnItemObscuredAbove) {
             m_dragging_rmb = true;
             m_dragging_rmb_initial_point = pt;
 
-            if (hit_result.result == hit_test_obscured_below || hit_result.result == hit_test_obscured_above)
+            if (hit_result.category == HitTestCategory::OnItemObscuredBelow
+                || hit_result.category == HitTestCategory::OnItemObscuredAbove)
                 ensure_visible(hit_result.index);
 
             if (!get_item_selected(hit_result.index)) {
@@ -342,7 +345,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                     set_item_selected_single(hit_result.index, true, notification_source_rmb);
             } else if (get_focus_item() != hit_result.index)
                 set_focus_item(hit_result.index);
-        } else if (hit_result.result == hit_test_on_group) {
+        } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
             t_size index = 0, count = 0;
             get_item_group(hit_result.index, hit_result.group_level, index, count);
             set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
@@ -358,11 +361,12 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
         if (!m_selecting) {
             if (m_show_tooltips && (pt.y >= 0 && pt.y > get_items_top())) {
-                t_hit_test_result hit_result;
+                HitTestResult hit_result;
                 hit_test_ex(pt, hit_result);
 
-                if ((hit_result.result == hit_test_on || hit_result.result == hit_test_obscured_below
-                        || hit_result.result == hit_test_obscured_above)
+                if ((hit_result.category == HitTestCategory::OnUnobscuredItem
+                        || hit_result.category == HitTestCategory::OnItemObscuredBelow
+                        || hit_result.category == HitTestCategory::OnItemObscuredAbove)
                     && hit_result.column != -1) {
                     if (m_tooltip_last_index != hit_result.index || m_tooltip_last_column != hit_result.column) {
                         t_size cx = 0;
@@ -441,35 +445,39 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         if (m_selecting && !m_single_selection) {
             // t_size index;
             if (!m_selecting_move) {
-                t_hit_test_result hit_result;
+                HitTestResult hit_result;
                 hit_test_ex(pt, hit_result);
                 {
-                    if (hit_result.result == hit_test_above || hit_result.result == hit_test_below
-                        || hit_result.result == hit_test_on
+                    if (hit_result.category == HitTestCategory::AboveViewport
+                        || hit_result.category == HitTestCategory::BelowViewport
+                        || hit_result.category == HitTestCategory::OnUnobscuredItem
                         //|| hit_result.result == hit_test_obscured_below || hit_result.result ==
-                        //hit_test_obscured_above
-                        || hit_result.result == hit_test_right_of_item || hit_result.result == hit_test_left_of_item
-                        || hit_result.result == hit_test_right_of_group || hit_result.result == hit_test_left_of_group
-                        || hit_result.result == hit_test_below_items || hit_result.result == hit_test_on_group) {
-                        if (hit_result.result == hit_test_below) {
+                        // hit_test_obscured_above
+                        || hit_result.category == HitTestCategory::RightOfItem
+                        || hit_result.category == HitTestCategory::LeftOfItem
+                        || hit_result.category == HitTestCategory::RightOfGroupHeader
+                        || hit_result.category == HitTestCategory::LeftOfGroupHeader
+                        || hit_result.category == HitTestCategory::NotOnItem
+                        || hit_result.category == HitTestCategory::OnGroupHeader) {
+                        if (hit_result.category == HitTestCategory::BelowViewport) {
                             create_timer_scroll_down();
                         } else
                             destroy_timer_scroll_down();
 
-                        if (hit_result.result == hit_test_above) {
+                        if (hit_result.category == HitTestCategory::AboveViewport) {
                             create_timer_scroll_up();
                         } else
                             destroy_timer_scroll_up();
 
-                        if (hit_result.result == hit_test_obscured_below
-                            || hit_result.result == hit_test_obscured_above)
+                        if (hit_result.category == HitTestCategory::OnItemObscuredBelow
+                            || hit_result.category == HitTestCategory::OnItemObscuredAbove)
                             ensure_visible(hit_result.index);
 
-                        if (hit_result.result == hit_test_on_group) {
+                        if (hit_result.category == HitTestCategory::OnGroupHeader) {
                             if (hit_result.index > m_selecting_start)
                                 hit_result.index--;
                         }
-                        if (hit_result.result == hit_test_below_items && hit_result.index < m_selecting_start
+                        if (hit_result.category == HitTestCategory::NotOnItem && hit_result.index < m_selecting_start
                             && hit_result.index + 1 < get_item_count()) // Items removed whilst selecting.. messy
                             hit_result.index++;
 
@@ -486,7 +494,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                         {
                             if (get_focus_item() != hit_result.index) {
                                 if (!is_partially_visible(hit_result.index)) {
-                                    if (hit_result.index > get_last_viewable_item())
+                                    if (gsl::narrow_cast<int>(hit_result.index) > get_last_viewable_item())
                                         scroll(get_item_position_bottom(hit_result.index) - get_item_area_height());
                                     else
                                         scroll(get_item_position(hit_result.index));
@@ -506,17 +514,18 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         return 0;
     case WM_LBUTTONDBLCLK: {
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
-        t_hit_test_result hit_result;
+        HitTestResult hit_result;
         hit_test_ex(pt, hit_result);
-        if (hit_result.result == hit_test_on) {
+        if (hit_result.category == HitTestCategory::OnUnobscuredItem) {
             exit_inline_edit();
             m_inline_edit_prevent = true;
             t_size focus = get_focus_item();
             if (focus != pfc_infinite)
                 execute_default_action(focus, hit_result.column, false, (wp & MK_CONTROL) != 0);
             return 0;
-        } else if (hit_result.result == hit_test_nowhere || hit_result.result == hit_test_right_of_item
-            || hit_result.result == hit_test_right_of_group || hit_result.result == hit_test_below_items)
+        } else if (hit_result.category == HitTestCategory::RightOfItem
+            || hit_result.category == HitTestCategory::RightOfGroupHeader
+            || hit_result.category == HitTestCategory::NotOnItem)
             if (notify_on_doubleleftclick_nowhere())
                 return 0;
     } break;
@@ -527,9 +536,9 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_MBUTTONUP: {
         m_inline_edit_prevent = false;
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
-        t_hit_test_result hit_result;
+        HitTestResult hit_result;
         hit_test_ex(pt, hit_result);
-        if (notify_on_middleclick(hit_result.result == hit_test_on, hit_result.index))
+        if (notify_on_middleclick(hit_result.category == HitTestCategory::OnUnobscuredItem, hit_result.index))
             return 0;
     } break;
     case WM_MOUSEHWHEEL:
@@ -728,12 +737,12 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 if (from_keyboard) {
                     t_size focus = get_focus_item();
                     unsigned last = get_last_viewable_item();
-                    if (focus >= m_items.get_count() || focus < get_next_item(m_scroll_position) || focus > last) {
+                    if (focus >= m_items.get_count() || focus < get_item_at_or_after(m_scroll_position)
+                        || focus > last) {
                         px.x = 0;
                         px.y = 0;
                     } else {
-                        RECT rc;
-                        get_items_rect(&rc);
+                        const auto rc = get_items_rect();
                         px.x = 0;
                         px.y = (get_item_position(focus) - m_scroll_position) + m_item_height / 2 + rc.top;
                     }
