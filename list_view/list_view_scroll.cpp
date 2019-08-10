@@ -1,5 +1,4 @@
 #include "../stdafx.h"
-#include "../../foobar2000/SDK/foobar2000.h"
 
 namespace uih {
 
@@ -46,7 +45,7 @@ void ListView::ensure_visible(t_size index, EnsureVisibleMode mode)
     }
 }
 
-void ListView::scroll(int position, bool b_horizontal, bool update_display)
+void ListView::scroll(int position, bool b_horizontal, bool suppress_scroll_window)
 {
     const INT scroll_bar_type = b_horizontal ? SB_HORZ : SB_VERT;
     int& scroll_position = b_horizontal ? m_horizontal_scroll_position : m_scroll_position;
@@ -68,13 +67,20 @@ void ListView::scroll(int position, bool b_horizontal, bool update_display)
     int dy = 0;
     (b_horizontal ? dx : dy) = original_scroll_position - scroll_position;
 
-    if (update_display) {
-        ScrollWindowEx(get_wnd(), dx, dy, &playlist, &playlist, nullptr, nullptr, SW_INVALIDATE);
-        RedrawWindow(get_wnd(), nullptr, nullptr, RDW_UPDATENOW);
-    }
-
     if (b_horizontal)
         reposition_header();
+
+    if (suppress_scroll_window) {
+        invalidate_all();
+    } else {
+        RECT rc_invalidated{};
+        const int rgn_type
+            = ScrollWindowEx(get_wnd(), dx, dy, &playlist, &playlist, nullptr, &rc_invalidated, SW_INVALIDATE);
+
+        if (dx != 0 || rgn_type == COMPLEXREGION
+            || (rgn_type == SIMPLEREGION && !EqualRect(&rc_invalidated, &playlist)))
+            RedrawWindow(get_wnd(), nullptr, nullptr, RDW_UPDATENOW | RDW_ALLCHILDREN);
+    }
 }
 
 void ListView::scroll_from_scroll_bar(short scroll_bar_command, bool b_horizontal)
@@ -132,7 +138,7 @@ void ListView::_update_scroll_info_vertical()
     // if (b_old_show != b_show)
     // BOOL ret = ShowScrollBar(get_wnd(), SB_VERT, b_show);
     if (m_scroll_position != old_scroll_position /* || b_old_show != b_show*/)
-        invalidate_all(false);
+        invalidate_all();
 }
 
 void ListView::_update_scroll_info_horizontal()
@@ -162,7 +168,7 @@ void ListView::_update_scroll_info_horizontal()
         // GetClientRect(get_wnd(), &rc2);
     }
     if (m_horizontal_scroll_position != old_scroll_position /* || b_old_show != b_show*/)
-        invalidate_all(false);
+        invalidate_all();
     if (b_old_show != b_show) {
         rc = get_items_rect();
         memset(&scroll, 0, sizeof(SCROLLINFO));
@@ -173,11 +179,9 @@ void ListView::_update_scroll_info_horizontal()
     }
 }
 
-void ListView::update_scroll_info(bool b_update, bool b_vertical, bool b_horizontal)
+void ListView::update_scroll_info(bool b_vertical, bool b_horizontal)
 {
     // god this is a bit complicated when showing h scrollbar causes need for v scrollbar (and vv)
-
-    m_suppress_wm_size_window_updating = true;
 
     if (b_vertical) {
         _update_scroll_info_vertical();
@@ -185,11 +189,6 @@ void ListView::update_scroll_info(bool b_update, bool b_vertical, bool b_horizon
     if (b_horizontal) {
         _update_scroll_info_horizontal();
     }
-
-    m_suppress_wm_size_window_updating = false;
-
-    if (b_update)
-        UpdateWindow(get_wnd());
 }
 void ListView::create_timer_scroll_up()
 {

@@ -2,7 +2,7 @@
 
 namespace uih {
 
-void ListView::refresh_item_positions(bool b_update_display)
+void ListView::refresh_item_positions()
 {
     // Work out where the scroll position is proportionally in the item at the
     // scroll position, or between the previous and next items if the scroll
@@ -18,7 +18,7 @@ void ListView::refresh_item_positions(bool b_update_display)
         : 0.0;
 
     __calculate_item_positions();
-    update_scroll_info(b_update_display);
+    update_scroll_info();
 
     // Restore the scroll position
     const auto new_next_item_bottom = get_item_position_bottom(next_item_index);
@@ -26,10 +26,9 @@ void ListView::refresh_item_positions(bool b_update_display)
     const auto new_position = proportional_position * static_cast<double>(new_next_item_bottom - new_previous_item_top)
         + new_previous_item_top;
     const auto new_position_rounded = gsl::narrow<int>(std::lround(new_position));
-    scroll(new_position_rounded, false, false);
+    scroll(new_position_rounded, false, true);
 
-    if (b_update_display)
-        RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
 bool ListView::copy_selected_items_as_text(t_size default_single_item_column)
@@ -87,7 +86,7 @@ void ListView::set_sort_column(t_size index, bool b_direction)
         }
     }
 
-    RedrawWindow(m_wnd_header, nullptr, nullptr, RDW_UPDATENOW | RDW_INVALIDATE);
+    RedrawWindow(m_wnd_header, nullptr, nullptr, RDW_INVALIDATE);
 }
 
 void ListView::set_autosize(bool b_val)
@@ -102,7 +101,6 @@ void ListView::set_autosize(bool b_val)
         update_column_sizes();
         update_header();
         invalidate_all();
-        // RedrawWindow(get_wnd(), NULL, NULL, RDW_UPDATENOW|RDW_ALLCHILDREN);
         update_scroll_info();
     }
 }
@@ -112,14 +110,14 @@ void ListView::set_always_show_focus(bool b_val)
     if (m_initialised)
         invalidate_all();
 }
-void ListView::on_size(bool b_update, bool b_update_scroll)
+void ListView::on_size(bool b_update_scroll)
 {
     RECT rc;
     GetClientRect(get_wnd(), &rc);
-    on_size(RECT_CX(rc), RECT_CY(rc), b_update, b_update_scroll);
+    on_size(RECT_CX(rc), RECT_CY(rc), b_update_scroll);
 }
 
-void ListView::on_size(int cxd, int cyd, bool b_update, bool b_update_scroll)
+void ListView::on_size(int cxd, int cyd, bool b_update_scroll)
 {
     if (!m_sizing) {
         pfc::vartoggle_t<bool> toggler(m_sizing, true);
@@ -145,7 +143,7 @@ void ListView::on_size(int cxd, int cyd, bool b_update, bool b_update_scroll)
                 cx + m_horizontal_scroll_position, new_header_height, SWP_NOZORDER);
 
         if (b_update_scroll)
-            update_scroll_info(false);
+            update_scroll_info();
 
         if (m_autosize)
             update_column_sizes();
@@ -166,12 +164,9 @@ void ListView::on_size(int cxd, int cyd, bool b_update, bool b_update_scroll)
         }
 
         if (new_header_height != RECT_CY(rc_header))
-            RedrawWindow(m_wnd_header, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+            RedrawWindow(m_wnd_header, nullptr, nullptr, RDW_INVALIDATE);
         if (m_autosize || new_header_height != RECT_CY(rc_header) || get_search_box_height() != old_search_height)
-            invalidate_all(false);
-        if (b_update) {
-            UpdateWindow(get_wnd());
-        }
+            invalidate_all();
     }
 }
 
@@ -286,13 +281,12 @@ void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
         const t_size start = m_alternate_selection ? focus : m_shift_start;
         const pfc::bit_array_range array_select(min(start, t_size(target_item)), abs(int(start - (target_item))) + 1);
         if (m_alternate_selection && !focus_sel)
-            set_selection_state(array_select, pfc::bit_array_not(array_select), true, false);
+            set_selection_state(array_select, pfc::bit_array_not(array_select), true);
         else if (m_alternate_selection)
-            set_selection_state(array_select, array_select, true, false);
+            set_selection_state(array_select, array_select, true);
         else
-            set_selection_state(pfc::bit_array_true(), array_select, true, false);
-        set_focus_item(target_item, true, false);
-        UpdateWindow(get_wnd());
+            set_selection_state(pfc::bit_array_true(), array_select, true);
+        set_focus_item(target_item, true);
     } else {
         set_item_selected_single(target_item);
     }
@@ -313,36 +307,33 @@ int ListView::get_default_group_height()
         ret = 1;
     return ret;
 }
-void ListView::on_focus_change(t_size index_prev, t_size index_new, bool b_update_display)
+void ListView::on_focus_change(t_size index_prev, t_size index_new)
 {
     t_size count = m_items.get_count();
     if (index_prev < count)
-        invalidate_items(index_prev, 1, b_update_display);
+        invalidate_items(index_prev, 1);
     if (index_new < count)
-        invalidate_items(index_new, 1, b_update_display);
+        invalidate_items(index_new, 1);
 }
-void ListView::invalidate_all(bool b_update, bool b_children)
+void ListView::invalidate_all(bool b_children)
 {
-    const auto rc = get_items_rect();
-    RedrawWindow(get_wnd(), b_children || true ? nullptr : &rc, nullptr,
-        RDW_INVALIDATE | (b_update ? RDW_UPDATENOW : 0) | (b_children ? RDW_ALLCHILDREN : 0));
+    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE | (b_children ? RDW_ALLCHILDREN : 0));
 }
 
-void ListView::update_items(t_size index, t_size count, bool b_update_display)
+void ListView::update_items(t_size index, t_size count)
 {
     t_size i;
     for (i = 0; i < count; i++)
         m_items[i + index]->m_subitems.set_size(0);
-    invalidate_items(index, count, b_update_display);
+    invalidate_items(index, count);
 }
 
-void ListView::reorder_items_partial(
-    size_t base, const size_t* order, size_t count, bool update_focus_item, bool update_display)
+void ListView::reorder_items_partial(size_t base, const size_t* order, size_t count, bool update_focus_item)
 {
     m_items.reorder_partial(base, order, count);
     pfc::list_t<InsertItem> insert_items;
     insert_items.set_size(count);
-    replace_items(base, insert_items, update_display);
+    replace_items(base, insert_items);
 
     if (update_focus_item) {
         auto focus_item = storage_get_focus_item();
@@ -353,12 +344,12 @@ void ListView::reorder_items_partial(
     }
 }
 
-void ListView::update_all_items(bool b_update_display)
+void ListView::update_all_items()
 {
-    update_items(0, m_items.get_count(), b_update_display);
+    update_items(0, m_items.get_count());
 }
 
-void ListView::invalidate_items(t_size index, t_size count, bool b_update_display)
+void ListView::invalidate_items(t_size index, t_size count)
 {
 #if 0
         RedrawWindow(get_wnd(), NULL, NULL, RDW_INVALIDATE | (b_update_display ? RDW_UPDATENOW : 0));
@@ -372,13 +363,13 @@ void ListView::invalidate_items(t_size index, t_size count, bool b_update_displa
             get_item_position(index + count - 1) - m_scroll_position + get_item_height(index + count - 1)
                 + rc_client.top};
         if (IntersectRect(&rc_invalidate, &rc_client, &rc_invalidate)) {
-            RedrawWindow(get_wnd(), &rc_invalidate, nullptr, RDW_INVALIDATE | (b_update_display ? RDW_UPDATENOW : 0));
+            RedrawWindow(get_wnd(), &rc_invalidate, nullptr, RDW_INVALIDATE);
         }
     }
 #endif
 }
 
-void ListView::invalidate_items(const pfc::bit_array& mask, bool b_update_display)
+void ListView::invalidate_items(const pfc::bit_array& mask)
 {
     t_size i, start, count = get_item_count();
     for (i = 0; i < count; i++) {
@@ -387,12 +378,12 @@ void ListView::invalidate_items(const pfc::bit_array& mask, bool b_update_displa
             i++;
         }
         if (i > start) {
-            invalidate_items(start, i - start, b_update_display);
+            invalidate_items(start, i - start);
         }
     }
 }
 
-void ListView::invalidate_item_group_info_area(t_size index, bool b_update_display)
+void ListView::invalidate_item_group_info_area(t_size index)
 {
     t_size count = 0;
     get_item_group(index, m_group_count ? m_group_count - 1 : 0, index, count);
@@ -408,7 +399,7 @@ void ListView::invalidate_item_group_info_area(t_size index, bool b_update_displ
             RECT_CX(rc_client), item_y + group_area_cy - m_scroll_position + rc_client.top};
 
         if (IntersectRect(&rc_invalidate, &rc_client, &rc_invalidate)) {
-            RedrawWindow(get_wnd(), &rc_invalidate, nullptr, RDW_INVALIDATE | (b_update_display ? RDW_UPDATENOW : 0));
+            RedrawWindow(get_wnd(), &rc_invalidate, nullptr, RDW_INVALIDATE);
         }
     }
 }
@@ -493,7 +484,7 @@ void ListView::enable_redrawing()
     // if (IsWindowVisible(get_wnd()))
     {
         SendMessage(get_wnd(), WM_SETREDRAW, TRUE, 0);
-        invalidate_all(true, true);
+        invalidate_all(true);
     }
 }
 
@@ -579,8 +570,8 @@ void ListView::set_vertical_item_padding(int val)
 
         m_item_height = get_default_item_height();
         m_group_height = get_default_group_height();
-        on_size(false, false);
-        refresh_item_positions(false);
+        on_size(false);
+        refresh_item_positions();
 
         enable_redrawing();
     }
@@ -621,7 +612,6 @@ void ListView::set_header_font(const LPLOGFONT lplf)
     if (m_initialised && m_wnd_header) {
         SendMessage(m_wnd_header, WM_SETFONT, NULL, MAKELPARAM(FALSE, 0));
         m_font_header = CreateFontIndirect(lplf);
-        // RedrawWindow(m_wnd_header, NULL, NULL, RDW_INVALIDATE|RDW_ERASE);
         SendMessage(m_wnd_header, WM_SETFONT, (WPARAM)m_font_header.get(), MAKELPARAM(TRUE, 0));
         on_size();
     }

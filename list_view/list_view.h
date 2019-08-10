@@ -218,28 +218,25 @@ public:
     void set_show_sort_indicators(bool b_val);
     void set_edge_style(t_size b_val);
 
-    void on_size(bool b_update = true, bool b_update_scroll = true);
-    void on_size(int cx, int cy, bool b_update = true, bool b_update_scroll = true);
+    void on_size(bool b_update_scroll = true);
+    void on_size(int cx, int cy, bool b_update_scroll = true);
 
     void reposition_header();
 
     void get_column_sizes(pfc::list_t<Column>& p_out);
     void update_column_sizes();
 
-    // void insert_item(t_size index, const t_string_list_const_fast & text, const t_string_list_const_fast & p_groups,
-    // t_size size); void insert_items(t_size index_start, const pfc::list_base_const_t<InsertItem> & items, bool
-    // b_update_display = true);
-    void insert_items(t_size index_start, t_size count, const InsertItem* items, bool b_update_display = true);
+    void insert_items(t_size index_start, t_size count, const InsertItem* items);
 
     template <class TItems>
-    void replace_items(t_size index_start, const TItems& items, bool b_update_display = true)
+    void replace_items(t_size index_start, const TItems& items)
     {
-        replace_items(index_start, items.get_size(), items.get_ptr(), b_update_display);
+        replace_items(index_start, items.get_size(), items.get_ptr());
     }
-    void replace_items(t_size index_start, t_size count, const InsertItem* items, bool b_update_display = true);
+    void replace_items(t_size index_start, t_size count, const InsertItem* items);
     void remove_item(t_size index);
-    void remove_items(const pfc::bit_array& p_mask, bool b_update_display = true);
-    void remove_all_items(bool b_update_display = true);
+    void remove_items(const pfc::bit_array& p_mask);
+    void remove_all_items();
 
     enum class HitTestCategory {
         NotOnItem,
@@ -272,7 +269,7 @@ public:
     };
 
     void hit_test_ex(POINT pt_client, HitTestResult& result);
-    void update_scroll_info(bool b_update = true, bool b_vertical = true, bool b_horizontal = true);
+    void update_scroll_info(bool b_vertical = true, bool b_horizontal = true);
     void _update_scroll_info_vertical();
     void _update_scroll_info_horizontal();
     ItemVisibility get_item_visibility(t_size index);
@@ -286,7 +283,7 @@ public:
 
     void ensure_visible(t_size index, EnsureVisibleMode mode = EnsureVisibleMode::PreferCentringItem);
 
-    void scroll(int position, bool b_horizontal = false, bool update_display = true);
+    void scroll(int position, bool b_horizontal = false, bool suppress_scroll_window = false);
     void scroll_from_scroll_bar(short scroll_bar_command, bool b_horizontal = false);
 
     void get_item_group(t_size index, t_size level, t_size& index_start, t_size& count);
@@ -314,18 +311,17 @@ public:
     void get_search_box_rect(LPRECT rc) const;
     unsigned get_search_box_height() const;
 
-    void invalidate_all(bool b_update = true, bool b_children = false);
-    void invalidate_items(t_size index, t_size count, bool b_update_display = true);
+    void invalidate_all(bool b_children = false);
+    void invalidate_items(t_size index, t_size count);
 
-    void invalidate_items(const pfc::bit_array& mask, bool b_update_display = true);
-    void invalidate_item_group_info_area(t_size index, bool b_update_display = true);
+    void invalidate_items(const pfc::bit_array& mask);
+    void invalidate_item_group_info_area(t_size index);
 
-    void update_items(t_size index, t_size count, bool b_update_display = true);
-    void update_all_items(bool b_update_display = true);
+    void update_items(t_size index, t_size count);
+    void update_all_items();
 
     // Current implementation clears sub-items.
-    void reorder_items_partial(
-        size_t base, const size_t* order, size_t count, bool update_focus_item = true, bool update_display = true);
+    void reorder_items_partial(size_t base, const size_t* order, size_t count, bool update_focus_item = true);
 
     enum class VerticalPositionCategory {
         OnItem,
@@ -423,7 +419,7 @@ public:
         return ret;
     }
 
-    void refresh_item_positions(bool b_update_display = true);
+    void refresh_item_positions();
 
     enum notification_source_t {
         notification_source_unknown,
@@ -435,9 +431,9 @@ public:
     // CLIENT FUNCTIONS
     void get_selection_state(pfc::bit_array_var& out);
     void set_selection_state(const pfc::bit_array& p_affected, const pfc::bit_array& p_status, bool b_notify = true,
-        bool b_update_display = true, notification_source_t p_notification_source = notification_source_unknown);
+        notification_source_t p_notification_source = notification_source_unknown);
     t_size get_focus_item();
-    void set_focus_item(t_size index, bool b_notify = true, bool b_update_display = true);
+    void set_focus_item(t_size index, bool b_notify = true);
     bool get_item_selected(t_size index);
 
     bool is_range_selected(t_size index, t_size count)
@@ -565,8 +561,6 @@ public:
     bool disable_redrawing();
     void enable_redrawing();
 
-    void update_window() { UpdateWindow(get_wnd()); }
-
     const char* get_item_text(t_size index, t_size column);
 
     t_size get_item_count() { return m_items.get_count(); }
@@ -613,7 +607,7 @@ protected:
         }
     }
 
-    void on_focus_change(t_size index_prev, t_size index_new, bool b_update_display = true);
+    void on_focus_change(t_size index_prev, t_size index_new);
 
     void set_group_level_indentation_enabled(bool b_val)
     {
@@ -795,7 +789,7 @@ private:
     void create_header();
     void destroy_header();
     void build_header();
-    void update_header(bool b_update = true);
+    void update_header();
 
     void create_tooltip(/*t_size index, t_size column, */ const char* str);
     void destroy_tooltip();
@@ -878,7 +872,6 @@ private:
     bool m_sort_direction{false};
     EdgeStyle m_edge_style{edge_grey};
     bool m_sizing{false};
-    bool m_suppress_wm_size_window_updating{false};
 
     bool m_single_selection{false};
     bool m_alternate_selection{false};

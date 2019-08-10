@@ -8,12 +8,11 @@ void ListView::get_selection_state(pfc::bit_array_var& out)
 }
 
 void ListView::set_selection_state(const pfc::bit_array& p_affected, const pfc::bit_array& p_status, bool b_notify,
-    bool b_update_display, notification_source_t p_notification_source)
+    notification_source_t p_notification_source)
 {
     pfc::bit_array_bittable p_changed(get_item_count());
     if (storage_set_selection_state(p_affected, p_status, &p_changed)) {
-        invalidate_items(p_changed, b_update_display);
-        // RedrawWindow(get_wnd(), NULL, NULL, RDW_INVALIDATE|(b_update_display?RDW_UPDATENOW:0));
+        invalidate_items(p_changed);
         if (b_notify)
             notify_on_selection_change(p_changed, p_status, p_notification_source);
     }
@@ -27,12 +26,12 @@ t_size ListView::get_focus_item()
     return ret;
 }
 
-void ListView::set_focus_item(t_size index, bool b_notify, bool b_update_display)
+void ListView::set_focus_item(t_size index, bool b_notify)
 {
     t_size old = storage_get_focus_item();
     if (old != index) {
         storage_set_focus_item(index);
-        on_focus_change(old, index, b_update_display);
+        on_focus_change(old, index);
         if (b_notify)
             notify_on_focus_item_change(index);
     }
@@ -71,9 +70,8 @@ void ListView::set_item_selected(t_size index, bool b_state)
 void ListView::set_item_selected_single(t_size index, bool b_notify, notification_source_t p_notification_source)
 {
     if (index < m_items.get_count()) {
-        set_selection_state(pfc::bit_array_true(), pfc::bit_array_one(index), b_notify, false, p_notification_source);
-        set_focus_item(index, b_notify, false);
-        UpdateWindow(get_wnd());
+        set_selection_state(pfc::bit_array_true(), pfc::bit_array_one(index), b_notify, p_notification_source);
+        set_focus_item(index, b_notify);
         // ensure_visible(index);
     }
 }

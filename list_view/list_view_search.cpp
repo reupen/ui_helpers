@@ -189,7 +189,7 @@ void ListView::__search_box_update_hot_status(const POINT& pt)
             SetCapture(m_search_editbox);
         else if (GetCapture() == m_search_editbox)
             ReleaseCapture();
-        RedrawWindow(m_search_editbox, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW | RDW_ERASENOW);
+        RedrawWindow(m_search_editbox, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE);
     }
 }
 

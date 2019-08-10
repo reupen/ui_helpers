@@ -77,7 +77,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         }
         return 0;*/
     case WM_SIZE:
-        on_size(LOWORD(lp), HIWORD(lp), !m_suppress_wm_size_window_updating);
+        on_size(LOWORD(lp), HIWORD(lp));
         break;
     /*case WM_STYLECHANGING:
         {
@@ -213,17 +213,16 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 t_size start = m_alternate_selection ? focus : m_shift_start;
                 pfc::bit_array_range br(min(start, hit_result.index), abs(t_ssize(start - hit_result.index)) + 1);
                 if (m_lbutton_down_ctrl && !m_alternate_selection) {
-                    set_selection_state(br, br, true, false);
+                    set_selection_state(br, br, true);
                 } else {
                     if (m_alternate_selection && !get_item_selected(focus))
-                        set_selection_state(br, pfc::bit_array_not(br), true, false);
+                        set_selection_state(br, pfc::bit_array_not(br), true);
                     else if (m_alternate_selection)
-                        set_selection_state(br, br, true, false);
+                        set_selection_state(br, br, true);
                     else
-                        set_selection_state(pfc::bit_array_true(), br, true, false);
+                        set_selection_state(pfc::bit_array_true(), br, true);
                 }
-                set_focus_item(hit_result.index, true, false);
-                UpdateWindow(get_wnd());
+                set_focus_item(hit_result.index, true);
             } else {
                 m_selecting_move = get_item_selected(hit_result.index);
                 m_selecting_moved = false;
@@ -299,7 +298,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                         get_item_group(hit_result.index, hit_result.group_level, index, count);
                         if (count) {
                             set_selection_state(pfc::bit_array_range(index, count),
-                                pfc::bit_array_range(index, count, !is_range_selected(index, count)), true, false);
+                                pfc::bit_array_range(index, count, !is_range_selected(index, count)), true);
                             set_focus_item(index);
                         }
                     }
@@ -644,13 +643,13 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 notify_on_search_box_contents_change(text);
             } break;
             case EN_KILLFOCUS: {
-                RedrawWindow(HWND(lp), nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ERASENOW | RDW_UPDATENOW);
+                RedrawWindow(HWND(lp), nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE);
                 HWND wnd_focus = GetFocus();
                 if (!HWND(wnd_focus) || (HWND(wnd_focus) != wnd && !IsChild(wnd, wnd_focus)))
                     notify_on_kill_focus(wnd_focus);
             } break;
             case EN_SETFOCUS:
-                RedrawWindow(HWND(lp), nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ERASENOW | RDW_UPDATENOW);
+                RedrawWindow(HWND(lp), nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE);
                 break;
             };
             break;
