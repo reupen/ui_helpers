@@ -48,8 +48,7 @@ void ListView::set_columns(const pfc::list_base_const_t<Column>& columns)
     if (m_initialised) {
         build_header();
         _update_scroll_info_horizontal();
-        on_size(false, false);
-        UpdateWindow(get_wnd());
+        on_size(false);
     }
 }
 
@@ -64,9 +63,8 @@ void ListView::set_column_widths(const pfc::list_base_const_t<int>& widths)
     update_header();
     if (m_wnd_header)
         SendMessage(m_wnd_header, WM_SETREDRAW, TRUE, NULL);
-    invalidate_all(false);
+    invalidate_all();
     on_size();
-    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_ALLCHILDREN | RDW_UPDATENOW);
 }
 
 void ListView::get_column_sizes(pfc::list_t<Column>& p_out)

@@ -15,25 +15,24 @@ const char* ListView::get_item_text(t_size index, t_size column)
     return m_items[index]->m_subitems[column];
 }
 
-void ListView::insert_items(t_size index_start, t_size count, const InsertItem* items, bool b_update_display)
+void ListView::insert_items(t_size index_start, t_size count, const InsertItem* items)
 {
     __insert_items_v3(index_start, count, items);
     __calculate_item_positions(index_start);
     // profiler(pvt_render);
-    update_scroll_info(b_update_display);
-    if (b_update_display)
-        RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+    update_scroll_info();
+    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
-void ListView::replace_items(t_size index_start, t_size count, const InsertItem* items, bool b_update_display)
+
+void ListView::replace_items(t_size index_start, t_size count, const InsertItem* items)
 {
     __replace_items_v2(index_start, count, items);
     __calculate_item_positions(index_start);
-    update_scroll_info(b_update_display);
-    if (b_update_display)
-        RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+    update_scroll_info();
+    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
-void ListView::remove_items(const pfc::bit_array& p_mask, bool b_update_display)
+void ListView::remove_items(const pfc::bit_array& p_mask)
 {
     if (m_timer_inline_edit)
         exit_inline_edit();
@@ -43,21 +42,19 @@ void ListView::remove_items(const pfc::bit_array& p_mask, bool b_update_display)
             __remove_item(i - 1);
     }
     __calculate_item_positions();
-    update_scroll_info(b_update_display);
-    if (b_update_display)
-        RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+    update_scroll_info();
+    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
-void ListView::remove_all_items(bool b_update_display)
+void ListView::remove_all_items()
 {
     if (m_timer_inline_edit)
         exit_inline_edit();
 
     m_items.remove_all();
-	update_scroll_info(b_update_display);
-    
-    if (b_update_display)
-        RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+    update_scroll_info();
+
+    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
 void ListView::__replace_items_v2(t_size index_start, t_size countl, const InsertItem* items)
@@ -375,7 +372,7 @@ void ListView::remove_item(t_size index)
     __remove_item(index);
     __calculate_item_positions();
     update_scroll_info();
-    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 void ListView::__remove_item(t_size index)
 {

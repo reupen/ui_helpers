@@ -308,7 +308,7 @@ unsigned ListView::calculate_header_height()
     return rv;
 }
 
-void ListView::update_header(bool b_update)
+void ListView::update_header()
 {
     if (m_wnd_header) {
         pfc::vartoggle_t<bool> toggle(m_ignore_column_size_change_notification, true);
