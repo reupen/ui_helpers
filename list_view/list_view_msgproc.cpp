@@ -389,14 +389,17 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                             create_tooltip(temp);
 
                             POINT a;
-                            a.x = cx + 4 - m_horizontal_scroll_position;
+                            a.x = cx + scale_dpi_value(1) + scale_dpi_value(3) - m_horizontal_scroll_position;
                             a.y = (get_item_position(hit_result.index) - m_scroll_position) + get_items_top();
                             ClientToScreen(get_wnd(), &a);
 
                             int text_cx = get_text_width(temp, temp.length());
+                            const auto font_height = get_font_height(m_font);
 
-                            m_rc_tooltip.top = a.y + ((m_item_height - uih::get_font_height(m_font)) / 2);
-                            m_rc_tooltip.bottom = a.y + m_item_height;
+                            m_rc_tooltip.top = a.y + ((m_item_height - font_height) / 2);
+                            // We don't get enough bottom-padding by default, so font_height / 10 is used to add
+                            // more
+                            m_rc_tooltip.bottom = m_rc_tooltip.top + font_height + font_height / 10;
                             m_rc_tooltip.left = a.x;
                             m_rc_tooltip.right = a.x + text_cx; // m_columns[hit_result.column].m_display_size;
 
