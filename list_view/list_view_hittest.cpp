@@ -5,6 +5,7 @@ namespace uih {
 void ListView::hit_test_ex(POINT pt_client, ListView::HitTestResult& result)
 {
     const RECT rc_item_area = get_items_rect();
+    const int item_area_height = RECT_CY(rc_item_area);
 
     result.column = pfc_infinite;
     const t_ssize first_column_left = -m_horizontal_scroll_position + get_total_indentation();
@@ -51,9 +52,9 @@ void ListView::hit_test_ex(POINT pt_client, ListView::HitTestResult& result)
             result.category = HitTestCategory::LeftOfItem;
         else if (pt_client.x >= last_column_right)
             result.category = HitTestCategory::RightOfItem;
-        else if (item_top - m_scroll_position < rc_item_area.top)
+        else if (item_top < m_scroll_position)
             result.category = HitTestCategory::OnItemObscuredAbove;
-        else if (item_bottom - m_scroll_position > rc_item_area.bottom)
+        else if (item_bottom > m_scroll_position + item_area_height)
             result.category = HitTestCategory::OnItemObscuredBelow;
         else
             result.category = HitTestCategory::OnUnobscuredItem;
