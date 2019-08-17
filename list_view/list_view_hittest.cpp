@@ -132,8 +132,6 @@ int ListView::get_last_viewable_item()
     if (!m_items.get_count())
         return 0;
 
-    const auto rc_items = get_items_rect();
-
     const auto item_area_height = get_item_area_height();
     const auto vertical_hit_test_result = vertical_hit_test(m_scroll_position + item_area_height);
 
@@ -152,9 +150,6 @@ int ListView::get_first_viewable_item()
     if (item_count == 0)
         return 0;
 
-    const auto rc_items = get_items_rect();
-
-    const auto item_area_height = get_item_area_height();
     const auto vertical_hit_test_result = vertical_hit_test(m_scroll_position);
 
     const int index = vertical_hit_test_result.item_rightmost;
