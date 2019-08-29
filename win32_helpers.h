@@ -100,6 +100,40 @@ int get_dc_font_height(HDC dc);
 
 bool set_clipboard_text(const char* text, HWND wnd = nullptr);
 
+template <class Element = uint8_t>
+bool set_clipboard_data(CLIPFORMAT format, gsl::span<Element> data, HWND wnd = nullptr)
+{
+    if (!OpenClipboard(nullptr))
+        return false;
+
+    auto succeeded = false;
+    const HGLOBAL mem = GlobalAlloc(GMEM_MOVEABLE, data.size_bytes());
+    if (mem) {
+        const auto buffer = GlobalLock(mem);
+
+        if (buffer) {
+            memcpy(buffer, data.data(), data.size_bytes());
+            GlobalUnlock(mem);
+            if (EmptyClipboard())
+                succeeded = SetClipboardData(format, mem) != nullptr;
+        }
+    }
+    if (!succeeded && mem)
+        GlobalFree(mem);
+    CloseClipboard();
+    return succeeded;
+}
+
+/**
+ * Convenience wrapper to handle narrowing conversation as gsl::span<> (currently) has a signed size.
+ */
+template <class Element = uint8_t, class Size = size_t>
+bool set_clipboard_data(CLIPFORMAT format, Element* data_ptr, Size data_size, HWND wnd = nullptr)
+{
+    gsl::span<Element> data{data_ptr, gsl::narrow<gsl::span<Element>::index_type>(data_size)};
+    return set_clipboard_data(format, data, wnd);
+}
+
 template <typename TInteger>
 class IntegerAndDpi {
 public:
