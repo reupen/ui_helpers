@@ -132,7 +132,7 @@ bool set_clipboard_data(CLIPFORMAT format, gsl::span<Element> data, HWND wnd = n
 template <class Element = uint8_t, class Size = size_t>
 bool set_clipboard_data(CLIPFORMAT format, Element* data_ptr, Size data_size, HWND wnd = nullptr)
 {
-    gsl::span<Element> data{data_ptr, gsl::narrow<gsl::span<Element>::index_type>(data_size)};
+    gsl::span<Element> data{data_ptr, gsl::narrow<typename gsl::span<Element>::index_type>(data_size)};
     return set_clipboard_data(format, data, wnd);
 }
 
