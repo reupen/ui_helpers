@@ -512,6 +512,31 @@ int get_dc_font_height(HDC dc)
     return tm.tmHeight > 1 ? tm.tmHeight : 1;
 }
 
+std::optional<std::vector<uint8_t>> get_clipboard_data(CLIPFORMAT format)
+{
+    if (!OpenClipboard(nullptr))
+        return {};
+
+    auto _ = gsl::finally([] { CloseClipboard(); });
+
+    const auto global_mem = GetClipboardData(format);
+
+    if (!global_mem)
+        return {};
+
+    const uint8_t* data = reinterpret_cast<uint8_t*>(GlobalLock(global_mem));
+
+    if (!data)
+        return {};
+
+    const auto size = GlobalSize(global_mem);
+    std::vector<uint8_t> read_data(data, data + size);
+
+    GlobalUnlock(global_mem);
+
+    return {std::move(read_data)};
+}
+
 BOOL tooltip_add_tool(HWND wnd, const LPTOOLINFO pti)
 {
     return static_cast<BOOL>(SendMessage(wnd, TTM_ADDTOOL, 0, reinterpret_cast<LPARAM>(pti)));
