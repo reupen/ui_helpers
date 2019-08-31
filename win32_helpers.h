@@ -98,6 +98,8 @@ HFONT create_icon_font();
 int get_font_height(HFONT font);
 int get_dc_font_height(HDC dc);
 
+std::optional<std::vector<uint8_t>> get_clipboard_data(CLIPFORMAT format);
+
 bool set_clipboard_text(const char* text, HWND wnd = nullptr);
 
 template <class Element = uint8_t>
