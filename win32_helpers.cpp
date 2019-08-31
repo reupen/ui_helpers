@@ -562,27 +562,8 @@ HWND handle_tab_down(HWND wnd)
 
 bool set_clipboard_text(const char* text, HWND wnd)
 {
-    pfc::stringcvt::string_wide_from_utf8 wstr(text);
-
-    if (!OpenClipboard(nullptr))
-        return false;
-
-    auto succeeded = false;
-    const auto buffer_size = wstr.length() * sizeof(WCHAR) + 2;
-    HGLOBAL mem = GlobalAlloc(GMEM_MOVEABLE, buffer_size);
-    if (mem) {
-        auto buffer = GlobalLock(mem);
-
-        if (buffer) {
-            memcpy(buffer, wstr.get_ptr(), buffer_size);
-            GlobalUnlock(mem);
-            if (EmptyClipboard())
-                succeeded = SetClipboardData(CF_UNICODETEXT, mem) != nullptr;
-        }
-    }
-    if (!succeeded && mem)
-        GlobalFree(mem);
-    CloseClipboard();
-    return succeeded;
+    const pfc::stringcvt::string_wide_from_utf8 text_utf16(text);
+    return set_clipboard_data<const wchar_t>(CF_UNICODETEXT, text_utf16.get_ptr(), text_utf16.length() + 1, wnd);
 }
+
 } // namespace uih
