@@ -360,18 +360,18 @@ public:
     int get_item_height(t_size index) const
     {
         int ret = 1;
-        if (m_variable_height_items && index < m_items.get_count())
+        if (m_variable_height_items && index < m_items.size())
             ret = m_items[index]->m_line_count * get_item_height();
         else
             ret = get_item_height();
         return ret;
     }
 
-    void clear_all_items() { m_items.remove_all(); }
+    void clear_all_items() { m_items.clear(); }
 
     int get_item_group_header_total_height(size_t index) const
     {
-        if (index >= m_items.get_count())
+        if (index >= m_items.size())
             return 0;
 
         return gsl::narrow<int>(get_item_display_group_count(index)) * m_group_height;
@@ -379,7 +379,7 @@ public:
 
     int get_item_position(t_size index, bool b_include_headers = false) const
     {
-        if (index >= m_items.get_count())
+        if (index >= m_items.size())
             return 0;
 
         const int position = m_items[index]->m_display_position;
@@ -392,7 +392,7 @@ public:
 
     int get_item_position_bottom(t_size index) const
     {
-        if (index >= m_items.get_count())
+        if (index >= m_items.size())
             return 0;
 
         return get_item_position(index) + get_item_height(index);
@@ -562,7 +562,7 @@ public:
 
     const char* get_item_text(t_size index, t_size column);
 
-    t_size get_item_count() { return m_items.get_count(); }
+    t_size get_item_count() { return m_items.size(); }
 
     void activate_inline_editing(t_size column_start = 0);
     void activate_inline_editing(const pfc::list_base_const_t<t_size>& indices, t_size column);
@@ -890,7 +890,7 @@ private:
 
     bool m_group_level_indentation_enabled{true};
 
-    pfc::list_t<t_item_ptr, pfc::alloc_fast> m_items;
+    std::vector<t_item_ptr> m_items;
     std::vector<Column> m_columns;
 
     /**

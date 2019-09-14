@@ -8,7 +8,7 @@ void ListView::activate_inline_editing(t_size column_start)
     if (count) {
         t_size focus = get_focus_item();
         if (focus != pfc_infinite) {
-            t_size i, pcount = m_items.get_count();
+            t_size i, pcount = m_items.size();
             pfc::bit_array_bittable sel(pcount);
             get_selection_state(sel);
 
@@ -113,7 +113,7 @@ LRESULT ListView::on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
                 } else {
                     t_size column = m_inline_edit_column + 1;
                     t_size row = m_inline_edit_indices[0];
-                    t_size row_count = m_items.get_count();
+                    t_size row_count = m_items.size();
                     pfc::string8_fast_aggressive temp;
                     bool found = false;
 
@@ -174,7 +174,7 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
     }
 
     {
-        t_size item_count = m_items.get_count();
+        t_size item_count = m_items.size();
         for (t_size j = 0; j < indices_count; j++) {
             if (indices[j] >= item_count)
                 return;

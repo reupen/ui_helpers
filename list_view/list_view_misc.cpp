@@ -207,7 +207,7 @@ void ListView::set_group_count(t_size count, bool b_update_columns)
 void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
 {
     auto focus = static_cast<int>(get_focus_item());
-    const auto total = gsl::narrow<int>(m_items.get_count());
+    const auto total = gsl::narrow<int>(m_items.size());
 
     if (!total)
         return;
@@ -299,7 +299,7 @@ int ListView::get_default_group_height()
 }
 void ListView::on_focus_change(t_size index_prev, t_size index_new)
 {
-    t_size count = m_items.get_count();
+    t_size count = m_items.size();
     if (index_prev < count)
         invalidate_items(index_prev, 1);
     if (index_new < count)
@@ -320,7 +320,7 @@ void ListView::update_items(t_size index, t_size count)
 
 void ListView::reorder_items_partial(size_t base, const size_t* order, size_t count, bool update_focus_item)
 {
-    m_items.reorder_partial(base, order, count);
+    pfc::reorder_partial_t(m_items, base, order, count);
     pfc::list_t<InsertItem> insert_items;
     insert_items.set_size(count);
     replace_items(base, insert_items);
@@ -336,7 +336,7 @@ void ListView::reorder_items_partial(size_t base, const size_t* order, size_t co
 
 void ListView::update_all_items()
 {
-    update_items(0, m_items.get_count());
+    update_items(0, m_items.size());
 }
 
 void ListView::invalidate_items(t_size index, t_size count)
@@ -398,7 +398,7 @@ void ListView::get_item_group(t_size index, t_size level, t_size& index_start, t
 {
     if (m_group_count == 0) {
         index_start = 0;
-        count = m_items.get_count();
+        count = m_items.size();
     } else {
         t_size end = index, start = index;
         while (m_items[start]->m_groups[level] == m_items[index]->m_groups[level]) {
@@ -407,7 +407,7 @@ void ListView::get_item_group(t_size index, t_size level, t_size& index_start, t
                 break;
             start--;
         }
-        while (end < m_items.get_count() && m_items[end]->m_groups[level] == m_items[index]->m_groups[level]) {
+        while (end < m_items.size() && m_items[end]->m_groups[level] == m_items[index]->m_groups[level]) {
             count = end - index_start + 1;
             end++;
         }
@@ -519,8 +519,8 @@ void ListView::on_search_string_change(WCHAR c)
     }
 
     t_size focus = get_focus_item();
-    t_size i = 0, count = m_items.get_count();
-    if (focus == pfc_infinite || focus > m_items.get_count())
+    t_size i = 0, count = m_items.size();
+    if (focus == pfc_infinite || focus > m_items.size())
         focus = 0;
     else if (b_all_same) {
         if (focus + 1 == count)

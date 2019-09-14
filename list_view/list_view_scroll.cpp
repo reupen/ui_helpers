@@ -4,7 +4,7 @@ namespace uih {
 
 void ListView::ensure_visible(t_size index, EnsureVisibleMode mode)
 {
-    if (index > m_items.get_count())
+    if (index > m_items.size())
         return;
 
     const auto item_visibility = get_item_visibility(index);
@@ -126,7 +126,7 @@ void ListView::_update_scroll_info_vertical()
     scroll.cbSize = sizeof(SCROLLINFO);
     scroll.fMask = SIF_RANGE | SIF_PAGE | SIF_POS;
     scroll.nMin = 0;
-    t_size count = m_items.get_count();
+    t_size count = m_items.size();
     scroll.nMax = count ? get_item_group_bottom(count - 1) : 0;
     scroll.nPage = RECT_CY(rc);
     scroll.nPos = m_scroll_position;

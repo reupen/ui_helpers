@@ -129,7 +129,7 @@ bool ListView::is_fully_visible(t_size index)
 
 int ListView::get_last_viewable_item()
 {
-    if (!m_items.get_count())
+    if (!m_items.size())
         return 0;
 
     const auto item_area_height = get_item_area_height();
@@ -146,7 +146,7 @@ int ListView::get_last_viewable_item()
 
 int ListView::get_first_viewable_item()
 {
-    const auto item_count = gsl::narrow<int>(m_items.get_count());
+    const auto item_count = gsl::narrow<int>(m_items.size());
     if (item_count == 0)
         return 0;
 
@@ -163,7 +163,7 @@ int ListView::get_first_viewable_item()
 
 ListView::VerticalHitTestResult ListView::vertical_hit_test(int y) const
 {
-    const auto item_count = gsl::narrow<int>(m_items.get_count());
+    const auto item_count = gsl::narrow<int>(m_items.size());
 
     if (item_count == 0)
         return {VerticalPositionCategory::NoItems};

@@ -47,7 +47,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
     if (rc_update.bottom <= rc_update.top || rc_update.bottom < rc_items.top)
         return;
 
-    t_size i, count = m_items.get_count();
+    t_size i, count = m_items.size();
     const int cx_space = uih::get_text_width(dc, " ", 1);
     const int item_preindentation = cx_space * level_spacing_size * m_group_count + rc_items.left;
     const int item_indentation = item_preindentation + get_group_info_area_total_width();

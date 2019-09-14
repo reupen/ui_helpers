@@ -6,7 +6,7 @@ namespace uih {
 
 const char* ListView::get_item_text(t_size index, t_size column)
 {
-    if (index >= m_items.get_count())
+    if (index >= m_items.size())
         return "";
     if (m_items[index]->m_subitems.get_count() != get_column_count())
         update_item_data(index);
@@ -36,7 +36,7 @@ void ListView::remove_items(const pfc::bit_array& p_mask)
 {
     if (m_timer_inline_edit)
         exit_inline_edit();
-    t_size i = m_items.get_count();
+    t_size i = m_items.size();
     for (; i; i--) {
         if (p_mask[i - 1])
             __remove_item(i - 1);
@@ -51,7 +51,7 @@ void ListView::remove_all_items()
     if (m_timer_inline_edit)
         exit_inline_edit();
 
-    m_items.remove_all();
+    m_items.clear();
     update_scroll_info();
 
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
@@ -59,8 +59,8 @@ void ListView::remove_all_items()
 
 void ListView::__replace_items_v2(t_size index_start, t_size countl, const InsertItem* items)
 {
-    pfc::list_t<t_item_ptr> items_prev(m_items);
-    t_size l, countitems = m_items.get_count();
+    std::vector<t_item_ptr> items_prev(m_items);
+    t_size l, countitems = m_items.size();
     t_size newgroupcount = 0, oldgroupcount = 0;
 
     // Calculate old group count
@@ -187,17 +187,13 @@ void ListView::__replace_items_v2(t_size index_start, t_size countl, const Inser
 void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const InsertItem* items)
 {
     t_size countl = pcountitems;
-    {
-        pfc::list_t<t_item_ptr> itemsinsert;
-        itemsinsert.set_count(countl);
-        m_items.insert_items(itemsinsert, index_start);
-    }
+    m_items.insert(m_items.begin() + index_start, countl, t_item_ptr());
 
     if (m_highlight_selected_item_index != pfc_infinite && m_highlight_selected_item_index >= index_start)
         m_highlight_selected_item_index += countl;
 
-    pfc::list_t<t_item_ptr> items_prev(m_items);
-    t_size countitems = m_items.get_count();
+    std::vector<t_item_ptr> items_prev(m_items);
+    t_size countitems = m_items.size();
     t_size newgroupcount = 0, oldgroupcount = 0;
 
     // Calculate old group count
@@ -215,7 +211,7 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
     // Determine grouping
 
     {
-        t_item_ptr* p_items = m_items.get_ptr();
+        t_item_ptr* p_items = m_items.data();
 
         concurrency::parallel_for(size_t{0}, countl, [this, p_items, index_start, items](size_t l) {
             t_size count = m_group_count;
@@ -349,7 +345,7 @@ void ListView::__calculate_item_positions(t_size index_start)
         else
             y_pointer = get_item_position(index_start - 1) + get_item_height(index_start - 1);
     }
-    t_size i, count = m_items.get_count(), group_height_counter = 0,
+    t_size i, count = m_items.size(), group_height_counter = 0,
               group_minimum_inner_height = get_group_minimum_inner_height();
     for (i = index_start; i < count; i++) {
         t_size groups = get_item_display_group_count(i);
@@ -382,8 +378,7 @@ void ListView::__remove_item(t_size index)
     {
         for (k = 0; k < count2; k++) {
             if ((!index || m_items[index]->m_groups[k] != m_items[index - 1]->m_groups[k])
-                && (index + 1 >= m_items.get_count()
-                       || m_items[index]->m_groups[k] != m_items[index + 1]->m_groups[k])) {
+                && (index + 1 >= m_items.size() || m_items[index]->m_groups[k] != m_items[index + 1]->m_groups[k])) {
                 gc++;
             }
             // else break;
@@ -392,9 +387,9 @@ void ListView::__remove_item(t_size index)
     // else gc = count2;
 
     // t_item_ptr item = m_items[index];
-    m_items.remove_by_idx(index);
+    m_items.erase(m_items.begin() + index);
 
-    if (index < m_items.get_count()) {
+    if (index < m_items.size()) {
         int item_height = m_item_height;
         t_size j;
         if (index) {
@@ -404,27 +399,21 @@ void ListView::__remove_item(t_size index)
                         m_items[index - 1]->m_groups[i]->m_text, m_items[index]->m_groups[i]->m_text)) {
                     t_group_ptr newgroup = m_items[index - 1]->m_groups[i];
                     j = index;
-                    while (j < m_items.get_count()
+                    while (j < m_items.size()
                         && (!i || m_items[index - 1]->m_groups[i - 1] == m_items[j]->m_groups[i - 1])
                         && !GROUP_STRING_COMPARE(
-                               m_items[index - 1]->m_groups[i]->m_text, m_items[j]->m_groups[i]->m_text)) {
+                            m_items[index - 1]->m_groups[i]->m_text, m_items[j]->m_groups[i]->m_text)) {
                         if (j == index && m_items[j]->m_groups[i] != newgroup)
                             gc++;
                         m_items[j]->m_groups[i] = newgroup;
                         j++;
                     };
-                    // j = index;
-                    // while (j < m_items.get_count())
-                    //{
-                    //    m_items[j]->m_position -= item_height;
-                    //    j++;
-                    //}
                 } else
                     break;
             }
         }
         j = index;
-        while (j < m_items.get_count()) {
+        while (j < m_items.size()) {
             m_items[j]->m_display_index -= (1 + gc);
             j++;
         }
