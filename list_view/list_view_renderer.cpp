@@ -213,10 +213,8 @@ COLORREF ListView::get_group_text_colour_default()
 bool ListView::get_group_text_colour_default(COLORREF& cr)
 {
     cr = NULL;
-    if (!(m_theme && IsThemePartDefined(m_theme, LVP_GROUPHEADER, NULL)
-            && SUCCEEDED(GetThemeColor(m_theme, LVP_GROUPHEADER, LVGH_OPEN, TMT_HEADING1TEXTCOLOR, &cr))))
-        return false;
-    return true;
+    return m_theme && IsThemePartDefined(m_theme, LVP_GROUPHEADER, NULL)
+        && SUCCEEDED(GetThemeColor(m_theme, LVP_GROUPHEADER, LVGH_OPEN, TMT_HEADING1TEXTCOLOR, &cr));
 }
 void ListView::render_group_default(
     const ColourData& p_data, HDC dc, const char* text, int indentation, t_size level, const RECT& rc)

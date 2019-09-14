@@ -547,7 +547,7 @@ LRESULT TrackbarBase::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         if ((wp == VK_ESCAPE || wp == VK_RETURN) && m_host && m_host->on_key(wp, lp))
             return 0;
         if (!(lp & (1 << 31)) && (wp == VK_LEFT || wp == VK_DOWN || wp == VK_RIGHT || wp == VK_UP)) {
-            bool down = (wp == VK_LEFT || wp == VK_UP) == false; //! get_direction();
+            bool down = !(wp == VK_LEFT || wp == VK_UP); //! get_direction();
             unsigned newpos = m_position;
             if (down && m_step > m_position)
                 newpos = 0;
@@ -562,7 +562,7 @@ LRESULT TrackbarBase::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             }
         }
         if (!(lp & (1 << 31)) && (wp == VK_HOME || wp == VK_END)) {
-            bool down = (wp == VK_END) == false; //! get_direction();
+            bool down = wp != VK_END; //! get_direction();
             unsigned newpos;
             if (down)
                 newpos = m_range;
@@ -585,9 +585,9 @@ LRESULT TrackbarBase::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         bool down = delta < 0;
         // if (get_direction()) down = down == false;
         if (!get_orientation())
-            down = down == false;
+            down = !down;
         if (m_mouse_wheel_reversed)
-            down = down == false;
+            down = !down;
         unsigned offset = abs(delta);
 
         unsigned newpos = m_position;
