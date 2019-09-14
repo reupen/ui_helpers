@@ -39,8 +39,7 @@ CEnumFormatEtc::CEnumFormatEtc(LPFORMATETC pFE, int nItems)
 
 CEnumFormatEtc::~CEnumFormatEtc()
 {
-    if (m_pStrFE)
-        delete [] m_pStrFE;
+    delete[] m_pStrFE;
 }
 
 STDMETHODIMP CEnumFormatEtc::QueryInterface(REFIID riid, LPVOID* ppvOut)
