@@ -49,7 +49,7 @@ t_size ListView::get_selection_count(t_size max)
 
 t_size ListView::storage_get_selection_count(t_size max)
 {
-    t_size i, count = m_items.get_count(), ret = 0;
+    t_size i, count = m_items.size(), ret = 0;
     ;
     for (i = 0; i < count; i++) {
         if (get_item_selected(i))
@@ -69,7 +69,7 @@ void ListView::set_item_selected(t_size index, bool b_state)
 }
 void ListView::set_item_selected_single(t_size index, bool b_notify, notification_source_t p_notification_source)
 {
-    if (index < m_items.get_count()) {
+    if (index < m_items.size()) {
         set_selection_state(pfc::bit_array_true(), pfc::bit_array_one(index), b_notify, p_notification_source);
         set_focus_item(index, b_notify);
         // ensure_visible(index);
@@ -89,7 +89,7 @@ void ListView::storage_set_focus_item(t_size index)
 
 void ListView::storage_get_selection_state(pfc::bit_array_var& out) // storage
 {
-    t_size i, count = m_items.get_count();
+    t_size i, count = m_items.size();
     for (i = 0; i < count; i++)
         out.set(i, m_items[i]->m_selected);
 }
@@ -98,7 +98,7 @@ bool ListView::storage_set_selection_state(const pfc::bit_array& p_affected, con
     pfc::bit_array_var* p_changed) // storage, returns hint if sel actually changed
 {
     bool b_changed = false;
-    t_size i, count = m_items.get_count();
+    t_size i, count = m_items.size();
     for (i = 0; i < count; i++) {
         if (p_affected[i] && p_status[i] != get_item_selected(i)) {
             b_changed = true;

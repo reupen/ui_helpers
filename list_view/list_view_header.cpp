@@ -77,7 +77,7 @@ void ListView::build_header()
         pfc::stringcvt::string_wide_from_utf8 wstr;
 
         {
-            int n, t = m_columns.get_count(), i = 0;
+            int n, t = m_columns.size(), i = 0;
             const auto indentation = get_total_indentation();
             if (indentation /*m_group_count*/) {
                 hdi.fmt = HDF_STRING | HDF_LEFT;
@@ -153,7 +153,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
                 t_size realIndex = lpnmh->iItem;
                 if (m_have_indent_column)
                     realIndex--;
-                if (realIndex < m_columns.get_count()) {
+                if (realIndex < m_columns.size()) {
                     HDC dc;
                     dc = GetDC(get_wnd());
                     int size;
@@ -221,8 +221,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
                         t_size realIndex = lpnmh->iItem;
                         if (m_have_indent_column)
                             realIndex--;
-                        if (realIndex < m_columns.get_count()
-                            && m_columns[realIndex].m_display_size != lpnmh->pitem->cxy) {
+                        if (realIndex < m_columns.size() && m_columns[realIndex].m_display_size != lpnmh->pitem->cxy) {
                             m_columns[realIndex].m_size = lpnmh->pitem->cxy;
                             m_columns[realIndex].m_display_size = lpnmh->pitem->cxy;
                             invalidate_all();
@@ -240,7 +239,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
             t_size realIndex = lpnmh->iItem;
             if (m_have_indent_column)
                 realIndex--;
-            if (realIndex < m_columns.get_count()) {
+            if (realIndex < m_columns.size()) {
                 bool des = (realIndex == m_sort_column_index ? !m_sort_direction : false);
                 sort_by_column(realIndex, des);
             }
@@ -313,7 +312,7 @@ void ListView::update_header()
     if (m_wnd_header) {
         pfc::vartoggle_t<bool> toggle(m_ignore_column_size_change_notification, true);
         // SendMessage(m_wnd_header, WM_SETREDRAW, FALSE, NULL);
-        t_size i, count = m_columns.get_count(), j = 0;
+        t_size i, count = m_columns.size(), j = 0;
         if (m_have_indent_column) {
             uih::header_set_item_width(m_wnd_header, j, get_total_indentation());
             j++;

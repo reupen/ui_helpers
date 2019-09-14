@@ -258,7 +258,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_LBUTTONUP: {
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
         if (m_selecting_move && !m_selecting_moved && !m_lbutton_down_ctrl) {
-            if (m_selecting_start < m_items.get_count()) {
+            if (m_selecting_start < m_items.size()) {
                 if (!m_inline_edit_prevent && 1 && get_item_selected(m_selecting_start) && true /*m_prev_sel*/) {
                     {
                         exit_inline_edit();
@@ -288,12 +288,12 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 if (hit_result.category == HitTestCategory::OnUnobscuredItem
                     || hit_result.category == HitTestCategory::OnItemObscuredBelow
                     || hit_result.category == HitTestCategory::OnItemObscuredAbove) {
-                    if (m_selecting_start < m_items.get_count()) {
+                    if (m_selecting_start < m_items.size()) {
                         set_item_selected(m_selecting_start, !get_item_selected(m_selecting_start));
                         set_focus_item(m_selecting_start);
                     }
                 } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
-                    if (hit_result.index < m_items.get_count() && hit_result.group_level < m_group_count) {
+                    if (hit_result.index < m_items.size() && hit_result.group_level < m_group_count) {
                         t_size index = 0, count = 0;
                         get_item_group(hit_result.index, hit_result.group_level, index, count);
                         if (count) {
@@ -739,8 +739,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 if (from_keyboard) {
                     t_size focus = get_focus_item();
                     unsigned last = get_last_viewable_item();
-                    if (focus >= m_items.get_count() || focus < get_item_at_or_after(m_scroll_position)
-                        || focus > last) {
+                    if (focus >= m_items.size() || focus < get_item_at_or_after(m_scroll_position) || focus > last) {
                         px.x = 0;
                         px.y = 0;
                     } else {
