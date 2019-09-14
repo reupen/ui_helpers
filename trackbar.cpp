@@ -261,7 +261,8 @@ void TrackbarBase::update_hot_status(POINT pt)
 void Trackbar::draw_background(HDC dc, const RECT* rc) const
 {
     HWND wnd_parent = GetParent(get_wnd());
-    POINT pt = {0, 0}, pt_old = {0, 0};
+    POINT pt = {0, 0};
+    POINT pt_old = {0, 0};
     MapWindowPoints(get_wnd(), wnd_parent, &pt, 1);
     OffsetWindowOrgEx(dc, pt.x, pt.y, &pt_old);
     if (SendMessage(wnd_parent, WM_ERASEBKGND, reinterpret_cast<WPARAM>(dc), 0) == FALSE)
@@ -372,7 +373,8 @@ unsigned Trackbar::calculate_thumb_size() const
 
 unsigned TrackbarBase::calculate_position_from_point(const POINT& pt_client) const
 {
-    RECT rc_channel, rc_client;
+    RECT rc_channel;
+    RECT rc_client;
     GetClientRect(get_wnd(), &rc_client);
     get_channel_rect(&rc_channel);
     POINT pt = pt_client;

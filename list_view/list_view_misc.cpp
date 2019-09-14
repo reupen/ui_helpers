@@ -33,7 +33,8 @@ void ListView::refresh_item_positions()
 
 bool ListView::copy_selected_items_as_text(t_size default_single_item_column)
 {
-    pfc::string8 text, cleanedText;
+    pfc::string8 text;
+    pfc::string8 cleanedText;
     t_size selected_count = get_selection_count(2);
     if (selected_count == 0) {
         // return false;
@@ -42,7 +43,8 @@ bool ListView::copy_selected_items_as_text(t_size default_single_item_column)
         if (index != pfc_infinite)
             text = get_item_text(index, default_single_item_column);
     } else {
-        t_size column_count = get_column_count(), item_count = get_item_count();
+        t_size column_count = get_column_count();
+        t_size item_count = get_item_count();
         pfc::bit_array_bittable mask_selected(get_item_count());
         get_selection_state(mask_selected);
         bool b_first = true;
@@ -75,7 +77,9 @@ void ListView::set_sort_column(t_size index, bool b_direction)
         hdi.mask = HDI_FORMAT;
 
         {
-            int n, t = m_columns.size(), i = 0;
+            int n;
+            int t = m_columns.size();
+            int i = 0;
             for (n = 0; n < t; n++) {
                 Header_GetItem(m_wnd_header, n, &hdi);
                 hdi.fmt &= ~(HDF_SORTUP | HDF_SORTDOWN);
@@ -361,7 +365,9 @@ void ListView::invalidate_items(t_size index, t_size count)
 
 void ListView::invalidate_items(const pfc::bit_array& mask)
 {
-    t_size i, start, count = get_item_count();
+    t_size i;
+    t_size start;
+    t_size count = get_item_count();
     for (i = 0; i < count; i++) {
         start = i;
         while (i < count && mask[i]) {
@@ -381,7 +387,8 @@ void ListView::invalidate_item_group_info_area(t_size index)
         const auto rc_client = get_items_rect();
         const auto group_item_count = gsl::narrow<int>(get_item_display_group_count(index));
         const auto item_y = get_item_position(index);
-        int items_cy = gsl::narrow<int>(count) * m_item_height, group_area_cy = get_group_info_area_height();
+        int items_cy = gsl::narrow<int>(count) * m_item_height;
+        int group_area_cy = get_group_info_area_height();
         if (get_show_group_info_area() && items_cy < group_area_cy)
             items_cy = group_area_cy;
 
@@ -400,7 +407,8 @@ void ListView::get_item_group(t_size index, t_size level, t_size& index_start, t
         index_start = 0;
         count = m_items.size();
     } else {
-        t_size end = index, start = index;
+        t_size end = index;
+        t_size start = index;
         while (m_items[start]->m_groups[level] == m_items[index]->m_groups[level]) {
             index_start = start;
             if (start == 0)
@@ -519,7 +527,8 @@ void ListView::on_search_string_change(WCHAR c)
     }
 
     t_size focus = get_focus_item();
-    t_size i = 0, count = m_items.size();
+    t_size i = 0;
+    t_size count = m_items.size();
     if (focus == pfc_infinite || focus > m_items.size())
         focus = 0;
     else if (b_all_same) {

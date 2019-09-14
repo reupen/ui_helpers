@@ -77,7 +77,9 @@ void ListView::build_header()
         pfc::stringcvt::string_wide_from_utf8 wstr;
 
         {
-            int n, t = m_columns.size(), i = 0;
+            int n;
+            int t = m_columns.size();
+            int i = 0;
             const auto indentation = get_total_indentation();
             if (indentation /*m_group_count*/) {
                 hdi.fmt = HDF_STRING | HDF_LEFT;
@@ -160,7 +162,9 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
 
                     HFONT fnt_old = SelectFont(dc, m_font.get());
 
-                    int w = 0, n, t = get_item_count();
+                    int w = 0;
+                    int n;
+                    int t = get_item_count();
 
                     for (n = 0; n < t; n++) {
                         const char* str = get_item_text(n, realIndex);
@@ -312,7 +316,9 @@ void ListView::update_header()
     if (m_wnd_header) {
         pfc::vartoggle_t<bool> toggle(m_ignore_column_size_change_notification, true);
         // SendMessage(m_wnd_header, WM_SETREDRAW, FALSE, NULL);
-        t_size i, count = m_columns.size(), j = 0;
+        t_size i;
+        t_size count = m_columns.size();
+        t_size j = 0;
         if (m_have_indent_column) {
             uih::header_set_item_width(m_wnd_header, j, get_total_indentation());
             j++;

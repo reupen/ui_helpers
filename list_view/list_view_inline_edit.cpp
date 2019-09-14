@@ -8,7 +8,8 @@ void ListView::activate_inline_editing(t_size column_start)
     if (count) {
         t_size focus = get_focus_item();
         if (focus != pfc_infinite) {
-            t_size i, pcount = m_items.size();
+            t_size i;
+            t_size pcount = m_items.size();
             pfc::bit_array_bittable sel(pcount);
             get_selection_state(sel);
 
@@ -216,7 +217,8 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
     {
         x = get_total_indentation();
 
-        unsigned n, count = m_columns.size();
+        unsigned n;
+        unsigned count = m_columns.size();
         for (n = 0; n < count && n < column; n++) {
             x += m_columns[n].m_display_size;
         }

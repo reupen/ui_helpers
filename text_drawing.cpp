@@ -255,10 +255,13 @@ BOOL text_out_colours_ellipsis(HDC dc, const char* src_c, int src_c_len, int x_o
         }
     }
 
-    RECT clip = *base_clip, ellipsis = {0, 0, 0, 0};
+    RECT clip = *base_clip;
+    RECT ellipsis = {0, 0, 0, 0};
 
-    t_size i, colourChangeCount = colourChanges.get_count();
-    int widthTotal = 0, availableWidth = clip.right - clip.left - x_offset;
+    t_size i;
+    t_size colourChangeCount = colourChanges.get_count();
+    int widthTotal = 0;
+    int availableWidth = clip.right - clip.left - x_offset;
 
     src = src_s.get_ptr();
     wLen = src_s.get_size();

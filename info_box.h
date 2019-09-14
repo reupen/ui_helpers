@@ -32,7 +32,9 @@ public:
 
     int calc_height() const
     {
-        RECT rc, rcw, rcwc;
+        RECT rc;
+        RECT rcw;
+        RECT rcwc;
         GetWindowRect(m_wnd_button, &rc);
         GetWindowRect(m_container_window->get_wnd(), &rcw);
         GetClientRect(m_container_window->get_wnd(), &rcwc);
@@ -113,7 +115,8 @@ private:
             break;
         case WM_SIZE: {
             RedrawWindow(wnd, nullptr, nullptr, RDW_INVALIDATE);
-            RECT rc, rcicon;
+            RECT rc;
+            RECT rcicon;
             GetWindowRect(m_wnd_button, &rc);
             GetWindowRect(m_wnd_static, &rcicon);
             int cy_button = RECT_CY(rc);
@@ -137,7 +140,10 @@ private:
         }
             return 0;
         case WM_GETMINMAXINFO: {
-            RECT rc, rcicon, rcw, rcwc;
+            RECT rc;
+            RECT rcicon;
+            RECT rcw;
+            RECT rcwc;
             GetWindowRect(m_wnd_button, &rc);
             GetWindowRect(m_wnd_static, &rcicon);
             GetWindowRect(wnd, &rcw);
@@ -196,7 +202,8 @@ private:
             PAINTSTRUCT ps;
             HDC dc = BeginPaint(wnd, &ps);
             if (dc) {
-                RECT rc_client, rc_button;
+                RECT rc_client;
+                RECT rc_button;
                 GetClientRect(wnd, &rc_client);
                 RECT rc_fill = rc_client;
                 if (m_wnd_button) {

@@ -239,7 +239,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             SetCapture(wnd);
         } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
             if (!m_single_selection) {
-                t_size index = 0, count = 0;
+                t_size index = 0;
+                t_size count = 0;
                 if (!m_lbutton_down_ctrl) {
                     get_item_group(hit_result.index, hit_result.group_level, index, count);
                     set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
@@ -294,7 +295,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                     }
                 } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
                     if (hit_result.index < m_items.size() && hit_result.group_level < m_group_count) {
-                        t_size index = 0, count = 0;
+                        t_size index = 0;
+                        t_size count = 0;
                         get_item_group(hit_result.index, hit_result.group_level, index, count);
                         if (count) {
                             set_selection_state(pfc::bit_array_range(index, count),
@@ -345,7 +347,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             } else if (get_focus_item() != hit_result.index)
                 set_focus_item(hit_result.index);
         } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
-            t_size index = 0, count = 0;
+            t_size index = 0;
+            t_size count = 0;
             get_item_group(hit_result.index, hit_result.group_level, index, count);
             set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
             if (count)

@@ -47,7 +47,8 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
     if (rc_update.bottom <= rc_update.top || rc_update.bottom < rc_items.top)
         return;
 
-    t_size i, count = m_items.size();
+    t_size i;
+    t_size count = m_items.size();
     const int cx_space = uih::get_text_width(dc, " ", 1);
     const int item_preindentation = cx_space * level_spacing_size * m_group_count + rc_items.left;
     const int item_indentation = item_preindentation + get_group_info_area_total_width();
@@ -61,10 +62,12 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
         (rc_update.bottom > rc_items.top + 1 ? rc_update.bottom - rc_items.top - 1 : 0) + m_scroll_position);
     for (; i <= i_end && i < count; i++) {
         HFONT fnt_old = SelectFont(dc, m_group_font.get());
-        t_size item_group_start = NULL, item_group_count = NULL;
+        t_size item_group_start = NULL;
+        t_size item_group_count = NULL;
         get_item_group(i, m_group_count ? m_group_count - 1 : 0, item_group_start, item_group_count);
 
-        t_size j, countj = m_items[i]->m_groups.size();
+        t_size j;
+        t_size countj = m_items[i]->m_groups.size();
         t_size counter = 0;
         for (j = 0; j < countj; j++) {
             if (!i || m_items[i]->m_groups[j] != m_items[i - 1]->m_groups[j]) {
@@ -143,7 +146,8 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
         }
     }*/
     if (m_insert_mark_index != pfc_infinite && (m_insert_mark_index <= count)) {
-        RECT rc_line, rc_dummy;
+        RECT rc_line;
+        RECT rc_dummy;
         rc_line.left = item_indentation;
         int yPos = 0;
         if (count) {
@@ -275,7 +279,8 @@ void ListView::render_item_default(const ColourData& p_data, HDC dc, t_size inde
                     : p_data.m_background)));
     }
     RECT rc_subitem = *rc;
-    t_size k, countk = m_columns.size();
+    t_size k;
+    t_size countk = m_columns.size();
 
     for (k = 0; k < countk; k++) {
         rc_subitem.right = rc_subitem.left + m_columns[k].m_display_size;

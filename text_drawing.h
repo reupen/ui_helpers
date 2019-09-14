@@ -84,7 +84,8 @@ public:
     void get_character_logical_extents(int* p_array_out, int offset = 0) // NB RTL !
     {
         get_character_logical_widths(p_array_out);
-        int i, count = get_output_character_count();
+        int i;
+        int count = get_output_character_count();
         for (i = 1; i < count; i++) {
             p_array_out[i] += p_array_out[i - 1];
         }

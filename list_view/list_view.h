@@ -391,7 +391,8 @@ public:
 
     int get_item_group_bottom(t_size index, bool b_include_headers = false)
     {
-        t_size gstart = index, gcount = 0;
+        t_size gstart = index;
+        t_size gcount = 0;
         get_item_group(index, m_group_count ? m_group_count - 1 : 0, gstart, gcount);
         int ret = 0;
         if (gcount)
@@ -437,7 +438,8 @@ public:
 
     t_size get_selected_item_single()
     {
-        t_size numSelected = get_selection_count(2), index = 0;
+        t_size numSelected = get_selection_count(2);
+        t_size index = 0;
         if (numSelected == 1) {
             pfc::bit_array_bittable mask(get_item_count());
             get_selection_state(mask);
@@ -586,7 +588,8 @@ protected:
         if (index == 0)
             return m_group_count;
         else {
-            t_size counter = 0, i = m_group_count;
+            t_size counter = 0;
+            t_size i = m_group_count;
             while (i && m_items[index]->m_groups[i - 1] != m_items[index - 1]->m_groups[i - 1]) {
                 i--;
                 counter++;
