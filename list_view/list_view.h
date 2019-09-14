@@ -223,7 +223,6 @@ public:
 
     void reposition_header();
 
-    void get_column_sizes(pfc::list_t<Column>& p_out);
     void update_column_sizes();
 
     void insert_items(t_size index_start, t_size count, const InsertItem* items);
@@ -892,7 +891,7 @@ private:
     bool m_group_level_indentation_enabled{true};
 
     pfc::list_t<t_item_ptr, pfc::alloc_fast> m_items;
-    pfc::list_t<Column> m_columns;
+    std::vector<Column> m_columns;
 
     /**
      * \brief The underlying container window.

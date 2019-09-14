@@ -4,7 +4,7 @@ namespace uih {
 
 void ListView::activate_inline_editing(t_size column_start)
 {
-    unsigned count = m_columns.get_count();
+    unsigned count = m_columns.size();
     if (count) {
         t_size focus = get_focus_item();
         if (focus != pfc_infinite) {
@@ -34,12 +34,10 @@ void ListView::activate_inline_editing(t_size column_start)
 
 void ListView::activate_inline_editing(const pfc::list_base_const_t<t_size>& indices, t_size column)
 {
-    unsigned count = m_columns.get_count();
+    unsigned count = m_columns.size();
     if (column < count) {
-        {
-            if (notify_before_create_inline_edit(indices, column, false)) {
-                create_inline_edit(indices, column);
-            }
+        if (notify_before_create_inline_edit(indices, column, false)) {
+            create_inline_edit(indices, column);
         }
     }
 }
@@ -78,7 +76,7 @@ LRESULT ListView::on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
     case WM_KEYDOWN:
         switch (wp) {
         case VK_TAB: {
-            unsigned count = m_columns.get_count();
+            unsigned count = m_columns.size();
             t_size indices_count = m_inline_edit_indices.get_count();
             assert(indices_count);
             if (count && indices_count) {
@@ -170,7 +168,7 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
     t_size indices_count = indices.get_count();
     if (!indices_count)
         return;
-    if (!(column < m_columns.get_count()) || m_selecting) {
+    if (!(column < m_columns.size()) || m_selecting) {
         // console::print("internal error - edit column index out of range");
         return;
     }
@@ -218,7 +216,7 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
     {
         x = get_total_indentation();
 
-        unsigned n, count = m_columns.get_count();
+        unsigned n, count = m_columns.size();
         for (n = 0; n < count && n < column; n++) {
             x += m_columns[n].m_display_size;
         }

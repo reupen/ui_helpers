@@ -9,7 +9,7 @@ void ListView::hit_test_ex(POINT pt_client, ListView::HitTestResult& result)
 
     result.column = pfc_infinite;
     const t_ssize first_column_left = -m_horizontal_scroll_position + get_total_indentation();
-    const t_size column_count = m_columns.get_count();
+    const t_size column_count = m_columns.size();
     t_ssize last_column_right = first_column_left;
 
     for (size_t column_index{0}; column_index < column_count; column_index++) {

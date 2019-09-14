@@ -75,7 +75,7 @@ void ListView::set_sort_column(t_size index, bool b_direction)
         hdi.mask = HDI_FORMAT;
 
         {
-            int n, t = m_columns.get_count(), i = 0;
+            int n, t = m_columns.size(), i = 0;
             for (n = 0; n < t; n++) {
                 Header_GetItem(m_wnd_header, n, &hdi);
                 hdi.fmt &= ~(HDF_SORTUP | HDF_SORTDOWN);
@@ -192,19 +192,9 @@ int ListView::get_item_area_height() const
 
 void ListView::reset_columns()
 {
-    // assert (m_items.get_count() == 0);
-    // m_items.remove_all();
-    m_columns.remove_all();
+    m_columns.clear();
 }
 
-/*void ListView::add_column(const Column & col)
-{
-    m_columns.add_item(col);
-}*/
-/*void ListView::add_item(const t_string_list_const_fast & text, const t_string_list_const_fast & p_groups, t_size size)
-{
-    insert_item(m_items.get_count(), text, p_groups, size);
-}*/
 void ListView::set_group_count(t_size count, bool b_update_columns)
 {
     m_group_count = count;
@@ -523,8 +513,7 @@ void ListView::on_search_string_change(WCHAR c)
     }
 
     create_timer_search();
-    t_size countk = m_columns.get_count();
-    if (countk == 0) {
+    if (m_columns.empty()) {
         destroy_timer_search();
         return;
     }

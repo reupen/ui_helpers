@@ -275,7 +275,7 @@ void ListView::render_item_default(const ColourData& p_data, HDC dc, t_size inde
                     : p_data.m_background)));
     }
     RECT rc_subitem = *rc;
-    t_size k, countk = m_columns.get_count();
+    t_size k, countk = m_columns.size();
 
     for (k = 0; k < countk; k++) {
         rc_subitem.right = rc_subitem.left + m_columns[k].m_display_size;
