@@ -4,8 +4,7 @@ namespace uih {
 class hook_list {
 public:
     pfc::ptr_list_t<MessageHook> m_hooks;
-    HHOOK m_hook;
-    hook_list() : m_hook(nullptr){};
+    HHOOK m_hook{nullptr};
 };
 
 hook_list g_hooks[static_cast<size_t>(MessageHookType::hook_type_count)];

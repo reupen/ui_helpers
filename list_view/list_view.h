@@ -26,10 +26,10 @@ public:
     class Column {
     public:
         pfc::string8 m_title;
-        int m_size;
-        int m_display_size;
-        int m_autosize_weight;
-        uih::alignment m_alignment;
+        int m_size{0};
+        int m_display_size{0};
+        int m_autosize_weight{1};
+        uih::alignment m_alignment{uih::ALIGN_LEFT};
 
         Column(const char* title, int cx, int p_autosize_weight = 1, uih::alignment alignment = uih::ALIGN_LEFT)
             : m_title(title)
@@ -38,7 +38,7 @@ public:
             , m_autosize_weight(p_autosize_weight)
             , m_alignment(alignment){};
 
-        Column() : m_size(0), m_display_size(0), m_autosize_weight(1), m_alignment(uih::ALIGN_LEFT){};
+        Column() = default;
     };
 
     using string_array = std::vector<pfc::string_simple>;
@@ -95,15 +95,13 @@ protected:
 
     class Item : public pfc::refcounted_object_root {
     public:
-        // pfc::list_t<string_array> m_subitems_v2;
-        t_uint8 m_line_count;
+        t_uint8 m_line_count{1};
         string_array m_subitems;
         std::vector<t_group_ptr> m_groups;
 
-        // t_size m_position;
-        t_size m_display_index;
-        t_size m_display_position;
-        bool m_selected;
+        t_size m_display_index{0};
+        t_size m_display_position{0};
+        bool m_selected{false};
 
         void update_line_count()
         {
@@ -121,9 +119,6 @@ protected:
                 m_line_count = std::max(m_line_count, lc);
             }
         }
-
-        Item() : m_line_count(1), m_display_index(0), m_display_position(0), m_selected(false){};
-
     private:
     };
 
