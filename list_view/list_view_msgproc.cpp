@@ -8,7 +8,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     static const UINT MSG_DI_GETDRAGIMAGE = RegisterWindowMessage(DI_GETDRAGIMAGE);
 
     if (msg && msg == MSG_DI_GETDRAGIMAGE) {
-        LPSHDRAGIMAGE lpsdi = (LPSHDRAGIMAGE)lp;
+        auto lpsdi = (LPSHDRAGIMAGE)lp;
 
         return render_drag_image(lpsdi);
     }
@@ -421,8 +421,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             }
         }
         if (m_selecting_move || (m_single_selection && m_selecting) || m_dragging_rmb) {
-            const unsigned cx_drag = (unsigned)abs(GetSystemMetrics(SM_CXDRAG));
-            const unsigned cy_drag = (unsigned)abs(GetSystemMetrics(SM_CYDRAG));
+            const auto cx_drag = (unsigned)abs(GetSystemMetrics(SM_CXDRAG));
+            const auto cy_drag = (unsigned)abs(GetSystemMetrics(SM_CYDRAG));
 
             bool b_enter_drag = false;
 

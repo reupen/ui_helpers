@@ -210,8 +210,7 @@ BOOL set_process_dpi_aware()
     HINSTANCE hinstDll = LoadLibrary(_T("user32.dll"));
 
     if (hinstDll) {
-        SETPROCESSDPIAWAREPROC pSetProcessDPIAware
-            = (SETPROCESSDPIAWAREPROC)GetProcAddress(hinstDll, "SetProcessDPIAware");
+        auto pSetProcessDPIAware = (SETPROCESSDPIAWAREPROC)GetProcAddress(hinstDll, "SetProcessDPIAware");
 
         if (pSetProcessDPIAware) {
             return pSetProcessDPIAware();
@@ -252,7 +251,7 @@ HRESULT get_comctl32_version(DLLVERSIONINFO2& p_dvi)
 
         if (hinstDll) {
             if (!have_version) {
-                DLLGETVERSIONPROC pDllGetVersion = (DLLGETVERSIONPROC)GetProcAddress(hinstDll, "DllGetVersion");
+                auto pDllGetVersion = (DLLGETVERSIONPROC)GetProcAddress(hinstDll, "DllGetVersion");
 
                 if (pDllGetVersion) {
                     memset(&g_dvi, 0, sizeof(DLLVERSIONINFO2));

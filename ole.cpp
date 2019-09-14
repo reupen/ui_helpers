@@ -4,49 +4,49 @@ namespace uih::ole {
 
 CLIPFORMAT get_clipboard_format_drop_description()
 {
-    static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(CFSTR_DROPDESCRIPTION);
+    static const auto cfRet = (CLIPFORMAT)RegisterClipboardFormat(CFSTR_DROPDESCRIPTION);
     return cfRet;
 }
 
 CLIPFORMAT DragWindowFormat()
 {
-    static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"DragWindow");
+    static const auto cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"DragWindow");
     return cfRet;
 }
 
 CLIPFORMAT IsShowingLayeredFormat()
 {
-    static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsShowingLayered");
+    static const auto cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsShowingLayered");
     return cfRet;
 }
 
 CLIPFORMAT IsShowingTextFormat()
 {
-    static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsShowingText");
+    static const auto cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsShowingText");
     return cfRet;
 }
 
 CLIPFORMAT DisableDragTextFormat()
 {
-    static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"DisableDragText");
+    static const auto cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"DisableDragText");
     return cfRet;
 }
 
 CLIPFORMAT IsComputingImageFormat()
 {
-    static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsComutingImage");
+    static const auto cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsComutingImage");
     return cfRet;
 }
 
 CLIPFORMAT UsingDefaultDragImageFormat()
 {
-    static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"UsingDefaultDragImage");
+    static const auto cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"UsingDefaultDragImage");
     return cfRet;
 }
 
 CLIPFORMAT PreferredDropEffectFormat()
 {
-    static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT);
+    static const auto cfRet = (CLIPFORMAT)RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT);
     return cfRet;
 }
 

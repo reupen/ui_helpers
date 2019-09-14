@@ -148,7 +148,7 @@ private:
             GetWindowRect(m_wnd_static, &rcicon);
             GetWindowRect(wnd, &rcw);
             GetClientRect(wnd, &rcwc);
-            LPMINMAXINFO lpmmi = reinterpret_cast<LPMINMAXINFO>(lp);
+            auto lpmmi = reinterpret_cast<LPMINMAXINFO>(lp);
             lpmmi->ptMinTrackSize.x = get_large_padding() * 4 + get_small_padding() + RECT_CX(rcicon)
                 + uih::scale_dpi_value(50) + (RECT_CX(rcw) - RECT_CX(rcwc));
             lpmmi->ptMinTrackSize.y

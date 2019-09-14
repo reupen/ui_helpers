@@ -647,7 +647,7 @@ LRESULT TrackbarBase::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         // Create a rect same size of update rect
         HBITMAP bm_mem = CreateCompatibleBitmap(dc, rc_client.right, rc_client.bottom);
 
-        HBITMAP bm_old = (HBITMAP)SelectObject(dc_mem, bm_mem);
+        auto bm_old = (HBITMAP)SelectObject(dc_mem, bm_mem);
 
         // we should always be erasing first, so shouldn't be needed
         BitBlt(dc_mem, 0, 0, rc_client.right, rc_client.bottom, dc, 0, 0, SRCCOPY);
