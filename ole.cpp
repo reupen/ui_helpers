@@ -134,8 +134,8 @@ HRESULT set_drop_description(IDataObject* pdtobj, DROPIMAGETYPE dit, const char*
             wcscpy_s(dd.szMessage, wmsg.get_ptr());
             wcscpy_s(dd.szInsert, winsert.get_ptr());
             return set_blob(pdtobj, get_clipboard_format_drop_description(), &dd, sizeof(dd));
-        } else
-            return S_OK;
+        }
+        return S_OK;
     }
     return E_NOTIMPL;
 }
@@ -181,17 +181,21 @@ HRESULT STDMETHODCALLTYPE IDropSourceGeneric::QueryInterface(REFIID iid, void** 
 {
     if (ppvObject == nullptr)
         return E_INVALIDARG;
+
     *ppvObject = nullptr;
+
     if (iid == IID_IUnknown) {
         AddRef();
         *ppvObject = (IUnknown*)this;
         return S_OK;
-    } else if (iid == IID_IDropSource) {
+    }
+
+    if (iid == IID_IDropSource) {
         AddRef();
         *ppvObject = (IDropSource*)this;
         return S_OK;
-    } else
-        return E_NOINTERFACE;
+    }
+    return E_NOINTERFACE;
 }
 ULONG STDMETHODCALLTYPE IDropSourceGeneric::AddRef()
 {
@@ -210,11 +214,13 @@ HRESULT STDMETHODCALLTYPE IDropSourceGeneric::QueryContinueDrag(BOOL fEscapePres
 {
     if (fEscapePressed || ((m_initial_key_state & MK_LBUTTON) && (grfKeyState & MK_RBUTTON))) {
         return DRAGDROP_S_CANCEL;
-    } else if (((m_initial_key_state & MK_LBUTTON) && !(grfKeyState & MK_LBUTTON))
+    }
+
+    if (((m_initial_key_state & MK_LBUTTON) && !(grfKeyState & MK_LBUTTON))
         || ((m_initial_key_state & MK_RBUTTON) && !(grfKeyState & MK_RBUTTON))) {
         return DRAGDROP_S_DROP;
-    } else
-        return S_OK;
+    }
+    return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE IDropSourceGeneric::GiveFeedback(DWORD dwEffect)

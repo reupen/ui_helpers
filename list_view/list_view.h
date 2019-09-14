@@ -587,15 +587,14 @@ protected:
     {
         if (index == 0)
             return m_group_count;
-        else {
-            t_size counter = 0;
-            t_size i = m_group_count;
-            while (i && m_items[index]->m_groups[i - 1] != m_items[index - 1]->m_groups[i - 1]) {
-                i--;
-                counter++;
-            }
-            return counter;
+
+        t_size counter = 0;
+        t_size i = m_group_count;
+        while (i && m_items[index]->m_groups[i - 1] != m_items[index - 1]->m_groups[i - 1]) {
+            i--;
+            counter++;
         }
+        return counter;
     }
 
     void on_focus_change(t_size index_prev, t_size index_new);
@@ -652,16 +651,16 @@ protected:
     {
         if (m_have_indent_column)
             return index != 0;
-        else
-            return true;
+
+        return true;
     }
 
     t_size header_column_to_real_column(t_size index)
     {
         if (m_have_indent_column && index != pfc_infinite)
             return index - 1;
-        else
-            return index;
+
+        return index;
     }
 
     bool get_show_group_info_area() { return m_group_count ? m_show_group_info_area : false; }

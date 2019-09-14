@@ -528,7 +528,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             if (focus != pfc_infinite)
                 execute_default_action(focus, hit_result.column, false, (wp & MK_CONTROL) != 0);
             return 0;
-        } else if (hit_result.category == HitTestCategory::RightOfItem
+        }
+        if (hit_result.category == HitTestCategory::RightOfItem
             || hit_result.category == HitTestCategory::RightOfGroupHeader
             || hit_result.category == HitTestCategory::NotOnItem)
             if (notify_on_doubleleftclick_nowhere())
@@ -674,13 +675,14 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 
             if (b_focused)
                 return (LRESULT)GetSysColorBrush(COLOR_WINDOW);
-            else if (m_search_box_hot)
+
+            if (m_search_box_hot)
                 return (LRESULT)GetSysColorBrush(
                     COLOR_WINDOW); // m_search_box_hot_brush.get();//GetSysColorBrush(COLOR_BTNFACE);
-            else
-                return (LRESULT)GetSysColorBrush(IsThemeActive() && IsAppThemed()
-                        ? COLOR_BTNFACE
-                        : COLOR_WINDOW); // m_search_box_nofocus_brush.get();//GetSysColorBrush(COLOR_3DLIGHT);
+
+            return (LRESULT)GetSysColorBrush(IsThemeActive() && IsAppThemed()
+                    ? COLOR_BTNFACE
+                    : COLOR_WINDOW); // m_search_box_nofocus_brush.get();//GetSysColorBrush(COLOR_3DLIGHT);
         }
         break;
 #endif
