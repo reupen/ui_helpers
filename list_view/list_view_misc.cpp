@@ -314,7 +314,7 @@ void ListView::update_items(t_size index, t_size count)
 {
     t_size i;
     for (i = 0; i < count; i++)
-        m_items[i + index]->m_subitems.set_size(0);
+        m_items[i + index]->m_subitems.resize(0);
     invalidate_items(index, count);
 }
 

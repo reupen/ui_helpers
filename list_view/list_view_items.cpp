@@ -8,9 +8,9 @@ const char* ListView::get_item_text(t_size index, t_size column)
 {
     if (index >= m_items.size())
         return "";
-    if (m_items[index]->m_subitems.get_count() != get_column_count())
+    if (m_items[index]->m_subitems.size() != get_column_count())
         update_item_data(index);
-    if (column >= m_items[index]->m_subitems.get_count())
+    if (column >= m_items[index]->m_subitems.size())
         return "";
     return m_items[index]->m_subitems[column];
 }
@@ -230,7 +230,7 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
 
             item->m_display_index = index ? p_items[index - 1]->m_display_index + 1 : 0;
             if (m_variable_height_items) {
-                if (item->m_subitems.get_count() != get_column_count())
+                if (item->m_subitems.size() != get_column_count())
                     update_item_data(index);
                 item->update_line_count();
             }

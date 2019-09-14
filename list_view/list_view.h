@@ -41,7 +41,7 @@ public:
         Column() : m_size(0), m_display_size(0), m_autosize_weight(1), m_alignment(uih::ALIGN_LEFT){};
     };
 
-    using string_array = pfc::array_t<pfc::string_simple>;
+    using string_array = std::vector<pfc::string_simple>;
 
     class InsertItem {
     public:
@@ -57,8 +57,8 @@ public:
         };
         InsertItem(size_t subitem_count, size_t group_count)
         {
-            m_subitems.set_size(subitem_count);
-            m_groups.set_size(group_count);
+            m_subitems.resize(subitem_count);
+            m_groups.resize(group_count);
         };
     };
 
@@ -108,9 +108,9 @@ protected:
         void update_line_count()
         {
             m_line_count = 1;
-            for (t_size i = 0, count = m_subitems.get_count(); i < count; i++) {
+            for (auto&& subitem : m_subitems) {
                 t_uint8 lc = 1;
-                const char* ptr = m_subitems[i];
+                const char* ptr = subitem.c_str();
                 while (*ptr) {
                     if (*ptr == '\n') {
                         if (++lc == 255)
@@ -122,18 +122,7 @@ protected:
             }
         }
 
-        /*Item(const t_string_list_const_fast & p_text)
-            : m_position(0), m_selected(false)
-            {
-                m_subitems.add_items(p_text);
-            };
-        Item(const t_string_list_const_fast & p_text, t_size group_count)
-            : m_position(0), m_selected(false)
-            {
-                m_subitems.add_items(p_text);
-                m_groups.set_count(group_count);
-            };*/
-        Item() : /*m_position(0), */ m_line_count(1), m_display_index(0), m_display_position(0), m_selected(false){};
+        Item() : m_line_count(1), m_display_index(0), m_display_position(0), m_selected(false){};
 
     private:
     };
