@@ -64,7 +64,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
         t_size item_group_start = NULL, item_group_count = NULL;
         get_item_group(i, m_group_count ? m_group_count - 1 : 0, item_group_start, item_group_count);
 
-        t_size j, countj = m_items[i]->m_groups.get_count();
+        t_size j, countj = m_items[i]->m_groups.size();
         t_size counter = 0;
         for (j = 0; j < countj; j++) {
             if (!i || m_items[i]->m_groups[j] != m_items[i - 1]->m_groups[j]) {

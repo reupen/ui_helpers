@@ -98,7 +98,7 @@ protected:
         // pfc::list_t<string_array> m_subitems_v2;
         t_uint8 m_line_count;
         string_array m_subitems;
-        pfc::array_t<t_group_ptr> m_groups;
+        std::vector<t_group_ptr> m_groups;
 
         // t_size m_position;
         t_size m_display_index;

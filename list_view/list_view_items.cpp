@@ -89,7 +89,7 @@ void ListView::__replace_items_v2(t_size index_start, t_size countl, const Inser
                 item->m_subitems = items[l].m_subitems;
                 m_items[index] = item;
                 item->m_display_index = index ? m_items[index - 1]->m_display_index + 1 : 0;
-                item->m_groups.set_size(count);
+                item->m_groups.resize(count);
             }
             bool b_new = false;
 
@@ -220,7 +220,7 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
             item = storage_create_item();
             p_items[index] = item;
             item->m_subitems = items[l].m_subitems;
-            item->m_groups.set_size(count);
+            item->m_groups.resize(count);
         });
 
         for (size_t l = 0; l < countl; l++) {
@@ -372,7 +372,7 @@ void ListView::remove_item(t_size index)
 }
 void ListView::__remove_item(t_size index)
 {
-    t_size gc = 0, k, count2 = m_items[index]->m_groups.get_count();
+    t_size gc = 0, k, count2 = m_items[index]->m_groups.size();
 
     // if (index)
     {
@@ -393,7 +393,7 @@ void ListView::__remove_item(t_size index)
         int item_height = m_item_height;
         t_size j;
         if (index) {
-            t_size i, count = m_items[index]->m_groups.get_count();
+            t_size i, count = m_items[index]->m_groups.size();
             for (i = 0; i < count; i++) {
                 if (!GROUP_STRING_COMPARE(
                         m_items[index - 1]->m_groups[i]->m_text, m_items[index]->m_groups[i]->m_text)) {
