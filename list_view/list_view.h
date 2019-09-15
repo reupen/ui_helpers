@@ -79,8 +79,8 @@ protected:
     class Item;
     class Group;
 
-    typedef pfc::refcounted_object_ptr_t<Group> t_group_ptr;
-    typedef pfc::refcounted_object_ptr_t<Item> t_item_ptr;
+    using t_group_ptr = pfc::refcounted_object_ptr_t<Group>;
+    using t_item_ptr = pfc::refcounted_object_ptr_t<Item>;
 
     class Group : public pfc::refcounted_object_root {
     public:

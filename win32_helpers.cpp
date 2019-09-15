@@ -206,7 +206,7 @@ void format_date(uint64_t time, std::basic_string<TCHAR>& str, bool b_convert_to
 }
 BOOL set_process_dpi_aware()
 {
-    typedef BOOL(WINAPI * SETPROCESSDPIAWAREPROC)();
+    using SETPROCESSDPIAWAREPROC = BOOL (WINAPI*)();
     HINSTANCE hinstDll = LoadLibrary(_T("user32.dll"));
 
     if (hinstDll) {
