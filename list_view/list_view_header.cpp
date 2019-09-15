@@ -77,7 +77,9 @@ void ListView::build_header()
         pfc::stringcvt::string_wide_from_utf8 wstr;
 
         {
-            int n, t = m_columns.size(), i = 0;
+            int n;
+            int t = m_columns.size();
+            int i = 0;
             const auto indentation = get_total_indentation();
             if (indentation /*m_group_count*/) {
                 hdi.fmt = HDF_STRING | HDF_LEFT;
@@ -140,14 +142,14 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
 #endif
     case HDN_BEGINTRACKA:
     case HDN_BEGINTRACKW: {
-        LPNMHEADER lpnmh = (LPNMHEADER)lpnm;
+        auto lpnmh = (LPNMHEADER)lpnm;
         if (m_autosize && (!get_show_group_info_area() || lpnmh->iItem)) {
             ret = TRUE;
             return true;
         }
     } break;
     case HDN_DIVIDERDBLCLICK: {
-        LPNMHEADER lpnmh = (LPNMHEADER)lpnm;
+        auto lpnmh = (LPNMHEADER)lpnm;
         if (!m_autosize) {
             if (lpnmh->iItem != -1 && (!m_have_indent_column || lpnmh->iItem)) {
                 t_size realIndex = lpnmh->iItem;
@@ -160,7 +162,9 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
 
                     HFONT fnt_old = SelectFont(dc, m_font.get());
 
-                    int w = 0, n, t = get_item_count();
+                    int w = 0;
+                    int n;
+                    int t = get_item_count();
 
                     for (n = 0; n < t; n++) {
                         const char* str = get_item_text(n, realIndex);
@@ -185,7 +189,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
     } break;
     case HDN_ITEMCHANGING: {
         if (!m_ignore_column_size_change_notification) {
-            LPNMHEADER lpnmh = (LPNMHEADER)lpnm;
+            auto lpnmh = (LPNMHEADER)lpnm;
             if (lpnmh->pitem->mask & HDI_WIDTH) {
                 if (m_have_indent_column && lpnmh->iItem == 0) {
                     int min_indent = get_item_indentation();
@@ -201,7 +205,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
     } break;
     case HDN_ITEMCHANGED: {
         if (!m_ignore_column_size_change_notification) {
-            LPNMHEADER lpnmh = (LPNMHEADER)lpnm;
+            auto lpnmh = (LPNMHEADER)lpnm;
             if (lpnmh->pitem->mask & HDI_WIDTH) {
                 if (lpnmh->iItem != -1) {
                     if (m_have_indent_column && lpnmh->iItem == 0) {
@@ -234,7 +238,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
         }
     } break;
     case HDN_ITEMCLICK: {
-        LPNMHEADER lpnmh = (LPNMHEADER)lpnm;
+        auto lpnmh = (LPNMHEADER)lpnm;
         if (lpnmh->iItem != -1 && (!m_have_indent_column || lpnmh->iItem)) {
             t_size realIndex = lpnmh->iItem;
             if (m_have_indent_column)
@@ -256,7 +260,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
         }
         break;*/
     case HDN_ENDDRAG: {
-        LPNMHEADER lpnmh = (LPNMHEADER)lpnm;
+        auto lpnmh = (LPNMHEADER)lpnm;
         if (lpnmh->iButton == 0) {
             if (lpnmh->pitem && (lpnmh->pitem->mask & HDI_ORDER)) {
                 int from = lpnmh->iItem;
@@ -301,7 +305,7 @@ unsigned ListView::calculate_header_height()
 {
     unsigned rv = 0;
     if (m_wnd_header) {
-        HFONT font = (HFONT)SendMessage(m_wnd_header, WM_GETFONT, 0, 0);
+        auto font = (HFONT)SendMessage(m_wnd_header, WM_GETFONT, 0, 0);
         rv = uih::get_font_height(font) + m_vertical_item_padding + scale_dpi_value(2);
     }
     return rv;
@@ -312,7 +316,9 @@ void ListView::update_header()
     if (m_wnd_header) {
         pfc::vartoggle_t<bool> toggle(m_ignore_column_size_change_notification, true);
         // SendMessage(m_wnd_header, WM_SETREDRAW, FALSE, NULL);
-        t_size i, count = m_columns.size(), j = 0;
+        t_size i;
+        t_size count = m_columns.size();
+        t_size j = 0;
         if (m_have_indent_column) {
             uih::header_set_item_width(m_wnd_header, j, get_total_indentation());
             j++;

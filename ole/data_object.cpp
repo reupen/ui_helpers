@@ -42,7 +42,8 @@ CDataObject::CDataObject()
 
 CDataObject::~CDataObject()
 {
-    t_size i, count = m_data_entries.get_count();
+    t_size i;
+    t_size count = m_data_entries.get_count();
 
     for (i = 0; i < count; i++)
         ReleaseStgMedium(&m_data_entries[i].sm);
@@ -70,12 +71,12 @@ STDMETHODIMP CDataObject::QueryInterface(REFIID riid, LPVOID* ppvOut)
     return E_NOINTERFACE;
 }
 
-STDMETHODIMP_(ULONG) CDataObject::AddRef(void)
+STDMETHODIMP_(ULONG) CDataObject::AddRef()
 {
     return ++m_cRefCount;
 }
 
-STDMETHODIMP_(ULONG) CDataObject::Release(void)
+STDMETHODIMP_(ULONG) CDataObject::Release()
 {
     if (--m_cRefCount == 0) {
         delete this;

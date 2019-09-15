@@ -168,7 +168,8 @@ void tree_view_collapse_other_nodes(HWND wnd, HTREEITEM ti)
 
 BOOL FileTimeToLocalFileTime2(__in CONST FILETIME* lpFileTime, __out LPFILETIME lpLocalFileTime)
 {
-    SYSTEMTIME stUTC, stLocal;
+    SYSTEMTIME stUTC;
+    SYSTEMTIME stLocal;
     memset(&stUTC, 0, sizeof(stUTC));
     memset(&stLocal, 0, sizeof(stLocal));
 
@@ -185,7 +186,8 @@ FILETIME filetimestamp_to_FileTime(uint64_t time)
 }
 void format_date(uint64_t time, std::basic_string<TCHAR>& str, bool b_convert_to_local)
 {
-    FILETIME ft1 = filetimestamp_to_FileTime(time), ft2 = ft1;
+    FILETIME ft1 = filetimestamp_to_FileTime(time);
+    FILETIME ft2 = ft1;
     if (b_convert_to_local)
         FileTimeToLocalFileTime2(&ft1, &ft2);
     SYSTEMTIME st;
@@ -204,12 +206,11 @@ void format_date(uint64_t time, std::basic_string<TCHAR>& str, bool b_convert_to
 }
 BOOL set_process_dpi_aware()
 {
-    typedef BOOL(WINAPI * SETPROCESSDPIAWAREPROC)();
+    using SETPROCESSDPIAWAREPROC = BOOL (WINAPI*)();
     HINSTANCE hinstDll = LoadLibrary(_T("user32.dll"));
 
     if (hinstDll) {
-        SETPROCESSDPIAWAREPROC pSetProcessDPIAware
-            = (SETPROCESSDPIAWAREPROC)GetProcAddress(hinstDll, "SetProcessDPIAware");
+        auto pSetProcessDPIAware = (SETPROCESSDPIAWAREPROC)GetProcAddress(hinstDll, "SetProcessDPIAware");
 
         if (pSetProcessDPIAware) {
             return pSetProcessDPIAware();
@@ -250,7 +251,7 @@ HRESULT get_comctl32_version(DLLVERSIONINFO2& p_dvi)
 
         if (hinstDll) {
             if (!have_version) {
-                DLLGETVERSIONPROC pDllGetVersion = (DLLGETVERSIONPROC)GetProcAddress(hinstDll, "DllGetVersion");
+                auto pDllGetVersion = (DLLGETVERSIONPROC)GetProcAddress(hinstDll, "DllGetVersion");
 
                 if (pDllGetVersion) {
                     memset(&g_dvi, 0, sizeof(DLLVERSIONINFO2));
@@ -378,7 +379,8 @@ int combo_box_add_string_data(HWND wnd, const TCHAR* str, LPARAM data)
 
 int combo_box_find_item_by_data(HWND wnd, t_size id)
 {
-    t_size i, count = ComboBox_GetCount(wnd);
+    t_size i;
+    t_size count = ComboBox_GetCount(wnd);
     for (i = 0; i < count; i++)
         if (ComboBox_GetItemData(wnd, i) == id)
             return i;
@@ -417,7 +419,8 @@ void handle_modern_background_paint(HWND wnd, HWND wnd_button)
     PAINTSTRUCT ps;
     HDC dc = BeginPaint(wnd, &ps);
     if (dc) {
-        RECT rc_client, rc_button;
+        RECT rc_client;
+        RECT rc_button;
         GetClientRect(wnd, &rc_client);
         RECT rc_fill = rc_client;
         if (wnd_button) {

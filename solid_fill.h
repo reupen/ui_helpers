@@ -149,7 +149,7 @@ public:
             redraw();
     }
 
-    TranslucentFillWindow() : m_fill_colour(NULL)
+    TranslucentFillWindow()
     {
         auto window_config = uih::ContainerWindowConfig{L"columns_ui_transparent_fill"};
         window_config.window_styles = WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
@@ -170,7 +170,7 @@ private:
     void redraw() { RedrawWindow(m_container_window->get_wnd(), nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW); }
     LRESULT on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 
-    COLORREF m_fill_colour;
+    COLORREF m_fill_colour{NULL};
     std::unique_ptr<uih::ContainerWindow> m_container_window;
 };
 } // namespace uih

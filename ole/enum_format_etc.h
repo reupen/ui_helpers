@@ -23,19 +23,19 @@
 class CEnumFormatEtc : public IEnumFORMATETC {
 public:
     CEnumFormatEtc(LPFORMATETC pFE, int numberItems);
-    ~CEnumFormatEtc(void);
+    ~CEnumFormatEtc();
 
     //BOOL FInit(HWND);
 
     //IUnknown members
     STDMETHOD(QueryInterface)(REFIID, LPVOID*);
-    STDMETHOD_(ULONG, AddRef)(void);
-    STDMETHOD_(ULONG, Release)(void);
+    STDMETHOD_(ULONG, AddRef)();
+    STDMETHOD_(ULONG, Release)();
 
     //IEnumFORMATETC members
     STDMETHOD(Next)(ULONG, LPFORMATETC, ULONG*);
     STDMETHOD(Skip)(ULONG);
-    STDMETHOD(Reset)(void);
+    STDMETHOD(Reset)();
     STDMETHOD(Clone)(IEnumFORMATETC**);
 
 private:

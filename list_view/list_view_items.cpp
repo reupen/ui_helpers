@@ -60,14 +60,17 @@ void ListView::remove_all_items()
 void ListView::__replace_items_v2(t_size index_start, t_size countl, const InsertItem* items)
 {
     std::vector<t_item_ptr> items_prev(m_items);
-    t_size l, countitems = m_items.size();
-    t_size newgroupcount = 0, oldgroupcount = 0;
+    t_size l;
+    t_size countitems = m_items.size();
+    t_size newgroupcount = 0;
+    t_size oldgroupcount = 0;
 
     // Calculate old group count
     {
         t_size countl2 = index_start + countl < countitems ? countl + 1 : countl;
         for (l = 0; l < countl2; l++) {
-            t_size i, count = m_group_count;
+            t_size i;
+            t_size count = m_group_count;
             t_size index = l + index_start;
             for (i = 0; i < count; i++) {
                 if ((!index || m_items[index - 1]->m_groups[i] != m_items[index]->m_groups[i]))
@@ -79,9 +82,11 @@ void ListView::__replace_items_v2(t_size index_start, t_size countl, const Inser
 
     {
         for (l = 0; l < countl; l++) {
-            t_size i, count = m_group_count;
+            t_size i;
+            t_size count = m_group_count;
             t_size index = l + index_start;
-            t_item_ptr item, item_old;
+            t_item_ptr item;
+            t_item_ptr item_old;
             item_old = m_items[index];
             {
                 item = storage_create_item();
@@ -164,7 +169,8 @@ void ListView::__replace_items_v2(t_size index_start, t_size countl, const Inser
     {
         t_size countl2 = index_start + countl < countitems ? countl + 1 : countl;
         for (l = 0; l < countl2; l++) {
-            t_size i, count = m_group_count;
+            t_size i;
+            t_size count = m_group_count;
             t_size index = l + index_start;
             for (i = 0; i < count; i++) {
                 if ((!index || m_items[index - 1]->m_groups[i] != m_items[index]->m_groups[i]))
@@ -194,13 +200,15 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
 
     std::vector<t_item_ptr> items_prev(m_items);
     t_size countitems = m_items.size();
-    t_size newgroupcount = 0, oldgroupcount = 0;
+    t_size newgroupcount = 0;
+    t_size oldgroupcount = 0;
 
     // Calculate old group count
     {
         t_size index = index_start + countl;
         if (index < countitems) {
-            t_size i, count = m_group_count;
+            t_size i;
+            t_size count = m_group_count;
             for (i = 0; i < count; i++) {
                 if ((!index_start || m_items[index_start - 1]->m_groups[i] != m_items[index]->m_groups[i]))
                     oldgroupcount++;
@@ -224,7 +232,8 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
         });
 
         for (size_t l = 0; l < countl; l++) {
-            t_size i, count = m_group_count;
+            t_size i;
+            t_size count = m_group_count;
             t_size index = l + index_start;
             Item* item = p_items[index].get_ptr();
 
@@ -281,7 +290,8 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
         t_size index = index_start + countl;
         if (index_start && index < countitems) {
             t_size index_prev = index_start - 1;
-            t_size i, count = m_group_count;
+            t_size i;
+            t_size count = m_group_count;
             for (i = 0; i < count; i++) {
                 {
                     if (items_prev[index_prev]->m_groups[i] == items_prev[index]->m_groups[i]) {
@@ -305,7 +315,8 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
     {
         t_size countl2 = index_start + countl < countitems ? countl + 1 : countl;
         for (size_t l = 0; l < countl2; l++) {
-            t_size i, count = m_group_count;
+            t_size i;
+            t_size count = m_group_count;
             t_size index = l + index_start;
             for (i = 0; i < count; i++) {
                 if ((!index || m_items[index - 1]->m_groups[i] != m_items[index]->m_groups[i]))
@@ -345,8 +356,10 @@ void ListView::__calculate_item_positions(t_size index_start)
         else
             y_pointer = get_item_position(index_start - 1) + get_item_height(index_start - 1);
     }
-    t_size i, count = m_items.size(), group_height_counter = 0,
-              group_minimum_inner_height = get_group_minimum_inner_height();
+    t_size i;
+    t_size count = m_items.size();
+    t_size group_height_counter = 0;
+    t_size group_minimum_inner_height = get_group_minimum_inner_height();
     for (i = index_start; i < count; i++) {
         t_size groups = get_item_display_group_count(i);
         if (groups) {
@@ -372,7 +385,9 @@ void ListView::remove_item(t_size index)
 }
 void ListView::__remove_item(t_size index)
 {
-    t_size gc = 0, k, count2 = m_items[index]->m_groups.size();
+    t_size gc = 0;
+    t_size k;
+    t_size count2 = m_items[index]->m_groups.size();
 
     // if (index)
     {
@@ -393,7 +408,8 @@ void ListView::__remove_item(t_size index)
         int item_height = m_item_height;
         t_size j;
         if (index) {
-            t_size i, count = m_items[index]->m_groups.size();
+            t_size i;
+            t_size count = m_items[index]->m_groups.size();
             for (i = 0; i < count; i++) {
                 if (!GROUP_STRING_COMPARE(
                         m_items[index - 1]->m_groups[i]->m_text, m_items[index]->m_groups[i]->m_text)) {

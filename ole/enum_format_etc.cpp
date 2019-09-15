@@ -39,8 +39,7 @@ CEnumFormatEtc::CEnumFormatEtc(LPFORMATETC pFE, int nItems)
 
 CEnumFormatEtc::~CEnumFormatEtc()
 {
-    if (m_pStrFE)
-        delete [] m_pStrFE;
+    delete[] m_pStrFE;
 }
 
 STDMETHODIMP CEnumFormatEtc::QueryInterface(REFIID riid, LPVOID* ppvOut)
@@ -65,12 +64,12 @@ STDMETHODIMP CEnumFormatEtc::QueryInterface(REFIID riid, LPVOID* ppvOut)
     return E_NOINTERFACE;
 }
 
-STDMETHODIMP_(ULONG) CEnumFormatEtc::AddRef(void)
+STDMETHODIMP_(ULONG) CEnumFormatEtc::AddRef()
 {
     return ++m_cRefCount;
 }
 
-STDMETHODIMP_(ULONG) CEnumFormatEtc::Release(void)
+STDMETHODIMP_(ULONG) CEnumFormatEtc::Release()
 {
     if (--m_cRefCount == 0) {
         delete this;
@@ -115,7 +114,7 @@ STDMETHODIMP CEnumFormatEtc::Skip(ULONG celt)
     return S_OK;
 }
 
-STDMETHODIMP CEnumFormatEtc::Reset(void)
+STDMETHODIMP CEnumFormatEtc::Reset()
 {
     m_iCur = 0;
 

@@ -4,8 +4,7 @@ namespace uih {
 class hook_list {
 public:
     pfc::ptr_list_t<MessageHook> m_hooks;
-    HHOOK m_hook;
-    hook_list() : m_hook(nullptr){};
+    HHOOK m_hook{nullptr};
 };
 
 hook_list g_hooks[static_cast<size_t>(MessageHookType::hook_type_count)];
@@ -16,7 +15,8 @@ LRESULT CALLBACK g_on_hooked_message(uih::MessageHookType p_type, int code, WPAR
     bool b_call_next = true;
 
     if (code >= 0) {
-        t_size n, count = g_hooks[type_index].m_hooks.get_count();
+        t_size n;
+        t_size count = g_hooks[type_index].m_hooks.get_count();
 
         for (n = 0; n < count; n++) {
             if ((p_type != MessageHookType::type_get_message || wp == PM_REMOVE)

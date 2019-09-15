@@ -4,49 +4,49 @@ namespace uih::ole {
 
 CLIPFORMAT get_clipboard_format_drop_description()
 {
-    static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(CFSTR_DROPDESCRIPTION);
+    static const auto cfRet = (CLIPFORMAT)RegisterClipboardFormat(CFSTR_DROPDESCRIPTION);
     return cfRet;
 }
 
 CLIPFORMAT DragWindowFormat()
 {
-    static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"DragWindow");
+    static const auto cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"DragWindow");
     return cfRet;
 }
 
 CLIPFORMAT IsShowingLayeredFormat()
 {
-    static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsShowingLayered");
+    static const auto cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsShowingLayered");
     return cfRet;
 }
 
 CLIPFORMAT IsShowingTextFormat()
 {
-    static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsShowingText");
+    static const auto cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsShowingText");
     return cfRet;
 }
 
 CLIPFORMAT DisableDragTextFormat()
 {
-    static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"DisableDragText");
+    static const auto cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"DisableDragText");
     return cfRet;
 }
 
 CLIPFORMAT IsComputingImageFormat()
 {
-    static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsComutingImage");
+    static const auto cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"IsComutingImage");
     return cfRet;
 }
 
 CLIPFORMAT UsingDefaultDragImageFormat()
 {
-    static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"UsingDefaultDragImage");
+    static const auto cfRet = (CLIPFORMAT)RegisterClipboardFormat(L"UsingDefaultDragImage");
     return cfRet;
 }
 
 CLIPFORMAT PreferredDropEffectFormat()
 {
-    static const CLIPFORMAT cfRet = (CLIPFORMAT)RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT);
+    static const auto cfRet = (CLIPFORMAT)RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT);
     return cfRet;
 }
 
@@ -134,8 +134,8 @@ HRESULT set_drop_description(IDataObject* pdtobj, DROPIMAGETYPE dit, const char*
             wcscpy_s(dd.szMessage, wmsg.get_ptr());
             wcscpy_s(dd.szInsert, winsert.get_ptr());
             return set_blob(pdtobj, get_clipboard_format_drop_description(), &dd, sizeof(dd));
-        } else
-            return S_OK;
+        }
+        return S_OK;
     }
     return E_NOTIMPL;
 }
@@ -181,17 +181,21 @@ HRESULT STDMETHODCALLTYPE IDropSourceGeneric::QueryInterface(REFIID iid, void** 
 {
     if (ppvObject == nullptr)
         return E_INVALIDARG;
+
     *ppvObject = nullptr;
+
     if (iid == IID_IUnknown) {
         AddRef();
         *ppvObject = (IUnknown*)this;
         return S_OK;
-    } else if (iid == IID_IDropSource) {
+    }
+
+    if (iid == IID_IDropSource) {
         AddRef();
         *ppvObject = (IDropSource*)this;
         return S_OK;
-    } else
-        return E_NOINTERFACE;
+    }
+    return E_NOINTERFACE;
 }
 ULONG STDMETHODCALLTYPE IDropSourceGeneric::AddRef()
 {
@@ -210,11 +214,13 @@ HRESULT STDMETHODCALLTYPE IDropSourceGeneric::QueryContinueDrag(BOOL fEscapePres
 {
     if (fEscapePressed || ((m_initial_key_state & MK_LBUTTON) && (grfKeyState & MK_RBUTTON))) {
         return DRAGDROP_S_CANCEL;
-    } else if (((m_initial_key_state & MK_LBUTTON) && !(grfKeyState & MK_LBUTTON))
+    }
+
+    if (((m_initial_key_state & MK_LBUTTON) && !(grfKeyState & MK_LBUTTON))
         || ((m_initial_key_state & MK_RBUTTON) && !(grfKeyState & MK_RBUTTON))) {
         return DRAGDROP_S_DROP;
-    } else
-        return S_OK;
+    }
+    return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE IDropSourceGeneric::GiveFeedback(DWORD dwEffect)

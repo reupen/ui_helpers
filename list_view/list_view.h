@@ -26,10 +26,10 @@ public:
     class Column {
     public:
         pfc::string8 m_title;
-        int m_size;
-        int m_display_size;
-        int m_autosize_weight;
-        uih::alignment m_alignment;
+        int m_size{0};
+        int m_display_size{0};
+        int m_autosize_weight{1};
+        uih::alignment m_alignment{uih::ALIGN_LEFT};
 
         Column(const char* title, int cx, int p_autosize_weight = 1, uih::alignment alignment = uih::ALIGN_LEFT)
             : m_title(title)
@@ -38,7 +38,7 @@ public:
             , m_autosize_weight(p_autosize_weight)
             , m_alignment(alignment){};
 
-        Column() : m_size(0), m_display_size(0), m_autosize_weight(1), m_alignment(uih::ALIGN_LEFT){};
+        Column() = default;
     };
 
     using string_array = std::vector<pfc::string_simple>;
@@ -48,18 +48,18 @@ public:
         string_array m_subitems;
         string_array m_groups;
 
-        InsertItem(){};
+        InsertItem() = default;
 
         InsertItem(const string_array& text, const string_array& p_groups)
         {
             m_subitems = text;
             m_groups = p_groups;
-        };
+        }
         InsertItem(size_t subitem_count, size_t group_count)
         {
             m_subitems.resize(subitem_count);
             m_groups.resize(group_count);
-        };
+        }
     };
 
     template <size_t subitem_count, size_t group_count>
@@ -79,31 +79,23 @@ protected:
     class Item;
     class Group;
 
-    typedef pfc::refcounted_object_ptr_t<Group> t_group_ptr;
-    typedef pfc::refcounted_object_ptr_t<Item> t_item_ptr;
+    using t_group_ptr = pfc::refcounted_object_ptr_t<Group>;
+    using t_item_ptr = pfc::refcounted_object_ptr_t<Item>;
 
     class Group : public pfc::refcounted_object_root {
     public:
         pfc::string8 m_text;
-
-        Group(const char* p_text) : m_text(p_text) {}
-
-        Group() {}
-
-    private:
     };
 
     class Item : public pfc::refcounted_object_root {
     public:
-        // pfc::list_t<string_array> m_subitems_v2;
-        t_uint8 m_line_count;
+        t_uint8 m_line_count{1};
         string_array m_subitems;
         std::vector<t_group_ptr> m_groups;
 
-        // t_size m_position;
-        t_size m_display_index;
-        t_size m_display_position;
-        bool m_selected;
+        t_size m_display_index{0};
+        t_size m_display_position{0};
+        bool m_selected{false};
 
         void update_line_count()
         {
@@ -121,9 +113,6 @@ protected:
                 m_line_count = std::max(m_line_count, lc);
             }
         }
-
-        Item() : m_line_count(1), m_display_index(0), m_display_position(0), m_selected(false){};
-
     private:
     };
 
@@ -391,7 +380,8 @@ public:
 
     int get_item_group_bottom(t_size index, bool b_include_headers = false)
     {
-        t_size gstart = index, gcount = 0;
+        t_size gstart = index;
+        t_size gcount = 0;
         get_item_group(index, m_group_count ? m_group_count - 1 : 0, gstart, gcount);
         int ret = 0;
         if (gcount)
@@ -437,7 +427,8 @@ public:
 
     t_size get_selected_item_single()
     {
-        t_size numSelected = get_selection_count(2), index = 0;
+        t_size numSelected = get_selection_count(2);
+        t_size index = 0;
         if (numSelected == 1) {
             pfc::bit_array_bittable mask(get_item_count());
             get_selection_state(mask);
@@ -585,14 +576,14 @@ protected:
     {
         if (index == 0)
             return m_group_count;
-        else {
-            t_size counter = 0, i = m_group_count;
-            while (i && m_items[index]->m_groups[i - 1] != m_items[index - 1]->m_groups[i - 1]) {
-                i--;
-                counter++;
-            }
-            return counter;
+
+        t_size counter = 0;
+        t_size i = m_group_count;
+        while (i && m_items[index]->m_groups[i - 1] != m_items[index - 1]->m_groups[i - 1]) {
+            i--;
+            counter++;
         }
+        return counter;
     }
 
     void on_focus_change(t_size index_prev, t_size index_new);
@@ -649,16 +640,16 @@ protected:
     {
         if (m_have_indent_column)
             return index != 0;
-        else
-            return true;
+
+        return true;
     }
 
     t_size header_column_to_real_column(t_size index)
     {
         if (m_have_indent_column && index != pfc_infinite)
             return index - 1;
-        else
-            return index;
+
+        return index;
     }
 
     bool get_show_group_info_area() { return m_group_count ? m_show_group_info_area : false; }

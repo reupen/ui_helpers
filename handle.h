@@ -2,7 +2,7 @@
 
 template <typename t_handle, class t_release>
 class handle_container_t {
-    typedef handle_container_t<t_handle, t_release> t_self;
+    using t_self = handle_container_t<t_handle, t_release>;
 
 public:
     void release()
@@ -66,7 +66,7 @@ public:
             handle = nullptr;
         };
     };
-    typedef handle_container_t<t_gdi_type, gdi_release_t> ptr_t;
+    using ptr_t = handle_container_t<t_gdi_type, gdi_release_t>;
 };
 
 class icon_release_t {
@@ -84,6 +84,7 @@ public:
     static bool is_valid(HANDLE handle) { return handle != INVALID_HANDLE_VALUE; };
     static void set_invalid(HANDLE& handle) { handle = INVALID_HANDLE_VALUE; };
 };
-typedef handle_container_t<HANDLE, __handle_release_t> handle_ptr_t;
+
+using handle_ptr_t = handle_container_t<HANDLE, __handle_release_t>;
 
 } // namespace win32

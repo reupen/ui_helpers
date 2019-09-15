@@ -8,7 +8,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     static const UINT MSG_DI_GETDRAGIMAGE = RegisterWindowMessage(DI_GETDRAGIMAGE);
 
     if (msg && msg == MSG_DI_GETDRAGIMAGE) {
-        LPSHDRAGIMAGE lpsdi = (LPSHDRAGIMAGE)lp;
+        auto lpsdi = (LPSHDRAGIMAGE)lp;
 
         return render_drag_image(lpsdi);
     }
@@ -239,7 +239,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             SetCapture(wnd);
         } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
             if (!m_single_selection) {
-                t_size index = 0, count = 0;
+                t_size index = 0;
+                t_size count = 0;
                 if (!m_lbutton_down_ctrl) {
                     get_item_group(hit_result.index, hit_result.group_level, index, count);
                     set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
@@ -294,7 +295,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                     }
                 } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
                     if (hit_result.index < m_items.size() && hit_result.group_level < m_group_count) {
-                        t_size index = 0, count = 0;
+                        t_size index = 0;
+                        t_size count = 0;
                         get_item_group(hit_result.index, hit_result.group_level, index, count);
                         if (count) {
                             set_selection_state(pfc::bit_array_range(index, count),
@@ -345,7 +347,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             } else if (get_focus_item() != hit_result.index)
                 set_focus_item(hit_result.index);
         } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
-            t_size index = 0, count = 0;
+            t_size index = 0;
+            t_size count = 0;
             get_item_group(hit_result.index, hit_result.group_level, index, count);
             set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
             if (count)
@@ -418,8 +421,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             }
         }
         if (m_selecting_move || (m_single_selection && m_selecting) || m_dragging_rmb) {
-            const unsigned cx_drag = (unsigned)abs(GetSystemMetrics(SM_CXDRAG));
-            const unsigned cy_drag = (unsigned)abs(GetSystemMetrics(SM_CYDRAG));
+            const auto cx_drag = (unsigned)abs(GetSystemMetrics(SM_CXDRAG));
+            const auto cy_drag = (unsigned)abs(GetSystemMetrics(SM_CYDRAG));
 
             bool b_enter_drag = false;
 
@@ -525,7 +528,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             if (focus != pfc_infinite)
                 execute_default_action(focus, hit_result.column, false, (wp & MK_CONTROL) != 0);
             return 0;
-        } else if (hit_result.category == HitTestCategory::RightOfItem
+        }
+        if (hit_result.category == HitTestCategory::RightOfItem
             || hit_result.category == HitTestCategory::RightOfGroupHeader
             || hit_result.category == HitTestCategory::NotOnItem)
             if (notify_on_doubleleftclick_nowhere())
@@ -671,13 +675,14 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 
             if (b_focused)
                 return (LRESULT)GetSysColorBrush(COLOR_WINDOW);
-            else if (m_search_box_hot)
+
+            if (m_search_box_hot)
                 return (LRESULT)GetSysColorBrush(
                     COLOR_WINDOW); // m_search_box_hot_brush.get();//GetSysColorBrush(COLOR_BTNFACE);
-            else
-                return (LRESULT)GetSysColorBrush(IsThemeActive() && IsAppThemed()
-                        ? COLOR_BTNFACE
-                        : COLOR_WINDOW); // m_search_box_nofocus_brush.get();//GetSysColorBrush(COLOR_3DLIGHT);
+
+            return (LRESULT)GetSysColorBrush(IsThemeActive() && IsAppThemed()
+                    ? COLOR_BTNFACE
+                    : COLOR_WINDOW); // m_search_box_nofocus_brush.get();//GetSysColorBrush(COLOR_3DLIGHT);
         }
         break;
 #endif

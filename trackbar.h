@@ -461,11 +461,9 @@ private:
 
     class t_last_mousemove {
     public:
-        bool m_valid;
-        WPARAM m_wp;
-        LPARAM m_lp;
-
-        t_last_mousemove() : m_valid(false), m_wp(NULL), m_lp(NULL){};
+        bool m_valid{false};
+        WPARAM m_wp{NULL};
+        LPARAM m_lp{NULL};
     } m_last_mousemove;
 
     /**
