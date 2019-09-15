@@ -48,18 +48,18 @@ public:
         string_array m_subitems;
         string_array m_groups;
 
-        InsertItem(){};
+        InsertItem() = default;
 
         InsertItem(const string_array& text, const string_array& p_groups)
         {
             m_subitems = text;
             m_groups = p_groups;
-        };
+        }
         InsertItem(size_t subitem_count, size_t group_count)
         {
             m_subitems.resize(subitem_count);
             m_groups.resize(group_count);
-        };
+        }
     };
 
     template <size_t subitem_count, size_t group_count>
@@ -85,12 +85,6 @@ protected:
     class Group : public pfc::refcounted_object_root {
     public:
         pfc::string8 m_text;
-
-        Group(const char* p_text) : m_text(p_text) {}
-
-        Group() {}
-
-    private:
     };
 
     class Item : public pfc::refcounted_object_root {

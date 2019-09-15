@@ -17,7 +17,7 @@ struct WindowPosition {
     int32_t cx = 0;
     int32_t cy = 0;
 
-    WindowPosition() {}
+    WindowPosition() = default;
 
     WindowPosition(int32_t x_, int32_t y_, int32_t cx_, int32_t cy_) : x{x_}, y{y_}, cx{cx_}, cy{cy_} {}
 
