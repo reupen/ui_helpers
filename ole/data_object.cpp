@@ -71,12 +71,12 @@ STDMETHODIMP CDataObject::QueryInterface(REFIID riid, LPVOID* ppvOut)
     return E_NOINTERFACE;
 }
 
-STDMETHODIMP_(ULONG) CDataObject::AddRef(void)
+STDMETHODIMP_(ULONG) CDataObject::AddRef()
 {
     return ++m_cRefCount;
 }
 
-STDMETHODIMP_(ULONG) CDataObject::Release(void)
+STDMETHODIMP_(ULONG) CDataObject::Release()
 {
     if (--m_cRefCount == 0) {
         delete this;

@@ -29,8 +29,8 @@ public:
 
     //IUnknown members that delegate to m_pUnkOuter.
     STDMETHOD(QueryInterface)(REFIID, LPVOID*);
-    STDMETHOD_(ULONG, AddRef)(void);
-    STDMETHOD_(ULONG, Release)(void);
+    STDMETHOD_(ULONG, AddRef)();
+    STDMETHOD_(ULONG, Release)();
 
     /* IDataObject methods */
     STDMETHOD(GetData)(LPFORMATETC, LPSTGMEDIUM);
