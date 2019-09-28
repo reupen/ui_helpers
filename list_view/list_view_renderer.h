@@ -18,6 +18,8 @@ struct ColourData {
 
 class RendererBase {
 public:
+    virtual void render_group_info(HDC dc, t_size index, RECT rc) {}
+
     virtual void render_group(ColourData p_data, HDC dc, HTHEME theme, size_t item_index, size_t group_index,
         std::string_view text, int indentation, t_size level, RECT rc)
         = 0;

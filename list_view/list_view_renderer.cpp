@@ -99,7 +99,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
                 = {gx, gy, gx + gcx, get_item_position(item_group_start) + height - m_scroll_position + rc_items.top};
             if (rc_group_info.top >= rc_update.bottom)
                 break;
-            render_group_info(dc, item_group_start, item_group_count, rc_group_info);
+            m_renderer->render_group_info(dc, item_group_start, rc_group_info);
 
             // console::printf("%u %u %u %u; %u %u %u %u",rc_group_info,rc_update);
         }
