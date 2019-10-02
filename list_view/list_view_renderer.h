@@ -18,6 +18,8 @@ struct ColourData {
 
 class RendererBase {
 public:
+    virtual void render_background(ColourData p_data, HDC dc, const RECT* rc) = 0;
+
     virtual void render_group_info(HDC dc, t_size index, RECT rc) {}
 
     virtual void render_group(ColourData p_data, HDC dc, HTHEME theme, size_t item_index, size_t group_index,
@@ -29,6 +31,8 @@ public:
 
 class DefaultRenderer : public RendererBase {
 public:
+    void render_background(ColourData p_data, HDC dc, const RECT* rc) override;
+
     void render_group(ColourData p_data, HDC dc, HTHEME theme, size_t item_index, size_t group_index,
         std::string_view text, int indentation, t_size level, RECT rc) override;
 

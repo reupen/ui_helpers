@@ -41,7 +41,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
         = (SendMessage(get_wnd(), WM_QUERYUISTATE, NULL, NULL) & UISF_HIDEFOCUS) != 0 && !m_always_show_focus;
     bool b_window_focused = (wnd_focus == get_wnd()) || IsChild(get_wnd(), wnd_focus);
 
-    render_background(dc, &rc_update);
+    m_renderer->render_background(p_data, dc, &rc_update);
     const auto rc_items = get_items_rect();
 
     if (rc_update.bottom <= rc_update.top || rc_update.bottom < rc_items.top)
@@ -336,7 +336,7 @@ void ListView::render_focus_rect_default(const ColourData& p_data, HDC dc, bool 
     }
 }
 
-void ListView::render_background_default(const ColourData& p_data, HDC dc, const RECT* rc)
+void lv::DefaultRenderer::render_background(ColourData p_data, HDC dc, const RECT* rc)
 {
     FillRect(dc, rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(p_data.m_background)));
 }
@@ -348,12 +348,6 @@ void ListView::render_item(HDC dc, t_size index, int indentation, bool b_selecte
     render_get_colour_data(p_data);
     render_item_default(
         p_data, dc, index, indentation, b_selected, b_window_focused, b_highlight, should_hide_focus, b_focused, rc);
-}
-void ListView::render_background(HDC dc, const RECT* rc)
-{
-    ColourData p_data;
-    render_get_colour_data(p_data);
-    render_background_default(p_data, dc, rc);
 }
 
 int ListView::get_text_width(const char* text, t_size length)
