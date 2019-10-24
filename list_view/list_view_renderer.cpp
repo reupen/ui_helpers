@@ -30,6 +30,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
 {
     ColourData p_data;
     render_get_colour_data(p_data);
+    const lv::RendererContext context = {p_data, get_wnd(), dc, m_theme, m_items_view_theme};
 
     const t_size level_spacing_size = m_group_level_indentation_enabled ? _level_spacing_size : 0;
     // COLORREF cr_orig = GetTextColor(dc);
@@ -118,9 +119,17 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
         }
         if (rc.bottom > rc_update.top) {
             const auto show_item_focus = index_focus == i && (b_window_focused || m_always_show_focus);
+            std::vector<lv::RendererSubItem> sub_items;
 
-            render_item(dc, i, 0 /*item_indentation*/, b_selected, b_window_focused,
-                (m_highlight_item_index == i) || (highlight_index == i), should_hide_focus, show_item_focus, &rc);
+            for (size_t column_index{}; column_index < m_columns.size(); ++column_index) {
+                const auto text = get_item_text(i, column_index);
+                auto& column = m_columns[column_index];
+
+                sub_items.emplace_back(lv::RendererSubItem{text, column.m_display_size, column.m_alignment});
+            }
+
+            m_renderer->render_item(context, i, sub_items, 0 /*item_indentation*/, b_selected, b_window_focused,
+                (m_highlight_item_index == i) || (highlight_index == i), should_hide_focus, show_item_focus, rc);
             /*if (i == m_insert_mark_index || i + 1 == m_insert_mark_index)
             {
                 gdi_object_t<HPEN>::ptr_t pen = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_WINDOWTEXT));
@@ -249,10 +258,10 @@ void lv::DefaultRenderer::render_group(ColourData p_data, HDC dc, HTHEME theme, 
     }
 }
 
-void ListView::render_item_default(const ColourData& p_data, HDC dc, t_size index, int indentation, bool b_selected,
-    bool b_window_focused, bool b_highlight, bool should_hide_focus, bool b_focused, const RECT* rc)
+void lv::DefaultRenderer::render_item(RendererContext context, t_size index, std::vector<RendererSubItem> sub_items,
+    int indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool should_hide_focus, bool b_focused,
+    RECT rc)
 {
-    t_item_ptr item = m_items[index];
     int theme_state = NULL;
     if (b_selected) {
         if (b_highlight || b_focused && b_window_focused)
@@ -266,59 +275,64 @@ void ListView::render_item_default(const ColourData& p_data, HDC dc, t_size inde
     }
 
     // NB Third param of IsThemePartDefined "must be 0". But this works.
-    bool b_themed = m_theme && p_data.m_themed && IsThemePartDefined(m_theme, LVP_LISTITEM, theme_state);
+    bool b_themed = context.list_view_theme && context.colours.m_themed
+        && IsThemePartDefined(context.list_view_theme, LVP_LISTITEM, theme_state);
 
     COLORREF cr_text = NULL;
     if (b_themed && theme_state) {
-        cr_text = GetThemeSysColor(m_theme, b_selected ? COLOR_BTNTEXT : COLOR_WINDOWTEXT);
+        cr_text = GetThemeSysColor(context.list_view_theme, b_selected ? COLOR_BTNTEXT : COLOR_WINDOWTEXT);
         ;
         {
-            if (IsThemeBackgroundPartiallyTransparent(m_theme, LVP_LISTITEM, theme_state))
-                DrawThemeParentBackground(get_wnd(), dc, rc);
-            DrawThemeBackground(m_theme, dc, LVP_LISTITEM, theme_state, rc, nullptr);
+            if (IsThemeBackgroundPartiallyTransparent(context.list_view_theme, LVP_LISTITEM, theme_state))
+                DrawThemeParentBackground(context.wnd, context.dc, &rc);
+            DrawThemeBackground(context.list_view_theme, context.dc, LVP_LISTITEM, theme_state, &rc, nullptr);
         }
     } else {
-        cr_text = b_selected ? (b_window_focused ? p_data.m_selection_text : p_data.m_inactive_selection_text)
-                             : p_data.m_text;
-        FillRect(dc, rc,
-            gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(b_selected
-                    ? (b_window_focused ? p_data.m_selection_background : p_data.m_inactive_selection_background)
-                    : p_data.m_background)));
+        cr_text = b_selected
+            ? (b_window_focused ? context.colours.m_selection_text : context.colours.m_inactive_selection_text)
+            : context.colours.m_text;
+        FillRect(context.dc, &rc,
+            gdi_object_t<HBRUSH>::ptr_t(
+                CreateSolidBrush(b_selected ? (b_window_focused ? context.colours.m_selection_background
+                                                                : context.colours.m_inactive_selection_background)
+                                            : context.colours.m_background)));
     }
-    RECT rc_subitem = *rc;
-    t_size k;
-    t_size countk = m_columns.size();
+    RECT rc_subitem = rc;
 
-    for (k = 0; k < countk; k++) {
-        rc_subitem.right = rc_subitem.left + m_columns[k].m_display_size;
-        text_out_colours_tab(dc, get_item_text(index, k), strlen(get_item_text(index, k)),
-            scale_dpi_value(1) + (k == 0 ? indentation : 0), scale_dpi_value(3), &rc_subitem, b_selected, cr_text, true,
-            true, true, m_columns[k].m_alignment);
+    for (size_t column_index{0}; column_index < sub_items.size(); ++column_index) {
+        auto& sub_item = sub_items[column_index];
+        rc_subitem.right = rc_subitem.left + sub_item.width;
+        text_out_colours_tab(context.dc, sub_item.text.data(), sub_item.text.size(),
+            scale_dpi_value(1) + (column_index == 0 ? indentation : 0), scale_dpi_value(3), &rc_subitem, b_selected,
+            cr_text, true, true, true, sub_item.alignment);
         rc_subitem.left = rc_subitem.right;
     }
 
     if (b_focused) {
-        render_focus_rect_default(p_data, dc, should_hide_focus, *rc);
+        render_focus_rect(context, should_hide_focus, rc);
     }
 }
 
-void ListView::render_focus_rect_default(const ColourData& p_data, HDC dc, bool should_hide_focus, RECT rc) const
+void lv::DefaultRenderer::render_focus_rect(RendererContext context, bool should_hide_focus, RECT rc) const
 {
-    const auto use_themed_rect = p_data.m_themed && !p_data.m_use_custom_active_item_frame && m_items_view_theme
+    const auto use_themed_rect = context.colours.m_themed && !context.colours.m_use_custom_active_item_frame
+        && context.items_view_theme
         && IsThemePartDefined(
-               m_items_view_theme, theming::items_view_part_focus_rect, theming::items_view_state_focus_rect_normal);
+            context.items_view_theme, theming::items_view_part_focus_rect, theming::items_view_state_focus_rect_normal);
 
     if (use_themed_rect) {
-        DrawThemeBackground(m_items_view_theme, dc, theming::items_view_part_focus_rect,
+        DrawThemeBackground(context.items_view_theme, context.dc, theming::items_view_part_focus_rect,
             theming::items_view_state_focus_rect_normal, &rc, nullptr);
 
         return;
     }
 
-    if (p_data.m_themed && m_theme && IsThemePartDefined(m_theme, LVP_LISTITEM, LISS_SELECTED)) {
+    if (context.colours.m_themed && context.list_view_theme
+        && IsThemePartDefined(context.list_view_theme, LVP_LISTITEM, LISS_SELECTED)) {
         MARGINS margins{};
 
-        auto hr = GetThemeMargins(m_theme, dc, LVP_LISTITEM, LISS_SELECTED, TMT_CONTENTMARGINS, nullptr, &margins);
+        const auto hr = GetThemeMargins(
+            context.list_view_theme, context.dc, LVP_LISTITEM, LISS_SELECTED, TMT_CONTENTMARGINS, nullptr, &margins);
         if (SUCCEEDED(hr)) {
             rc.left += margins.cxLeftWidth;
             rc.top += margins.cxRightWidth;
@@ -327,27 +341,18 @@ void ListView::render_focus_rect_default(const ColourData& p_data, HDC dc, bool 
         }
     }
 
-    if (p_data.m_use_custom_active_item_frame) {
-        draw_rect_outline(dc, rc, p_data.m_active_item_frame, scale_dpi_value(1));
+    if (context.colours.m_use_custom_active_item_frame) {
+        draw_rect_outline(context.dc, rc, context.colours.m_active_item_frame, scale_dpi_value(1));
     } else if (!should_hide_focus) {
         // We only obey should_hide_focus for traditional dotted focus rectangles, similar to how
         // Windows behaves
-        DrawFocusRect(dc, &rc);
+        DrawFocusRect(context.dc, &rc);
     }
 }
 
 void lv::DefaultRenderer::render_background(ColourData p_data, HDC dc, const RECT* rc)
 {
     FillRect(dc, rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(p_data.m_background)));
-}
-
-void ListView::render_item(HDC dc, t_size index, int indentation, bool b_selected, bool b_window_focused,
-    bool b_highlight, bool should_hide_focus, bool b_focused, const RECT* rc)
-{
-    ColourData p_data;
-    render_get_colour_data(p_data);
-    render_item_default(
-        p_data, dc, index, indentation, b_selected, b_window_focused, b_highlight, should_hide_focus, b_focused, rc);
 }
 
 int ListView::get_text_width(const char* text, t_size length)

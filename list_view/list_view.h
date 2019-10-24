@@ -664,14 +664,6 @@ protected:
     COLORREF get_group_text_colour_default();
     bool get_group_text_colour_default(COLORREF& cr);
 
-    void render_item_default(const ColourData& p_data, HDC dc, t_size index, int indentation, bool b_selected,
-        bool b_window_focused, bool b_highlight, bool should_hide_focus, bool b_focused, const RECT* rc);
-    void render_focus_rect_default(const ColourData& p_data, HDC dc, bool should_hide_focus, RECT rc) const;
-
-    virtual void render_group_info(HDC dc, t_size index, t_size group_count, const RECT& rc){};
-
-    virtual void render_item(HDC dc, t_size index, int indentation, bool b_selected, bool b_window_focused,
-        bool b_highlight, bool should_hide_focus, bool b_focused, const RECT* rc);
     virtual bool render_drag_image(LPSHDRAGIMAGE lpsdi);
 
     virtual icon_ptr get_drag_image_icon() { return nullptr; }
