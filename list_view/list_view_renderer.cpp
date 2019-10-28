@@ -28,9 +28,8 @@ int ListView::get_default_indentation_step()
 
 void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
 {
-    ColourData p_data;
-    render_get_colour_data(p_data);
-    const lv::RendererContext context = {p_data, get_wnd(), dc, m_theme, m_items_view_theme};
+    ColourData colours = render_get_colour_data();
+    const lv::RendererContext context = {colours, get_wnd(), dc, m_theme, m_items_view_theme};
 
     const t_size level_spacing_size = m_group_level_indentation_enabled ? _level_spacing_size : 0;
     // COLORREF cr_orig = GetTextColor(dc);
@@ -42,7 +41,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
         = (SendMessage(get_wnd(), WM_QUERYUISTATE, NULL, NULL) & UISF_HIDEFOCUS) != 0 && !m_always_show_focus;
     bool b_window_focused = (wnd_focus == get_wnd()) || IsChild(get_wnd(), wnd_focus);
 
-    m_renderer->render_background(p_data, dc, &rc_update);
+    m_renderer->render_background(context, &rc_update);
     const auto rc_items = get_items_rect();
 
     if (rc_update.bottom <= rc_update.top || rc_update.bottom < rc_items.top)
@@ -83,7 +82,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
                     break; // CRUDE
                 }
                 m_renderer->render_group(
-                    p_data, dc, m_theme, i, j, p_group->m_text.get_ptr(), cx_space * level_spacing_size, j, rc);
+                    context, i, j, p_group->m_text.get_ptr(), cx_space * level_spacing_size, j, rc);
 
                 counter++;
             }
@@ -100,7 +99,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
                 = {gx, gy, gx + gcx, get_item_position(item_group_start) + height - m_scroll_position + rc_items.top};
             if (rc_group_info.top >= rc_update.bottom)
                 break;
-            m_renderer->render_group_info(dc, item_group_start, rc_group_info);
+            m_renderer->render_group_info(context, item_group_start, rc_group_info);
 
             // console::printf("%u %u %u %u; %u %u %u %u",rc_group_info,rc_update);
         }
@@ -170,7 +169,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
         rc_line.right = cx;
         rc_line.bottom = yPos + scale_dpi_value(2);
         if (IntersectRect(&rc_dummy, &rc_line, &rc_update)) {
-            gdi_object_t<HBRUSH>::ptr_t br = CreateSolidBrush(p_data.m_text);
+            gdi_object_t<HBRUSH>::ptr_t br = CreateSolidBrush(colours.m_text);
             FillRect(dc, &rc_line, br);
         }
         /*gdi_object_t<HBRUSH>::ptr_t pen = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_WINDOWTEXT));
@@ -197,23 +196,24 @@ void ListView::render_get_colour_data(ColourData& p_out)
     p_out.m_group_background = p_out.m_background;
 }
 
-void lv::DefaultRenderer::render_group_line(const ColourData& p_data, HDC dc, HTHEME theme, const RECT* rc)
+void lv::DefaultRenderer::render_group_line(RendererContext context, const RECT* rc)
 {
-    if (theme && IsThemePartDefined(theme, LVP_GROUPHEADERLINE, NULL)
-        && SUCCEEDED(DrawThemeBackground(theme, dc, LVP_GROUPHEADERLINE, LVGH_OPEN, rc, nullptr))) {
+    if (context.list_view_theme && IsThemePartDefined(context.list_view_theme, LVP_GROUPHEADERLINE, NULL)
+        && SUCCEEDED(
+            DrawThemeBackground(context.list_view_theme, context.dc, LVP_GROUPHEADERLINE, LVGH_OPEN, rc, nullptr))) {
     } else {
-        COLORREF cr = p_data.m_group_text; // get_group_text_colour_default();
+        COLORREF cr = context.colours.m_group_text; // get_group_text_colour_default();
         gdi_object_t<HPEN>::ptr_t pen = CreatePen(PS_SOLID, uih::scale_dpi_value(1), cr);
-        HPEN pen_old = SelectPen(dc, pen);
-        MoveToEx(dc, rc->left, rc->top, nullptr);
-        LineTo(dc, rc->right, rc->top);
-        SelectPen(dc, pen_old);
+        HPEN pen_old = SelectPen(context.dc, pen);
+        MoveToEx(context.dc, rc->left, rc->top, nullptr);
+        LineTo(context.dc, rc->right, rc->top);
+        SelectPen(context.dc, pen_old);
     }
 }
 
-void lv::DefaultRenderer::render_group_background(const ColourData& p_data, HDC dc, const RECT* rc)
+void lv::DefaultRenderer::render_group_background(RendererContext context, const RECT* rc)
 {
-    FillRect(dc, rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(p_data.m_group_background)));
+    FillRect(context.dc, rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(context.colours.m_group_background)));
 }
 
 COLORREF ListView::get_group_text_colour_default()
@@ -232,15 +232,15 @@ bool ListView::get_group_text_colour_default(COLORREF& cr)
         && SUCCEEDED(GetThemeColor(m_theme, LVP_GROUPHEADER, LVGH_OPEN, TMT_HEADING1TEXTCOLOR, &cr));
 }
 
-void lv::DefaultRenderer::render_group(ColourData p_data, HDC dc, HTHEME theme, size_t item_index, size_t group_index,
+void lv::DefaultRenderer::render_group(RendererContext context, size_t item_index, size_t group_index,
     std::string_view text, int indentation, t_size level, RECT rc)
 {
-    COLORREF cr = p_data.m_group_text;
+    COLORREF cr = context.colours.m_group_text;
 
     int text_right = NULL;
 
-    render_group_background(p_data, dc, &rc);
-    uih::text_out_colours_tab(dc, text.data(), text.size(),
+    render_group_background(context, &rc);
+    uih::text_out_colours_tab(context.dc, text.data(), text.size(),
         uih::scale_dpi_value(1) + indentation * gsl::narrow<int>(level), uih::scale_dpi_value(3), &rc, false, cr, false,
         false, true, uih::ALIGN_LEFT, nullptr, true, true, &text_right);
 
@@ -254,7 +254,7 @@ void lv::DefaultRenderer::render_group(ColourData p_data, HDC dc, HTHEME theme, 
     };
 
     if (rc_line.right > rc_line.left) {
-        render_group_line(p_data, dc, theme, &rc_line);
+        render_group_line(context, &rc_line);
     }
 }
 
@@ -350,9 +350,9 @@ void lv::DefaultRenderer::render_focus_rect(RendererContext context, bool should
     }
 }
 
-void lv::DefaultRenderer::render_background(ColourData p_data, HDC dc, const RECT* rc)
+void lv::DefaultRenderer::render_background(RendererContext context, const RECT* rc)
 {
-    FillRect(dc, rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(p_data.m_background)));
+    FillRect(context.dc, rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(context.colours.m_background)));
 }
 
 int ListView::get_text_width(const char* text, t_size length)

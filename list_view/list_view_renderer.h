@@ -32,12 +32,12 @@ struct RendererContext {
 
 class RendererBase {
 public:
-    virtual void render_background(ColourData p_data, HDC dc, const RECT* rc) = 0;
+    virtual void render_background(RendererContext context, const RECT* rc) = 0;
 
-    virtual void render_group_info(HDC dc, t_size index, RECT rc) {}
+    virtual void render_group_info(RendererContext context, t_size index, RECT rc) {}
 
-    virtual void render_group(ColourData p_data, HDC dc, HTHEME theme, size_t item_index, size_t group_index,
-        std::string_view text, int indentation, t_size level, RECT rc)
+    virtual void render_group(RendererContext context, size_t item_index, size_t group_index, std::string_view text,
+        int indentation, t_size level, RECT rc)
         = 0;
 
     virtual void render_item(RendererContext context, t_size index, std::vector<RendererSubItem> sub_items,
@@ -50,19 +50,19 @@ public:
 
 class DefaultRenderer : public RendererBase {
 public:
-    void render_background(ColourData p_data, HDC dc, const RECT* rc) override;
+    void render_background(RendererContext context, const RECT* rc) override;
 
-    void render_group(ColourData p_data, HDC dc, HTHEME theme, size_t item_index, size_t group_index,
-        std::string_view text, int indentation, t_size level, RECT rc) override;
+    void render_group(RendererContext context, size_t item_index, size_t group_index, std::string_view text,
+        int indentation, t_size level, RECT rc) override;
 
     void render_item(RendererContext context, t_size index, std::vector<RendererSubItem> sub_items, int indentation,
         bool b_selected, bool b_window_focused, bool b_highlight, bool should_hide_focus, bool b_focused,
         RECT rc) override;
 
 protected:
-    void render_group_line(const ColourData& p_data, HDC dc, HTHEME theme, const RECT* rc);
+    void render_group_line(RendererContext context, const RECT* rc);
 
-    void render_group_background(const ColourData& p_data, HDC dc, const RECT* rc);
+    void render_group_background(RendererContext context, const RECT* rc);
 
     void render_focus_rect(RendererContext context, bool should_hide_focus, RECT rc) const;
 };
