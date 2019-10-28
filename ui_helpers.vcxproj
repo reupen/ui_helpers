@@ -148,6 +148,7 @@
     <ClInclude Include="drag_image.h" />
     <ClInclude Include="handle.h" />
     <ClInclude Include="list_view\list_view.h" />
+    <ClInclude Include="list_view\list_view_renderer.h" />
     <ClInclude Include="ole.h" />
     <ClInclude Include="OLE\data_object.h" />
     <ClInclude Include="ole\enum_format_etc.h" />

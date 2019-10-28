@@ -32,6 +32,9 @@
       <Filter>Data Object</Filter>
     </ClInclude>
     <ClInclude Include="theming.h" />
+    <ClInclude Include="list_view\list_view_renderer.h">
+      <Filter>List View</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="message_hook.cpp" />

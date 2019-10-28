@@ -1,5 +1,7 @@
 #pragma once
 
+#include "list_view_renderer.h"
+
 namespace uih {
 
 class ListView {
@@ -15,13 +17,7 @@ public:
 
     enum { MSG_KILL_INLINE_EDIT = WM_USER + 3 };
 
-    struct ColourData {
-        bool m_themed;
-        bool m_use_custom_active_item_frame;
-        COLORREF
-        m_text, m_selection_text, m_inactive_selection_text, m_background, m_selection_background,
-            m_inactive_selection_background, m_active_item_frame, m_group_background, m_group_text;
-    };
+    using ColourData = uih::lv::ColourData;
 
     class Column {
     public:
@@ -117,7 +113,8 @@ protected:
     };
 
 public:
-    ListView()
+    ListView(std::unique_ptr<uih::lv::RendererBase> renderer = std::make_unique<uih::lv::DefaultRenderer>())
+        : m_renderer{std::move(renderer)}
     {
         m_dragging_initial_point.x = 0;
         m_dragging_initial_point.y = 0;
@@ -657,26 +654,16 @@ protected:
     int get_total_indentation() { return get_item_indentation() + get_group_info_area_total_width(); }
 
     virtual void render_get_colour_data(ColourData& p_out);
+    ColourData render_get_colour_data()
+    {
+        ColourData data;
+        render_get_colour_data(data);
+        return data;
+    }
 
-    void render_group_line_default(const ColourData& p_data, HDC dc, const RECT* rc);
-    void render_group_background_default(const ColourData& p_data, HDC dc, const RECT* rc);
     COLORREF get_group_text_colour_default();
     bool get_group_text_colour_default(COLORREF& cr);
 
-    void render_group_default(
-        const ColourData& p_data, HDC dc, const char* text, int indentation, t_size level, const RECT& rc);
-    void render_item_default(const ColourData& p_data, HDC dc, t_size index, int indentation, bool b_selected,
-        bool b_window_focused, bool b_highlight, bool should_hide_focus, bool b_focused, const RECT* rc);
-    void render_focus_rect_default(const ColourData& p_data, HDC dc, bool should_hide_focus, RECT rc) const;
-    void render_background_default(const ColourData& p_data, HDC dc, const RECT* rc);
-
-    virtual void render_group_info(HDC dc, t_size index, t_size group_count, const RECT& rc){};
-
-    virtual void render_group(
-        HDC dc, t_size index, t_size group, const char* text, int indentation, t_size level, const RECT& rc);
-    virtual void render_item(HDC dc, t_size index, int indentation, bool b_selected, bool b_window_focused,
-        bool b_highlight, bool should_hide_focus, bool b_focused, const RECT* rc);
-    virtual void render_background(HDC dc, const RECT* rc);
     virtual bool render_drag_image(LPSHDRAGIMAGE lpsdi);
 
     virtual icon_ptr get_drag_image_icon() { return nullptr; }
@@ -877,5 +864,6 @@ private:
      * \brief The underlying container window.
      */
     std::unique_ptr<uih::ContainerWindow> m_container_window;
+    std::unique_ptr<uih::lv::RendererBase> m_renderer;
 };
 } // namespace uih
