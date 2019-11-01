@@ -38,8 +38,9 @@ bool ListView::on_wm_keydown(WPARAM wp, LPARAM lp)
 
             if (focus != pfc_infinite)
                 set_item_selected(focus, !get_item_selected(focus));
+            return true;
         }
-        return true;
+        return false;
     }
     case VK_RETURN: {
         const bool ctrl_down = 0 != (GetKeyState(VK_CONTROL) & KF_UP);
