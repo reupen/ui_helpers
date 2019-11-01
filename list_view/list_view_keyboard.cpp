@@ -32,8 +32,7 @@ bool ListView::on_wm_keydown(WPARAM wp, LPARAM lp)
         return true;
     }
     case VK_SPACE: {
-        const bool ctrl_down = 0 != (GetKeyState(VK_CONTROL) & KF_UP);
-        if (ctrl_down) {
+        if (is_ctrl_down) {
             const t_size focus = get_focus_item();
 
             if (focus != pfc_infinite)
@@ -43,10 +42,9 @@ bool ListView::on_wm_keydown(WPARAM wp, LPARAM lp)
         return false;
     }
     case VK_RETURN: {
-        const bool ctrl_down = 0 != (GetKeyState(VK_CONTROL) & KF_UP);
         const t_size focus = get_focus_item();
         if (focus != pfc_infinite)
-            execute_default_action(focus, pfc_infinite, true, ctrl_down);
+            execute_default_action(focus, pfc_infinite, true, is_ctrl_down);
         return true;
     }
     case VK_SHIFT:
