@@ -295,6 +295,9 @@ BOOL text_out_colours_ellipsis(HDC dc, const char* src_c, int src_c_len, int x_o
                         segment.analyse(dc);
 
                         segments.resize(std::distance(segment_iter, segments.rend()));
+                        cumulative_width = std::accumulate(segments.begin(), segments.end(), 0,
+                            [](int value, auto&& segment) { return value + segment.renderer.get_output_width(); });
+
                         return true;
                     }
                     return false;
