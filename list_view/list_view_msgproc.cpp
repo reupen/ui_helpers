@@ -633,14 +633,15 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         return 0;
     case WM_COMMAND:
         switch (LOWORD(wp)) {
-        case 667:
+        case IDC_INLINEEDIT:
             switch (HIWORD(wp)) {
             case EN_KILLFOCUS: {
                 HWND wnd_focus = GetFocus();
                 if (!HWND(wnd_focus) || (HWND(wnd_focus) != wnd && !IsChild(wnd, wnd_focus)))
                     notify_on_kill_focus(wnd_focus);
-            } break;
-            };
+                break;
+            }
+            }
             break;
         case IDC_SEARCHBOX:
             switch (HIWORD(wp)) {

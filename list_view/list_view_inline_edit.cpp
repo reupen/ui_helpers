@@ -282,7 +282,7 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
         m_wnd_inline_edit = CreateWindowEx(0, WC_EDIT, pfc::stringcvt::string_os_from_utf8(text).get_ptr(),
             WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE | ES_LEFT | ES_AUTOHSCROLL | ES_MULTILINE | ES_AUTOVSCROLL
                 | WS_BORDER | WS_CLIPCHILDREN | ((flags & inline_edit_uppercase) ? ES_UPPERCASE : 0),
-            x, y, cx, cy, get_wnd(), HMENU(667), mmh::get_current_instance(), nullptr);
+            x, y, cx, cy, get_wnd(), HMENU(IDC_INLINEEDIT), mmh::get_current_instance(), nullptr);
 
         m_proc_original_inline_edit = reinterpret_cast<WNDPROC>(GetWindowLongPtr(m_wnd_inline_edit, GWLP_WNDPROC));
 
@@ -306,6 +306,9 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
         SetWindowPos(m_wnd_inline_edit, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
         SendMessage(m_wnd_inline_edit, WM_SETFONT, reinterpret_cast<WPARAM>(m_font.get()), MAKELONG(TRUE, 0));
+
+        m_inline_edit_initial_text.reset();
+        get_window_text(m_wnd_inline_edit, m_inline_edit_initial_text);
     }
 
     // Edit_SetRect makes the rectangle passed to it slightly smaller to
@@ -342,7 +345,9 @@ void ListView::save_inline_edit()
 
         pfc::string8 text;
         uih::get_window_text(m_wnd_inline_edit, text);
-        notify_save_inline_edit(text.get_ptr());
+
+        if (strcmp(text, m_inline_edit_initial_text) != 0)
+            notify_save_inline_edit(text.get_ptr());
 
         m_inline_edit_saving = false;
     }
@@ -362,6 +367,7 @@ void ListView::exit_inline_edit()
         KillTimer(get_wnd(), EDIT_TIMER_ID);
         m_timer_inline_edit = false;
     }
+    m_inline_edit_initial_text.reset();
     m_inline_edit_indices.remove_all();
     notify_exit_inline_edit();
 }
