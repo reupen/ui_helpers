@@ -64,8 +64,6 @@ int combo_box_find_item_by_data(HWND wnd, t_size id);
 int rebar_find_item_by_id(HWND wnd, unsigned id);
 void rebar_show_all_bands(HWND wnd);
 
-BOOL shell_notify_icon_simple(DWORD dwMessage, HWND wnd, UINT id, UINT callbackmsg, HICON icon, const char* tip,
-    const char* balloon_title = nullptr, const char* balloon_msg = nullptr);
 BOOL shell_notify_icon(DWORD action, HWND wnd, UINT id, UINT version, UINT callbackmsg, HICON icon, const char* tip);
 BOOL shell_notify_icon_ex(DWORD action, HWND wnd, UINT id, UINT callbackmsg, HICON icon, const char* tip,
     const char* balloon_title, const char* balloon_msg);

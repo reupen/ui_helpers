@@ -275,31 +275,6 @@ HRESULT get_comctl32_version(DLLVERSIONINFO2& p_dvi)
     return rv;
 }
 
-BOOL shell_notify_icon_simple(DWORD dwMessage, HWND wnd, UINT id, UINT callbackmsg, HICON icon, const char* tip,
-    const char* balloon_title, const char* balloon_msg)
-{
-    // param_utf16_from_utf8 wtip(tip), wbtitle(balloon_title), wbmsg(balloon_msg);
-    NOTIFYICONDATA nid;
-    memset(&nid, 0, sizeof(nid));
-
-    nid.cbSize = NOTIFYICONDATA_V2_SIZE;
-    nid.hWnd = wnd;
-    nid.uID = id;
-    nid.uCallbackMessage = callbackmsg;
-    nid.hIcon = icon;
-    nid.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE | (balloon_msg ? NIF_INFO : NULL);
-    if (tip)
-        wcscpy_s(nid.szTip, pfc::stringcvt::string_wide_from_utf8(tip).get_ptr());
-    if (balloon_title)
-        wcscpy_s(nid.szInfoTitle, pfc::stringcvt::string_wide_from_utf8(balloon_title).get_ptr());
-    if (balloon_msg)
-        wcscpy_s(nid.szInfo, pfc::stringcvt::string_wide_from_utf8(balloon_msg).get_ptr());
-    nid.uTimeout = 10000;
-    nid.dwInfoFlags = NIIF_INFO;
-
-    return Shell_NotifyIcon(dwMessage, &nid);
-}
-
 BOOL run_action(DWORD action, NOTIFYICONDATA* data)
 {
     if (Shell_NotifyIcon(action, data))

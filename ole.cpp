@@ -131,8 +131,8 @@ HRESULT set_drop_description(IDataObject* pdtobj, DROPIMAGETYPE dit, const char*
             || wcscmp(dd_prev.szMessage, wmsg)) {
             DROPDESCRIPTION dd;
             dd.type = dit;
-            wcscpy_s(dd.szMessage, wmsg.get_ptr());
-            wcscpy_s(dd.szInsert, winsert.get_ptr());
+            wcsncpy_s(dd.szMessage, wmsg.get_ptr(), _TRUNCATE);
+            wcsncpy_s(dd.szInsert, winsert.get_ptr(), _TRUNCATE);
             return set_blob(pdtobj, get_clipboard_format_drop_description(), &dd, sizeof(dd));
         }
         return S_OK;
