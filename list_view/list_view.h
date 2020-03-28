@@ -152,8 +152,8 @@ public:
     HWND get_wnd() const { return m_container_window->get_wnd(); }
 
     unsigned calculate_header_height();
-    void set_columns(const pfc::list_base_const_t<Column>& columns);
-    void set_column_widths(const pfc::list_base_const_t<int>& widths);
+    void set_columns(std::vector<Column> columns);
+    void set_column_widths(std::vector<int> widths);
     void set_group_count(t_size count, bool b_update_columns = true);
 
     t_size get_group_count() const { return m_group_count; }
