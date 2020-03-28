@@ -33,12 +33,9 @@ uih::alignment ListView::get_column_alignment(t_size index)
     return ret;
 }
 
-void ListView::set_columns(const pfc::list_base_const_t<Column>& columns)
+void ListView::set_columns(std::vector<Column> columns)
 {
-    reset_columns();
-    for (size_t i{}; i < columns.get_count(); ++i) {
-        m_columns.emplace_back(columns[i]);
-    }
+    m_columns = std::move(columns);
 
     update_column_sizes();
 
@@ -49,9 +46,9 @@ void ListView::set_columns(const pfc::list_base_const_t<Column>& columns)
     }
 }
 
-void ListView::set_column_widths(const pfc::list_base_const_t<int>& widths)
+void ListView::set_column_widths(std::vector<int> widths)
 {
-    assert(m_columns.size() == widths.get_count());
+    assert(m_columns.size() == widths.size());
     for (size_t i{}; i < m_columns.size(); ++i)
         m_columns[i].m_size = widths[i];
 
