@@ -242,7 +242,7 @@ void lv::DefaultRenderer::render_group(RendererContext context, size_t item_inde
     render_group_background(context, &rc);
     uih::text_out_colours_tab(context.dc, text.data(), text.size(),
         uih::scale_dpi_value(1) + indentation * gsl::narrow<int>(level), uih::scale_dpi_value(3), &rc, false, cr, false,
-        false, true, uih::ALIGN_LEFT, nullptr, true, true, &text_right);
+        true, uih::ALIGN_LEFT, nullptr, true, true, &text_right);
 
     auto line_height = scale_dpi_value(1);
     auto line_top = rc.top + RECT_CY(rc) / 2 - line_height / 2;
@@ -304,7 +304,7 @@ void lv::DefaultRenderer::render_item(RendererContext context, t_size index, std
         rc_subitem.right = rc_subitem.left + sub_item.width;
         text_out_colours_tab(context.dc, sub_item.text.data(), sub_item.text.size(),
             scale_dpi_value(1) + (column_index == 0 ? indentation : 0), scale_dpi_value(3), &rc_subitem, b_selected,
-            cr_text, true, true, true, sub_item.alignment);
+            cr_text, m_enable_item_tab_columns, true, sub_item.alignment);
         rc_subitem.left = rc_subitem.right;
     }
 

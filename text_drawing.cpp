@@ -345,7 +345,7 @@ BOOL text_out_colours_ellipsis(HDC dc, const char* src_c, int src_c_len, int x_o
 }
 
 BOOL text_out_colours_tab(HDC dc, const char* display, int display_len, int left_offset, int border,
-    const RECT* base_clip, bool selected, DWORD default_color, bool columns, bool use_tab, bool show_ellipsis,
+    const RECT* base_clip, bool selected, DWORD default_color, bool enable_tab_columns, bool show_ellipsis,
     alignment align, unsigned* p_width, bool b_set_default_colours, bool b_vertical_align_centre, int* p_position)
 {
     if (!base_clip)
@@ -364,9 +364,7 @@ BOOL text_out_colours_tab(HDC dc, const char* display, int display_len, int left
 
     display_len = pfc::strlen_max(display, display_len);
 
-    columns = use_tab; // always called equal
-
-    if (use_tab) {
+    if (enable_tab_columns) {
         int start = 0;
         int n;
         for (n = 0; n < display_len; n++) {
