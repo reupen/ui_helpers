@@ -50,6 +50,8 @@ public:
 
 class DefaultRenderer : public RendererBase {
 public:
+    DefaultRenderer(bool enable_item_tab_columns = false) : m_enable_item_tab_columns{enable_item_tab_columns} {};
+
     void render_background(RendererContext context, const RECT* rc) override;
 
     void render_group(RendererContext context, size_t item_index, size_t group_index, std::string_view text,
@@ -65,6 +67,9 @@ protected:
     void render_group_background(RendererContext context, const RECT* rc);
 
     void render_focus_rect(RendererContext context, bool should_hide_focus, RECT rc) const;
+
+private:
+    bool m_enable_item_tab_columns{};
 };
 
 } // namespace uih::lv

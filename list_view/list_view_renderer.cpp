@@ -304,7 +304,7 @@ void lv::DefaultRenderer::render_item(RendererContext context, t_size index, std
         rc_subitem.right = rc_subitem.left + sub_item.width;
         text_out_colours_tab(context.dc, sub_item.text.data(), sub_item.text.size(),
             scale_dpi_value(1) + (column_index == 0 ? indentation : 0), scale_dpi_value(3), &rc_subitem, b_selected,
-            cr_text, true, true, sub_item.alignment);
+            cr_text, m_enable_item_tab_columns, true, sub_item.alignment);
         rc_subitem.left = rc_subitem.right;
     }
 
