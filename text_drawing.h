@@ -14,12 +14,6 @@ public:
         analyse(dc, p_str, p_str_len, max_cx, b_clip);
     }
 
-    UniscribeTextRenderer(HDC dc, const char* p_str, size_t p_str_len, int max_cx, bool b_clip)
-    {
-        initialise();
-        analyse(dc, p_str, p_str_len, max_cx, b_clip);
-    }
-
     void analyse(HDC dc, const wchar_t* p_str, size_t p_str_len, int max_cx, bool b_clip)
     {
         if (m_ssa) {
@@ -31,12 +25,6 @@ public:
             ScriptStringAnalyse(dc, p_str, p_str_len, NULL, -1,
                 SSA_FALLBACK | SSA_GLYPHS | SSA_LINK | (b_clip ? SSA_CLIP : NULL), max_cx, &m_sc, &m_ss, nullptr,
                 nullptr, nullptr, &m_ssa);
-    }
-
-    void analyse(HDC dc, const char* p_str, size_t p_str_len, int max_cx, bool b_clip)
-    {
-        pfc::stringcvt::string_wide_from_utf8 wstr(p_str, p_str_len);
-        analyse(dc, wstr.get_ptr(), wstr.length(), max_cx, b_clip);
     }
 
     void text_out(int x, int y, UINT flags, const RECT* p_rc)
