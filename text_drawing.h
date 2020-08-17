@@ -36,7 +36,11 @@ public:
     int get_output_character_count()
     {
         const int* len = m_ssa ? ScriptString_pcOutChars(m_ssa) : nullptr; // b_clip = true only
-        return len ? *len : m_string_length;
+
+        if (len && (*len < 0 || gsl::narrow_cast<size_t>(*len) > m_string_length))
+            throw std::length_error("Character count out of range.");
+
+        return len ? *len : gsl::narrow<int>(m_string_length);
     }
 
     void get_output_size(SIZE& p_sz)
