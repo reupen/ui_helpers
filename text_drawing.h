@@ -14,12 +14,6 @@ public:
         analyse(dc, p_str, p_str_len, max_cx, b_clip);
     }
 
-    UniscribeTextRenderer(HDC dc, const char* p_str, size_t p_str_len, int max_cx, bool b_clip)
-    {
-        initialise();
-        analyse(dc, p_str, p_str_len, max_cx, b_clip);
-    }
-
     void analyse(HDC dc, const wchar_t* p_str, size_t p_str_len, int max_cx, bool b_clip)
     {
         if (m_ssa) {
@@ -33,12 +27,6 @@ public:
                 nullptr, nullptr, &m_ssa);
     }
 
-    void analyse(HDC dc, const char* p_str, size_t p_str_len, int max_cx, bool b_clip)
-    {
-        pfc::stringcvt::string_wide_from_utf8 wstr(p_str, p_str_len);
-        analyse(dc, wstr.get_ptr(), wstr.length(), max_cx, b_clip);
-    }
-
     void text_out(int x, int y, UINT flags, const RECT* p_rc)
     {
         if (m_ssa)
@@ -48,7 +36,11 @@ public:
     int get_output_character_count()
     {
         const int* len = m_ssa ? ScriptString_pcOutChars(m_ssa) : nullptr; // b_clip = true only
-        return len ? *len : m_string_length;
+
+        if (len && (*len < 0 || gsl::narrow_cast<size_t>(*len) > m_string_length))
+            throw std::length_error("Character count out of range.");
+
+        return len ? *len : gsl::narrow<int>(m_string_length);
     }
 
     void get_output_size(SIZE& p_sz)
@@ -130,17 +122,6 @@ private:
 
     static SCRIPT_DIGITSUBSTITUTE m_sdg;
     static bool m_sdg_valid;
-};
-
-class CharacterExtentsCalculator {
-    pfc::string8_fast_aggressive temp;
-    pfc::stringcvt::string_wide_from_utf8_fast text_w;
-    pfc::stringcvt::string_utf8_from_wide w_utf8;
-
-public:
-    CharacterExtentsCalculator() { temp.prealloc(64); }
-    BOOL run(HDC dc, const char* text, int length, int max_width, LPINT max_chars, LPINT width_array, LPSIZE sz,
-        unsigned* width_out, bool trunc);
 };
 
 enum alignment {

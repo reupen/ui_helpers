@@ -49,35 +49,6 @@ unsigned get_text_truncate_point(const char* src, unsigned len)
     return rv;
 }
 
-BOOL CharacterExtentsCalculator::run(HDC dc, const char* text, int length, int max_width, LPINT max_chars,
-    LPINT width_array, LPSIZE sz, unsigned* width_out, bool trunc)
-{
-    const char* src = text;
-
-    if (check_colour_marks(text, length)) {
-        remove_color_marks(text, temp, length);
-        src = temp;
-        length = temp.length();
-    }
-
-    text_w.convert(src, length);
-    UniscribeTextRenderer p_ScriptString;
-    p_ScriptString.analyse(dc, text_w.get_ptr(), text_w.length(), max_width, max_chars != nullptr);
-
-    int _max_chars = p_ScriptString.get_output_character_count();
-    if (width_array)
-        p_ScriptString.get_character_logical_extents(width_array);
-    if (max_chars)
-        *max_chars = _max_chars;
-    if (trunc || width_out) {
-        w_utf8.convert(text_w.get_ptr(), *max_chars);
-        *max_chars = trunc ? get_text_truncate_point(w_utf8, w_utf8.length()) : w_utf8.length();
-        if (width_out)
-            *width_out = get_text_width_colour(dc, w_utf8, *max_chars);
-    }
-    return TRUE;
-}
-
 bool is_rect_null_or_reversed(const RECT* r)
 {
     return r->right <= r->left || r->bottom <= r->top;
