@@ -134,7 +134,6 @@ bool is_rect_null_or_reversed(const RECT* r);
 void get_text_size(HDC dc, const char* src, int len, SIZE& sz);
 int get_text_width(HDC dc, const char* src, int len);
 int get_text_width_colour(HDC dc, const char* src, int len, bool b_ignore_tabs = false);
-unsigned get_text_truncate_point(const char* src, unsigned len);
 BOOL text_out_colours_ellipsis(HDC dc, const char* src, int len, int x_offset, int pos_y, const RECT* base_clip,
     bool selected, bool show_ellipsis, DWORD default_color, alignment align, unsigned* p_width = nullptr,
     bool b_set_default_colours = true, int* p_position = nullptr);

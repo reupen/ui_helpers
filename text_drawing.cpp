@@ -36,19 +36,6 @@ void remove_color_marks(const char* src, pfc::string_base& out, t_size len)
     }
 }
 
-unsigned get_text_truncate_point(const char* src, unsigned len)
-{
-    unsigned rv = len;
-
-    const char* ptr = src;
-    ptr += len - 1;
-    while (ptr > src && (*ptr == ' ' || *ptr == '.')) {
-        ptr--;
-        rv--;
-    }
-    return rv;
-}
-
 bool is_rect_null_or_reversed(const RECT* r)
 {
     return r->right <= r->left || r->bottom <= r->top;
