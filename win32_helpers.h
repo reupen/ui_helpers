@@ -124,16 +124,6 @@ bool set_clipboard_data(CLIPFORMAT format, gsl::span<Element> data, HWND wnd = n
     return succeeded;
 }
 
-/**
- * Convenience wrapper to handle narrowing conversation as gsl::span<> (currently) has a signed size.
- */
-template <class Element = uint8_t, class Size = size_t>
-bool set_clipboard_data(CLIPFORMAT format, Element* data_ptr, Size data_size, HWND wnd = nullptr)
-{
-    gsl::span<Element> data{data_ptr, gsl::narrow<typename gsl::span<Element>::index_type>(data_size)};
-    return set_clipboard_data(format, data, wnd);
-}
-
 template <typename TInteger>
 class IntegerAndDpi {
 public:

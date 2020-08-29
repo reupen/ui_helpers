@@ -566,7 +566,7 @@ HWND handle_tab_down(HWND wnd)
 bool set_clipboard_text(const char* text, HWND wnd)
 {
     const pfc::stringcvt::string_wide_from_utf8 text_utf16(text);
-    return set_clipboard_data<const wchar_t>(CF_UNICODETEXT, text_utf16.get_ptr(), text_utf16.length() + 1, wnd);
+    return set_clipboard_data<const wchar_t>(CF_UNICODETEXT, {text_utf16.get_ptr(), text_utf16.length() + 1}, wnd);
 }
 
 } // namespace uih
