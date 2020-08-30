@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+using namespace uih::literals::spx;
+
 class param_utf16_from_utf8 : public pfc::stringcvt::string_wide_from_utf8 {
     bool is_null;
     WORD low_word;
@@ -391,7 +393,10 @@ void rebar_show_all_bands(HWND wnd)
 
 void handle_modern_background_paint(HWND wnd, HWND wnd_button)
 {
-    PAINTSTRUCT ps;
+    const auto padding_height = 11_spx;
+    const auto line_height = 1_spx;
+
+    PAINTSTRUCT ps{};
     HDC dc = BeginPaint(wnd, &ps);
     if (dc) {
         RECT rc_client;
@@ -400,13 +405,13 @@ void handle_modern_background_paint(HWND wnd, HWND wnd_button)
         RECT rc_fill = rc_client;
         if (wnd_button) {
             GetWindowRect(wnd_button, &rc_button);
-            rc_fill.bottom -= RECT_CY(rc_button) + 11;
-            rc_fill.bottom -= 11;
+            MapWindowPoints(HWND_DESKTOP, wnd, reinterpret_cast<LPPOINT>(&rc_button), 2);
+            rc_fill.bottom = rc_button.top - padding_height - line_height / 2;
         }
         FillRect(dc, &rc_fill, GetSysColorBrush(COLOR_WINDOW));
         if (wnd_button) {
             rc_fill.top = rc_fill.bottom;
-            rc_fill.bottom += 1;
+            rc_fill.bottom += line_height;
             FillRect(dc, &rc_fill, GetSysColorBrush(COLOR_3DLIGHT));
         }
         rc_fill.top = rc_fill.bottom;
