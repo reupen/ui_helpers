@@ -145,6 +145,7 @@
     <ClInclude Include="handle.h" />
     <ClInclude Include="list_view\list_view.h" />
     <ClInclude Include="list_view\list_view_renderer.h" />
+    <ClInclude Include="literals.h" />
     <ClInclude Include="ole.h" />
     <ClInclude Include="OLE\data_object.h" />
     <ClInclude Include="ole\enum_format_etc.h" />
@@ -247,6 +248,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="literals.cpp" />
     <ClCompile Include="ole.cpp" />
     <ClCompile Include="ole\data_object.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\stdafx.h</PrecompiledHeaderFile>
