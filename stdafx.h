@@ -54,6 +54,8 @@
 #define RECT_CY(rc) (rc.bottom - rc.top)
 #endif
 
+#include "literals.h"
+
 #include "handle.h"
 #include "win32_helpers.h"
 #include "ole.h"
