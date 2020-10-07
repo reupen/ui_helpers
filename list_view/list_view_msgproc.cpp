@@ -624,6 +624,13 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             return 0;
     } break;
     case WM_VSCROLL:
+        // IDropTargetHelper inexplicably sends these messages. They aren't processed to
+        // avoid interfering with the timer usually used by clients.
+        // If this causes problems, the alternative is to let clients disable and enable
+        // processing as needed.
+        if ((LOWORD(wp) == SB_LINEDOWN || LOWORD(wp) == SB_LINEUP) && HIWORD(wp) == 1)
+            return 0;
+
         exit_inline_edit();
         scroll_from_scroll_bar(LOWORD(wp));
         return 0;
