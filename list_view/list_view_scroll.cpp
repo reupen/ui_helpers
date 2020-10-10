@@ -190,17 +190,26 @@ void ListView::update_scroll_info(bool b_vertical, bool b_horizontal)
         _update_scroll_info_horizontal();
     }
 }
+
+unsigned ListView::calculate_scroll_timer_speed() const
+{
+    const auto num_visible_items = get_item_area_height() / get_item_height();
+    const auto divisor = (std::max)(num_visible_items - 5, 1);
+    return std::clamp(25 * 15 / divisor, 10, 100);
+}
+
 void ListView::create_timer_scroll_up()
 {
     if (!m_timer_scroll_up) {
-        SetTimer(get_wnd(), TIMER_SCROLL_UP, 10, nullptr);
+        SetTimer(get_wnd(), TIMER_SCROLL_UP, calculate_scroll_timer_speed(), nullptr);
         m_timer_scroll_up = true;
     }
 }
+
 void ListView::create_timer_scroll_down()
 {
     if (!m_timer_scroll_down) {
-        SetTimer(get_wnd(), TIMER_SCROLL_DOWN, 10, nullptr);
+        SetTimer(get_wnd(), TIMER_SCROLL_DOWN, calculate_scroll_timer_speed(), nullptr);
         m_timer_scroll_down = true;
     }
 }

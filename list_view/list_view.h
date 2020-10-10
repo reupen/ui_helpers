@@ -707,6 +707,8 @@ public:
     };
 
 private:
+    unsigned calculate_scroll_timer_speed() const;
+
     void create_timer_search();
     void destroy_timer_search();
 
