@@ -118,7 +118,7 @@ int strlen_utf8_colour(const char* src, int len = -1)
 
 BOOL text_out_colours_ellipsis(HDC dc, const char* src_c, int src_c_len, int x_offset, int pos_y, const RECT* base_clip,
     bool selected, bool show_ellipsis, DWORD default_color, alignment align, unsigned* p_width,
-    bool b_set_default_colours, int* p_position)
+    bool b_set_default_colours, int* p_position, bool enable_tabs, int tab_origin)
 {
     struct ColouredTextSegment {
         std::wstring text;
@@ -127,9 +127,9 @@ BOOL text_out_colours_ellipsis(HDC dc, const char* src_c, int src_c_len, int x_o
         UniscribeTextRenderer renderer{};
         std::vector<int> character_right_offsets{};
 
-        void analyse(HDC dc)
+        void analyse(HDC dc, bool enable_tabs, int tab_origin)
         {
-            renderer.analyse(dc, text.data(), text.size(), -1, false);
+            renderer.analyse(dc, text.data(), text.size(), -1, false, enable_tabs, tab_origin + left_offset);
             character_right_offsets.resize(text.length());
             renderer.get_character_logical_extents(character_right_offsets.data(), left_offset);
         }
@@ -223,7 +223,7 @@ BOOL text_out_colours_ellipsis(HDC dc, const char* src_c, int src_c_len, int x_o
         auto& segment = *iter;
 
         segment.left_offset = cumulative_width;
-        segment.analyse(dc);
+        segment.analyse(dc, enable_tabs, tab_origin);
         cumulative_width += segment.renderer.get_output_width();
 
         if (cumulative_width > available_width) {
@@ -250,7 +250,7 @@ BOOL text_out_colours_ellipsis(HDC dc, const char* src_c, int src_c_len, int x_o
 
                         segment.text.resize(index + 1);
                         segment.text.push_back(0x2026);
-                        segment.analyse(dc);
+                        segment.analyse(dc, enable_tabs, tab_origin);
 
                         segments.resize(std::distance(segment_iter, segments.rend()));
                         cumulative_width = std::accumulate(segments.begin(), segments.end(), 0,
@@ -304,7 +304,8 @@ BOOL text_out_colours_ellipsis(HDC dc, const char* src_c, int src_c_len, int x_o
 
 BOOL text_out_colours_tab(HDC dc, const char* display, int display_len, int left_offset, int border,
     const RECT* base_clip, bool selected, DWORD default_color, bool enable_tab_columns, bool show_ellipsis,
-    alignment align, unsigned* p_width, bool b_set_default_colours, bool b_vertical_align_centre, int* p_position)
+    alignment align, unsigned* p_width, bool b_set_default_colours, bool b_vertical_align_centre, int* p_position,
+    int tab_origin)
 {
     if (!base_clip)
         return FALSE;
@@ -337,7 +338,7 @@ BOOL text_out_colours_tab(HDC dc, const char* display, int display_len, int left
         clip.left += border;
         clip.right -= border;
         return text_out_colours_ellipsis(dc, display, display_len, left_offset, pos_y, &clip, selected, show_ellipsis,
-            default_color, align, p_width, b_set_default_colours, p_position);
+            default_color, align, p_width, b_set_default_colours, p_position, !enable_tab_columns, tab_origin);
     }
 
     if (p_width)

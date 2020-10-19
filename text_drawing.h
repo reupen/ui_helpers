@@ -8,23 +8,31 @@ public:
 
     ~UniscribeTextRenderer() { cleanup(); }
 
-    UniscribeTextRenderer(HDC dc, const wchar_t* p_str, size_t p_str_len, int max_cx, bool b_clip)
+    UniscribeTextRenderer(HDC dc, const wchar_t* p_str, size_t p_str_len, int max_cx, bool b_clip,
+        bool enable_tabs = false, int tab_origin = 0)
     {
         initialise();
-        analyse(dc, p_str, p_str_len, max_cx, b_clip);
+        analyse(dc, p_str, p_str_len, max_cx, b_clip, enable_tabs, tab_origin);
     }
 
-    void analyse(HDC dc, const wchar_t* p_str, size_t p_str_len, int max_cx, bool b_clip)
+    void analyse(HDC dc, const wchar_t* p_str, size_t p_str_len, int max_cx, bool b_clip, bool enable_tabs = false,
+        int tab_origin = 0)
     {
         if (m_ssa) {
             cleanup();
             initialise();
         }
+
         m_string_length = p_str_len;
-        if (m_string_length)
-            ScriptStringAnalyse(dc, p_str, p_str_len, NULL, -1,
-                SSA_FALLBACK | SSA_GLYPHS | SSA_LINK | (b_clip ? SSA_CLIP : NULL), max_cx, &m_sc, &m_ss, nullptr,
-                nullptr, nullptr, &m_ssa);
+
+        if (!m_string_length)
+            return;
+
+        SCRIPT_TABDEF tab_def{0, 4, nullptr, tab_origin};
+
+        ScriptStringAnalyse(dc, p_str, p_str_len, NULL, -1,
+            SSA_FALLBACK | SSA_GLYPHS | SSA_LINK | (b_clip ? SSA_CLIP : NULL) | (enable_tabs ? SSA_TAB : NULL), max_cx,
+            &m_sc, &m_ss, nullptr, enable_tabs ? &tab_def : nullptr, nullptr, &m_ssa);
     }
 
     void text_out(int x, int y, UINT flags, const RECT* p_rc)
@@ -136,11 +144,11 @@ int get_text_width(HDC dc, const char* src, int len);
 int get_text_width_colour(HDC dc, const char* src, int len, bool b_ignore_tabs = false);
 BOOL text_out_colours_ellipsis(HDC dc, const char* src, int len, int x_offset, int pos_y, const RECT* base_clip,
     bool selected, bool show_ellipsis, DWORD default_color, alignment align, unsigned* p_width = nullptr,
-    bool b_set_default_colours = true, int* p_position = nullptr);
+    bool b_set_default_colours = true, int* p_position = nullptr, bool enable_tabs = false, int tab_origin = 0);
 BOOL text_out_colours_tab(HDC dc, const char* display, int display_len, int left_offset, int border,
     const RECT* base_clip, bool selected, DWORD default_color, bool enable_tab_columns, bool show_ellipsis,
     alignment align, unsigned* p_width = nullptr, bool b_set_default_colours = true,
-    bool b_vertical_align_centre = true, int* p_position = nullptr);
+    bool b_vertical_align_centre = true, int* p_position = nullptr, int tab_origin = 0);
 
 void remove_color_marks(const char* src, pfc::string_base& out, t_size len = pfc_infinite);
 } // namespace uih
