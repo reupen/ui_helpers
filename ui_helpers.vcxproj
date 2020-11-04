@@ -137,6 +137,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="container_window.h" />
+    <ClInclude Include="dpi.h" />
     <ClInclude Include="drag_image.h" />
     <ClInclude Include="handle.h" />
     <ClInclude Include="list_view\list_view.h" />
@@ -158,6 +159,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="container_window.cpp" />
+    <ClCompile Include="dpi.cpp" />
     <ClCompile Include="drag_image.cpp" />
     <ClCompile Include="gdi.cpp" />
     <ClCompile Include="list_view\list_view_columns.cpp">

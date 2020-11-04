@@ -19,6 +19,8 @@
 // Included before windows.h, because pfc.h includes winsock2.h
 #include "../pfc/pfc.h"
 
+#include <wil/resource.h>
+
 #include <windows.h>
 #include <WindowsX.h>
 #include <SHLWAPI.H>
@@ -60,6 +62,7 @@
 #include "win32_helpers.h"
 #include "ole.h"
 
+#include "dpi.h"
 #include "container_window.h"
 #include "message_hook.h"
 #include "trackbar.h"
