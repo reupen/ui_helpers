@@ -36,6 +36,7 @@
       <Filter>List View</Filter>
     </ClInclude>
     <ClInclude Include="literals.h" />
+    <ClInclude Include="dpi.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="message_hook.cpp" />
@@ -97,6 +98,7 @@
     </ClCompile>
     <ClCompile Include="gdi.cpp" />
     <ClCompile Include="literals.cpp" />
+    <ClCompile Include="dpi.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
