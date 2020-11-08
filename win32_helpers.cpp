@@ -393,8 +393,9 @@ void rebar_show_all_bands(HWND wnd)
 
 void handle_modern_background_paint(HWND wnd, HWND wnd_button)
 {
-    const auto padding_height = 11_spx;
-    const auto line_height = 1_spx;
+    const auto dpi = dpi::get_dpi_for_window(wnd);
+    const auto padding_height = dpi::scale_value(dpi, 11);
+    const auto line_height = dpi ::scale_value(dpi, 1);
 
     PAINTSTRUCT ps{};
     HDC dc = BeginPaint(wnd, &ps);
