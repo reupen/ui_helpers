@@ -47,7 +47,8 @@ BOOL system_parameters_info_for_dpi(unsigned action, unsigned param, void* data,
     return get_dpi_for_window_proc(wnd);
 }
 
-[[nodiscard]] std::unique_ptr<SetThreadDpiAwarenessContextHandle> set_thread_per_monitor_dpi_aware()
+[[nodiscard]] std::unique_ptr<SetThreadDpiAwarenessContextHandle> set_thread_per_monitor_dpi_awareness_context(
+    DPI_AWARENESS_CONTEXT context)
 {
     wil::unique_hmodule user32(THROW_LAST_ERROR_IF_NULL(LoadLibrary(L"user32.dll")));
 
@@ -57,10 +58,44 @@ BOOL system_parameters_info_for_dpi(unsigned action, unsigned param, void* data,
     if (!set_thread_dpi_awareness_context_proc)
         return {};
 
-    const auto previous_awareness = set_thread_dpi_awareness_context_proc(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    const auto previous_awareness = set_thread_dpi_awareness_context_proc(context);
 
     return std::make_unique<SetThreadDpiAwarenessContextHandle>(
         std::move(user32), set_thread_dpi_awareness_context_proc, previous_awareness);
+}
+
+[[nodiscard]] std::unique_ptr<SetThreadDpiAwarenessContextHandle> set_thread_per_monitor_dpi_aware()
+{
+    return set_thread_per_monitor_dpi_awareness_context(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+}
+
+[[nodiscard]] std::unique_ptr<SetThreadDpiAwarenessContextHandle> reset_thread_per_monitor_dpi_awareness()
+{
+    const auto context = IsProcessDPIAware() ? DPI_AWARENESS_CONTEXT_SYSTEM_AWARE : DPI_AWARENESS_CONTEXT_UNAWARE;
+
+    return set_thread_per_monitor_dpi_awareness_context(context);
+}
+
+[[nodiscard]] std::unique_ptr<SetThreadDpiHostingBehaviorHandle> set_thread_dpi_hosting_behaviour(
+    DPI_HOSTING_BEHAVIOR hosting_behaviour)
+{
+    wil::unique_hmodule user32(THROW_LAST_ERROR_IF_NULL(LoadLibrary(L"user32.dll")));
+
+    const auto set_thread_dpi_hosting_behavior_proc = reinterpret_cast<SetThreadDpiHostingBehaviorProc>(
+        GetProcAddress(user32.get(), "SetThreadDpiHostingBehavior"));
+
+    if (!set_thread_dpi_hosting_behavior_proc)
+        return {};
+
+    const auto previous_hosting_behaviour = set_thread_dpi_hosting_behavior_proc(hosting_behaviour);
+
+    return std::make_unique<SetThreadDpiHostingBehaviorHandle>(
+        std::move(user32), set_thread_dpi_hosting_behavior_proc, previous_hosting_behaviour);
+}
+
+[[nodiscard]] std::unique_ptr<SetThreadDpiHostingBehaviorHandle> set_thread_mixed_dpi_hosting()
+{
+    return set_thread_dpi_hosting_behaviour(DPI_HOSTING_BEHAVIOR_MIXED);
 }
 
 namespace {
@@ -117,4 +152,10 @@ HWND modeless_dialog_box(
     return CreateDialogParam(mmh::get_current_instance(), MAKEINTRESOURCE(resource_id), wnd, on_dialog_box_message,
         reinterpret_cast<LPARAM>(data.get()));
 }
+
+int scale_value(unsigned target_dpi, int value, unsigned original_dpi)
+{
+    return MulDiv(value, gsl::narrow<int>(target_dpi), gsl::narrow<int>(original_dpi));
+}
+
 } // namespace uih::dpi
