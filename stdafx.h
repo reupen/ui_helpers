@@ -62,6 +62,7 @@
 #include "win32_helpers.h"
 #include "ole.h"
 
+#include "dialog.h"
 #include "dpi.h"
 #include "container_window.h"
 #include "message_hook.h"

@@ -42,9 +42,9 @@ BOOL system_parameters_info_for_dpi(unsigned action, unsigned param, void* data,
 
 [[nodiscard]] unsigned get_dpi_for_window(HWND wnd);
 
-[[nodiscard]] std::unique_ptr<SetThreadDpiAwarenessContextHandle> set_thread_per_monitor_dpi_aware();
+[[nodiscard]] std::shared_ptr<SetThreadDpiAwarenessContextHandle> set_thread_per_monitor_dpi_aware();
 
-[[nodiscard]] std::unique_ptr<SetThreadDpiAwarenessContextHandle> reset_thread_per_monitor_dpi_awareness();
+[[nodiscard]] std::shared_ptr<SetThreadDpiAwarenessContextHandle> reset_thread_per_monitor_dpi_awareness();
 
 template <class Function>
 auto with_default_thread_dpi_awareness(Function&& function)
@@ -53,7 +53,7 @@ auto with_default_thread_dpi_awareness(Function&& function)
     return function();
 }
 
-[[nodiscard]] std::unique_ptr<SetThreadDpiHostingBehaviorHandle> set_thread_mixed_dpi_hosting();
+[[nodiscard]] std::shared_ptr<SetThreadDpiHostingBehaviorHandle> set_thread_mixed_dpi_hosting();
 
 /*
  * Per monitor DPI-aware version of DialogBox() (for modal dialogs).

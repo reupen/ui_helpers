@@ -47,7 +47,7 @@ BOOL system_parameters_info_for_dpi(unsigned action, unsigned param, void* data,
     return get_dpi_for_window_proc(wnd);
 }
 
-[[nodiscard]] std::unique_ptr<SetThreadDpiAwarenessContextHandle> set_thread_per_monitor_dpi_awareness_context(
+[[nodiscard]] std::shared_ptr<SetThreadDpiAwarenessContextHandle> set_thread_per_monitor_dpi_awareness_context(
     DPI_AWARENESS_CONTEXT context)
 {
     wil::unique_hmodule user32(THROW_LAST_ERROR_IF_NULL(LoadLibrary(L"user32.dll")));
@@ -60,23 +60,23 @@ BOOL system_parameters_info_for_dpi(unsigned action, unsigned param, void* data,
 
     const auto previous_awareness = set_thread_dpi_awareness_context_proc(context);
 
-    return std::make_unique<SetThreadDpiAwarenessContextHandle>(
+    return std::make_shared<SetThreadDpiAwarenessContextHandle>(
         std::move(user32), set_thread_dpi_awareness_context_proc, previous_awareness);
 }
 
-[[nodiscard]] std::unique_ptr<SetThreadDpiAwarenessContextHandle> set_thread_per_monitor_dpi_aware()
+[[nodiscard]] std::shared_ptr<SetThreadDpiAwarenessContextHandle> set_thread_per_monitor_dpi_aware()
 {
     return set_thread_per_monitor_dpi_awareness_context(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 }
 
-[[nodiscard]] std::unique_ptr<SetThreadDpiAwarenessContextHandle> reset_thread_per_monitor_dpi_awareness()
+[[nodiscard]] std::shared_ptr<SetThreadDpiAwarenessContextHandle> reset_thread_per_monitor_dpi_awareness()
 {
     const auto context = IsProcessDPIAware() ? DPI_AWARENESS_CONTEXT_SYSTEM_AWARE : DPI_AWARENESS_CONTEXT_UNAWARE;
 
     return set_thread_per_monitor_dpi_awareness_context(context);
 }
 
-[[nodiscard]] std::unique_ptr<SetThreadDpiHostingBehaviorHandle> set_thread_dpi_hosting_behaviour(
+[[nodiscard]] std::shared_ptr<SetThreadDpiHostingBehaviorHandle> set_thread_dpi_hosting_behaviour(
     DPI_HOSTING_BEHAVIOR hosting_behaviour)
 {
     wil::unique_hmodule user32(THROW_LAST_ERROR_IF_NULL(LoadLibrary(L"user32.dll")));
@@ -93,64 +93,36 @@ BOOL system_parameters_info_for_dpi(unsigned action, unsigned param, void* data,
         std::move(user32), set_thread_dpi_hosting_behavior_proc, previous_hosting_behaviour);
 }
 
-[[nodiscard]] std::unique_ptr<SetThreadDpiHostingBehaviorHandle> set_thread_mixed_dpi_hosting()
+[[nodiscard]] std::shared_ptr<SetThreadDpiHostingBehaviorHandle> set_thread_mixed_dpi_hosting()
 {
     return set_thread_dpi_hosting_behaviour(DPI_HOSTING_BEHAVIOR_MIXED);
 }
 
-namespace {
-struct DialogBoxData {
-    std::function<BOOL(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message;
-    std::unique_ptr<SetThreadDpiAwarenessContextHandle> dpi_awareness_context;
-    std::shared_ptr<DialogBoxData> self;
-};
-
-BOOL WINAPI on_dialog_box_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
-{
-    DialogBoxData* data{};
-    if (msg == WM_INITDIALOG) {
-        data = reinterpret_cast<DialogBoxData*>(lp);
-        data->dpi_awareness_context.reset();
-        SetWindowLongPtr(wnd, DWLP_USER, lp);
-    } else {
-        data = reinterpret_cast<DialogBoxData*>(GetWindowLongPtr(wnd, DWLP_USER));
-    }
-
-    const BOOL result = data ? data->on_message(wnd, msg, wp, lp) : FALSE;
-
-    if (msg == WM_NCDESTROY) {
-        assert(data);
-
-        if (data)
-            data->self.reset();
-
-        SetWindowLongPtr(wnd, DWLP_USER, NULL);
-    }
-
-    return result;
-}
-
-} // namespace
-
 INT_PTR modal_dialog_box(
     UINT resource_id, HWND wnd, std::function<BOOL(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
 {
-    const auto data = std ::make_unique<DialogBoxData>(
-        DialogBoxData{std::move(on_message), set_thread_per_monitor_dpi_aware(), {}});
+    auto wrapped_on_message = [on_message = std::move(on_message), dpi_handle = set_thread_per_monitor_dpi_aware()](
+                                  auto&& wnd, auto&& msg, auto&& wp, auto&& lp) mutable {
+        if (msg == WM_INITDIALOG) {
+            dpi_handle.reset();
+        }
 
-    return DialogBoxParam(mmh::get_current_instance(), MAKEINTRESOURCE(resource_id), wnd, on_dialog_box_message,
-        reinterpret_cast<LPARAM>(data.get()));
+        return on_message(wnd, msg, wp, lp);
+    };
+
+    return uih::modal_dialog_box(resource_id, wnd, std::move(wrapped_on_message));
 }
 
 HWND modeless_dialog_box(
     UINT resource_id, HWND wnd, std::function<BOOL(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
 {
-    std::shared_ptr<DialogBoxData> data = std ::make_shared<DialogBoxData>(
-        DialogBoxData{std::move(on_message), set_thread_per_monitor_dpi_aware(), {}});
-    data->self = data;
+    auto _ = set_thread_per_monitor_dpi_aware();
 
-    return CreateDialogParam(mmh::get_current_instance(), MAKEINTRESOURCE(resource_id), wnd, on_dialog_box_message,
-        reinterpret_cast<LPARAM>(data.get()));
+    auto wrapped_on_message = [on_message = std::move(on_message)](auto&& wnd, auto&& msg, auto&& wp, auto&& lp) {
+        return on_message(wnd, msg, wp, lp);
+    };
+
+    return uih::modeless_dialog_box(resource_id, wnd, std::move(wrapped_on_message));
 }
 
 int scale_value(unsigned target_dpi, int value, unsigned original_dpi)
