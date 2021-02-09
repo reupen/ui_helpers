@@ -37,6 +37,7 @@
     </ClInclude>
     <ClInclude Include="literals.h" />
     <ClInclude Include="dpi.h" />
+    <ClInclude Include="dialog.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="message_hook.cpp" />
@@ -99,6 +100,7 @@
     <ClCompile Include="gdi.cpp" />
     <ClCompile Include="literals.cpp" />
     <ClCompile Include="dpi.cpp" />
+    <ClCompile Include="dialog.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
