@@ -101,7 +101,7 @@ std::optional<std::vector<uint8_t>> get_clipboard_data(CLIPFORMAT format);
 bool set_clipboard_text(const char* text, HWND wnd = nullptr);
 
 template <class Element = uint8_t>
-bool set_clipboard_data(CLIPFORMAT format, gsl::span<Element> data, HWND wnd = nullptr)
+bool set_clipboard_data(CLIPFORMAT format, std::span<Element> data, HWND wnd = nullptr)
 {
     if (!OpenClipboard(nullptr))
         return false;
