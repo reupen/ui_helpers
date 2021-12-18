@@ -68,7 +68,9 @@ public:
     ContainerWindow(const ContainerWindowConfig& config,
         std::function<LRESULT(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message = nullptr,
         std::function<void(size_t cx, size_t cy)> on_size = nullptr)
-        : m_config{config}, m_on_message{on_message}, m_on_size{on_size}
+        : m_config{config}
+        , m_on_message{std::move(on_message)}
+        , m_on_size{std::move(on_size)}
     {
     }
 

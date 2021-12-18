@@ -29,7 +29,8 @@ int ListView::get_default_indentation_step()
 void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
 {
     ColourData colours = render_get_colour_data();
-    const lv::RendererContext context = {colours, get_wnd(), dc, m_theme, m_items_view_theme};
+    const lv::RendererContext context
+        = {colours, m_use_dark_mode, get_wnd(), dc, m_list_view_theme.get(), m_items_view_theme.get()};
 
     const t_size level_spacing_size = m_group_level_indentation_enabled ? _level_spacing_size : 0;
     // COLORREF cr_orig = GetTextColor(dc);
@@ -219,8 +220,9 @@ void lv::DefaultRenderer::render_group_background(RendererContext context, const
 COLORREF ListView::get_group_text_colour_default()
 {
     COLORREF cr = NULL;
-    if (!(m_theme && IsThemePartDefined(m_theme, LVP_GROUPHEADER, NULL)
-            && SUCCEEDED(GetThemeColor(m_theme, LVP_GROUPHEADER, LVGH_OPEN, TMT_HEADING1TEXTCOLOR, &cr))))
+    if (!(m_list_view_theme && IsThemePartDefined(m_list_view_theme.get(), LVP_GROUPHEADER, NULL)
+            && SUCCEEDED(
+                GetThemeColor(m_list_view_theme.get(), LVP_GROUPHEADER, LVGH_OPEN, TMT_HEADING1TEXTCOLOR, &cr))))
         cr = GetSysColor(COLOR_WINDOWTEXT);
     return cr;
 }
@@ -228,8 +230,8 @@ COLORREF ListView::get_group_text_colour_default()
 bool ListView::get_group_text_colour_default(COLORREF& cr)
 {
     cr = NULL;
-    return m_theme && IsThemePartDefined(m_theme, LVP_GROUPHEADER, NULL)
-        && SUCCEEDED(GetThemeColor(m_theme, LVP_GROUPHEADER, LVGH_OPEN, TMT_HEADING1TEXTCOLOR, &cr));
+    return m_list_view_theme && IsThemePartDefined(m_list_view_theme.get(), LVP_GROUPHEADER, NULL)
+        && SUCCEEDED(GetThemeColor(m_list_view_theme.get(), LVP_GROUPHEADER, LVGH_OPEN, TMT_HEADING1TEXTCOLOR, &cr));
 }
 
 void lv::DefaultRenderer::render_group(RendererContext context, size_t item_index, size_t group_index,
@@ -278,15 +280,19 @@ void lv::DefaultRenderer::render_item(RendererContext context, t_size index, std
     bool b_themed = context.list_view_theme && context.colours.m_themed
         && IsThemePartDefined(context.list_view_theme, LVP_LISTITEM, theme_state);
 
-    COLORREF cr_text = NULL;
+    COLORREF cr_text = RGB(255, 0, 0);
     if (b_themed && theme_state) {
-        cr_text = GetThemeSysColor(context.list_view_theme, b_selected ? COLOR_BTNTEXT : COLOR_WINDOWTEXT);
-        ;
-        {
-            if (IsThemeBackgroundPartiallyTransparent(context.list_view_theme, LVP_LISTITEM, theme_state))
-                DrawThemeParentBackground(context.wnd, context.dc, &rc);
-            DrawThemeBackground(context.list_view_theme, context.dc, LVP_LISTITEM, theme_state, &rc, nullptr);
-        }
+        if (FAILED(GetThemeColor(context.list_view_theme, LVP_LISTITEM, LISS_SELECTED, TMT_TEXTCOLOR, &cr_text)))
+            cr_text = GetThemeSysColor(context.list_view_theme, b_selected ? COLOR_BTNTEXT : COLOR_WINDOWTEXT);
+
+        if (IsThemeBackgroundPartiallyTransparent(context.list_view_theme, LVP_LISTITEM, theme_state))
+            DrawThemeParentBackground(context.wnd, context.dc, &rc);
+
+        RECT rc_background{rc};
+        if (context.m_use_dark_mode)
+            // This is inexplicable, but it needs to be done to get the same appearance as Windows Explorer
+            InflateRect(&rc_background, 1, 1);
+        DrawThemeBackground(context.list_view_theme, context.dc, LVP_LISTITEM, theme_state, &rc_background, &rc);
     } else {
         cr_text = b_selected
             ? (b_window_focused ? context.colours.m_selection_text : context.colours.m_inactive_selection_text)

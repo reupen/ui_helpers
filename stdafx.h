@@ -20,8 +20,6 @@
 // Included before windows.h, because pfc.h includes winsock2.h
 #include "../pfc/pfc.h"
 
-#include <wil/resource.h>
-
 #include <windows.h>
 #include <WindowsX.h>
 #include <SHLWAPI.H>
@@ -32,6 +30,8 @@
 #include <gdiplus.h>
 #include <Usp10.h>
 #include <CommonControls.h>
+
+#include <wil/resource.h>
 
 // Windows SDK headers define min and max macros, which are used by gdiplus.h.
 //
