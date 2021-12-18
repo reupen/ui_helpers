@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
 namespace uih {
-// Only used in non-themed mode – if theming is active, the shell draws the background for us
+// Only used in non-themed mode â€“ if theming is active, the shell draws the background for us
 void draw_drag_image_background(
     HWND wnd, bool isThemed, HTHEME theme, HDC dc, COLORREF selectionBackgroundColour, const RECT& rc)
 {
@@ -16,7 +16,7 @@ void draw_drag_image_background(
             DrawThemeBackground(theme, dc, DD_IMAGEBG, themeState, &rc, nullptr);
         }
     } else {
-        FillRect(dc, &rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(selectionBackgroundColour)));
+        FillRect(dc, &rc, wil::unique_hbrush(CreateSolidBrush(selectionBackgroundColour)).get());
     }
 }
 void draw_drag_image_label(

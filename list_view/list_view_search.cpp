@@ -26,7 +26,7 @@ void ListView::show_search_box(const char* label, bool b_focus)
         m_proc_search_edit
             = (WNDPROC)SetWindowLongPtr(m_search_editbox, GWLP_WNDPROC, (LPARAM)(g_on_search_edit_message));
         // SetWindowPos(m_wnd_inline_edit,HWND_TOP,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);
-        SendMessage(m_search_editbox, WM_SETFONT, (WPARAM)m_font.get(), MAKELONG(TRUE, 0));
+        SendMessage(m_search_editbox, WM_SETFONT, (WPARAM)m_items_font.get(), MAKELONG(TRUE, 0));
         SetWindowTheme(m_search_editbox, L"SearchBoxEdit", nullptr);
 
         // m_search_box_theme = OpenThemeData(m_search_editbox, L"Edit");

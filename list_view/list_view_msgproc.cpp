@@ -29,10 +29,10 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         notify_on_initialisation();
 
         reopen_themes();
-        m_font = m_lf_items_valid ? CreateFontIndirect(&m_lf_items) : uih::create_icon_font();
-        m_group_font = m_lf_group_header_valid
-            ? CreateFontIndirect(&m_lf_group_header)
-            : (m_lf_items_valid ? CreateFontIndirect(&m_lf_items) : uih::create_icon_font());
+        m_items_font.reset(m_lf_items_valid ? CreateFontIndirect(&m_lf_items) : uih::create_icon_font());
+        m_group_font.reset(m_lf_group_header_valid
+                ? CreateFontIndirect(&m_lf_group_header)
+                : (m_lf_items_valid ? CreateFontIndirect(&m_lf_items) : uih::create_icon_font()));
         m_item_height = get_default_item_height();
         m_group_height = get_default_group_height();
         if (m_show_header)
@@ -50,7 +50,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         exit_inline_edit();
         destroy_header();
         close_themes();
-        m_font.release();
+        m_items_font.reset();
+        m_group_font.reset();
         m_dummy_theme_window->destroy();
         m_dummy_theme_window.reset();
         notify_on_destroy();
@@ -134,7 +135,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         HBITMAP bm_mem = CreateCompatibleBitmap(dc, RECT_CX(rc), RECT_CY(rc));
         // if (!bm_mem) console::formatter() << "ONIJoj";
         HBITMAP bm_old = SelectBitmap(dc_mem, bm_mem);
-        HFONT font_old = SelectFont(dc_mem, m_font);
+        HFONT font_old = SelectFont(dc_mem, m_items_font.get());
         OffsetWindowOrgEx(dc_mem, rc.left, rc.top, nullptr);
         // int item_height = get_default_item_height();
         render_items(dc_mem, rc, RECT_CX(rc_client));
@@ -384,7 +385,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                             ClientToScreen(get_wnd(), &a);
 
                             int text_cx = get_text_width(temp, temp.length());
-                            const auto font_height = get_font_height(m_font);
+                            const auto font_height = get_font_height(m_items_font.get());
 
                             m_rc_tooltip.top = a.y + ((m_item_height - font_height) / 2);
                             // We don't get enough bottom-padding by default, so font_height / 10 is used to add

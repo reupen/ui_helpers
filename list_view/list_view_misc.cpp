@@ -288,7 +288,7 @@ void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
 
 int ListView::get_default_item_height()
 {
-    int ret = uih::get_font_height(m_font) + m_vertical_item_padding;
+    int ret = uih::get_font_height(m_items_font.get()) + m_vertical_item_padding;
     if (ret < 1)
         ret = 1;
     return ret;
@@ -296,7 +296,7 @@ int ListView::get_default_item_height()
 
 int ListView::get_default_group_height()
 {
-    int ret = uih::get_font_height(m_group_font) + m_vertical_item_padding;
+    int ret = uih::get_font_height(m_group_font.get()) + m_vertical_item_padding;
     if (ret < 1)
         ret = 1;
     return ret;
@@ -612,7 +612,7 @@ void ListView::set_font(const LPLOGFONT lplf)
     if (m_initialised) {
         exit_inline_edit();
         destroy_tooltip();
-        m_font = CreateFontIndirect(lplf);
+        m_items_font.reset(CreateFontIndirect(lplf));
         m_item_height = get_default_item_height();
         if (m_group_count)
             update_header();
@@ -627,7 +627,7 @@ void ListView::set_group_font(const LPLOGFONT lplf)
     if (m_initialised) {
         exit_inline_edit();
         destroy_tooltip();
-        m_group_font = CreateFontIndirect(lplf);
+        m_group_font.reset(CreateFontIndirect(lplf));
         m_group_height = get_default_group_height();
         refresh_item_positions();
     }
@@ -639,8 +639,8 @@ void ListView::set_header_font(const LPLOGFONT lplf)
     m_lf_header_valid = true;
     if (m_initialised && m_wnd_header) {
         SendMessage(m_wnd_header, WM_SETFONT, NULL, MAKELPARAM(FALSE, 0));
-        m_font_header = CreateFontIndirect(lplf);
-        SendMessage(m_wnd_header, WM_SETFONT, (WPARAM)m_font_header.get(), MAKELPARAM(TRUE, 0));
+        m_header_font.reset(CreateFontIndirect(lplf));
+        SendMessage(m_wnd_header, WM_SETFONT, (WPARAM)m_header_font.get(), MAKELPARAM(TRUE, 0));
         on_size();
     }
 }

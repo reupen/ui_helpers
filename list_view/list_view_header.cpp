@@ -8,7 +8,7 @@ void ListView::destroy_header()
     if (m_wnd_header) {
         DestroyWindow(m_wnd_header);
         m_wnd_header = nullptr;
-        m_font_header.release();
+        m_header_font.reset();
     }
 }
 
@@ -17,14 +17,14 @@ void ListView::create_header()
     // if (m_show_header)
     {
         if (!m_wnd_header) {
-            m_font_header = m_lf_header_valid ? CreateFontIndirect(&m_lf_header) : uih::create_icon_font();
+            m_header_font.reset(m_lf_header_valid ? CreateFontIndirect(&m_lf_header) : uih::create_icon_font());
             m_wnd_header = CreateWindowEx(0, WC_HEADER, _T("NGLVH"),
                 WS_CHILD | (0) | /*(m_autosize ? 0x0800  : NULL) |*/ HDS_HOTTRACK
                     | (m_allow_header_rearrange ? HDS_DRAGDROP : NULL) | HDS_HORZ | HDS_FULLDRAG
                     | (m_sorting_enabled ? HDS_BUTTONS : 0) | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
                 0, 0, 0, 0, get_wnd(), HMENU(IDC_HEADER), mmh::get_current_instance(), nullptr);
             SetWindowTheme(m_wnd_header, m_use_dark_mode ? L"DarkMode_ItemsView" : L"ItemsView", nullptr);
-            SendMessage(m_wnd_header, WM_SETFONT, (WPARAM)m_font_header.get(), MAKELPARAM(FALSE, 0));
+            SendMessage(m_wnd_header, WM_SETFONT, (WPARAM)m_header_font.get(), MAKELPARAM(FALSE, 0));
             if (m_initialised) {
                 build_header();
                 ShowWindow(m_wnd_header, SW_SHOWNORMAL);
@@ -158,7 +158,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
                     dc = GetDC(get_wnd());
                     int size;
 
-                    HFONT fnt_old = SelectFont(dc, m_font.get());
+                    HFONT fnt_old = SelectFont(dc, m_items_font.get());
 
                     int w = 0;
                     int n;

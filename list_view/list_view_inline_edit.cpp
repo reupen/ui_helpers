@@ -235,7 +235,7 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
     GetClientRect(get_wnd(), &rc_playlist);
     const auto rc_items = get_items_rect();
 
-    int font_height = uih::get_font_height(m_font);
+    int font_height = uih::get_font_height(m_items_font.get());
     int header_height = rc_items.top;
 
     int cx = m_columns[column].m_display_size;
@@ -305,7 +305,7 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
 
         SetWindowPos(m_wnd_inline_edit, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
-        SendMessage(m_wnd_inline_edit, WM_SETFONT, reinterpret_cast<WPARAM>(m_font.get()), MAKELONG(TRUE, 0));
+        SendMessage(m_wnd_inline_edit, WM_SETFONT, reinterpret_cast<WPARAM>(m_items_font.get()), MAKELONG(TRUE, 0));
 
         m_inline_edit_initial_text.reset();
         get_window_text(m_wnd_inline_edit, m_inline_edit_initial_text);

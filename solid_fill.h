@@ -101,7 +101,7 @@ private:
         case WM_PAINT:
             PAINTSTRUCT ps;
             HDC dc = BeginPaint(wnd, &ps);
-            gdi_object_t<HBRUSH>::ptr_t p_brush;
+            wil::unique_hbrush brush;
             RECT rc;
             GetClientRect(wnd, &rc);
 
@@ -112,18 +112,18 @@ private:
                 if (IsThemeBackgroundPartiallyTransparent(m_theme, m_theme_part, m_theme_state))
                     DrawThemeParentBackground(wnd, dc, &rc);
                 if (FAILED(DrawThemeBackground(m_theme, dc, m_theme_part, m_theme_state, &rc, nullptr))) {
-                    p_brush = CreateSolidBrush(m_fill_colour);
-                    FillRect(dc, &ps.rcPaint, p_brush);
+                    brush.reset(CreateSolidBrush(m_fill_colour));
+                    FillRect(dc, &ps.rcPaint, brush.get());
                 }
             } else if (m_mode == mode_theme_solid_fill && m_theme) {
                 COLORREF cr_fill = GetThemeSysColor(m_theme, m_theme_colour_index);
-                p_brush = CreateSolidBrush(cr_fill);
-                FillRect(dc, &ps.rcPaint, p_brush);
+                brush.reset(CreateSolidBrush(cr_fill));
+                FillRect(dc, &ps.rcPaint, brush.get());
             } else {
-                p_brush = CreateSolidBrush(m_fill_colour);
-                FillRect(dc, &ps.rcPaint, p_brush);
+                brush.reset(CreateSolidBrush(m_fill_colour));
+                FillRect(dc, &ps.rcPaint, brush.get());
             }
-            p_brush.release();
+            brush.release();
             EndPaint(wnd, &ps);
             return 0;
         }
