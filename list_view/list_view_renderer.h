@@ -3,31 +3,32 @@
 namespace uih::lv {
 
 struct ColourData {
-    bool m_themed;
-    bool m_use_custom_active_item_frame;
-    COLORREF m_text;
-    COLORREF m_selection_text;
-    COLORREF m_inactive_selection_text;
-    COLORREF m_background;
-    COLORREF m_selection_background;
-    COLORREF m_inactive_selection_background;
-    COLORREF m_active_item_frame;
-    COLORREF m_group_background;
-    COLORREF m_group_text;
+    bool m_themed{};
+    bool m_use_custom_active_item_frame{};
+    COLORREF m_text{};
+    COLORREF m_selection_text{};
+    COLORREF m_inactive_selection_text{};
+    COLORREF m_background{};
+    COLORREF m_selection_background{};
+    COLORREF m_inactive_selection_background{};
+    COLORREF m_active_item_frame{};
+    COLORREF m_group_background{};
+    COLORREF m_group_text{};
 };
 
 struct RendererSubItem {
     std::string_view text;
-    int width;
-    alignment alignment;
+    int width{};
+    alignment alignment{};
 };
 
 struct RendererContext {
-    ColourData colours;
-    HWND wnd;
-    HDC dc;
-    HTHEME list_view_theme;
-    HTHEME items_view_theme;
+    ColourData colours{};
+    bool m_use_dark_mode{};
+    HWND wnd{};
+    HDC dc{};
+    HTHEME list_view_theme{};
+    HTHEME items_view_theme{};
 };
 
 class RendererBase {

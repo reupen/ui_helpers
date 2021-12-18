@@ -18,8 +18,8 @@ bool ListView::render_drag_image(LPSHDRAGIMAGE lpsdi)
     else
         GetObject(m_font, sizeof(lf), &lf);
 
-    return uih::create_drag_image(get_wnd(), true, m_dd_theme, p_data.m_selection_background, p_data.m_selection_text,
-               icon, &lf, show_text, drag_text, lpsdi)
+    return uih::create_drag_image(get_wnd(), true, m_dd_theme.get(), p_data.m_selection_background,
+               p_data.m_selection_text, icon, &lf, show_text, drag_text, lpsdi)
         != 0;
 }
 

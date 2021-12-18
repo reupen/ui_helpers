@@ -560,6 +560,36 @@ void ListView::on_search_string_change(WCHAR c)
     }
 }
 
+void ListView::reopen_themes()
+{
+    close_themes();
+
+    if (IsThemeActive() && IsAppThemed()) {
+        const auto theme_wnd = m_dummy_theme_window->get_wnd();
+        m_list_view_theme.reset(
+            OpenThemeData(theme_wnd, m_use_dark_mode ? L"DarkMode_ItemsView::ListView" : L"ItemsView::ListView"));
+        if (!m_use_dark_mode)
+            m_items_view_theme.reset(OpenThemeData(theme_wnd, L"ItemsView"));
+        m_header_theme.reset(
+            OpenThemeData(theme_wnd, m_use_dark_mode ? L"DarkMode_ItemsView::Header" : L"ItemsView::Header"));
+        m_dd_theme.reset(OpenThemeData(get_wnd(), VSCLASS_DRAGDROP));
+    }
+}
+
+void ListView::close_themes()
+{
+    m_dd_theme.reset();
+    m_items_view_theme.reset();
+    m_header_theme.reset();
+    m_list_view_theme.reset();
+}
+
+void ListView::set_use_dark_mode(bool use_dark_mode)
+{
+    m_use_dark_mode = use_dark_mode;
+    // TODO: Handle dynamic changes
+}
+
 void ListView::set_vertical_item_padding(int val)
 {
     m_vertical_item_padding = val;

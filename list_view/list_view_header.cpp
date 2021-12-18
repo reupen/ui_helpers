@@ -1,4 +1,5 @@
 #include "../stdafx.h"
+#include "list_view.h"
 
 namespace uih {
 
@@ -22,8 +23,7 @@ void ListView::create_header()
                     | (m_allow_header_rearrange ? HDS_DRAGDROP : NULL) | HDS_HORZ | HDS_FULLDRAG
                     | (m_sorting_enabled ? HDS_BUTTONS : 0) | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
                 0, 0, 0, 0, get_wnd(), HMENU(IDC_HEADER), mmh::get_current_instance(), nullptr);
-            // SetWindowTheme(m_wnd_header, L"ItemsView", NULL);
-            // SendMessage (m_wnd_header, 0x2009, (WPARAM)get_wnd(), NULL);
+            SetWindowTheme(m_wnd_header, m_use_dark_mode ? L"DarkMode_ItemsView" : L"ItemsView", nullptr);
             SendMessage(m_wnd_header, WM_SETFONT, (WPARAM)m_font_header.get(), MAKELPARAM(FALSE, 0));
             if (m_initialised) {
                 build_header();
@@ -118,28 +118,26 @@ void ListView::build_header()
 bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
 {
     switch (lpnm->code) {
-#if 0
-        case NM_CUSTOMDRAW:
-            {
-                LPNMCUSTOMDRAW lpcd = (LPNMCUSTOMDRAW)lpnm;
-                switch (lpcd->dwDrawStage)
-                {
-                case CDDS_PREPAINT :
-                    ret = CDRF_NOTIFYITEMDRAW;
-                    return true;
+    case NM_CUSTOMDRAW: {
+        LPNMCUSTOMDRAW lpcd = (LPNMCUSTOMDRAW)lpnm;
+        switch (lpcd->dwDrawStage) {
+        case CDDS_PREPAINT:
+            ret = CDRF_NOTIFYITEMDRAW;
+            return true;
 
-                case CDDS_ITEMPREPAINT:
-                    {
-                        render_background(lpcd->hdc, &lpcd->rc);
-                    }
+        case CDDS_ITEMPREPAINT: {
+            auto cr{RGB(255, 0, 0)};
+            if (!SUCCEEDED(GetThemeColor(m_header_theme.get(), HP_HEADERITEM, 0, TMT_TEXTCOLOR, &cr)))
+                return false;
 
-                    SetTextColor(lpcd->hdc, RGB(76,96,128));
-                    ret = CDRF_NEWFONT;
-                    return true;
-                };
-            }
+            SetTextColor(lpcd->hdc, cr);
+            ret = CDRF_NEWFONT;
+            return true;
+        }
+        default:
             return false;
-#endif
+        }
+    }
     case HDN_BEGINTRACKA:
     case HDN_BEGINTRACKW: {
         auto lpnmh = (LPNMHEADER)lpnm;

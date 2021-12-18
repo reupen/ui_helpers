@@ -15,13 +15,20 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 #endif
 
     switch (msg) {
-    case WM_CREATE: {
-        m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, L"ListView") : nullptr;
-        m_items_view_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, L"ItemsView") : nullptr;
-        m_dd_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, VSCLASS_DRAGDROP) : nullptr;
-        SetWindowTheme(wnd, L"ItemsView", nullptr);
-    }
+    case WM_CREATE:
+        // For dark mode, the window needs to have the DarkMode_Explorer theme to get dark scroll bars,
+        // but we also need access to DarkMode_ItemsView themes. To do this, a dummy window with a
+        // different window theme is created.
+        m_dummy_theme_window
+            = std::make_unique<ContainerWindow>(ContainerWindowConfig{L"list_view_dummy_theme_window_FJg96cJ"});
+        m_dummy_theme_window->create(wnd, {-1, -1, 0, 0});
+
+        if (m_use_dark_mode)
+            SetWindowTheme(wnd, L"DarkMode_Explorer", nullptr);
+
         notify_on_initialisation();
+
+        reopen_themes();
         m_font = m_lf_items_valid ? CreateFontIndirect(&m_lf_items) : uih::create_icon_font();
         m_group_font = m_lf_group_header_valid
             ? CreateFontIndirect(&m_lf_group_header)
@@ -42,20 +49,10 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         destroy_tooltip();
         exit_inline_edit();
         destroy_header();
-        {
-            if (m_theme)
-                CloseThemeData(m_theme);
-            m_theme = nullptr;
-
-            if (m_dd_theme)
-                CloseThemeData(m_dd_theme);
-            m_dd_theme = nullptr;
-
-            if (m_items_view_theme)
-                CloseThemeData(m_items_view_theme);
-            m_items_view_theme = nullptr;
-        }
+        close_themes();
         m_font.release();
+        m_dummy_theme_window->destroy();
+        m_dummy_theme_window.reset();
         notify_on_destroy();
         return 0;
     /*case WM_WINDOWPOSCHANGED:
@@ -86,19 +83,9 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 console::formatter() << "GWL_EXSTYLE changed";
         }
         break;*/
-    case WM_THEMECHANGED: {
-        if (m_theme)
-            CloseThemeData(m_theme);
-        m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, L"ListView") : nullptr;
-
-        if (m_dd_theme)
-            CloseThemeData(m_dd_theme);
-        m_dd_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, VSCLASS_DRAGDROP) : nullptr;
-
-        if (m_items_view_theme)
-            CloseThemeData(m_items_view_theme);
-        m_items_view_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, L"ItemsView") : nullptr;
-    } break;
+    case WM_THEMECHANGED:
+        reopen_themes();
+        break;
     case WM_TIMECHANGE:
         notify_on_time_change();
         break;

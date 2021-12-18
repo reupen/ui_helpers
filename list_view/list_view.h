@@ -185,6 +185,7 @@ public:
         m_allow_header_rearrange = b_allow_header_rearrange;
     }
 
+    void set_use_dark_mode(bool use_dark_mode);
     void set_vertical_item_padding(int val);
     void set_font(const LPLOGFONT lplf);
     void set_group_font(const LPLOGFONT lplf);
@@ -678,8 +679,6 @@ protected:
 
     virtual const char* get_drag_unit_plural() const { return "items"; }
 
-    HTHEME get_theme() { return m_theme; }
-
     void set_sort_column(t_size index, bool b_direction);
 
     void clear_sort_column() { set_sort_column(pfc_infinite, false); }
@@ -754,6 +753,9 @@ private:
 
     void reset_columns();
 
+    void reopen_themes();
+    void close_themes();
+
     void create_header();
     void destroy_header();
     void build_header();
@@ -766,15 +768,17 @@ private:
 
     gdi_object_t<HFONT>::ptr_t m_font, m_font_header, m_group_font;
 
-    HTHEME m_theme{nullptr};
-    HTHEME m_dd_theme{nullptr};
-    HTHEME m_items_view_theme{nullptr};
+    wil::unique_htheme m_list_view_theme;
+    wil::unique_htheme m_items_view_theme;
+    wil::unique_htheme m_header_theme;
+    wil::unique_htheme m_dd_theme;
 
     HWND m_wnd_header{nullptr};
     HWND m_wnd_inline_edit{nullptr};
     WNDPROC m_proc_inline_edit{nullptr};
     WNDPROC m_proc_original_inline_edit{nullptr};
     pfc::string8 m_inline_edit_initial_text;
+    bool m_use_dark_mode{};
     bool m_inline_edit_save{false};
     bool m_inline_edit_saving{false};
     bool m_timer_inline_edit{false};
@@ -867,6 +871,7 @@ private:
      * \brief The underlying container window.
      */
     std::unique_ptr<uih::ContainerWindow> m_container_window;
+    std::unique_ptr<uih::ContainerWindow> m_dummy_theme_window;
     std::unique_ptr<uih::lv::RendererBase> m_renderer;
 };
 } // namespace uih
