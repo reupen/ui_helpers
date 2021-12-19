@@ -22,7 +22,7 @@ void ListView::create_tooltip(/*t_size index, t_size column, */ const char* str)
         WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP | TTS_NOPREFIX, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         CW_USEDEFAULT, get_wnd(), nullptr, mmh::get_current_instance(), nullptr);
 
-    SendMessage(m_wnd_tooltip, WM_SETFONT, (WPARAM)m_font.get(), MAKELPARAM(FALSE, 0));
+    SendMessage(m_wnd_tooltip, WM_SETFONT, (WPARAM)m_items_font.get(), MAKELPARAM(FALSE, 0));
 
     RECT rect;
     GetClientRect(get_wnd(), &rect);

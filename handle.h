@@ -45,30 +45,6 @@ private:
     t_handle m_handle;
 };
 
-template <typename t_gdi_type>
-class gdi_object_t {
-public:
-    class gdi_release_t {
-    public:
-        template <typename t_gdi_type>
-        static void release(t_gdi_type handle)
-        {
-            DeleteObject((t_gdi_type)handle);
-        };
-        template <typename t_gdi_type>
-        static bool is_valid(t_gdi_type handle)
-        {
-            return handle != nullptr;
-        };
-        template <typename t_gdi_type>
-        static void set_invalid(t_gdi_type& handle)
-        {
-            handle = nullptr;
-        };
-    };
-    using ptr_t = handle_container_t<t_gdi_type, gdi_release_t>;
-};
-
 class icon_release_t {
 public:
     static void release(HICON handle) { DestroyIcon(handle); };

@@ -44,7 +44,7 @@ public:
 
     int get_text_height() const
     {
-        return SendMessage(m_wnd_edit, EM_GETLINECOUNT, 0, 0) * uih::get_font_height(m_font);
+        return SendMessage(m_wnd_edit, EM_GETLINECOUNT, 0, 0) * uih::get_font_height(m_font.get());
     }
 
     int get_icon_height() const
@@ -156,7 +156,7 @@ private:
         }
             return 0;
         case WM_CREATE: {
-            m_font = uih::create_icon_font();
+            m_font.reset(uih::create_icon_font());
 
             auto edit_styles
                 = WS_CHILD | WS_VISIBLE | WS_GROUP | ES_READONLY | ES_MULTILINE | ES_AUTOVSCROLL;
@@ -170,7 +170,7 @@ private:
                 RECT_CY(rc) - get_large_padding() * 2, wnd, reinterpret_cast<HMENU>(1001), mmh::get_current_instance(),
                 nullptr);
             SendMessage(m_wnd_edit, WM_SETFONT, reinterpret_cast<WPARAM>(m_font.get()), MAKELPARAM(FALSE, 0));
-            int cy_button = uih::get_font_height(m_font) + uih::scale_dpi_value(10);
+            int cy_button = uih::get_font_height(m_font.get()) + uih::scale_dpi_value(10);
             m_wnd_button = CreateWindowEx(0, WC_BUTTON, L"Close",
                 WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON | WS_GROUP,
                 RECT_CX(rc) - get_large_padding() * 2 - get_button_width(),
@@ -189,7 +189,7 @@ private:
         case DM_GETDEFID:
             return IDCANCEL | (DC_HASDEFID << 16);
         case WM_DESTROY:
-            m_font.release();
+            m_font.reset();
             return 0;
         case WM_CTLCOLORSTATIC:
             SetBkColor(reinterpret_cast<HDC>(wp), GetSysColor(COLOR_WINDOW));
@@ -261,7 +261,7 @@ private:
 
     HWND m_wnd_edit, m_wnd_button, m_wnd_static;
     alignment m_text_alignment{ALIGN_LEFT};
-    gdi_object_t<HFONT>::ptr_t m_font;
+    wil::unique_hfont m_font;
     icon_ptr m_icon;
     std::function<void(HWND)> m_on_creation;
     std::function<void(HWND)> m_on_destruction;

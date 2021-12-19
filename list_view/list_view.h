@@ -766,7 +766,9 @@ private:
     bool is_item_clipped(t_size index, t_size column);
     int get_text_width(const char* text, t_size length);
 
-    gdi_object_t<HFONT>::ptr_t m_font, m_font_header, m_group_font;
+    wil::unique_hfont m_items_font;
+    wil::unique_hfont m_header_font;
+    wil::unique_hfont m_group_font;
 
     wil::unique_htheme m_list_view_theme;
     wil::unique_htheme m_items_view_theme;

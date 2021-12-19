@@ -17,7 +17,7 @@ int ListView::get_default_indentation_step()
     int ret = 0;
     if (m_group_level_indentation_enabled) {
         HDC dc = GetDC(get_wnd());
-        HFONT font_old = SelectFont(dc, m_font);
+        HFONT font_old = SelectFont(dc, m_items_font.get());
         const int cx_space = uih::get_text_width(dc, " ", 1);
         SelectFont(dc, font_old);
         ReleaseDC(get_wnd(), dc);
@@ -170,8 +170,8 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
         rc_line.right = cx;
         rc_line.bottom = yPos + scale_dpi_value(2);
         if (IntersectRect(&rc_dummy, &rc_line, &rc_update)) {
-            gdi_object_t<HBRUSH>::ptr_t br = CreateSolidBrush(colours.m_text);
-            FillRect(dc, &rc_line, br);
+            wil::unique_hbrush brush(CreateSolidBrush(colours.m_text));
+            FillRect(dc, &rc_line, brush.get());
         }
         /*gdi_object_t<HBRUSH>::ptr_t pen = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_WINDOWTEXT));
         HPEN pen_old = SelectPen(dc, pen);
@@ -204,8 +204,8 @@ void lv::DefaultRenderer::render_group_line(RendererContext context, const RECT*
             DrawThemeBackground(context.list_view_theme, context.dc, LVP_GROUPHEADERLINE, LVGH_OPEN, rc, nullptr))) {
     } else {
         COLORREF cr = context.colours.m_group_text; // get_group_text_colour_default();
-        gdi_object_t<HPEN>::ptr_t pen = CreatePen(PS_SOLID, uih::scale_dpi_value(1), cr);
-        HPEN pen_old = SelectPen(context.dc, pen);
+        wil::unique_hpen pen(CreatePen(PS_SOLID, uih::scale_dpi_value(1), cr));
+        HPEN pen_old = SelectPen(context.dc, pen.get());
         MoveToEx(context.dc, rc->left, rc->top, nullptr);
         LineTo(context.dc, rc->right, rc->top);
         SelectPen(context.dc, pen_old);
@@ -214,7 +214,7 @@ void lv::DefaultRenderer::render_group_line(RendererContext context, const RECT*
 
 void lv::DefaultRenderer::render_group_background(RendererContext context, const RECT* rc)
 {
-    FillRect(context.dc, rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(context.colours.m_group_background)));
+    FillRect(context.dc, rc, wil::unique_hbrush(CreateSolidBrush(context.colours.m_group_background)).get());
 }
 
 COLORREF ListView::get_group_text_colour_default()
@@ -298,10 +298,11 @@ void lv::DefaultRenderer::render_item(RendererContext context, t_size index, std
             ? (b_window_focused ? context.colours.m_selection_text : context.colours.m_inactive_selection_text)
             : context.colours.m_text;
         FillRect(context.dc, &rc,
-            gdi_object_t<HBRUSH>::ptr_t(
+            wil::unique_hbrush(
                 CreateSolidBrush(b_selected ? (b_window_focused ? context.colours.m_selection_background
                                                                 : context.colours.m_inactive_selection_background)
-                                            : context.colours.m_background)));
+                                            : context.colours.m_background))
+                .get());
     }
     RECT rc_subitem = rc;
 
@@ -358,7 +359,7 @@ void lv::DefaultRenderer::render_focus_rect(RendererContext context, bool should
 
 void lv::DefaultRenderer::render_background(RendererContext context, const RECT* rc)
 {
-    FillRect(context.dc, rc, gdi_object_t<HBRUSH>::ptr_t(CreateSolidBrush(context.colours.m_background)));
+    FillRect(context.dc, rc, wil::unique_hbrush(CreateSolidBrush(context.colours.m_background)).get());
 }
 
 int ListView::get_text_width(const char* text, t_size length)
@@ -366,7 +367,7 @@ int ListView::get_text_width(const char* text, t_size length)
     int ret = 0;
     HDC hdc = GetDC(get_wnd());
     if (hdc) {
-        HFONT fnt_old = SelectFont(hdc, m_font);
+        HFONT fnt_old = SelectFont(hdc, m_items_font.get());
         ret = uih::get_text_width(hdc, text, strlen(text));
         SelectFont(hdc, fnt_old);
         ReleaseDC(get_wnd(), hdc);
@@ -381,7 +382,7 @@ bool ListView::is_item_clipped(t_size index, t_size column)
         return false;
 
     pfc::string8 text = get_item_text(index, column);
-    HFONT fnt_old = SelectFont(hdc, m_font);
+    HFONT fnt_old = SelectFont(hdc, m_items_font.get());
     int width = uih::get_text_width_colour(hdc, text, text.length());
     SelectFont(hdc, fnt_old);
     ReleaseDC(get_wnd(), hdc);
