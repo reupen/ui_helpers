@@ -23,10 +23,10 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             = std::make_unique<ContainerWindow>(ContainerWindowConfig{L"list_view_dummy_theme_window_FJg96cJ"});
         m_dummy_theme_window->create(wnd, {-1, -1, 0, 0});
 
+        notify_on_initialisation();
+
         if (m_use_dark_mode)
             SetWindowTheme(wnd, L"DarkMode_Explorer", nullptr);
-
-        notify_on_initialisation();
 
         reopen_themes();
         m_items_font.reset(m_lf_items_valid ? CreateFontIndirect(&m_lf_items) : uih::create_icon_font());
