@@ -28,8 +28,9 @@ public:
             CloseThemeData(m_theme);
         m_theme = nullptr;
         if (m_container_window->get_wnd()) {
-            m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(m_container_window->get_wnd(), m_theme_class)
-                                                       : nullptr;
+            m_theme = IsThemeActive() && IsAppThemed()
+                ? OpenThemeData(m_container_window->get_wnd(), m_theme_class.c_str())
+                : nullptr;
             redraw();
         }
     }
@@ -43,8 +44,9 @@ public:
             CloseThemeData(m_theme);
         m_theme = nullptr;
         if (m_container_window->get_wnd()) {
-            m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(m_container_window->get_wnd(), m_theme_class)
-                                                       : nullptr;
+            m_theme = IsThemeActive() && IsAppThemed()
+                ? OpenThemeData(m_container_window->get_wnd(), m_theme_class.c_str())
+                : nullptr;
             redraw();
         }
     }
@@ -77,7 +79,7 @@ private:
         switch (msg) {
         case WM_CREATE: {
             if (m_mode == mode_theme_fill || m_mode == mode_theme_solid_fill)
-                m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, m_theme_class) : nullptr;
+                m_theme = IsThemeActive() && IsAppThemed() ? OpenThemeData(wnd, m_theme_class.c_str()) : nullptr;
             SetWindowTheme(wnd, L"Explorer", nullptr);
         } break;
         case WM_DESTROY: {
@@ -90,7 +92,7 @@ private:
                 CloseThemeData(m_theme);
             m_theme = nullptr;
             if (m_mode == mode_theme_fill || m_mode == mode_theme_solid_fill)
-                m_theme = (IsThemeActive() && IsAppThemed()) ? OpenThemeData(wnd, m_theme_class) : nullptr;
+                m_theme = (IsThemeActive() && IsAppThemed()) ? OpenThemeData(wnd, m_theme_class.c_str()) : nullptr;
             redraw();
         } break;
         case WM_ENABLE:
@@ -131,7 +133,7 @@ private:
     };
 
     Mode m_mode{mode_solid_fill};
-    pfc::string_simple_t<WCHAR> m_theme_class;
+    std::wstring m_theme_class;
     COLORREF m_fill_colour = NULL;
     HTHEME m_theme = nullptr;
     int m_theme_part = NULL;
