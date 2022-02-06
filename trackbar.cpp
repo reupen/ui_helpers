@@ -49,7 +49,13 @@ void Trackbar::draw_background(HDC dc, const RECT* rc) const
 
 void Trackbar::draw_thumb(HDC dc, const RECT* rc) const
 {
-    if (get_theme_handle()) {
+    if (m_custom_colours) {
+        const auto colour = get_enabled()
+            ? (get_hot() ? m_custom_colours->thumb_hot_colour : m_custom_colours->thumb_default_colour)
+            : m_custom_colours->thumb_disabled_colour;
+        const wil::unique_hbrush brush(CreateSolidBrush(colour));
+        FillRect(dc, rc, brush.get());
+    } else if (get_theme_handle()) {
         const auto part_id = get_orientation() ? TKP_THUMBVERT : TKP_THUMB;
         const auto state_id
             = get_enabled() ? (get_tracking() ? TUS_PRESSED : (get_hot() ? TUS_HOT : TUS_NORMAL)) : TUS_DISABLED;
@@ -111,7 +117,10 @@ void Trackbar::draw_thumb(HDC dc, const RECT* rc) const
 
 void Trackbar::draw_channel(HDC dc, const RECT* rc) const
 {
-    if (get_theme_handle()) {
+    if (m_custom_colours) {
+        const wil::unique_hbrush brush(CreateSolidBrush(m_custom_colours->channel_colour));
+        FillRect(dc, rc, brush.get());
+    } else if (get_theme_handle()) {
         DrawThemeBackground(
             get_theme_handle(), dc, get_orientation() ? TKP_TRACKVERT : TKP_TRACK, TUTS_NORMAL, rc, nullptr);
     } else {
@@ -125,6 +134,14 @@ int Trackbar::calculate_thumb_size() const
     RECT rc_client;
     GetClientRect(get_wnd(), &rc_client);
     return MulDiv(get_orientation() ? rc_client.right : rc_client.bottom, 9, 20);
+}
+
+void Trackbar::set_custom_colours(std::optional<TrackbarCustomColours> colours)
+{
+    m_custom_colours = colours;
+
+    if (get_wnd())
+        RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
 } // namespace uih
