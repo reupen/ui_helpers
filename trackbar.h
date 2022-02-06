@@ -492,11 +492,11 @@ protected:
 
     /**
      * Used internally by the standard track bar implementation.\n
-     * Used to calulate the height or width of the thumb, depnding on the orientation.
+     * Used to calculate the height or width of the thumb, depending on the orientation.
      *
      * \return                    Thumb width or height in pixels
      */
-    unsigned calculate_thumb_size() const;
+    int calculate_thumb_size() const;
 };
 
 } // namespace uih

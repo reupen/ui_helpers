@@ -191,10 +191,10 @@ bool TrackbarBase::get_enabled() const
 
 void Trackbar::get_thumb_rect(unsigned pos, unsigned range, RECT* rc) const
 {
-    RECT rc_client;
+    RECT rc_client{};
     GetClientRect(get_wnd(), &rc_client);
 
-    unsigned cx = calculate_thumb_size();
+    const auto cx = calculate_thumb_size();
     if (get_orientation()) {
         rc->left = 2;
         rc->right = rc_client.right - 2;
@@ -212,9 +212,9 @@ void Trackbar::get_thumb_rect(unsigned pos, unsigned range, RECT* rc) const
 
 void Trackbar::get_channel_rect(RECT* rc) const
 {
-    RECT rc_client;
+    RECT rc_client{};
     GetClientRect(get_wnd(), &rc_client);
-    unsigned cx = calculate_thumb_size();
+    const auto cx = calculate_thumb_size();
 
     rc->left = get_orientation() ? rc_client.right / 2 - 2 : rc_client.left + cx / 2;
     rc->right = get_orientation() ? rc_client.right / 2 + 2 : rc_client.right - cx + cx / 2;
@@ -364,7 +364,7 @@ bool TrackbarBase::on_hooked_message(uih::MessageHookType p_type, int code, WPAR
     return false;
 }
 
-unsigned Trackbar::calculate_thumb_size() const
+int Trackbar::calculate_thumb_size() const
 {
     RECT rc_client;
     GetClientRect(get_wnd(), &rc_client);
