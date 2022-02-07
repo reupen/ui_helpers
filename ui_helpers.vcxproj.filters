@@ -7,6 +7,9 @@
     <Filter Include="Data Object">
       <UniqueIdentifier>{29b3132f-c094-4c8d-a22c-92ca8ed4b40f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Trackbar">
+      <UniqueIdentifier>{cd91f854-e740-4719-bd4a-d0d160aae3bf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gdi.h" />
@@ -15,7 +18,6 @@
     <ClInclude Include="solid_fill.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="text_drawing.h" />
-    <ClInclude Include="trackbar.h" />
     <ClInclude Include="win32_helpers.h" />
     <ClInclude Include="ole.h" />
     <ClInclude Include="drag_image.h" />
@@ -38,13 +40,18 @@
     <ClInclude Include="literals.h" />
     <ClInclude Include="dpi.h" />
     <ClInclude Include="dialog.h" />
+    <ClInclude Include="trackbar.h">
+      <Filter>Trackbar</Filter>
+    </ClInclude>
+    <ClInclude Include="trackbar_base.h">
+      <Filter>Trackbar</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="message_hook.cpp" />
     <ClCompile Include="solid_fill.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="text_drawing.cpp" />
-    <ClCompile Include="trackbar.cpp" />
     <ClCompile Include="win32_helpers.cpp" />
     <ClCompile Include="ole.cpp" />
     <ClCompile Include="drag_image.cpp" />
@@ -101,6 +108,12 @@
     <ClCompile Include="literals.cpp" />
     <ClCompile Include="dpi.cpp" />
     <ClCompile Include="dialog.cpp" />
+    <ClCompile Include="trackbar.cpp">
+      <Filter>Trackbar</Filter>
+    </ClCompile>
+    <ClCompile Include="trackbar_base.cpp">
+      <Filter>Trackbar</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
