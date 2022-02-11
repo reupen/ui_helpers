@@ -560,6 +560,11 @@ void ListView::on_search_string_change(WCHAR c)
     }
 }
 
+void ListView::set_window_theme() const
+{
+    SetWindowTheme(get_wnd(), m_use_dark_mode ? L"DarkMode_Explorer" : nullptr, nullptr);
+}
+
 void ListView::reopen_themes()
 {
     close_themes();
@@ -587,7 +592,9 @@ void ListView::close_themes()
 void ListView::set_use_dark_mode(bool use_dark_mode)
 {
     m_use_dark_mode = use_dark_mode;
-    // TODO: Handle dynamic changes
+
+    set_window_theme();
+    set_header_window_theme();
 }
 
 void ListView::set_vertical_item_padding(int val)

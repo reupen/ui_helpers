@@ -25,10 +25,9 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 
         notify_on_initialisation();
 
-        if (m_use_dark_mode)
-            SetWindowTheme(wnd, L"DarkMode_Explorer", nullptr);
-
+        set_window_theme();
         reopen_themes();
+
         m_items_font.reset(m_lf_items_valid ? CreateFontIndirect(&m_lf_items) : uih::create_icon_font());
         m_group_font.reset(m_lf_group_header_valid
                 ? CreateFontIndirect(&m_lf_group_header)
