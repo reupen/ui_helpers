@@ -753,11 +753,13 @@ private:
 
     void reset_columns();
 
+    void set_window_theme() const;
     void reopen_themes();
     void close_themes();
 
     void create_header();
     void destroy_header();
+    void set_header_window_theme() const;
     void build_header();
     void update_header();
 
