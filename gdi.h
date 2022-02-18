@@ -1,51 +1,31 @@
 #pragma once
 
 namespace uih {
-class MemoryDC {
+
+class BufferedDC {
 public:
-    MemoryDC(const PAINTSTRUCT& ps)
+    BufferedDC(HDC paint_dc, RECT paint_rect) : m_paint_rect(paint_rect), m_paint_dc(paint_dc)
     {
-        m_rc = ps.rcPaint;
-        m_dc = ps.hdc;
-        m_dc_mem = CreateCompatibleDC(m_dc);
-        m_bm_mem = CreateCompatibleBitmap(m_dc, RECT_CX(m_rc), RECT_CY(m_rc));
-        m_bm_old = SelectBitmap(m_dc_mem, m_bm_mem);
+        m_memory_dc.reset(CreateCompatibleDC(m_paint_dc));
+        m_memory_bitmap.reset(CreateCompatibleBitmap(m_paint_dc, RECT_CX(m_paint_rect), RECT_CY(m_paint_rect)));
+        m_select_bitmap = wil::SelectObject(m_memory_dc.get(), m_memory_bitmap.get());
 
-        OffsetWindowOrgEx(m_dc_mem, m_rc.left, m_rc.top, nullptr);
+        OffsetWindowOrgEx(m_memory_dc.get(), m_paint_rect.left, m_paint_rect.top, nullptr);
     }
-    ~MemoryDC()
+    ~BufferedDC()
     {
-        OffsetWindowOrgEx(m_dc_mem, -m_rc.left, -m_rc.top, nullptr);
-        BitBlt(m_dc, m_rc.left, m_rc.top, RECT_CX(m_rc), RECT_CY(m_rc), m_dc_mem, 0, 0, SRCCOPY);
-
-        SelectObject(m_dc_mem, m_bm_old);
-        DeleteObject(m_bm_mem);
-        DeleteDC(m_dc_mem);
+        BitBlt(m_paint_dc, m_paint_rect.left, m_paint_rect.top, RECT_CX(m_paint_rect), RECT_CY(m_paint_rect),
+            m_memory_dc.get(), m_paint_rect.left, m_paint_rect.top, SRCCOPY);
     }
-    operator HDC() const { return m_dc_mem; };
+
+    [[nodiscard]] HDC get() const { return m_memory_dc.get(); };
 
 private:
-    RECT m_rc;
-    HDC m_dc;
-    HDC m_dc_mem;
-    HBITMAP m_bm_mem;
-    HBITMAP m_bm_old;
-};
-
-class PaintScope {
-public:
-    PaintScope(HWND wnd) : m_wnd(wnd)
-    {
-        memset(&m_ps, 0, sizeof(PAINTSTRUCT));
-        BeginPaint(m_wnd, &m_ps);
-    };
-    ~PaintScope() { EndPaint(m_wnd, &m_ps); };
-    operator const PAINTSTRUCT&() const { return m_ps; };
-    const PAINTSTRUCT* operator->() const { return &m_ps; };
-
-private:
-    PAINTSTRUCT m_ps;
-    HWND m_wnd;
+    RECT m_paint_rect{};
+    HDC m_paint_dc;
+    wil::unique_hdc m_memory_dc;
+    wil::unique_hbitmap m_memory_bitmap;
+    wil::unique_select_object m_select_bitmap;
 };
 
 class DisableRedrawScope {
@@ -71,6 +51,7 @@ private:
     HWND m_wnd;
 };
 
+void paint_subclassed_window_with_buffering(HWND wnd, WNDPROC window_proc);
 void draw_rect_outline(HDC dc, const RECT& rc, COLORREF colour, int width);
 
 } // namespace uih
