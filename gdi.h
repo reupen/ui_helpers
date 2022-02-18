@@ -51,6 +51,7 @@ private:
     HWND m_wnd;
 };
 
+void paint_subclassed_window_with_buffering(HWND wnd, WNDPROC window_proc);
 void draw_rect_outline(HDC dc, const RECT& rc, COLORREF colour, int width);
 
 } // namespace uih
