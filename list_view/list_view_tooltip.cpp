@@ -22,6 +22,7 @@ void ListView::create_tooltip(/*t_size index, t_size column, */ const char* str)
         WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP | TTS_NOPREFIX, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
         CW_USEDEFAULT, get_wnd(), nullptr, mmh::get_current_instance(), nullptr);
 
+    set_tooltip_window_theme();
     SendMessage(m_wnd_tooltip, WM_SETFONT, (WPARAM)m_items_font.get(), MAKELPARAM(FALSE, 0));
 
     RECT rect;
@@ -41,6 +42,7 @@ void ListView::create_tooltip(/*t_size index, t_size column, */ const char* str)
 
     uih::tooltip_add_tool(m_wnd_tooltip, &ti);
 }
+
 void ListView::destroy_tooltip()
 {
     if (m_wnd_tooltip) {
@@ -49,6 +51,14 @@ void ListView::destroy_tooltip()
     }
     m_tooltip_last_index = -1;
     m_tooltip_last_column = -1;
+}
+
+void ListView::set_tooltip_window_theme() const
+{
+    if (!m_wnd_tooltip)
+        return;
+
+    SetWindowTheme(m_wnd_tooltip, m_use_dark_mode ? L"DarkMode_Explorer" : nullptr, nullptr);
 }
 
 } // namespace uih

@@ -765,6 +765,7 @@ private:
 
     void create_tooltip(/*t_size index, t_size column, */ const char* str);
     void destroy_tooltip();
+    void set_tooltip_window_theme() const;
     bool is_item_clipped(t_size index, t_size column);
     int get_text_width(const char* text, t_size length);
 
