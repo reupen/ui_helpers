@@ -99,7 +99,7 @@ BOOL system_parameters_info_for_dpi(unsigned action, unsigned param, void* data,
 }
 
 INT_PTR modal_dialog_box(
-    UINT resource_id, HWND wnd, std::function<BOOL(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
+    UINT resource_id, HWND wnd, std::function<INT_PTR(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
 {
     auto wrapped_on_message = [on_message = std::move(on_message), dpi_handle = set_thread_per_monitor_dpi_aware()](
                                   auto&& wnd, auto&& msg, auto&& wp, auto&& lp) mutable {
@@ -114,7 +114,7 @@ INT_PTR modal_dialog_box(
 }
 
 HWND modeless_dialog_box(
-    UINT resource_id, HWND wnd, std::function<BOOL(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
+    UINT resource_id, HWND wnd, std::function<INT_PTR(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
 {
     auto _ = set_thread_per_monitor_dpi_aware();
 

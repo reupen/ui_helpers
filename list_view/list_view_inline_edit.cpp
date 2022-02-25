@@ -4,7 +4,7 @@ namespace uih {
 
 void ListView::activate_inline_editing(t_size column_start)
 {
-    unsigned count = m_columns.size();
+    size_t count = m_columns.size();
     if (count) {
         t_size focus = get_focus_item();
         if (focus != pfc_infinite) {
@@ -22,7 +22,7 @@ void ListView::activate_inline_editing(t_size column_start)
             if (column_start > count)
                 column_start = 0;
 
-            unsigned column;
+            size_t column;
             for (column = column_start; column < count; column++) {
                 if (notify_before_create_inline_edit(indices, column, false)) {
                     create_inline_edit(indices, column);
@@ -35,7 +35,7 @@ void ListView::activate_inline_editing(t_size column_start)
 
 void ListView::activate_inline_editing(const pfc::list_base_const_t<t_size>& indices, t_size column)
 {
-    unsigned count = m_columns.size();
+    size_t count = m_columns.size();
     if (column < count) {
         if (notify_before_create_inline_edit(indices, column, false)) {
             create_inline_edit(indices, column);
@@ -84,7 +84,7 @@ LRESULT ListView::on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
     case WM_KEYDOWN:
         switch (wp) {
         case VK_TAB: {
-            unsigned count = m_columns.size();
+            size_t count = m_columns.size();
             t_size indices_count = m_inline_edit_indices.get_count();
             assert(indices_count);
             if (count && indices_count) {
@@ -171,7 +171,7 @@ LRESULT ListView::on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
     return CallWindowProc(m_proc_inline_edit, wnd, msg, wp, lp);
 }
 
-void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices, unsigned column)
+void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices, size_t column)
 {
     t_size indices_count = indices.get_count();
     if (!indices_count)
@@ -192,7 +192,7 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
     const auto indices_spread = indices[indices_count - 1] - indices[0] + 1;
     const auto items_top = get_item_position(indices[0]);
     const auto items_bottom = get_item_position_bottom(indices[indices_count - 1]);
-    int indices_total_height = min(items_bottom - items_top, MAXLONG);
+    int indices_total_height = std::min(items_bottom - items_top, MAXLONG);
 
     if (m_timer_inline_edit) {
         KillTimer(get_wnd(), EDIT_TIMER_ID);
@@ -225,7 +225,7 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
         x = get_total_indentation();
 
         unsigned n;
-        unsigned count = m_columns.size();
+        size_t count = m_columns.size();
         for (n = 0; n < count && n < column; n++) {
             x += m_columns[n].m_display_size;
         }
@@ -239,7 +239,7 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
     int header_height = rc_items.top;
 
     int cx = m_columns[column].m_display_size;
-    int cy = min(max(indices_total_height, font_height), rc_items.bottom - rc_items.top);
+    int cy = std::min(std::max(indices_total_height, font_height), gsl::narrow<int>(rc_items.bottom - rc_items.top));
     int y = get_item_position(indices[0]) - m_scroll_position + header_height;
     if (cy > indices_total_height)
         y -= (cy - indices_total_height) / 2;

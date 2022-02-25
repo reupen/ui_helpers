@@ -89,7 +89,7 @@ void ListView::update_column_sizes()
             total_weight += column.m_autosize_weight;
 
         pfc::array_t<bool> sized;
-        pfc::array_t<t_ssize> deltas;
+        pfc::array_t<int> deltas;
         sized.set_count(count);
         deltas.set_count(count);
         sized.fill_null();
@@ -98,7 +98,7 @@ void ListView::update_column_sizes()
         int width_difference = display_width - width;
 
         while (width_difference && total_weight && sized_count) {
-            t_ssize width_difference_local = width_difference;
+            int width_difference_local = width_difference;
             int total_weight_local = total_weight;
 
             for (size_t i{0}; i < count; i++) {
@@ -111,8 +111,8 @@ void ListView::update_column_sizes()
 
             for (size_t i{0}; i < count; i++) {
                 if (!sized[i]) {
-                    t_ssize delta = deltas[i];
-                    if ((t_ssize)m_columns[i].m_display_size + delta <= 0) {
+                    int delta = deltas[i];
+                    if (m_columns[i].m_display_size + delta <= 0) {
                         total_weight -= m_columns[i].m_autosize_weight;
                         sized[i] = true;
                         sized_count--;

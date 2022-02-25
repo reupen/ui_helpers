@@ -77,10 +77,8 @@ void ListView::set_sort_column(t_size index, bool b_direction)
         hdi.mask = HDI_FORMAT;
 
         {
-            int n;
-            int t = m_columns.size();
-            int i = 0;
-            for (n = 0; n < t; n++) {
+            const int t = gsl::narrow<int>(m_columns.size());
+            for (int n = 0; n < t; n++) {
                 Header_GetItem(m_wnd_header, n, &hdi);
                 hdi.fmt &= ~(HDF_SORTUP | HDF_SORTDOWN);
                 if (m_show_sort_indicators && n == headerIndex)
@@ -131,16 +129,15 @@ void ListView::on_size(int cxd, int cyd, bool b_update_scroll)
         RECT rc;
         GetClientRect(get_wnd(), &rc);
         int cx = RECT_CX(rc);
-        int cy = RECT_CY(rc);
 
-        t_size old_search_height = get_search_box_height();
-        t_size new_search_height = m_search_editbox ? m_item_height + scale_dpi_value(4) : 0;
+        auto old_search_height = get_search_box_height();
+        auto new_search_height = m_search_editbox ? m_item_height + scale_dpi_value(4) : 0;
 
         if (m_search_editbox) {
             SetWindowPos(m_search_editbox, nullptr, 0, 0, cx, new_search_height, SWP_NOZORDER);
         }
 
-        t_size new_header_height = calculate_header_height();
+        auto new_header_height = calculate_header_height();
         if (new_header_height != RECT_CY(rc_header) && m_wnd_header)
             // Update height because affects scroll info
             SetWindowPos(m_wnd_header, nullptr, -m_horizontal_scroll_position, new_search_height,
@@ -156,7 +153,6 @@ void ListView::on_size(int cxd, int cyd, bool b_update_scroll)
 
         GetClientRect(get_wnd(), &rc);
         cx = RECT_CX(rc);
-        cy = RECT_CY(rc);
 
         // Reposition again due to potential vertical scrollbar changes
         if (m_wnd_header)
@@ -273,7 +269,8 @@ void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
         set_focus_item(target_item);
     } else if (!m_single_selection && (GetKeyState(VK_SHIFT) & KF_UP)) {
         const t_size start = m_alternate_selection ? focus : m_shift_start;
-        const pfc::bit_array_range array_select(min(start, t_size(target_item)), abs(int(start - (target_item))) + 1);
+        const pfc::bit_array_range array_select(
+            std::min(start, t_size(target_item)), abs(int(start - (target_item))) + 1);
         if (m_alternate_selection && !focus_sel)
             set_selection_state(array_select, pfc::bit_array_not(array_select), true);
         else if (m_alternate_selection)

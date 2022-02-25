@@ -8,14 +8,14 @@ public:
 
     ~UniscribeTextRenderer() { cleanup(); }
 
-    UniscribeTextRenderer(HDC dc, const wchar_t* p_str, size_t p_str_len, int max_cx, bool b_clip,
+    UniscribeTextRenderer(HDC dc, const wchar_t* p_str, int p_str_len, int max_cx, bool b_clip,
         bool enable_tabs = false, int tab_origin = 0)
     {
         initialise();
         analyse(dc, p_str, p_str_len, max_cx, b_clip, enable_tabs, tab_origin);
     }
 
-    void analyse(HDC dc, const wchar_t* p_str, size_t p_str_len, int max_cx, bool b_clip, bool enable_tabs = false,
+    void analyse(HDC dc, const wchar_t* p_str, int p_str_len, int max_cx, bool b_clip, bool enable_tabs = false,
         int tab_origin = 0)
     {
         if (m_ssa) {
@@ -141,11 +141,11 @@ enum alignment {
 bool is_rect_null_or_reversed(const RECT* r);
 void get_text_size(HDC dc, const char* src, int len, SIZE& sz);
 int get_text_width(HDC dc, const char* src, int len);
-int get_text_width_colour(HDC dc, const char* src, int len, bool b_ignore_tabs = false);
-BOOL text_out_colours_ellipsis(HDC dc, const char* src, int len, int x_offset, int pos_y, const RECT* base_clip,
+int get_text_width_colour(HDC dc, const char* src, size_t len, bool b_ignore_tabs = false);
+BOOL text_out_colours_ellipsis(HDC dc, const char* src, size_t len, int x_offset, int pos_y, const RECT* base_clip,
     bool selected, bool show_ellipsis, DWORD default_color, alignment align, unsigned* p_width = nullptr,
     bool b_set_default_colours = true, int* p_position = nullptr, bool enable_tabs = false, int tab_origin = 0);
-BOOL text_out_colours_tab(HDC dc, const char* display, int display_len, int left_offset, int border,
+BOOL text_out_colours_tab(HDC dc, const char* display, size_t display_len, int left_offset, int border,
     const RECT* base_clip, bool selected, DWORD default_color, bool enable_tab_columns, bool show_ellipsis,
     alignment align, unsigned* p_width = nullptr, bool b_set_default_colours = true,
     bool b_vertical_align_centre = true, int* p_position = nullptr, int tab_origin = 0);

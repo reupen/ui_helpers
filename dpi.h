@@ -61,13 +61,13 @@ auto with_default_thread_dpi_awareness(Function&& function)
  * loop, while the DPI-awareness context needs to be reset straight away.
  */
 INT_PTR modal_dialog_box(
-    UINT resource_id, HWND wnd, std::function<BOOL(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message);
+    UINT resource_id, HWND wnd, std::function<INT_PTR(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message);
 
 /**
  * Per monitor DPI-aware version of CreateDialog() (for modeless dialogs).
  */
 HWND modeless_dialog_box(
-    UINT resource_id, HWND wnd, std::function<BOOL(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message);
+    UINT resource_id, HWND wnd, std::function<INT_PTR(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message);
 
 int scale_value(unsigned target_dpi, int value, unsigned original_dpi = USER_DEFAULT_SCREEN_DPI);
 

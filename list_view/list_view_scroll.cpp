@@ -145,8 +145,8 @@ void ListView::_update_scroll_info_horizontal()
 {
     auto rc = get_items_rect();
 
-    t_size old_scroll_position = m_horizontal_scroll_position;
-    t_size cx = get_columns_display_width() + get_total_indentation();
+    const auto old_scroll_position = m_horizontal_scroll_position;
+    const auto cx = get_columns_display_width() + get_total_indentation();
 
     SCROLLINFO scroll;
     memset(&scroll, 0, sizeof(SCROLLINFO));

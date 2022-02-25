@@ -9,7 +9,7 @@ int ListView::get_item_indentation()
     const auto rc = get_items_rect();
     int ret = rc.left;
     if (m_group_count)
-        ret += get_default_indentation_step() * m_group_count;
+        ret += get_default_indentation_step() * gsl::narrow<int>(m_group_count);
     return ret;
 }
 int ListView::get_default_indentation_step()
@@ -32,7 +32,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
     const lv::RendererContext context
         = {colours, m_use_dark_mode, get_wnd(), dc, m_list_view_theme.get(), m_items_view_theme.get()};
 
-    const t_size level_spacing_size = m_group_level_indentation_enabled ? _level_spacing_size : 0;
+    const int level_spacing_size = m_group_level_indentation_enabled ? _level_spacing_size : 0;
     // COLORREF cr_orig = GetTextColor(dc);
     // OffsetWindowOrgEx(dc, m_horizontal_scroll_position, 0, NULL);
     t_size highlight_index = get_highlight_item();
@@ -51,16 +51,17 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
     t_size i;
     t_size count = m_items.size();
     const int cx_space = uih::get_text_width(dc, " ", 1);
-    const int item_preindentation = cx_space * level_spacing_size * m_group_count + rc_items.left;
+    const int item_preindentation = cx_space * level_spacing_size * gsl::narrow<int>(m_group_count) + rc_items.left;
     const int item_indentation = item_preindentation + get_group_info_area_total_width();
     cx = get_columns_display_width() + item_indentation;
 
     bool b_show_group_info_area = get_show_group_info_area();
 
-    i = get_item_at_or_before((rc_update.top > rc_items.top ? rc_update.top - rc_items.top : 0) + m_scroll_position);
+    i = gsl::narrow<size_t>(
+        get_item_at_or_before((rc_update.top > rc_items.top ? rc_update.top - rc_items.top : 0) + m_scroll_position));
     t_size i_start = i;
-    t_size i_end = get_item_at_or_after(
-        (rc_update.bottom > rc_items.top + 1 ? rc_update.bottom - rc_items.top - 1 : 0) + m_scroll_position);
+    t_size i_end = gsl::narrow<size_t>(get_item_at_or_after(
+        (rc_update.bottom > rc_items.top + 1 ? rc_update.bottom - rc_items.top - 1 : 0) + m_scroll_position));
     for (; i <= i_end && i < count; i++) {
         HFONT fnt_old = SelectFont(dc, m_group_font.get());
         t_size item_group_start = NULL;
@@ -73,7 +74,8 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
         for (j = 0; j < countj; j++) {
             if (!i || m_items[i]->m_groups[j] != m_items[i - 1]->m_groups[j]) {
                 t_group_ptr p_group = m_items[i]->m_groups[j];
-                int y = get_item_position(i) - m_scroll_position - m_group_height * (countj - j) + rc_items.top;
+                int y = get_item_position(i) - m_scroll_position - m_group_height * gsl::narrow<int>(countj - j)
+                    + gsl::narrow_cast<int>(rc_items.top);
                 int x = -m_horizontal_scroll_position + rc_items.left;
                 // y += counter*m_item_height;
                 RECT rc = {x, y, x + cx, y + m_group_height};
@@ -368,7 +370,7 @@ int ListView::get_text_width(const char* text, t_size length)
     HDC hdc = GetDC(get_wnd());
     if (hdc) {
         HFONT fnt_old = SelectFont(hdc, m_items_font.get());
-        ret = uih::get_text_width(hdc, text, strlen(text));
+        ret = uih::get_text_width(hdc, text, gsl::narrow<int>(strlen(text)));
         SelectFont(hdc, fnt_old);
         ReleaseDC(get_wnd(), hdc);
     }

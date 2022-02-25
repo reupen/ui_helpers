@@ -50,10 +50,10 @@ void get_text_size(HDC dc, const char* src, int len, SIZE& sz)
     if (len <= 0)
         return;
 
-    pfc::stringcvt::string_wide_from_utf8 wstr(src, len);
+    pfc::stringcvt::string_wide_from_utf8 wstr(src, gsl::narrow<size_t>(len));
     t_size wlen = wstr.length();
 
-    UniscribeTextRenderer p_ScriptString(dc, wstr, wlen, NULL, false);
+    UniscribeTextRenderer p_ScriptString(dc, wstr, gsl::narrow<int>(wlen), NULL, false);
     p_ScriptString.get_output_size(sz);
 }
 
@@ -64,15 +64,14 @@ int get_text_width(HDC dc, const char* src, int len)
     return sz.cx;
 }
 
-int get_text_width_colour(HDC dc, const char* src, int len, bool b_ignore_tabs)
+int get_text_width_colour(HDC dc, const char* src, size_t len, bool b_ignore_tabs)
 {
     if (!dc)
         return 0;
-    int ptr = 0;
-    int start = 0;
+    size_t ptr = 0;
+    size_t start = 0;
     int rv = 0;
-    if (len < 0)
-        len = strlen(src);
+
     while (ptr < len) {
         if (src[ptr] == 3) {
             rv += get_text_width(dc, src + start, ptr - start);
@@ -93,31 +92,8 @@ int get_text_width_colour(HDC dc, const char* src, int len, bool b_ignore_tabs)
     return rv;
 }
 
-int strlen_utf8_colour(const char* src, int len = -1)
-{
-    int ptr = 0;
-    int start = 0;
-    int rv = 0;
-    if (len < 0)
-        len = strlen(src);
-    while (ptr < len) {
-        if (src[ptr] == 3) {
-            rv += pfc::strlen_utf8(src + start, ptr - start);
-            ptr++;
-            while (ptr < len && src[ptr] != 3)
-                ptr++;
-            if (ptr < len)
-                ptr++;
-            start = ptr;
-        } else
-            ptr++;
-    }
-    rv += pfc::strlen_utf8(src + start, ptr - start);
-    return rv;
-}
-
-BOOL text_out_colours_ellipsis(HDC dc, const char* src_c, int src_c_len, int x_offset, int pos_y, const RECT* base_clip,
-    bool selected, bool show_ellipsis, DWORD default_color, alignment align, unsigned* p_width,
+BOOL text_out_colours_ellipsis(HDC dc, const char* src_c, size_t src_c_len, int x_offset, int pos_y,
+    const RECT* base_clip, bool selected, bool show_ellipsis, DWORD default_color, alignment align, unsigned* p_width,
     bool b_set_default_colours, int* p_position, bool enable_tabs, int tab_origin)
 {
     struct ColouredTextSegment {
@@ -129,7 +105,8 @@ BOOL text_out_colours_ellipsis(HDC dc, const char* src_c, int src_c_len, int x_o
 
         void analyse(HDC dc, bool enable_tabs, int tab_origin)
         {
-            renderer.analyse(dc, text.data(), text.size(), -1, false, enable_tabs, tab_origin + left_offset);
+            renderer.analyse(
+                dc, text.data(), gsl::narrow<int>(text.size()), -1, false, enable_tabs, tab_origin + left_offset);
             character_right_offsets.resize(text.length());
             renderer.get_character_logical_extents(character_right_offsets.data(), left_offset);
         }
@@ -188,7 +165,7 @@ BOOL text_out_colours_ellipsis(HDC dc, const char* src_c, int src_c_len, int x_o
                     p_current += 2;
                 } else {
                     p_current++;
-                    new_colour = mmh::strtoul_n(p_current, min(6, wLen - (p_current - p_start)), 0x10);
+                    new_colour = mmh::strtoul_n(p_current, std::min(size_t{6}, wLen - (p_current - p_start)), 0x10);
                     while (size_t(p_current - p_start) < wLen && p_current[0] != 3 && p_current[0] != '|') {
                         p_current++;
                     }
@@ -198,7 +175,8 @@ BOOL text_out_colours_ellipsis(HDC dc, const char* src_c, int src_c_len, int x_o
                             break;
 
                         p_current++;
-                        new_colour_selected = mmh::strtoul_n(p_current, min(6, wLen - (p_current - p_start)), 0x10);
+                        new_colour_selected
+                            = mmh::strtoul_n(p_current, std::min(size_t{6}, wLen - (p_current - p_start)), 0x10);
                         have_selected = true;
 
                         while (size_t(p_current - p_start) < wLen && p_current[0] != 3)
@@ -302,7 +280,7 @@ BOOL text_out_colours_ellipsis(HDC dc, const char* src_c, int src_c_len, int x_o
     return TRUE;
 }
 
-BOOL text_out_colours_tab(HDC dc, const char* display, int display_len, int left_offset, int border,
+BOOL text_out_colours_tab(HDC dc, const char* display, size_t display_len, int left_offset, int border,
     const RECT* base_clip, bool selected, DWORD default_color, bool enable_tab_columns, bool show_ellipsis,
     alignment align, unsigned* p_width, bool b_set_default_colours, bool b_vertical_align_centre, int* p_position,
     int tab_origin)
@@ -324,11 +302,8 @@ BOOL text_out_colours_tab(HDC dc, const char* display, int display_len, int left
     display_len = pfc::strlen_max(display, display_len);
 
     if (enable_tab_columns) {
-        int start = 0;
-        int n;
-        for (n = 0; n < display_len; n++) {
+        for (size_t n = 0; n < display_len; n++) {
             if (display[n] == '\t') {
-                start = n + 1;
                 n_tabs++;
             }
         }
@@ -349,18 +324,18 @@ BOOL text_out_colours_tab(HDC dc, const char* display, int display_len, int left
     clip.left += left_offset;
     int tab_total = clip.right - clip.left;
 
-    int ptr = display_len;
+    auto ptr = display_len;
     int tab_ptr = 0;
     int written = 0;
     int clip_x = clip.right;
     RECT t_clip = clip;
 
     do {
-        int ptr_end = ptr;
+        auto ptr_end = ptr;
         while (ptr > 0 && display[ptr - 1] != '\t')
             ptr--;
         const char* t_string = display + ptr;
-        int t_length = ptr_end - ptr;
+        const auto t_length = ptr_end - ptr;
         if (t_length > 0) {
             t_clip.right -= border;
 

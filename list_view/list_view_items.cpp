@@ -344,7 +344,7 @@ void ListView::__calculate_item_positions(t_size index_start)
     if (index_start >= get_item_count())
         return;
 
-    t_size y_pointer = 0;
+    int y_pointer = 0;
     if (m_group_count)
         while (index_start && get_item_display_group_count(index_start) == 0)
             index_start--;
@@ -358,10 +358,10 @@ void ListView::__calculate_item_positions(t_size index_start)
     }
     t_size i;
     t_size count = m_items.size();
-    t_size group_height_counter = 0;
-    t_size group_minimum_inner_height = get_group_minimum_inner_height();
+    int group_height_counter = 0;
+    const auto group_minimum_inner_height = get_group_minimum_inner_height();
     for (i = index_start; i < count; i++) {
-        t_size groups = get_item_display_group_count(i);
+        const auto groups = gsl::narrow<int>(get_item_display_group_count(i));
         if (groups) {
             if (group_height_counter && group_height_counter < group_minimum_inner_height)
                 y_pointer += group_minimum_inner_height - group_height_counter;

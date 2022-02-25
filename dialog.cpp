@@ -4,11 +4,11 @@ namespace uih {
 
 namespace {
 struct DialogBoxData {
-    std::function<BOOL(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message;
+    std::function<INT_PTR(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message;
     std::shared_ptr<DialogBoxData> self;
 };
 
-BOOL WINAPI on_dialog_box_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
+INT_PTR WINAPI on_dialog_box_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 {
     DialogBoxData* data{};
     if (msg == WM_INITDIALOG) {
@@ -18,7 +18,7 @@ BOOL WINAPI on_dialog_box_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         data = reinterpret_cast<DialogBoxData*>(GetWindowLongPtr(wnd, DWLP_USER));
     }
 
-    const BOOL result = data ? data->on_message(wnd, msg, wp, lp) : FALSE;
+    const auto result = data ? data->on_message(wnd, msg, wp, lp) : FALSE;
 
     if (msg == WM_NCDESTROY) {
         assert(data);
@@ -35,7 +35,7 @@ BOOL WINAPI on_dialog_box_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 } // namespace
 
 INT_PTR modal_dialog_box(
-    UINT resource_id, HWND wnd, std::function<BOOL(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
+    UINT resource_id, HWND wnd, std::function<INT_PTR(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
 {
     const auto data = std ::make_unique<DialogBoxData>(DialogBoxData{std::move(on_message), {}});
 
@@ -44,7 +44,7 @@ INT_PTR modal_dialog_box(
 }
 
 HWND modeless_dialog_box(
-    UINT resource_id, HWND wnd, std::function<BOOL(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
+    UINT resource_id, HWND wnd, std::function<INT_PTR(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
 {
     std::shared_ptr<DialogBoxData> data = std ::make_shared<DialogBoxData>(DialogBoxData{std::move(on_message), {}});
     data->self = data;

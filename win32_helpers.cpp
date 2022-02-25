@@ -2,26 +2,8 @@
 
 using namespace uih::literals::spx;
 
-class param_utf16_from_utf8 : public pfc::stringcvt::string_wide_from_utf8 {
-    bool is_null;
-    WORD low_word;
-
-public:
-    param_utf16_from_utf8(const char* p)
-        : pfc::stringcvt::string_wide_from_utf8(p && HIWORD((DWORD)p) != 0 ? p : "")
-        , is_null(p == nullptr)
-        , low_word(HIWORD((DWORD)p) == 0 ? LOWORD((DWORD)p) : 0)
-    {
-    }
-    inline operator const WCHAR*() { return get_ptr(); }
-    const WCHAR* get_ptr()
-    {
-        return low_word ? (const WCHAR*)(DWORD)low_word
-                        : is_null ? nullptr : pfc::stringcvt::string_wide_from_utf8::get_ptr();
-    }
-};
-
 namespace uih {
+
 const RECT rect_null = {0, 0, 0, 0};
 
 void list_view_set_explorer_theme(HWND wnd)
@@ -44,42 +26,18 @@ bool are_keyboard_cues_enabled()
     return a != 0;
 }
 
-#define TVS_EX_UNKNOWN 0x0001 //
-#define TVS_EX_MULTISELECT 0x0002
-#define TVS_EX_DOUBLEBUFFER 0x0004 //
-#define TVS_EX_NOINDENTSTATE 0x0008
-#define TVS_EX_RICHTOOLTIP 0x0010 //
-#define TVS_EX_AUTOHSCROLL 0x0020 //
-#define TVS_EX_FADEINOUTEXPANDOS 0x0040 //
-#define TVS_EX_PARTIALCHECKBOXES 0x0080
-#define TVS_EX_EXCLUSIONCHECKBOXES 0x0100
-#define TVS_EX_DIMMEDCHECKBOXES 0x0200
-#define TVS_EX_DRAWIMAGEASYNC 0x0400 //
-
 void tree_view_set_explorer_theme(HWND wnd, bool b_reduce_indent)
 {
     if (mmh::is_windows_vista_or_newer()) {
-        UINT_PTR stylesex = /*TVS_EX_FADEINOUTEXPANDOS|*/ TVS_EX_DOUBLEBUFFER | TVS_EX_AUTOHSCROLL;
-        UINT_PTR styles = NULL; // TVS_TRACKSELECT;
+        UINT_PTR stylesex = TVS_EX_DOUBLEBUFFER | TVS_EX_AUTOHSCROLL;
+        UINT_PTR styles = NULL;
 
-        SendMessage(wnd, TV_FIRST + 44, stylesex, stylesex);
+        SendMessage(wnd, TVM_SETEXTENDEDSTYLE, stylesex, stylesex);
         SetWindowTheme(wnd, L"Explorer", nullptr);
         SetWindowLongPtr(
             wnd, GWL_STYLE, (GetWindowLongPtr(wnd, GWL_STYLE) & ~(TVS_HASLINES /*|TVS_NOHSCROLL*/)) | styles);
         if (b_reduce_indent)
             TreeView_SetIndent(wnd, 0xa);
-    }
-}
-
-void tree_view_remove_explorer_theme(HWND wnd)
-{
-    if (mmh::is_windows_vista_or_newer()) {
-        UINT_PTR stylesex = /*TVS_EX_FADEINOUTEXPANDOS|*/ TVS_EX_DOUBLEBUFFER;
-        UINT_PTR styles = NULL; // TVS_TRACKSELECT;
-
-        SendMessage(wnd, TV_FIRST + 44, stylesex, NULL);
-        SetWindowTheme(wnd, L"", nullptr);
-        SetWindowLongPtr(wnd, GWL_STYLE, (GetWindowLongPtr(wnd, GWL_STYLE) | TVS_HASLINES));
     }
 }
 
@@ -356,35 +314,16 @@ int combo_box_add_string_data(HWND wnd, const TCHAR* str, LPARAM data)
 
 int combo_box_find_item_by_data(HWND wnd, t_size id)
 {
-    t_size i;
-    t_size count = ComboBox_GetCount(wnd);
-    for (i = 0; i < count; i++)
+    int count = ComboBox_GetCount(wnd);
+    for (int i = 0; i < count; i++)
         if (ComboBox_GetItemData(wnd, i) == id)
             return i;
     return -1;
 }
 
-int rebar_find_item_by_id(HWND wnd, unsigned id)
-{
-    /* Avoid RB_IDTOINDEX for backwards compatibility */
-    REBARBANDINFO rbbi;
-    memset(&rbbi, 0, sizeof(rbbi));
-    rbbi.cbSize = sizeof(rbbi);
-    rbbi.fMask = RBBIM_ID;
-
-    UINT count = SendMessage(wnd, RB_GETBANDCOUNT, 0, 0);
-    unsigned n;
-    for (n = 0; n < count; n++) {
-        SendMessage(wnd, RB_GETBANDINFO, n, (long)&rbbi);
-        if (rbbi.wID == id)
-            return n;
-    }
-    return -1;
-}
-
 void rebar_show_all_bands(HWND wnd)
 {
-    UINT count = SendMessage(wnd, RB_GETBANDCOUNT, 0, 0);
+    const UINT count = static_cast<UINT>(SendMessage(wnd, RB_GETBANDCOUNT, 0, 0));
     unsigned n;
     for (n = 0; n < count; n++) {
         SendMessage(wnd, RB_SHOWBAND, n, TRUE);
@@ -558,7 +497,7 @@ HWND handle_tab_down(HWND wnd)
     if (wnd_temp) {
         HWND wnd_next = GetNextDlgTabItem(wnd_temp, wnd, (GetKeyState(VK_SHIFT) & KF_UP) ? TRUE : FALSE);
         if (wnd_next && wnd_next != wnd) {
-            unsigned flags = SendMessage(wnd_next, WM_GETDLGCODE, 0, 0);
+            const auto flags = SendMessage(wnd_next, WM_GETDLGCODE, 0, 0);
             if (flags & DLGC_HASSETSEL)
                 SendMessage(wnd_next, EM_SETSEL, 0, -1);
             SetFocus(wnd_next);

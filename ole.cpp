@@ -173,7 +173,7 @@ HRESULT do_drag_drop(HWND wnd, WPARAM initialKeyState, IDataObject* pDataObject,
 
     mmh::ComPtr<IDropSource> pDropSource;
     // if (!IsVistaOrNewer())
-    pDropSource = new uih::ole::IDropSourceGeneric(wnd, pDataObject, initialKeyState, true, lpsdi);
+    pDropSource = new uih::ole::IDropSourceGeneric(wnd, pDataObject, LODWORD(initialKeyState), true, lpsdi);
     return SHDoDragDrop(wnd, pDataObject, pDropSource, dwEffect, pdwEffect);
 }
 
