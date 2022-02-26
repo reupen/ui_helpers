@@ -90,7 +90,7 @@ protected:
         std::vector<t_group_ptr> m_groups;
 
         t_size m_display_index{0};
-        t_size m_display_position{0};
+        int m_display_position{0};
         bool m_selected{false};
 
         void update_line_count()
@@ -151,7 +151,7 @@ public:
      */
     HWND get_wnd() const { return m_container_window->get_wnd(); }
 
-    unsigned calculate_header_height();
+    int calculate_header_height();
     void set_columns(std::vector<Column> columns);
     void set_column_widths(std::vector<int> widths);
     void set_group_count(t_size count, bool b_update_columns = true);
@@ -274,7 +274,7 @@ public:
     void get_header_rect(LPRECT rc) const;
 
     /** Current height*/
-    unsigned get_header_height() const;
+    int get_header_height() const;
     [[nodiscard]] RECT get_items_rect() const;
     int get_item_area_height() const;
 
@@ -284,7 +284,7 @@ public:
     }
 
     void get_search_box_rect(LPRECT rc) const;
-    unsigned get_search_box_height() const;
+    int get_search_box_height() const;
 
     void invalidate_all(bool b_children = false);
     void invalidate_items(t_size index, t_size count);
@@ -317,11 +317,11 @@ public:
 
     [[nodiscard]] VerticalHitTestResult vertical_hit_test(int y) const;
 
-    [[nodiscard]] size_t get_item_at_or_before(int y_position) const
+    [[nodiscard]] int get_item_at_or_before(int y_position) const
     {
         return vertical_hit_test(y_position).item_leftmost;
     }
-    [[nodiscard]] size_t get_item_at_or_after(int y_position) const
+    [[nodiscard]] int get_item_at_or_after(int y_position) const
     {
         return vertical_hit_test(y_position).item_rightmost;
     }
@@ -387,7 +387,7 @@ public:
         ret += get_item_position(index, b_include_headers);
         ret += m_item_height - 1;
         if (get_show_group_info_area() && m_group_count) {
-            int gheight = gcount * m_item_height;
+            int gheight = gsl::narrow<int>(gcount) * m_item_height;
             int group_cy = get_group_info_area_total_height();
             if (gheight < group_cy)
                 ret += group_cy - gheight;
@@ -519,7 +519,7 @@ public:
 
     virtual void notify_on_column_size_change(t_size index, int new_width){};
 
-    virtual void notify_on_group_info_area_size_change(t_size new_width){};
+    virtual void notify_on_group_info_area_size_change(int new_width){};
 
     virtual void notify_on_header_rearrange(t_size index_from, t_size index_to){};
 
@@ -726,17 +726,17 @@ private:
     static LRESULT WINAPI g_on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
     LRESULT on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 
-    void create_inline_edit(const pfc::list_base_const_t<t_size>& indices, unsigned column);
+    void create_inline_edit(const pfc::list_base_const_t<t_size>& indices, size_t column);
     void save_inline_edit();
     void exit_inline_edit();
 
     virtual bool notify_before_create_inline_edit(
-        const pfc::list_base_const_t<t_size>& indices, unsigned column, bool b_source_mouse)
+        const pfc::list_base_const_t<t_size>& indices, size_t column, bool b_source_mouse)
     {
         return false;
     };
 
-    virtual bool notify_create_inline_edit(const pfc::list_base_const_t<t_size>& indices, unsigned column,
+    virtual bool notify_create_inline_edit(const pfc::list_base_const_t<t_size>& indices, size_t column,
         pfc::string_base& p_test, t_size& p_flags, mmh::ComPtr<IUnknown>& pAutocompleteEntries)
     {
         return true;

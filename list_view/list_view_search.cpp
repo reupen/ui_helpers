@@ -95,9 +95,9 @@ void ListView::get_search_box_rect(LPRECT rc) const
         rc->top = rc->bottom;
     }
 }
-unsigned ListView::get_search_box_height() const
+int ListView::get_search_box_height() const
 {
-    unsigned ret = 0;
+    int ret = 0;
     if (m_search_editbox) {
         RECT rc;
         get_search_box_rect(&rc);

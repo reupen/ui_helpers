@@ -48,7 +48,6 @@ LRESULT list_view_insert_item_text(HWND wnd_lv, UINT item, UINT subitem, const c
     LPARAM lp = 0, int image_index = I_IMAGENONE);
 
 void tree_view_set_explorer_theme(HWND wnd, bool b_reduce_indent = false);
-void tree_view_remove_explorer_theme(HWND wnd);
 HTREEITEM tree_view_insert_item_simple(HWND wnd_tree, const char* sz_text, LPARAM data, DWORD state = TVIS_EXPANDED,
     HTREEITEM ti_parent = TVI_ROOT, HTREEITEM ti_after = TVI_LAST, bool b_image = false, UINT image = NULL,
     UINT integral_height = 1);
@@ -61,7 +60,6 @@ void tree_view_collapse_other_nodes(HWND wnd, HTREEITEM ti);
 int combo_box_add_string_data(HWND wnd, const TCHAR* str, LPARAM data);
 int combo_box_find_item_by_data(HWND wnd, t_size id);
 
-int rebar_find_item_by_id(HWND wnd, unsigned id);
 void rebar_show_all_bands(HWND wnd);
 
 BOOL shell_notify_icon(DWORD action, HWND wnd, UINT id, UINT version, UINT callbackmsg, HICON icon, const char* tip);

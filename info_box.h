@@ -39,13 +39,10 @@ public:
         GetWindowRect(m_container_window->get_wnd(), &rcw);
         GetClientRect(m_container_window->get_wnd(), &rcwc);
         return get_large_padding() * 6 + uih::scale_dpi_value(1) + RECT_CY(rc) + (RECT_CY(rcw) - RECT_CY(rcwc))
-            + std::max((t_size)get_text_height(), (t_size)get_icon_height());
+            + std::max(get_text_height(), get_icon_height());
     }
 
-    int get_text_height() const
-    {
-        return SendMessage(m_wnd_edit, EM_GETLINECOUNT, 0, 0) * uih::get_font_height(m_font.get());
-    }
+    int get_text_height() const { return Edit_GetLineCount(m_wnd_edit) * uih::get_font_height(m_font.get()); }
 
     int get_icon_height() const
     {

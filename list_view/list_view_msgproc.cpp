@@ -198,7 +198,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             if (b_shift_down && !m_single_selection) {
                 t_size focus = get_focus_item();
                 t_size start = m_alternate_selection ? focus : m_shift_start;
-                pfc::bit_array_range br(min(start, hit_result.index), abs(t_ssize(start - hit_result.index)) + 1);
+                pfc::bit_array_range br(std::min(start, hit_result.index), abs(t_ssize(start - hit_result.index)) + 1);
                 if (m_lbutton_down_ctrl && !m_alternate_selection) {
                     set_selection_state(br, br, true);
                 } else {
@@ -358,7 +358,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                         || hit_result.category == HitTestCategory::OnItemObscuredAbove)
                     && hit_result.column != -1) {
                     if (m_tooltip_last_index != hit_result.index || m_tooltip_last_column != hit_result.column) {
-                        t_size cx = 0;
+                        int cx = 0;
                         {
                             t_size i;
                             // if (hit_result.column == 0)
@@ -493,7 +493,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                                 }
 
                                 set_selection_state(pfc::bit_array_true(),
-                                    pfc::bit_array_range(min(hit_result.index, m_selecting_start),
+                                    pfc::bit_array_range(std::min(hit_result.index, m_selecting_start),
                                         (t_size)abs(int(m_selecting_start - hit_result.index)) + 1));
                                 set_focus_item(hit_result.index);
                             }
@@ -604,7 +604,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_CHAR:
         // Values below 32, and 127, are special values (e.g. Ctrl-A and Ctrl-Backspace)
         if (!m_prevent_wm_char_processing && wp >= 32u && wp != 127u)
-            on_search_string_change(wp);
+            on_search_string_change(LOWORD(wp));
         break;
     case WM_SYSKEYDOWN: {
         if ((m_prevent_wm_char_processing = notify_on_keyboard_keydown_filter(WM_SYSKEYDOWN, wp, lp)))
@@ -737,9 +737,9 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             POINT px;
             {
                 if (from_keyboard) {
-                    t_size focus = get_focus_item();
-                    unsigned last = get_last_viewable_item();
-                    if (focus >= m_items.size() || focus < get_item_at_or_after(m_scroll_position) || focus > last) {
+                    const auto focus = gsl::narrow<int>(get_focus_item());
+                    const auto last = get_last_viewable_item();
+                    if (focus < 0 || focus < get_item_at_or_after(m_scroll_position) || focus > last) {
                         px.x = 0;
                         px.y = 0;
                     } else {

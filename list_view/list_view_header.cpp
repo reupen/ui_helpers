@@ -85,7 +85,7 @@ void ListView::build_header()
 
         {
             int n;
-            int t = m_columns.size();
+            int t = gsl::narrow<int>(m_columns.size());
             int i = 0;
             const auto indentation = get_total_indentation();
             if (indentation /*m_group_count*/) {
@@ -106,7 +106,7 @@ void ListView::build_header()
                     hdi.fmt |= HDF_CENTER;
                 else if (m_columns[n].m_alignment == uih::ALIGN_RIGHT)
                     hdi.fmt |= HDF_RIGHT;
-                hdi.cchTextMax = m_columns[n].m_title.length();
+                hdi.cchTextMax = gsl::narrow<int>(m_columns[n].m_title.length());
                 wstr.convert(m_columns[n].m_title);
                 hdi.pszText = const_cast<wchar_t*>(wstr.get_ptr());
 
@@ -168,10 +168,9 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
                     HFONT fnt_old = SelectFont(dc, m_items_font.get());
 
                     int w = 0;
-                    int n;
-                    int t = get_item_count();
+                    auto t = get_item_count();
 
-                    for (n = 0; n < t; n++) {
+                    for (size_t n = 0; n < t; n++) {
                         const char* str = get_item_text(n, realIndex);
                         size = uih::get_text_width_colour(dc, str, strlen(str));
                         if (size > w)
@@ -296,7 +295,7 @@ void ListView::get_header_rect(LPRECT rc) const
     }
 }
 
-unsigned ListView::get_header_height() const
+int ListView::get_header_height() const
 {
     unsigned ret = 0;
     if (m_wnd_header) {
@@ -306,7 +305,7 @@ unsigned ListView::get_header_height() const
     }
     return ret;
 }
-unsigned ListView::calculate_header_height()
+int ListView::calculate_header_height()
 {
     unsigned rv = 0;
     if (m_wnd_header) {
@@ -320,15 +319,13 @@ void ListView::update_header()
 {
     if (m_wnd_header) {
         pfc::vartoggle_t<bool> toggle(m_ignore_column_size_change_notification, true);
-        // SendMessage(m_wnd_header, WM_SETREDRAW, FALSE, NULL);
-        t_size i;
-        t_size count = m_columns.size();
-        t_size j = 0;
+        auto count = gsl::narrow<int>(m_columns.size());
+        int j = 0;
         if (m_have_indent_column) {
             uih::header_set_item_width(m_wnd_header, j, get_total_indentation());
             j++;
         }
-        for (i = 0; i < count; i++) {
+        for (int i = 0; i < count; i++) {
             uih::header_set_item_width(m_wnd_header, i + j, m_columns[i].m_display_size);
         }
         // SendMessage(m_wnd_header, WM_SETREDRAW, TRUE, NULL);

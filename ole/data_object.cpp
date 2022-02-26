@@ -223,7 +223,7 @@ STDMETHODIMP CDataObject::EnumFormatEtc(DWORD dwDir, LPENUMFORMATETC* ppEnum)
                     data[i] = m_data_entries[i].fe;
                 // Note: SHCreateStdEnumFmtEtc is deprecated, but still contained in current
                 // versions of Windows
-                return SHCreateStdEnumFmtEtc(count, data.get_ptr(), ppEnum);
+                return SHCreateStdEnumFmtEtc(gsl::narrow<UINT>(count), data.get_ptr(), ppEnum);
                 //*ppEnum = new CEnumFormatEtc(data.get_ptr(), count);
 
                 if (*ppEnum)
