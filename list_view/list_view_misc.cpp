@@ -667,7 +667,7 @@ void ListView::set_show_sort_indicators(bool b_val)
     }
 }
 
-void ListView::set_edge_style(t_size b_val)
+void ListView::set_edge_style(uint32_t b_val)
 {
     m_edge_style = (EdgeStyle)b_val;
     if (get_wnd()) {
