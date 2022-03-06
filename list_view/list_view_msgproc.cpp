@@ -737,7 +737,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             POINT px;
             {
                 if (from_keyboard) {
-                    const auto focus = gsl::narrow<int>(get_focus_item());
+                    const auto focus = gsl::narrow_cast<int>(get_focus_item());
                     const auto last = get_last_viewable_item();
                     if (focus < 0 || focus < get_item_at_or_after(m_scroll_position) || focus > last) {
                         px.x = 0;
