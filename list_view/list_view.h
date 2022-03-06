@@ -192,7 +192,7 @@ public:
     void set_header_font(const LPLOGFONT lplf);
     void set_sorting_enabled(bool b_val);
     void set_show_sort_indicators(bool b_val);
-    void set_edge_style(t_size b_val);
+    void set_edge_style(uint32_t b_val);
 
     void on_size(bool b_update_scroll = true);
     void on_size(int cx, int cy, bool b_update_scroll = true);

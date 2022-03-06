@@ -41,10 +41,10 @@ SIZE get_system_dpi_cached();
 int scale_dpi_value(int value, unsigned original_dpi = USER_DEFAULT_SCREEN_DPI);
 
 void list_view_set_explorer_theme(HWND wnd);
-int list_view_insert_column_text(HWND wnd_lv, UINT index, const TCHAR* text, int cx);
-LRESULT list_view_insert_item_text(HWND wnd_lv, UINT item, UINT subitem, const TCHAR* text, bool b_set = false,
+int list_view_insert_column_text(HWND wnd_lv, int index, const TCHAR* text, int cx);
+LRESULT list_view_insert_item_text(HWND wnd_lv, int item, int subitem, const TCHAR* text, bool b_set = false,
     LPARAM lp = 0, int image_index = I_IMAGENONE);
-LRESULT list_view_insert_item_text(HWND wnd_lv, UINT item, UINT subitem, const char* text, bool b_set = false,
+LRESULT list_view_insert_item_text(HWND wnd_lv, int item, int subitem, const char* text, bool b_set = false,
     LPARAM lp = 0, int image_index = I_IMAGENONE);
 
 void tree_view_set_explorer_theme(HWND wnd, bool b_reduce_indent = false);
