@@ -41,7 +41,7 @@ void tree_view_set_explorer_theme(HWND wnd, bool b_reduce_indent)
     }
 }
 
-int list_view_insert_column_text(HWND wnd_lv, UINT index, const TCHAR* text, int cx)
+int list_view_insert_column_text(HWND wnd_lv, int index, const TCHAR* text, int cx)
 {
     LVCOLUMN lvc;
     memset(&lvc, 0, sizeof(LVCOLUMN));
@@ -53,7 +53,7 @@ int list_view_insert_column_text(HWND wnd_lv, UINT index, const TCHAR* text, int
 }
 
 LRESULT list_view_insert_item_text(
-    HWND wnd_lv, UINT item, UINT subitem, const TCHAR* text, bool b_set, LPARAM lp, int image_index)
+    HWND wnd_lv, int item, int subitem, const TCHAR* text, bool b_set, LPARAM lp, int image_index)
 {
     LVITEM lvi;
     memset(&lvi, 0, sizeof(LVITEM));
@@ -70,7 +70,7 @@ LRESULT list_view_insert_item_text(
 }
 
 LRESULT list_view_insert_item_text(
-    HWND wnd_lv, UINT item, UINT subitem, const char* text, bool b_set, LPARAM lp, int image_index)
+    HWND wnd_lv, int item, int subitem, const char* text, bool b_set, LPARAM lp, int image_index)
 {
     pfc::stringcvt::string_os_from_utf8 wide(text);
     return list_view_insert_item_text(
