@@ -385,7 +385,7 @@ bool ListView::is_item_clipped(t_size index, t_size column)
 
     pfc::string8 text = get_item_text(index, column);
     HFONT fnt_old = SelectFont(hdc, m_items_font.get());
-    int width = uih::get_text_width_colour(hdc, text, text.length());
+    int width = get_text_width_colour(hdc, text, gsl::narrow<int>(text.length()));
     SelectFont(hdc, fnt_old);
     ReleaseDC(get_wnd(), hdc);
     const auto col_width = m_columns[column].m_display_size;
