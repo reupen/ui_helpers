@@ -64,12 +64,12 @@ int get_text_width(HDC dc, const char* src, int len)
     return sz.cx;
 }
 
-int get_text_width_colour(HDC dc, const char* src, size_t len, bool b_ignore_tabs)
+int get_text_width_colour(HDC dc, const char* src, int len, bool b_ignore_tabs)
 {
     if (!dc)
         return 0;
-    size_t ptr = 0;
-    size_t start = 0;
+    int ptr = 0;
+    int start = 0;
     int rv = 0;
 
     while (ptr < len) {

@@ -172,7 +172,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
 
                     for (size_t n = 0; n < t; n++) {
                         const char* str = get_item_text(n, realIndex);
-                        size = uih::get_text_width_colour(dc, str, strlen(str));
+                        size = get_text_width_colour(dc, str, gsl::narrow<int>(strlen(str)));
                         if (size > w)
                             w = size;
                     }
