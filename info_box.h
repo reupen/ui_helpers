@@ -155,17 +155,15 @@ private:
         case WM_CREATE: {
             m_font.reset(uih::create_icon_font());
 
-            auto edit_styles
-                = WS_CHILD | WS_VISIBLE | WS_GROUP | ES_READONLY | ES_MULTILINE | ES_AUTOVSCROLL;
+            auto edit_styles = WS_CHILD | WS_VISIBLE | WS_GROUP | ES_READONLY | ES_MULTILINE | ES_AUTOVSCROLL;
 
             edit_styles |= get_edit_alignment_style();
 
             RECT rc;
             GetClientRect(wnd, &rc);
-            m_wnd_edit = CreateWindowEx(0, WC_EDIT, L"", edit_styles, get_large_padding(), 
-                get_large_padding(), RECT_CX(rc) - get_large_padding() * 2,
-                RECT_CY(rc) - get_large_padding() * 2, wnd, reinterpret_cast<HMENU>(1001), mmh::get_current_instance(),
-                nullptr);
+            m_wnd_edit = CreateWindowEx(0, WC_EDIT, L"", edit_styles, get_large_padding(), get_large_padding(),
+                RECT_CX(rc) - get_large_padding() * 2, RECT_CY(rc) - get_large_padding() * 2, wnd,
+                reinterpret_cast<HMENU>(1001), mmh::get_current_instance(), nullptr);
             SendMessage(m_wnd_edit, WM_SETFONT, reinterpret_cast<WPARAM>(m_font.get()), MAKELPARAM(FALSE, 0));
             int cy_button = uih::get_font_height(m_font.get()) + uih::scale_dpi_value(10);
             m_wnd_button = CreateWindowEx(0, WC_BUTTON, L"Close",

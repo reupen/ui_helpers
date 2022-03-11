@@ -258,7 +258,10 @@ HRESULT STDMETHODCALLTYPE IDropSourceGeneric::GiveFeedback(DWORD dwEffect)
 
 IDropSourceGeneric::IDropSourceGeneric(
     HWND wnd, IDataObject* pDataObj, DWORD initial_key_state, bool b_allowdropdescriptiontext, SHDRAGIMAGE* lpsdi)
-    : m_refcount(0), m_initial_key_state(initial_key_state), m_prev_is_showing_layered(false), m_data_object(pDataObj)
+    : m_refcount(0)
+    , m_initial_key_state(initial_key_state)
+    , m_prev_is_showing_layered(false)
+    , m_data_object(pDataObj)
 {
     HRESULT hr;
 

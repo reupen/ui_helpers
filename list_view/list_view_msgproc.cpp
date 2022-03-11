@@ -415,11 +415,11 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 
             if (!m_dragging_rmb && (wp & MK_LBUTTON)
                 && ((unsigned)abs(m_dragging_initial_point.x - pt.x) > cx_drag
-                       || (unsigned)abs(m_dragging_initial_point.y - pt.y) > cy_drag))
+                    || (unsigned)abs(m_dragging_initial_point.y - pt.y) > cy_drag))
                 b_enter_drag = true;
             if (m_dragging_rmb && (wp & MK_RBUTTON)
                 && ((unsigned)abs(m_dragging_rmb_initial_point.x - pt.x) > cx_drag
-                       || (unsigned)abs(m_dragging_rmb_initial_point.y - pt.y) > cy_drag))
+                    || (unsigned)abs(m_dragging_rmb_initial_point.y - pt.y) > cy_drag))
                 b_enter_drag = true;
 
             if (b_enter_drag) {

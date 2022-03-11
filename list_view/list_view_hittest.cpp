@@ -63,7 +63,7 @@ void ListView::hit_test_ex(POINT pt_client, ListView::HitTestResult& result)
             result.insertion_index++;
 
         return;
-    } 
+    }
 
     if (vertical_hit_test_result.position_category == VerticalPositionCategory::OnGroupHeader) {
         assert(m_group_count > 0);
