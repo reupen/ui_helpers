@@ -11,14 +11,16 @@ void Trackbar::get_thumb_rect(unsigned pos, unsigned range, RECT* rc) const
     if (get_orientation()) {
         rc->left = 2;
         rc->right = rc_client.right - 2;
-        rc->top = range ? MulDiv(get_direction() ? range - pos : pos, rc_client.bottom - cx, range)
-                        : get_direction() ? rc_client.bottom - cx : 0;
+        rc->top = range       ? MulDiv(get_direction() ? range - pos : pos, rc_client.bottom - cx, range)
+            : get_direction() ? rc_client.bottom - cx
+                              : 0;
         rc->bottom = rc->top + cx;
     } else {
         rc->top = 2;
         rc->bottom = rc_client.bottom - 2;
-        rc->left = range ? MulDiv(get_direction() ? range - pos : pos, rc_client.right - cx, range)
-                         : get_direction() ? rc_client.right - cx : 0;
+        rc->left = range      ? MulDiv(get_direction() ? range - pos : pos, rc_client.right - cx, range)
+            : get_direction() ? rc_client.right - cx
+                              : 0;
         rc->right = rc->left + cx;
     }
 }

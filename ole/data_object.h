@@ -1,10 +1,10 @@
 /**
-* This code is based on:
-* - The DragImg sample in the Windows SDK for Windows Server 2008 and .NET Framework 3.5
-* - https://msdn.microsoft.com/en-gb/library/ms997502.aspx [http://archive.is/uvdvf]
-*
-* The licence terms for the relevant Windows SDK are contained in windows-sdk-6.1-licence.html.
-*/
+ * This code is based on:
+ * - The DragImg sample in the Windows SDK for Windows Server 2008 and .NET Framework 3.5
+ * - https://msdn.microsoft.com/en-gb/library/ms997502.aspx [http://archive.is/uvdvf]
+ *
+ * The licence terms for the relevant Windows SDK are contained in windows-sdk-6.1-licence.html.
+ */
 
 /**************************************************************************
    THIS CODE AND INFORMATION IS PROVIDED 'AS IS' WITHOUT WARRANTY OF
@@ -27,7 +27,7 @@ public:
     CDataObject();
     ~CDataObject();
 
-    //IUnknown members that delegate to m_pUnkOuter.
+    // IUnknown members that delegate to m_pUnkOuter.
     STDMETHOD(QueryInterface)(REFIID, LPVOID*);
     STDMETHOD_(ULONG, AddRef)();
     STDMETHOD_(ULONG, Release)();
@@ -46,7 +46,6 @@ public:
 private:
     HRESULT _FindFormatEtc(LPFORMATETC lpfe, t_size& index, bool b_checkTymed);
     HRESULT _GetStgMediumAddRef(t_size index, STGMEDIUM* pstgmOut);
-
 
     class t_data_entry {
     public:

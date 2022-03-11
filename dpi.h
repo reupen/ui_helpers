@@ -14,7 +14,9 @@ public:
     DpiContextHandle& operator=(DpiContextHandle&&) = default;
 
     DpiContextHandle(wil::unique_hmodule&& user32, ReleaseFunc release_func, Value previous_value)
-        : m_user32(std::move(user32)), m_release_func(release_func), m_previous_value(previous_value)
+        : m_user32(std::move(user32))
+        , m_release_func(release_func)
+        , m_previous_value(previous_value)
     {
     }
 

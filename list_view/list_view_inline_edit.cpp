@@ -98,9 +98,8 @@ LRESULT ListView::on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
                     if (indices_count == 1) {
                         do {
                             pfc::list_single_ref_t<t_size> indices(row);
-                            while (
-                                column > 0 && !((found = notify_before_create_inline_edit(indices, --column, false)))) {
-                            }
+                            while (column > 0
+                                && !((found = notify_before_create_inline_edit(indices, --column, false)))) {}
                             if (!found)
                                 column = count;
                         } while (!found && row > 0 && --row >= 0);
@@ -111,8 +110,7 @@ LRESULT ListView::on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
                         }
                     } else {
                         while (column > 0
-                            && !((found = notify_before_create_inline_edit(m_inline_edit_indices, --column, false)))) {
-                        }
+                            && !((found = notify_before_create_inline_edit(m_inline_edit_indices, --column, false)))) {}
 
                         if (found) {
                             create_inline_edit(m_inline_edit_indices, column);

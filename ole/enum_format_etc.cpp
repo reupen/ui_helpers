@@ -1,12 +1,12 @@
 #include "../stdafx.h"
 
 /**
-* This code is based on:
-* - The DragImg sample in the Windows SDK for Windows Server 2008 and .NET Framework 3.5
-* - https://msdn.microsoft.com/en-gb/library/ms997502.aspx [http://archive.is/uvdvf]
-*
-* The licence terms for the relevant Windows SDK are contained in windows-sdk-6.1-licence.html.
-*/
+ * This code is based on:
+ * - The DragImg sample in the Windows SDK for Windows Server 2008 and .NET Framework 3.5
+ * - https://msdn.microsoft.com/en-gb/library/ms997502.aspx [http://archive.is/uvdvf]
+ *
+ * The licence terms for the relevant Windows SDK are contained in windows-sdk-6.1-licence.html.
+ */
 
 /**************************************************************************
    THIS CODE AND INFORMATION IS PROVIDED 'AS IS' WITHOUT WARRANTY OF
@@ -46,12 +46,12 @@ STDMETHODIMP CEnumFormatEtc::QueryInterface(REFIID riid, LPVOID* ppvOut)
 {
     *ppvOut = nullptr;
 
-    //IUnknown
+    // IUnknown
     if (IsEqualIID(riid, IID_IUnknown)) {
         *ppvOut = this;
     }
 
-    //IEnumFORMATETC
+    // IEnumFORMATETC
     else if (IsEqualIID(riid, IID_IEnumFORMATETC)) {
         *ppvOut = (IEnumFORMATETC*)this;
     }

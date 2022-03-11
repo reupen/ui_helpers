@@ -2,7 +2,7 @@
  * This code is based on:
  * - The DragImg sample in the Windows SDK for Windows Server 2008 and .NET Framework 3.5
  * - https://msdn.microsoft.com/en-gb/library/ms997502.aspx [http://archive.is/uvdvf]
- * 
+ *
  * The licence terms for the relevant Windows SDK are contained in windows-sdk-6.1-licence.html.
  */
 
@@ -25,14 +25,14 @@ public:
     CEnumFormatEtc(LPFORMATETC pFE, int numberItems);
     ~CEnumFormatEtc();
 
-    //BOOL FInit(HWND);
+    // BOOL FInit(HWND);
 
-    //IUnknown members
+    // IUnknown members
     STDMETHOD(QueryInterface)(REFIID, LPVOID*);
     STDMETHOD_(ULONG, AddRef)();
     STDMETHOD_(ULONG, Release)();
 
-    //IEnumFORMATETC members
+    // IEnumFORMATETC members
     STDMETHOD(Next)(ULONG, LPFORMATETC, ULONG*);
     STDMETHOD(Skip)(ULONG);
     STDMETHOD(Reset)();

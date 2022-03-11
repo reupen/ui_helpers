@@ -109,6 +109,7 @@ protected:
                 m_line_count = std::max(m_line_count, lc);
             }
         }
+
     private:
     };
 
@@ -278,10 +279,7 @@ public:
     [[nodiscard]] RECT get_items_rect() const;
     int get_item_area_height() const;
 
-    int get_items_top() const
-    {
-        return get_items_rect().top;
-    }
+    int get_items_top() const { return get_items_rect().top; }
 
     void get_search_box_rect(LPRECT rc) const;
     int get_search_box_height() const;
