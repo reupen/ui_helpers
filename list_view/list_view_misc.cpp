@@ -572,8 +572,8 @@ void ListView::reopen_themes()
             OpenThemeData(theme_wnd, m_use_dark_mode ? L"DarkMode_ItemsView::ListView" : L"ItemsView::ListView"));
         if (!m_use_dark_mode)
             m_items_view_theme.reset(OpenThemeData(theme_wnd, L"ItemsView"));
-        m_header_theme.reset(
-            OpenThemeData(theme_wnd, m_use_dark_mode ? L"DarkMode_ItemsView::Header" : L"ItemsView::Header"));
+        if (m_use_dark_mode)
+            m_header_theme.reset(OpenThemeData(theme_wnd, L"DarkMode_ItemsView::Header"));
         m_dd_theme.reset(OpenThemeData(get_wnd(), VSCLASS_DRAGDROP));
     }
 }
