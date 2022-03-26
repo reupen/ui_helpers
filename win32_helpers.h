@@ -30,7 +30,6 @@ inline KeyboardLParam& GetKeyboardLParam(LPARAM& lp)
 
 bool are_keyboard_cues_enabled();
 
-HRESULT get_comctl32_version(DLLVERSIONINFO2& p_dvi);
 BOOL set_process_dpi_aware();
 
 // This is cached as system-DPI changes take effect at next log on.
@@ -39,6 +38,8 @@ BOOL set_process_dpi_aware();
 // See https://msdn.microsoft.com/en-gb/library/windows/desktop/dn469266%28v=vs.85%29.aspx
 SIZE get_system_dpi_cached();
 int scale_dpi_value(int value, unsigned original_dpi = USER_DEFAULT_SCREEN_DPI);
+
+int get_pointer_height();
 
 void list_view_set_explorer_theme(HWND wnd);
 int list_view_insert_column_text(HWND wnd_lv, int index, const TCHAR* text, int cx);

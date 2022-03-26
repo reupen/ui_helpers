@@ -405,6 +405,8 @@ private:
      */
     unsigned m_range{0};
 
+    int m_cursor_height{};
+
     /**
      * Hot state of the thumb.
      */

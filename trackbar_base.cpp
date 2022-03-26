@@ -6,18 +6,13 @@ BOOL TrackbarBase::create_tooltip(const TCHAR* text, POINT pt)
 {
     destroy_tooltip();
 
-    DLLVERSIONINFO2 dvi;
-    bool b_comctl_6 = SUCCEEDED(uih::get_comctl32_version(dvi)) && dvi.info1.dwMajorVersion >= 6;
-
-    m_wnd_tooltip = CreateWindowEx(WS_EX_TOPMOST | (b_comctl_6 ? WS_EX_TRANSPARENT : 0), TOOLTIPS_CLASS, nullptr,
+    m_wnd_tooltip = CreateWindowEx(WS_EX_TOPMOST | WS_EX_TRANSPARENT, TOOLTIPS_CLASS, nullptr,
         WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, get_wnd(),
         nullptr, mmh::get_current_instance(), nullptr);
 
     SetWindowPos(m_wnd_tooltip, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
-    TOOLINFO ti;
-
-    memset(&ti, 0, sizeof(ti));
+    TOOLINFO ti{};
 
     ti.cbSize = TTTOOLINFO_V1_SIZE;
     ti.uFlags = TTF_SUBCLASS | TTF_TRANSPARENT | TTF_TRACK | TTF_ABSOLUTE;
@@ -27,8 +22,10 @@ BOOL TrackbarBase::create_tooltip(const TCHAR* text, POINT pt)
 
     uih::tooltip_add_tool(m_wnd_tooltip, &ti);
 
-    SendMessage(m_wnd_tooltip, TTM_TRACKPOSITION, 0, MAKELONG(pt.x, pt.y + 21));
-    SendMessage(m_wnd_tooltip, TTM_TRACKACTIVATE, TRUE, (LPARAM)&ti);
+    m_cursor_height = get_pointer_height();
+
+    SendMessage(m_wnd_tooltip, TTM_TRACKPOSITION, 0, MAKELONG(pt.x, pt.y + m_cursor_height));
+    SendMessage(m_wnd_tooltip, TTM_TRACKACTIVATE, TRUE, reinterpret_cast<LPARAM>(&ti));
 
     return TRUE;
 }
@@ -46,7 +43,7 @@ BOOL TrackbarBase::update_tooltip(POINT pt, const TCHAR* text)
     if (!m_wnd_tooltip)
         return FALSE;
 
-    SendMessage(m_wnd_tooltip, TTM_TRACKPOSITION, 0, MAKELONG(pt.x, pt.y + 21));
+    SendMessage(m_wnd_tooltip, TTM_TRACKPOSITION, 0, MAKELONG(pt.x, pt.y + m_cursor_height));
 
     TOOLINFO ti;
     memset(&ti, 0, sizeof(ti));

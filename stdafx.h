@@ -16,6 +16,7 @@
 #include <ppl.h>
 
 #include <gsl/gsl>
+#include <range/v3/all.hpp>
 
 // Included before windows.h, because pfc.h includes winsock2.h
 #include "../pfc/pfc.h"
