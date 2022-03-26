@@ -199,40 +199,47 @@ int scale_dpi_value(int value, unsigned original_dpi)
     return MulDiv(value, get_system_dpi_cached().cx, original_dpi);
 }
 
-HRESULT get_comctl32_version(DLLVERSIONINFO2& p_dvi)
+int get_pointer_height()
 {
-    static bool have_version = false;
-    static HRESULT rv = E_FAIL;
+    int win_10_pointer_size{};
+    if (SystemParametersInfo(0x2028, 0, &win_10_pointer_size, 0) && win_10_pointer_size > 0)
+        return win_10_pointer_size;
 
-    static DLLVERSIONINFO2 g_dvi;
+    const auto cursor
+        = static_cast<HCURSOR>(LoadImage(nullptr, IDC_ARROW, IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
 
-    if (!have_version) {
-        HINSTANCE hinstDll = LoadLibrary(_T("comctl32.dll"));
+    ICONINFO icon_info{};
+    if (!GetIconInfo(cursor, &icon_info))
+        return 0;
 
-        if (hinstDll) {
-            if (!have_version) {
-                auto pDllGetVersion = (DLLGETVERSIONPROC)GetProcAddress(hinstDll, "DllGetVersion");
+    const wil::unique_hbitmap _colour_bitmap(icon_info.hbmColor);
+    const wil::unique_hbitmap _mask_bitmap(icon_info.hbmMask);
 
-                if (pDllGetVersion) {
-                    memset(&g_dvi, 0, sizeof(DLLVERSIONINFO2));
-                    g_dvi.info1.cbSize = sizeof(DLLVERSIONINFO2);
+    if (!icon_info.hbmMask)
+        return 0;
 
-                    rv = (*pDllGetVersion)(&g_dvi.info1);
+    BITMAP bitmap_info{};
+    if (!GetObject(icon_info.hbmMask, sizeof(BITMAP), &bitmap_info))
+        return 0;
 
-                    if (FAILED(rv)) {
-                        memset(&g_dvi, 0, sizeof(DLLVERSIONINFO));
-                        g_dvi.info1.cbSize = sizeof(DLLVERSIONINFO);
+    const auto bitmap_height = gsl::narrow<int>(icon_info.hbmColor ? bitmap_info.bmHeight : bitmap_info.bmHeight / 2);
+    const auto bitmap_width = gsl::narrow<int>(bitmap_info.bmWidth);
 
-                        rv = (*pDllGetVersion)(&g_dvi.info1);
-                    }
-                }
-                have_version = true;
-            }
-            FreeLibrary(hinstDll);
-        }
+    const wil::unique_hdc_window desktop_dc(GetDC(nullptr));
+    const wil::unique_hdc memory_dc(CreateCompatibleDC(desktop_dc.get()));
+    auto _ = wil::SelectObject(memory_dc.get(), icon_info.hbmMask);
+
+    for (auto y : ranges::views::iota(0, bitmap_height) | ranges::views::reverse) {
+        const auto any_pixel_set = ranges::any_of(ranges::views::iota(0, bitmap_width), [&memory_dc, y](auto x) {
+            const auto colour = GetPixel(memory_dc.get(), x, y);
+            return colour != 0xFFFFFF;
+        });
+
+        if (any_pixel_set)
+            return y + 1 - gsl::narrow<int>(icon_info.yHotspot);
     }
-    p_dvi = g_dvi;
-    return rv;
+
+    return 0;
 }
 
 BOOL run_action(DWORD action, NOTIFYICONDATA* data)
