@@ -126,7 +126,10 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
 {
     switch (lpnm->code) {
     case NM_CUSTOMDRAW: {
-        LPNMCUSTOMDRAW lpcd = (LPNMCUSTOMDRAW)lpnm;
+        if (!m_header_theme)
+            return false;
+
+        const auto lpcd = reinterpret_cast<LPNMCUSTOMDRAW>(lpnm);
         switch (lpcd->dwDrawStage) {
         case CDDS_PREPAINT:
             ret = CDRF_NOTIFYITEMDRAW;
@@ -147,14 +150,14 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
     }
     case HDN_BEGINTRACKA:
     case HDN_BEGINTRACKW: {
-        auto lpnmh = (LPNMHEADER)lpnm;
+        const auto lpnmh = reinterpret_cast<LPNMHEADERW>(lpnm);
         if (m_autosize && (!get_show_group_info_area() || lpnmh->iItem)) {
             ret = TRUE;
             return true;
         }
     } break;
     case HDN_DIVIDERDBLCLICK: {
-        auto lpnmh = (LPNMHEADER)lpnm;
+        const auto lpnmh = reinterpret_cast<LPNMHEADERW>(lpnm);
         if (!m_autosize) {
             if (lpnmh->iItem != -1 && (!m_have_indent_column || lpnmh->iItem)) {
                 t_size realIndex = lpnmh->iItem;
