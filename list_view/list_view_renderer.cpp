@@ -33,7 +33,6 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
         = {colours, m_use_dark_mode, get_wnd(), dc, m_list_view_theme.get(), m_items_view_theme.get()};
 
     const int level_spacing_size = m_group_level_indentation_enabled ? _level_spacing_size : 0;
-    // COLORREF cr_orig = GetTextColor(dc);
     // OffsetWindowOrgEx(dc, m_horizontal_scroll_position, 0, NULL);
     t_size highlight_index = get_highlight_item();
     t_size index_focus = get_focus_item();
@@ -103,8 +102,6 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
             if (rc_group_info.top >= rc_update.bottom)
                 break;
             m_renderer->render_group_info(context, item_group_start, rc_group_info);
-
-            // console::printf("%u %u %u %u; %u %u %u %u",rc_group_info,rc_update);
         }
 
         bool b_selected = get_item_selected(i) || i == m_highlight_selected_item_index;
@@ -132,15 +129,6 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
 
             m_renderer->render_item(context, i, sub_items, 0 /*item_indentation*/, b_selected, b_window_focused,
                 (m_highlight_item_index == i) || (highlight_index == i), should_hide_focus, show_item_focus, rc);
-            /*if (i == m_insert_mark_index || i + 1 == m_insert_mark_index)
-            {
-                gdi_object_t<HPEN>::ptr_t pen = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_WINDOWTEXT));
-                HPEN pen_old = SelectPen(dc, pen);
-                int yPos = i == m_insert_mark_index ? rc.top-counter*m_item_height : rc.bottom-1;
-                MoveToEx(dc, item_indentation, yPos, NULL);
-                LineTo(dc, rc.right, yPos);
-                SelectPen(dc, pen_old);
-            }*/
         }
     }
     /*if (m_search_editbox)
@@ -161,25 +149,22 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
         RECT rc_line;
         RECT rc_dummy;
         rc_line.left = item_indentation;
-        int yPos = 0;
+        rc_line.right = cx;
+        int y_pos = 0;
         if (count) {
             if (m_insert_mark_index == count)
-                yPos = get_item_position(count - 1) + get_item_height(count - 1) - m_scroll_position + rc_items.top - 1;
+                y_pos
+                    = get_item_position(count - 1) + get_item_height(count - 1) - m_scroll_position + rc_items.top - 1;
             else
-                yPos = get_item_position(m_insert_mark_index) - m_scroll_position + rc_items.top - 1;
+                y_pos = get_item_position(m_insert_mark_index) - m_scroll_position + rc_items.top - 1;
         }
-        rc_line.top = yPos;
-        rc_line.right = cx;
-        rc_line.bottom = yPos + scale_dpi_value(2);
+        const auto line_height = MulDiv(3, get_system_dpi_cached().cx, USER_DEFAULT_SCREEN_DPI * 2);
+        rc_line.top = y_pos;
+        rc_line.bottom = y_pos + line_height;
         if (IntersectRect(&rc_dummy, &rc_line, &rc_update)) {
             wil::unique_hbrush brush(CreateSolidBrush(colours.m_text));
             FillRect(dc, &rc_line, brush.get());
         }
-        /*gdi_object_t<HBRUSH>::ptr_t pen = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_WINDOWTEXT));
-        HPEN pen_old = SelectPen(dc, pen);
-        MoveToEx(dc, item_indentation, yPos, NULL);
-        LineTo(dc, cx, yPos);
-        SelectPen(dc, pen_old);                */
     }
     // OffsetWindowOrgEx(dc, -m_horizontal_scroll_position, 0, NULL);
 }
