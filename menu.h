@@ -77,7 +77,7 @@ public:
         insert_submenu(size(), text, submenu, flags);
     }
     void append_separator(uint32_t flags = NULL) { insert_separator(size(), flags); }
-    size_t run(HWND wnd, const POINT& pt)
+    auto run(HWND wnd, const POINT& pt) const
     {
         return TrackPopupMenu(m_handle, TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD, pt.x, pt.y, 0, wnd, nullptr);
     }
