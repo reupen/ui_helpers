@@ -657,10 +657,25 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             break;
         };
         break;
-#if 1
     case WM_CTLCOLOREDIT:
-    case WM_CTLCOLORSTATIC:
-        if (lp && HWND(lp) == m_search_editbox) {
+    case WM_CTLCOLORSTATIC: {
+        const auto wnd_edit = reinterpret_cast<HWND>(lp);
+        const auto dc = reinterpret_cast<HDC>(wp);
+
+        if (!wnd_edit)
+            break;
+
+        if (wnd_edit == m_wnd_inline_edit && m_use_dark_mode) {
+            SetTextColor(dc, m_dark_edit_text_colour);
+            SetBkColor(dc, m_dark_edit_background_colour);
+
+            if (!m_edit_background_brush) {
+                m_edit_background_brush.reset(CreateSolidBrush(m_dark_edit_background_colour));
+            }
+            return reinterpret_cast<LPARAM>(m_edit_background_brush.get());
+        }
+
+        if (wnd_edit == m_search_editbox) {
             /*POINT pt;
             GetMessagePos(&pt);
             HWND wnd_focus = GetFocus();
@@ -680,7 +695,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                     : COLOR_WINDOW); // m_search_box_nofocus_brush.get();//GetSysColorBrush(COLOR_3DLIGHT);
         }
         break;
-#endif
+    }
     case WM_NOTIFY:
         if (m_wnd_header && ((LPNMHDR)lp)->hwndFrom == m_wnd_header) {
             LRESULT ret = 0;

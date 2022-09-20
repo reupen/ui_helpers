@@ -592,6 +592,8 @@ void ListView::set_use_dark_mode(bool use_dark_mode)
 
     set_window_theme();
     set_header_window_theme();
+    set_inline_edit_window_theme();
+    set_inline_edit_rect();
     set_tooltip_window_theme();
 }
 
