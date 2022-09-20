@@ -187,6 +187,11 @@ public:
     }
 
     void set_use_dark_mode(bool use_dark_mode);
+    void set_dark_edit_colours(COLORREF text_colour, COLORREF background_colour)
+    {
+        m_dark_edit_text_colour = text_colour;
+        m_dark_edit_background_colour = background_colour;
+    }
     void set_vertical_item_padding(int val);
     void set_font(const LPLOGFONT lplf);
     void set_group_font(const LPLOGFONT lplf);
@@ -748,6 +753,8 @@ private:
 
     static LRESULT WINAPI g_on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
     LRESULT on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
+    void set_inline_edit_window_theme() const;
+    void set_inline_edit_rect() const;
 
     void reset_columns();
 
@@ -791,6 +798,9 @@ private:
     pfc::list_t<t_size> m_inline_edit_indices;
     // mmh::ComPtr<IUnknown> m_inline_edit_autocomplete_entries;
     mmh::ComPtr<IAutoComplete> m_inline_edit_autocomplete;
+    wil::unique_hbrush m_edit_background_brush;
+    COLORREF m_dark_edit_background_colour{};
+    COLORREF m_dark_edit_text_colour{RGB(255, 255, 255)};
 
     LOGFONT m_lf_items{0};
     LOGFONT m_lf_header{0};

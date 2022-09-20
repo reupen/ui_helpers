@@ -2,6 +2,46 @@
 
 namespace uih {
 
+using namespace literals::spx;
+
+void ListView::set_inline_edit_window_theme() const
+{
+    if (!m_wnd_inline_edit)
+        return;
+
+    SetWindowTheme(m_wnd_inline_edit, m_use_dark_mode ? L"DarkMode_Explorer" : nullptr, nullptr);
+}
+
+void ListView::set_inline_edit_rect() const
+{
+    if (!m_wnd_inline_edit)
+        return;
+
+    RECT window_rect{};
+    GetWindowRect(m_wnd_inline_edit, &window_rect);
+
+    const auto font_height = get_font_height(m_items_font.get());
+
+    // Edit_SetRect makes the rectangle passed to it slightly smaller to
+    // accomodate the control's border
+    // So, we have to work out what that adjustment is, and make our rectangle
+    // slightly larger to compensate for it
+    RECT rc_client{};
+    GetClientRect(m_wnd_inline_edit, &rc_client);
+    Edit_SetRectNoPaint(m_wnd_inline_edit, &rc_client);
+
+    RECT rc_client_adjusted{};
+    Edit_GetRect(m_wnd_inline_edit, &rc_client_adjusted);
+
+    RECT rc{};
+    rc.left = 3_spx + 1_spx - rc_client_adjusted.left + rc_client.left;
+    rc.top = (RECT_CY(window_rect) - font_height) / 2;
+    rc.right = rc_client.right - 3_spx + rc_client.right - rc_client_adjusted.right - 1_spx;
+    rc.bottom = rc.top + font_height;
+
+    Edit_SetRect(m_wnd_inline_edit, &rc);
+}
+
 void ListView::activate_inline_editing(t_size column_start)
 {
     size_t count = m_columns.size();
@@ -278,8 +318,8 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
     if (!m_wnd_inline_edit) {
         m_inline_edit_save = true;
         m_wnd_inline_edit = CreateWindowEx(0, WC_EDIT, pfc::stringcvt::string_os_from_utf8(text).get_ptr(),
-            WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE | ES_LEFT | ES_AUTOHSCROLL | ES_MULTILINE | ES_AUTOVSCROLL
-                | WS_BORDER | WS_CLIPCHILDREN | ((flags & inline_edit_uppercase) ? ES_UPPERCASE : 0),
+            WS_CHILD | WS_CLIPSIBLINGS | ES_LEFT | ES_AUTOHSCROLL | ES_MULTILINE | ES_AUTOVSCROLL | WS_BORDER
+                | WS_CLIPCHILDREN | ((flags & inline_edit_uppercase) ? ES_UPPERCASE : 0),
             x, y, cx, cy, get_wnd(), HMENU(IDC_INLINEEDIT), mmh::get_current_instance(), nullptr);
 
         m_proc_original_inline_edit = reinterpret_cast<WNDPROC>(GetWindowLongPtr(m_wnd_inline_edit, GWLP_WNDPROC));
@@ -303,32 +343,17 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
 
         SetWindowPos(m_wnd_inline_edit, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
+        set_inline_edit_window_theme();
         SendMessage(m_wnd_inline_edit, WM_SETFONT, reinterpret_cast<WPARAM>(m_items_font.get()), MAKELONG(TRUE, 0));
 
         m_inline_edit_initial_text.reset();
         get_window_text(m_wnd_inline_edit, m_inline_edit_initial_text);
     }
 
-    // Edit_SetRect makes the rectangle passed to it slightly smaller to
-    // accomodate the control's border
-    // So, we have to work out what that adjustment is, and make our rectangle
-    // slightly larger to compensate for it
-    RECT rc_client{};
-    GetClientRect(m_wnd_inline_edit, &rc_client);
-    Edit_SetRectNoPaint(m_wnd_inline_edit, &rc_client);
-
-    RECT rc_client_adjusted{};
-    Edit_GetRect(m_wnd_inline_edit, &rc_client_adjusted);
-
-    RECT rc{};
-    rc.left = scale_dpi_value(3) + scale_dpi_value(1) - rc_client_adjusted.left + rc_client.left;
-    rc.top = (cy - font_height) / 2;
-    rc.right = rc_client.right - scale_dpi_value(3) + rc_client.right - rc_client_adjusted.right - 1;
-    rc.bottom = rc.top + font_height;
-
-    Edit_SetRect(m_wnd_inline_edit, &rc);
+    set_inline_edit_rect();
 
     SendMessage(m_wnd_inline_edit, EM_SETSEL, 0, -1);
+    ShowWindow(m_wnd_inline_edit, SW_SHOWNORMAL);
     SetFocus(m_wnd_inline_edit);
 
     if (&indices != &m_inline_edit_indices)
@@ -367,6 +392,7 @@ void ListView::exit_inline_edit()
     }
     m_inline_edit_initial_text.reset();
     m_inline_edit_indices.remove_all();
+    m_edit_background_brush.reset();
     notify_exit_inline_edit();
 }
 
