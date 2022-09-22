@@ -267,7 +267,7 @@ void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
         move_selection(target_item - focus);
     } else if ((GetKeyState(VK_CONTROL) & KF_UP)) {
         set_focus_item(target_item);
-    } else if (!m_single_selection && (GetKeyState(VK_SHIFT) & KF_UP)) {
+    } else if (m_selection_mode == SelectionMode::Multiple && (GetKeyState(VK_SHIFT) & KF_UP)) {
         const t_size start = m_alternate_selection ? focus : m_shift_start;
         const pfc::bit_array_range array_select(
             std::min(start, t_size(target_item)), abs(int(start - (target_item))) + 1);

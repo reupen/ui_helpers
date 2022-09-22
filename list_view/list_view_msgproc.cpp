@@ -176,7 +176,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         hit_test_ex(pt, hit_result);
         m_lbutton_down_hittest = hit_result;
         bool b_shift_down = (wp & MK_SHIFT) != 0;
-        m_lbutton_down_ctrl = (wp & MK_CONTROL) != 0 && !m_single_selection; // Cheat.
+        m_lbutton_down_ctrl = (wp & MK_CONTROL) != 0 && m_selection_mode == SelectionMode::Multiple; // Cheat.
 
         if (hit_result.category == HitTestCategory::OnUnobscuredItem
             || hit_result.category == HitTestCategory::OnItemObscuredBelow
@@ -195,7 +195,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 move_selection (hit_result.index-get_focus_item());
             }
             else */
-            if (b_shift_down && !m_single_selection) {
+            if (b_shift_down && m_selection_mode == SelectionMode::Multiple) {
                 t_size focus = get_focus_item();
                 t_size start = m_alternate_selection ? focus : m_shift_start;
                 pfc::bit_array_range br(std::min(start, hit_result.index), abs(t_ssize(start - hit_result.index)) + 1);
@@ -225,7 +225,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             }
             SetCapture(wnd);
         } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
-            if (!m_single_selection) {
+            if (m_selection_mode == SelectionMode::Multiple) {
                 t_size index = 0;
                 t_size count = 0;
                 if (!m_lbutton_down_ctrl) {
@@ -237,7 +237,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             }
         } else // if (hit_result.result != hit_test_)
         {
-            if (!m_single_selection)
+            if (m_selection_mode != SelectionMode::SingleStrict)
                 set_selection_state(pfc::bit_array_true(), pfc::bit_array_false());
         }
         // console::formatter() << hit_result.result ;
@@ -327,7 +327,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 ensure_visible(hit_result.index);
 
             if (!get_item_selected(hit_result.index)) {
-                if (m_single_selection) {
+                if (m_selection_mode == SelectionMode::SingleStrict) {
                     set_focus_item(hit_result.index);
                 } else
                     set_item_selected_single(hit_result.index, true, notification_source_rmb);
@@ -340,7 +340,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
             if (count)
                 set_focus_item(index);
-        } else if (!m_single_selection) {
+        } else if (m_selection_mode != SelectionMode::SingleStrict) {
             set_selection_state(pfc::bit_array_true(), pfc::bit_array_false());
         }
     }
@@ -407,7 +407,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                     destroy_tooltip();
             }
         }
-        if (m_selecting_move || (m_single_selection && m_selecting) || m_dragging_rmb) {
+        if (m_selecting_move || (m_selection_mode != SelectionMode::Multiple && m_selecting) || m_dragging_rmb) {
             const auto cx_drag = (unsigned)abs(GetSystemMetrics(SM_CXDRAG));
             const auto cy_drag = (unsigned)abs(GetSystemMetrics(SM_CYDRAG));
 
@@ -434,7 +434,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 }
             }
         }
-        if (m_selecting && !m_single_selection) {
+        if (m_selecting && m_selection_mode == SelectionMode::Multiple) {
             // t_size index;
             if (!m_selecting_move) {
                 HitTestResult hit_result;
