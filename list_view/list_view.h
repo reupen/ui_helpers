@@ -114,6 +114,14 @@ protected:
     };
 
 public:
+    enum class SelectionMode {
+        Multiple,
+        /** Single selection, right-click changes selection, can deselect all items */
+        SingleRelaxed,
+        /** Single selection, right-click doesn't change the selection, can't deselect all items */
+        SingleStrict
+    };
+
     ListView(std::unique_ptr<uih::lv::RendererBase> renderer = std::make_unique<uih::lv::DefaultRenderer>())
         : m_renderer{std::move(renderer)}
     {
@@ -177,7 +185,7 @@ public:
 
     void set_variable_height_items(bool b_variable_height_items) { m_variable_height_items = b_variable_height_items; }
 
-    void set_single_selection(bool b_single_selection) { m_single_selection = b_single_selection; }
+    void set_selection_mode(SelectionMode mode) { m_selection_mode = mode; }
 
     void set_alternate_selection_model(bool b_alternate_selection) { m_alternate_selection = b_alternate_selection; }
 
@@ -859,7 +867,7 @@ private:
     EdgeStyle m_edge_style{edge_grey};
     bool m_sizing{false};
 
-    bool m_single_selection{false};
+    SelectionMode m_selection_mode{SelectionMode::Multiple};
     bool m_alternate_selection{false};
     bool m_allow_header_rearrange{false};
 

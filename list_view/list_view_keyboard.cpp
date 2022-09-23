@@ -61,7 +61,7 @@ bool ListView::on_wm_keydown(WPARAM wp, LPARAM lp)
     case VK_F3:
         return notify_on_keyboard_keydown_search();
     case 'A':
-        if (process_ctrl_char_shortcuts && !m_single_selection) {
+        if (process_ctrl_char_shortcuts && m_selection_mode == SelectionMode::Multiple) {
             set_selection_state(pfc::bit_array_true(), pfc::bit_array_true());
             return true;
         }
