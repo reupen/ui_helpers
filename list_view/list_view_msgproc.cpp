@@ -53,6 +53,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         m_group_font.reset();
         m_dummy_theme_window->destroy();
         m_dummy_theme_window.reset();
+        m_items.clear();
+        m_columns.clear();
         notify_on_destroy();
         return 0;
     /*case WM_WINDOWPOSCHANGED:
