@@ -15,6 +15,33 @@ const char* ListView::get_item_text(t_size index, t_size column)
     return m_items[index]->m_subitems[column];
 }
 
+ListView::ItemTransaction::~ItemTransaction() noexcept
+{
+    if (!m_start_index)
+        return;
+
+    m_list_view.__calculate_item_positions(*m_start_index);
+    m_list_view.update_scroll_info();
+    m_list_view.invalidate_all();
+}
+
+void ListView::ItemTransaction::insert_items(size_t index_start, size_t count, const InsertItem* items)
+{
+    m_start_index = std::min(index_start, m_start_index.value_or(index_start));
+    m_list_view.__insert_items_v3(index_start, count, items);
+}
+
+void ListView::ItemTransaction::remove_items(const pfc::bit_array& mask)
+{
+    m_list_view.__remove_items(mask);
+    m_start_index = 0;
+}
+
+ListView::ItemTransaction ListView::start_transaction()
+{
+    return {*this};
+}
+
 void ListView::insert_items(t_size index_start, t_size count, const InsertItem* items)
 {
     __insert_items_v3(index_start, count, items);
@@ -32,15 +59,9 @@ void ListView::replace_items(t_size index_start, t_size count, const InsertItem*
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
-void ListView::remove_items(const pfc::bit_array& p_mask)
+void ListView::remove_items(const pfc::bit_array& mask)
 {
-    if (m_timer_inline_edit)
-        exit_inline_edit();
-    t_size i = m_items.size();
-    for (; i; i--) {
-        if (p_mask[i - 1])
-            __remove_item(i - 1);
-    }
+    __remove_items(mask);
     __calculate_item_positions();
     update_scroll_info();
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
@@ -383,6 +404,18 @@ void ListView::remove_item(t_size index)
     update_scroll_info();
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
+
+void ListView::__remove_items(const pfc::bit_array& mask)
+{
+    if (m_timer_inline_edit)
+        exit_inline_edit();
+
+    for (size_t i = m_items.size(); i; i--) {
+        if (mask[i - 1])
+            __remove_item(i - 1);
+    }
+}
+
 void ListView::__remove_item(t_size index)
 {
     t_size gc = 0;

@@ -58,6 +58,28 @@ public:
         }
     };
 
+    class ItemTransaction {
+    public:
+        ~ItemTransaction() noexcept;
+
+        void insert_items(size_t index_start, size_t count, const InsertItem* items);
+        void remove_items(const pfc::bit_array& mask);
+
+    private:
+        ItemTransaction(ListView& list_view) : m_list_view(list_view) {}
+
+        ItemTransaction(const ItemTransaction&) = delete;
+        ItemTransaction& operator=(const ItemTransaction&) = delete;
+
+        ItemTransaction(ItemTransaction&&) = delete;
+        ItemTransaction& operator=(ItemTransaction&&) = delete;
+
+        std::optional<size_t> m_start_index;
+        ListView& m_list_view;
+
+        friend class ListView;
+    };
+
     template <size_t subitem_count, size_t group_count>
     class SizedInsertItem : public InsertItem {
     public:
@@ -215,6 +237,7 @@ public:
 
     void update_column_sizes();
 
+    ItemTransaction start_transaction();
     void insert_items(t_size index_start, t_size count, const InsertItem* items);
 
     template <class TItems>
@@ -224,7 +247,7 @@ public:
     }
     void replace_items(t_size index_start, t_size count, const InsertItem* items);
     void remove_item(t_size index);
-    void remove_items(const pfc::bit_array& p_mask);
+    void remove_items(const pfc::bit_array& mask);
     void remove_all_items();
 
     enum class HitTestCategory {
@@ -732,6 +755,7 @@ private:
     void __insert_items_v3(t_size index_start, t_size count, const InsertItem* items);
     void __replace_items_v2(t_size index_start, t_size count, const InsertItem* items);
     void __remove_item(t_size index);
+    void __remove_items(const pfc::bit_array& mask);
     void __calculate_item_positions(t_size index_start = 0);
 
     static LRESULT WINAPI g_on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);

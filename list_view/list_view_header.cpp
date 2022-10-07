@@ -308,6 +308,7 @@ int ListView::get_header_height() const
     }
     return ret;
 }
+
 int ListView::calculate_header_height()
 {
     unsigned rv = 0;
