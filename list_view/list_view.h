@@ -281,9 +281,9 @@ public:
     };
 
     void hit_test_ex(POINT pt_client, HitTestResult& result);
-    void update_scroll_info(bool b_vertical = true, bool b_horizontal = true);
-    void _update_scroll_info_vertical();
-    void _update_scroll_info_horizontal();
+    void update_scroll_info(bool b_vertical = true, bool b_horizontal = true, bool redraw = true);
+    void _update_scroll_info_vertical(bool redraw = true);
+    void _update_scroll_info_horizontal(bool redraw = true);
     ItemVisibility get_item_visibility(t_size index);
     bool is_partially_visible(t_size index);
     bool is_fully_visible(t_size index);
@@ -320,7 +320,7 @@ public:
     void get_search_box_rect(LPRECT rc) const;
     int get_search_box_height() const;
 
-    void invalidate_all(bool b_children = false);
+    void invalidate_all(bool b_children = false, bool non_client = false);
     void invalidate_items(t_size index, t_size count);
 
     void invalidate_items(const pfc::bit_array& mask);
