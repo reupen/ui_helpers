@@ -116,7 +116,7 @@ void ListView::scroll_from_scroll_bar(short scroll_bar_command, bool b_horizonta
     scroll(pos, b_horizontal);
 }
 
-void ListView::_update_scroll_info_vertical()
+void ListView::_update_scroll_info_vertical(bool redraw)
 {
     const auto rc = get_items_rect();
 
@@ -132,7 +132,7 @@ void ListView::_update_scroll_info_vertical()
     scroll.nPos = m_scroll_position;
     bool b_old_show = (GetWindowLongPtr(get_wnd(), GWL_STYLE) & WS_VSCROLL) != 0;
     ;
-    m_scroll_position = SetScrollInfo(get_wnd(), SB_VERT, &scroll, true);
+    m_scroll_position = SetScrollInfo(get_wnd(), SB_VERT, &scroll, redraw);
     GetScrollInfo(get_wnd(), SB_VERT, &scroll);
     bool b_show = (GetWindowLongPtr(get_wnd(), GWL_STYLE) & WS_VSCROLL) != 0; // scroll.nPage < (UINT)scroll.nMax;
     // if (b_old_show != b_show)
@@ -141,7 +141,7 @@ void ListView::_update_scroll_info_vertical()
         invalidate_all();
 }
 
-void ListView::_update_scroll_info_horizontal()
+void ListView::_update_scroll_info_horizontal(bool redraw)
 {
     auto rc = get_items_rect();
 
@@ -157,7 +157,7 @@ void ListView::_update_scroll_info_horizontal()
     scroll.nPage = m_autosize ? 0 : RECT_CX(rc);
     bool b_old_show = (GetWindowLongPtr(get_wnd(), GWL_STYLE) & WS_HSCROLL) != 0;
     ;
-    m_horizontal_scroll_position = SetScrollInfo(get_wnd(), SB_HORZ, &scroll, true);
+    m_horizontal_scroll_position = SetScrollInfo(get_wnd(), SB_HORZ, &scroll, redraw);
     GetScrollInfo(get_wnd(), SB_HORZ, &scroll);
     bool b_show = (GetWindowLongPtr(get_wnd(), GWL_STYLE) & WS_HSCROLL) != 0; // scroll.nPage < (UINT)scroll.nMax;
     // if (b_old_show != b_show)
@@ -175,19 +175,19 @@ void ListView::_update_scroll_info_horizontal()
         scroll.cbSize = sizeof(SCROLLINFO);
         scroll.fMask = SIF_PAGE;
         scroll.nPage = RECT_CY(rc);
-        m_scroll_position = SetScrollInfo(get_wnd(), SB_VERT, &scroll, true);
+        m_scroll_position = SetScrollInfo(get_wnd(), SB_VERT, &scroll, redraw);
     }
 }
 
-void ListView::update_scroll_info(bool b_vertical, bool b_horizontal)
+void ListView::update_scroll_info(bool b_vertical, bool b_horizontal, bool redraw)
 {
     // god this is a bit complicated when showing h scrollbar causes need for v scrollbar (and vv)
 
     if (b_vertical) {
-        _update_scroll_info_vertical();
+        _update_scroll_info_vertical(redraw);
     }
     if (b_horizontal) {
-        _update_scroll_info_horizontal();
+        _update_scroll_info_horizontal(redraw);
     }
 }
 

@@ -306,9 +306,10 @@ void ListView::on_focus_change(t_size index_prev, t_size index_new)
     if (index_new < count)
         invalidate_items(index_new, 1);
 }
-void ListView::invalidate_all(bool b_children)
+void ListView::invalidate_all(bool b_children, bool non_client)
 {
-    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE | (b_children ? RDW_ALLCHILDREN : 0));
+    auto flags = RDW_INVALIDATE | (b_children ? RDW_ALLCHILDREN : 0) | (non_client ? RDW_FRAME : 0);
+    RedrawWindow(get_wnd(), nullptr, nullptr, flags);
 }
 
 void ListView::update_items(t_size index, t_size count)

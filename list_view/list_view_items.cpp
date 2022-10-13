@@ -21,8 +21,8 @@ ListView::ItemTransaction::~ItemTransaction() noexcept
         return;
 
     m_list_view.__calculate_item_positions(*m_start_index);
-    m_list_view.update_scroll_info();
-    m_list_view.invalidate_all();
+    m_list_view.update_scroll_info(true, true, false);
+    m_list_view.invalidate_all(false, true);
 }
 
 void ListView::ItemTransaction::insert_items(size_t index_start, size_t count, const InsertItem* items)
