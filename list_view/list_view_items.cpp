@@ -219,7 +219,9 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
     if (m_highlight_selected_item_index != pfc_infinite && m_highlight_selected_item_index >= index_start)
         m_highlight_selected_item_index += countl;
 
-    std::vector<t_item_ptr> items_prev(m_items);
+    const std::optional<std::vector<t_item_ptr>> items_prev
+        = m_group_count > 0 ? std::make_optional(m_items) : std::nullopt;
+
     t_size countitems = m_items.size();
     t_size newgroupcount = 0;
     t_size oldgroupcount = 0;
@@ -309,22 +311,21 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
     }
     {
         t_size index = index_start + countl;
-        if (index_start && index < countitems) {
-            t_size index_prev = index_start - 1;
-            t_size i;
-            t_size count = m_group_count;
-            for (i = 0; i < count; i++) {
-                {
-                    if (items_prev[index_prev]->m_groups[i] == items_prev[index]->m_groups[i]) {
-                        if (m_items[index]->m_groups[i] != m_items[index - 1]->m_groups[i]) {
-                            t_group_ptr newgroup = storage_create_group();
-                            newgroup->m_text = (items_prev[index_prev]->m_groups[i]->m_text);
-                            t_size j = index;
-                            while (
-                                j < countitems && items_prev[index_prev]->m_groups[i] == items_prev[j]->m_groups[i]) {
-                                m_items[j]->m_groups[i] = newgroup;
-                                j++;
-                            };
+        if (m_group_count > 0 && index_start && index < countitems) {
+            const auto& items_prev_value = *items_prev;
+
+            const t_size index_prev = index_start - 1;
+            const t_size count = m_group_count;
+            for (t_size i = 0; i < count; i++) {
+                if (items_prev_value[index_prev]->m_groups[i] == items_prev_value[index]->m_groups[i]) {
+                    if (m_items[index]->m_groups[i] != m_items[index - 1]->m_groups[i]) {
+                        t_group_ptr newgroup = storage_create_group();
+                        newgroup->m_text = (items_prev_value[index_prev]->m_groups[i]->m_text);
+                        t_size j = index;
+                        while (j < countitems
+                            && items_prev_value[index_prev]->m_groups[i] == items_prev_value[j]->m_groups[i]) {
+                            m_items[j]->m_groups[i] = newgroup;
+                            j++;
                         }
                     }
                 }
