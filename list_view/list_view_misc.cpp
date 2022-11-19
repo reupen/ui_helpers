@@ -535,11 +535,13 @@ void ListView::on_search_string_change(WCHAR c)
         else
             focus++;
     }
+    const auto context = create_search_context();
+
     for (i = 0; i < count; i++) {
         t_size j = (i + focus) % count;
         t_item_ptr item = m_items[j];
 
-        const char* p_compare = get_item_text(j, 0);
+        const char* p_compare = context->get_item_text(j);
         pfc::string8 compare_noccodes;
 
         if (strchr(p_compare, 3)) {
