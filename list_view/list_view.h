@@ -135,6 +135,25 @@ protected:
     private:
     };
 
+    class ListViewSearchContextBase {
+    public:
+        virtual ~ListViewSearchContextBase() = default;
+
+        virtual const char* get_item_text(size_t index) = 0;
+
+    protected:
+    };
+
+    class DefaultListViewSearchContext : public ListViewSearchContextBase {
+    public:
+        explicit DefaultListViewSearchContext(ListView* list_view) : m_list_view(list_view) {}
+
+        const char* get_item_text(size_t index) override { return m_list_view->get_item_text(index, 0); }
+
+    private:
+        ListView* m_list_view{};
+    };
+
 public:
     enum class SelectionMode {
         Multiple,
@@ -599,6 +618,11 @@ protected:
     virtual Item* storage_create_item() { return new Item; }
 
     virtual Group* storage_create_group() { return new Group; }
+
+    virtual std::unique_ptr<ListViewSearchContextBase> create_search_context()
+    {
+        return std::make_unique<DefaultListViewSearchContext>(this);
+    }
 
     Item* get_item(t_size index) { return m_items[index].get_ptr(); }
 
