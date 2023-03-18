@@ -337,34 +337,33 @@ void rebar_show_all_bands(HWND wnd)
     }
 }
 
-void handle_modern_background_paint(HWND wnd, HWND wnd_button)
+void handle_modern_background_paint(
+    HWND wnd, HWND wnd_button, HBRUSH top_background_brush, HBRUSH bottom_background_brush)
 {
     const auto dpi = dpi::get_dpi_for_window(wnd);
-    const auto padding_height = dpi::scale_value(dpi, 11);
-    const auto line_height = dpi ::scale_value(dpi, 1);
+    const auto padding_height = dpi::scale_value(dpi, 12);
 
     PAINTSTRUCT ps{};
-    HDC dc = BeginPaint(wnd, &ps);
-    if (dc) {
-        RECT rc_client;
-        RECT rc_button;
-        GetClientRect(wnd, &rc_client);
-        RECT rc_fill = rc_client;
-        if (wnd_button) {
-            GetWindowRect(wnd_button, &rc_button);
-            MapWindowPoints(HWND_DESKTOP, wnd, reinterpret_cast<LPPOINT>(&rc_button), 2);
-            rc_fill.bottom = rc_button.top - padding_height - line_height / 2;
-        }
-        FillRect(dc, &rc_fill, GetSysColorBrush(COLOR_WINDOW));
-        if (wnd_button) {
-            rc_fill.top = rc_fill.bottom;
-            rc_fill.bottom += line_height;
-            FillRect(dc, &rc_fill, GetSysColorBrush(COLOR_3DLIGHT));
-        }
+    const auto paint_dc = wil::BeginPaint(wnd, &ps);
+    const BufferedDC buffered_dc(paint_dc.get(), ps.rcPaint);
+
+    RECT rc_client{};
+    GetClientRect(wnd, &rc_client);
+    RECT rc_fill{rc_client};
+
+    if (wnd_button) {
+        RECT rc_button{};
+        GetWindowRect(wnd_button, &rc_button);
+        MapWindowPoints(HWND_DESKTOP, wnd, reinterpret_cast<LPPOINT>(&rc_button), 2);
+        rc_fill.bottom = rc_button.top - padding_height;
+    }
+
+    FillRect(buffered_dc.get(), &rc_fill, top_background_brush);
+
+    if (wnd_button) {
         rc_fill.top = rc_fill.bottom;
         rc_fill.bottom = rc_client.bottom;
-        FillRect(dc, &rc_fill, GetSysColorBrush(COLOR_3DFACE));
-        EndPaint(wnd, &ps);
+        FillRect(buffered_dc.get(), &rc_fill, bottom_background_brush);
     }
 }
 
