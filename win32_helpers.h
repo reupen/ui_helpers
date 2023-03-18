@@ -75,7 +75,9 @@ BOOL header_set_item_width(HWND wnd, int n, UINT cx);
 
 void format_date(uint64_t time, std::basic_string<TCHAR>& str, bool b_convert_to_local = false);
 
-void handle_modern_background_paint(HWND wnd, HWND wnd_button);
+void handle_modern_background_paint(HWND wnd, HWND wnd_button,
+    HBRUSH top_background_brush = GetSysColorBrush(COLOR_WINDOW),
+    HBRUSH bottom_background_brush = GetSysColorBrush(COLOR_3DFACE));
 
 void send_message_to_direct_children(HWND wnd_parent, UINT msg, WPARAM wp, LPARAM lp);
 HWND handle_tab_down(HWND wnd);
