@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 using namespace uih::literals::spx;
+using namespace std::literals;
 
 namespace uih {
 
@@ -518,6 +519,122 @@ bool set_clipboard_text(const char* text, HWND wnd)
 {
     const pfc::stringcvt::string_wide_from_utf8 text_utf16(text);
     return set_clipboard_data<const wchar_t>(CF_UNICODETEXT, {text_utf16.get_ptr(), text_utf16.length() + 1}, wnd);
+}
+
+void enhance_edit_control(HWND wnd)
+{
+    auto send_backspace = [wnd] { SendMessage(wnd, WM_CHAR, 8, 0); };
+
+    auto delete_text = [wnd, send_backspace](DWORD start, DWORD end) {
+        Edit_SetSel(wnd, start, end);
+        send_backspace();
+    };
+
+    subclass_window(
+        wnd, [send_backspace, delete_text](HWND wnd, UINT msg, WPARAM wp, LPARAM lp) -> std::optional<LRESULT> {
+            switch (msg) {
+            case WM_KEYDOWN:
+                // If Autocomplete is enabled, it processes Ctrl+Backspace here
+                if (wp == VK_BACK && (GetKeyState(VK_CONTROL) & 0x8000))
+                    return 0;
+                break;
+            case WM_CHAR:
+                switch (wp) {
+                // Ctrl+A
+                // Note: The Edit control on Windows 10 1809 and newer also processes Ctrl-A in WM_CHAR
+                case 1: {
+                    if (!(HIWORD(lp) & KF_REPEAT) && (GetKeyState(VK_CONTROL) & 0x8000)) {
+                        Edit_SetSel(wnd, 0, -1);
+                    }
+                    return 0;
+                }
+                // Ctrl+Backspace
+                case 0x7f: {
+                    DWORD selection_start{};
+                    DWORD selection_end{};
+                    SendMessage(wnd, EM_GETSEL, reinterpret_cast<WPARAM>(&selection_start),
+                        reinterpret_cast<LPARAM>(&selection_end));
+
+                    if (selection_start != selection_end) {
+                        send_backspace();
+                        return 0;
+                    }
+
+                    if (selection_start == 0)
+                        return 0;
+
+                    const auto text_length = GetWindowTextLength(wnd);
+
+                    if (text_length < 0 || selection_start > gsl::narrow<DWORD>(std::numeric_limits<int>::max())
+                        || gsl::narrow<int>(selection_start) > text_length)
+                        return 0;
+
+                    const auto cursor_pos = gsl::narrow<int>(selection_start);
+
+                    std::vector<wchar_t> buffer(gsl::narrow<size_t>(text_length + 1));
+
+                    GetWindowText(wnd, buffer.data(), gsl::narrow<int>(buffer.size()));
+
+                    constexpr auto fragment_break_chars = L"\n "sv;
+
+                    auto start_of_fragment = cursor_pos;
+
+                    while (start_of_fragment > 0
+                        && fragment_break_chars.find_first_of(buffer[start_of_fragment - 1]) != std::wstring_view::npos)
+                        --start_of_fragment;
+
+                    while (start_of_fragment > 0
+                        && fragment_break_chars.find_first_of(buffer[start_of_fragment - 1]) == std::wstring_view::npos)
+                        --start_of_fragment;
+
+                    auto end_of_fragment = cursor_pos;
+
+                    while (end_of_fragment < text_length
+                        && fragment_break_chars.find_first_of(buffer[end_of_fragment]) == std::wstring_view::npos)
+                        ++end_of_fragment;
+
+                    SCRIPT_STRING_ANALYSIS ssa{};
+                    const auto hr = ScriptStringAnalyse(nullptr, buffer.data() + start_of_fragment,
+                        end_of_fragment - start_of_fragment, 0, -1, SSA_LINK | SSA_BREAK, 0, nullptr, nullptr, nullptr,
+                        nullptr, nullptr, &ssa);
+
+                    if (FAILED(hr)) {
+                        delete_text(start_of_fragment, cursor_pos);
+                        return 0;
+                    }
+
+                    auto _ = gsl::finally([&ssa] {
+                        if (FAILED(ScriptStringFree(&ssa)))
+                            OutputDebugString(L"Warning: ScriptStringFree() failed");
+                    });
+
+                    const auto log_attr = ScriptString_pLogAttr(ssa);
+
+                    if (!log_attr) {
+                        delete_text(start_of_fragment, cursor_pos);
+                        return 0;
+                    }
+
+                    auto delete_from_pos = cursor_pos - start_of_fragment;
+
+                    if (log_attr[delete_from_pos].fWordStop)
+                        --delete_from_pos;
+
+                    while (!log_attr[delete_from_pos].fWordStop && delete_from_pos > 0)
+                        --delete_from_pos;
+
+                    delete_text(start_of_fragment + delete_from_pos, cursor_pos);
+                    return 0;
+                }
+                }
+            }
+            return {};
+        });
+}
+
+void enhance_edit_control(HWND wnd, int id)
+{
+    enhance_edit_control(GetDlgItem(wnd, id));
 }
 
 } // namespace uih

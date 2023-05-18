@@ -149,4 +149,8 @@ public:
 
     IntegerAndDpi(TInteger _value = NULL, uint32_t _dpi = USER_DEFAULT_SCREEN_DPI) : value(_value), dpi(_dpi){};
 };
+
+void enhance_edit_control(HWND wnd);
+void enhance_edit_control(HWND wnd, int id);
+
 } // namespace uih
