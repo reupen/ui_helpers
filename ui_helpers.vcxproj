@@ -182,6 +182,7 @@
     <ClInclude Include="trackbar.h" />
     <ClInclude Include="trackbar_base.h" />
     <ClInclude Include="win32_helpers.h" />
+    <ClInclude Include="window_subclasser.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="container_window.cpp" />
@@ -299,6 +300,7 @@
     <ClCompile Include="trackbar.cpp" />
     <ClCompile Include="trackbar_base.cpp" />
     <ClCompile Include="win32_helpers.cpp" />
+    <ClCompile Include="window_subclasser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="LICENCE" />

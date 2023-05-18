@@ -46,6 +46,7 @@
     <ClInclude Include="trackbar_base.h">
       <Filter>Trackbar</Filter>
     </ClInclude>
+    <ClInclude Include="window_subclasser.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="message_hook.cpp" />
@@ -114,6 +115,7 @@
     <ClCompile Include="trackbar_base.cpp">
       <Filter>Trackbar</Filter>
     </ClCompile>
+    <ClCompile Include="window_subclasser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
