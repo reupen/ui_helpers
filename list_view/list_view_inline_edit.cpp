@@ -114,13 +114,6 @@ LRESULT ListView::on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
         break;
     case WM_GETDLGCODE:
         return CallWindowProc(m_proc_inline_edit, wnd, msg, wp, lp) | DLGC_WANTALLKEYS;
-    case WM_CHAR:
-        // Note: The Edit control on Windows 10 1809 and newer also processes Ctrl-A in WM_CHAR
-        if (!(HIWORD(lp) & KF_REPEAT) && wp == 1 && (GetKeyState(VK_CONTROL) & KF_UP)) {
-            Edit_SetSel(wnd, 0, -1);
-            return 0;
-        }
-        break;
     case WM_KEYDOWN:
         switch (wp) {
         case VK_TAB: {
@@ -340,6 +333,8 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
         SetWindowLongPtr(m_wnd_inline_edit, GWLP_USERDATA, reinterpret_cast<LPARAM>(this));
         m_proc_inline_edit = reinterpret_cast<WNDPROC>(
             SetWindowLongPtr(m_wnd_inline_edit, GWLP_WNDPROC, reinterpret_cast<LPARAM>(g_on_inline_edit_message)));
+
+        enhance_edit_control(m_wnd_inline_edit);
 
         SetWindowPos(m_wnd_inline_edit, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 

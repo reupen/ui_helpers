@@ -65,6 +65,7 @@
 #include "drag_image.h"
 #include "info_box.h"
 #include "menu.h"
+#include "window_subclasser.h"
 
 #include "ole/data_object.h"
 #include "ole/enum_format_etc.h"
