@@ -575,12 +575,14 @@ void enhance_edit_control(HWND wnd)
 
                     GetWindowText(wnd, buffer.data(), gsl::narrow<int>(buffer.size()));
 
-                    constexpr auto fragment_break_chars = L"\n "sv;
+                    const auto space_chars = L" "s;
+                    const auto line_break_chars = L"\n"s;
+                    const auto fragment_break_chars = space_chars + line_break_chars;
 
                     auto start_of_fragment = cursor_pos;
 
                     while (start_of_fragment > 0
-                        && fragment_break_chars.find_first_of(buffer[start_of_fragment - 1]) != std::wstring_view::npos)
+                        && space_chars.find_first_of(buffer[start_of_fragment - 1]) != std::wstring_view::npos)
                         --start_of_fragment;
 
                     while (start_of_fragment > 0
@@ -617,7 +619,7 @@ void enhance_edit_control(HWND wnd)
 
                     auto delete_from_pos = cursor_pos - start_of_fragment;
 
-                    if (log_attr[delete_from_pos].fWordStop)
+                    if (delete_from_pos > 0 && log_attr[delete_from_pos].fWordStop)
                         --delete_from_pos;
 
                     while (!log_attr[delete_from_pos].fWordStop && delete_from_pos > 0)
