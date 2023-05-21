@@ -550,6 +550,11 @@ void enhance_edit_control(HWND wnd)
                 }
                 // Ctrl+Backspace
                 case 0x7f: {
+                    const auto styles = GetWindowLongPtr(wnd, GWL_STYLE);
+
+                    if (styles & (WS_DISABLED | ES_READONLY))
+                        return 0;
+
                     DWORD selection_start{};
                     DWORD selection_end{};
                     SendMessage(wnd, EM_GETSEL, reinterpret_cast<WPARAM>(&selection_start),
