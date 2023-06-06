@@ -20,7 +20,7 @@ ListView::ItemTransaction::~ItemTransaction() noexcept
     if (!m_start_index)
         return;
 
-    m_list_view.__calculate_item_positions(*m_start_index);
+    m_list_view.calculate_item_positions(*m_start_index);
     m_list_view.update_scroll_info(true, true, false);
     m_list_view.invalidate_all(false, true);
 }
@@ -28,12 +28,12 @@ ListView::ItemTransaction::~ItemTransaction() noexcept
 void ListView::ItemTransaction::insert_items(size_t index_start, size_t count, const InsertItem* items)
 {
     m_start_index = std::min(index_start, m_start_index.value_or(index_start));
-    m_list_view.__insert_items_v3(index_start, count, items);
+    m_list_view.insert_items_in_internal_state(index_start, count, items);
 }
 
 void ListView::ItemTransaction::remove_items(const pfc::bit_array& mask)
 {
-    m_list_view.__remove_items(mask);
+    m_list_view.remove_items_in_internal_state(mask);
     m_start_index = 0;
 }
 
@@ -44,8 +44,8 @@ ListView::ItemTransaction ListView::start_transaction()
 
 void ListView::insert_items(t_size index_start, t_size count, const InsertItem* items)
 {
-    __insert_items_v3(index_start, count, items);
-    __calculate_item_positions(index_start);
+    insert_items_in_internal_state(index_start, count, items);
+    calculate_item_positions(index_start);
     // profiler(pvt_render);
     update_scroll_info();
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
@@ -53,16 +53,16 @@ void ListView::insert_items(t_size index_start, t_size count, const InsertItem* 
 
 void ListView::replace_items(t_size index_start, t_size count, const InsertItem* items)
 {
-    __replace_items_v2(index_start, count, items);
-    __calculate_item_positions(index_start);
+    replace_items_in_internal_state(index_start, count, items);
+    calculate_item_positions(index_start);
     update_scroll_info();
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
 void ListView::remove_items(const pfc::bit_array& mask)
 {
-    __remove_items(mask);
-    __calculate_item_positions();
+    remove_items_in_internal_state(mask);
+    calculate_item_positions();
     update_scroll_info();
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
@@ -78,7 +78,7 @@ void ListView::remove_all_items()
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
-void ListView::__replace_items_v2(t_size index_start, t_size countl, const InsertItem* items)
+void ListView::replace_items_in_internal_state(t_size index_start, t_size countl, const InsertItem* items)
 {
     std::vector<t_item_ptr> items_prev(m_items);
     t_size l;
@@ -211,7 +211,7 @@ void ListView::__replace_items_v2(t_size index_start, t_size countl, const Inser
     }
 }
 
-void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const InsertItem* items)
+void ListView::insert_items_in_internal_state(t_size index_start, t_size pcountitems, const InsertItem* items)
 {
     t_size countl = pcountitems;
     m_items.insert(m_items.begin() + index_start, countl, t_item_ptr());
@@ -361,7 +361,7 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
     }
 }
 
-void ListView::__calculate_item_positions(t_size index_start)
+void ListView::calculate_item_positions(t_size index_start)
 {
     if (index_start >= get_item_count())
         return;
@@ -400,24 +400,24 @@ void ListView::remove_item(t_size index)
 {
     if (m_timer_inline_edit)
         exit_inline_edit();
-    __remove_item(index);
-    __calculate_item_positions();
+    remove_item_in_internal_state(index);
+    calculate_item_positions();
     update_scroll_info();
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
-void ListView::__remove_items(const pfc::bit_array& mask)
+void ListView::remove_items_in_internal_state(const pfc::bit_array& mask)
 {
     if (m_timer_inline_edit)
         exit_inline_edit();
 
     for (size_t i = m_items.size(); i; i--) {
         if (mask[i - 1])
-            __remove_item(i - 1);
+            remove_item_in_internal_state(i - 1);
     }
 }
 
-void ListView::__remove_item(t_size index)
+void ListView::remove_item_in_internal_state(t_size index)
 {
     t_size gc = 0;
     t_size k;

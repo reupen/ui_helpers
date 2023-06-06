@@ -116,7 +116,7 @@ void ListView::scroll_from_scroll_bar(short scroll_bar_command, bool b_horizonta
     scroll(pos, b_horizontal);
 }
 
-void ListView::_update_scroll_info_vertical(bool redraw)
+void ListView::update_vertical_scroll_info(bool redraw)
 {
     const auto rc = get_items_rect();
 
@@ -141,7 +141,7 @@ void ListView::_update_scroll_info_vertical(bool redraw)
         invalidate_all();
 }
 
-void ListView::_update_scroll_info_horizontal(bool redraw)
+void ListView::update_horizontal_scroll_info(bool redraw)
 {
     auto rc = get_items_rect();
 
@@ -184,10 +184,10 @@ void ListView::update_scroll_info(bool b_vertical, bool b_horizontal, bool redra
     // god this is a bit complicated when showing h scrollbar causes need for v scrollbar (and vv)
 
     if (b_vertical) {
-        _update_scroll_info_vertical(redraw);
+        update_vertical_scroll_info(redraw);
     }
     if (b_horizontal) {
-        _update_scroll_info_horizontal(redraw);
+        update_horizontal_scroll_info(redraw);
     }
 }
 

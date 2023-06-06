@@ -87,7 +87,7 @@ void ListView::activate_inline_editing(t_size index, t_size column)
     activate_inline_editing(pfc::list_single_ref_t<t_size>(index), column);
 }
 
-LRESULT WINAPI ListView::g_on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
+LRESULT WINAPI ListView::s_on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 {
     ListView* p_this;
     LRESULT rv;
@@ -332,7 +332,7 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
 
         SetWindowLongPtr(m_wnd_inline_edit, GWLP_USERDATA, reinterpret_cast<LPARAM>(this));
         m_proc_inline_edit = reinterpret_cast<WNDPROC>(
-            SetWindowLongPtr(m_wnd_inline_edit, GWLP_WNDPROC, reinterpret_cast<LPARAM>(g_on_inline_edit_message)));
+            SetWindowLongPtr(m_wnd_inline_edit, GWLP_WNDPROC, reinterpret_cast<LPARAM>(s_on_inline_edit_message)));
 
         enhance_edit_control(m_wnd_inline_edit);
 

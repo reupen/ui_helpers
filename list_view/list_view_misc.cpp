@@ -17,7 +17,7 @@ void ListView::refresh_item_positions()
             / static_cast<double>(next_item_bottom - previous_item_top)
         : 0.0;
 
-    __calculate_item_positions();
+    calculate_item_positions();
     update_scroll_info();
 
     // Restore the scroll position
