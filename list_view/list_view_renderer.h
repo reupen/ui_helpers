@@ -35,13 +35,13 @@ class RendererBase {
 public:
     virtual void render_background(RendererContext context, const RECT* rc) = 0;
 
-    virtual void render_group_info(RendererContext context, t_size index, RECT rc) {}
+    virtual void render_group_info(RendererContext context, size_t index, RECT rc) {}
 
     virtual void render_group(RendererContext context, size_t item_index, size_t group_index, std::string_view text,
-        int indentation, t_size level, RECT rc)
+        int indentation, size_t level, RECT rc)
         = 0;
 
-    virtual void render_item(RendererContext context, t_size index, std::vector<RendererSubItem> sub_items,
+    virtual void render_item(RendererContext context, size_t index, std::vector<RendererSubItem> sub_items,
         int indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool should_hide_focus,
         bool b_focused, RECT rc)
         = 0;
@@ -56,9 +56,9 @@ public:
     void render_background(RendererContext context, const RECT* rc) override;
 
     void render_group(RendererContext context, size_t item_index, size_t group_index, std::string_view text,
-        int indentation, t_size level, RECT rc) override;
+        int indentation, size_t level, RECT rc) override;
 
-    void render_item(RendererContext context, t_size index, std::vector<RendererSubItem> sub_items, int indentation,
+    void render_item(RendererContext context, size_t index, std::vector<RendererSubItem> sub_items, int indentation,
         bool b_selected, bool b_window_focused, bool b_highlight, bool should_hide_focus, bool b_focused,
         RECT rc) override;
 

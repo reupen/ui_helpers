@@ -12,7 +12,7 @@ void ListView::set_limit_tooltips_to_clipped_items(bool b_val)
     m_limit_tooltips_to_clipped_items = b_val;
 }
 
-void ListView::create_tooltip(/*t_size index, t_size column, */ const char* str)
+void ListView::create_tooltip(/*size_t index, size_t column, */ const char* str)
 {
     destroy_tooltip();
 

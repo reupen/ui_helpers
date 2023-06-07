@@ -34,8 +34,8 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
 
     const int level_spacing_size = m_group_level_indentation_enabled ? _level_spacing_size : 0;
     // OffsetWindowOrgEx(dc, m_horizontal_scroll_position, 0, NULL);
-    t_size highlight_index = get_highlight_item();
-    t_size index_focus = get_focus_item();
+    size_t highlight_index = get_highlight_item();
+    size_t index_focus = get_focus_item();
     HWND wnd_focus = GetFocus();
     const bool should_hide_focus
         = (SendMessage(get_wnd(), WM_QUERYUISTATE, NULL, NULL) & UISF_HIDEFOCUS) != 0 && !m_always_show_focus;
@@ -47,8 +47,8 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
     if (rc_update.bottom <= rc_update.top || rc_update.bottom < rc_items.top)
         return;
 
-    t_size i;
-    t_size count = m_items.size();
+    size_t i;
+    size_t count = m_items.size();
     const int cx_space = uih::get_text_width(dc, " ", 1);
     const int item_preindentation = cx_space * level_spacing_size * gsl::narrow<int>(m_group_count) + rc_items.left;
     const int item_indentation = item_preindentation + get_group_info_area_total_width();
@@ -58,18 +58,18 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
 
     i = gsl::narrow<size_t>(
         get_item_at_or_before((rc_update.top > rc_items.top ? rc_update.top - rc_items.top : 0) + m_scroll_position));
-    t_size i_start = i;
-    t_size i_end = gsl::narrow<size_t>(get_item_at_or_after(
+    size_t i_start = i;
+    size_t i_end = gsl::narrow<size_t>(get_item_at_or_after(
         (rc_update.bottom > rc_items.top + 1 ? rc_update.bottom - rc_items.top - 1 : 0) + m_scroll_position));
     for (; i <= i_end && i < count; i++) {
         HFONT fnt_old = SelectFont(dc, m_group_font.get());
-        t_size item_group_start = NULL;
-        t_size item_group_count = NULL;
+        size_t item_group_start = NULL;
+        size_t item_group_count = NULL;
         get_item_group(i, m_group_count ? m_group_count - 1 : 0, item_group_start, item_group_count);
 
-        t_size j;
-        t_size countj = m_items[i]->m_groups.size();
-        t_size counter = 0;
+        size_t j;
+        size_t countj = m_items[i]->m_groups.size();
+        size_t counter = 0;
         for (j = 0; j < countj; j++) {
             if (!i || m_items[i]->m_groups[j] != m_items[i - 1]->m_groups[j]) {
                 t_group_ptr p_group = m_items[i]->m_groups[j];
@@ -222,7 +222,7 @@ bool ListView::get_group_text_colour_default(COLORREF& cr)
 }
 
 void lv::DefaultRenderer::render_group(RendererContext context, size_t item_index, size_t group_index,
-    std::string_view text, int indentation, t_size level, RECT rc)
+    std::string_view text, int indentation, size_t level, RECT rc)
 {
     COLORREF cr = context.colours.m_group_text;
 
@@ -247,7 +247,7 @@ void lv::DefaultRenderer::render_group(RendererContext context, size_t item_inde
     }
 }
 
-void lv::DefaultRenderer::render_item(RendererContext context, t_size index, std::vector<RendererSubItem> sub_items,
+void lv::DefaultRenderer::render_item(RendererContext context, size_t index, std::vector<RendererSubItem> sub_items,
     int indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool should_hide_focus, bool b_focused,
     RECT rc)
 {
@@ -349,7 +349,7 @@ void lv::DefaultRenderer::render_background(RendererContext context, const RECT*
     FillRect(context.dc, rc, wil::unique_hbrush(CreateSolidBrush(context.colours.m_background)).get());
 }
 
-int ListView::get_text_width(const char* text, t_size length)
+int ListView::get_text_width(const char* text, size_t length)
 {
     int ret = 0;
     HDC hdc = GetDC(get_wnd());
@@ -362,7 +362,7 @@ int ListView::get_text_width(const char* text, t_size length)
     return ret;
 }
 
-bool ListView::is_item_clipped(t_size index, t_size column)
+bool ListView::is_item_clipped(size_t index, size_t column)
 {
     HDC hdc = GetDC(get_wnd());
     if (!hdc)

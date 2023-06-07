@@ -31,29 +31,29 @@ void ListView::refresh_item_positions()
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
-bool ListView::copy_selected_items_as_text(t_size default_single_item_column)
+bool ListView::copy_selected_items_as_text(size_t default_single_item_column)
 {
     pfc::string8 text;
     pfc::string8 cleanedText;
-    t_size selected_count = get_selection_count(2);
+    size_t selected_count = get_selection_count(2);
     if (selected_count == 0) {
         // return false;
     } else if (default_single_item_column != pfc_infinite && selected_count == 1) {
-        t_size index = get_selected_item_single();
+        size_t index = get_selected_item_single();
         if (index != pfc_infinite)
             text = get_item_text(index, default_single_item_column);
     } else {
-        t_size column_count = get_column_count();
-        t_size item_count = get_item_count();
+        size_t column_count = get_column_count();
+        size_t item_count = get_item_count();
         pfc::bit_array_bittable mask_selected(get_item_count());
         get_selection_state(mask_selected);
         bool b_first = true;
-        for (t_size i = 0; i < item_count; i++)
+        for (size_t i = 0; i < item_count; i++)
             if (mask_selected[i]) {
                 if (!b_first)
                     text << "\r\n";
                 b_first = false;
-                for (t_size j = 0; j < column_count; j++)
+                for (size_t j = 0; j < column_count; j++)
                     text << (j ? "\t" : "") << get_item_text(i, j);
             }
     }
@@ -62,13 +62,13 @@ bool ListView::copy_selected_items_as_text(t_size default_single_item_column)
     return selected_count > 0;
 }
 
-void ListView::set_sort_column(t_size index, bool b_direction)
+void ListView::set_sort_column(size_t index, bool b_direction)
 {
     m_sort_column_index = index;
     m_sort_direction = b_direction;
 
     if (m_initialised && m_wnd_header) {
-        t_size headerIndex = index;
+        size_t headerIndex = index;
         if (m_have_indent_column && index != pfc_infinite)
             headerIndex++;
         HDITEM hdi;
@@ -195,7 +195,7 @@ void ListView::reset_columns()
     m_columns.clear();
 }
 
-void ListView::set_group_count(t_size count, bool b_update_columns)
+void ListView::set_group_count(size_t count, bool b_update_columns)
 {
     m_group_count = count;
     if (m_initialised && b_update_columns) {
@@ -268,9 +268,9 @@ void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
     } else if ((GetKeyState(VK_CONTROL) & KF_UP)) {
         set_focus_item(target_item);
     } else if (m_selection_mode == SelectionMode::Multiple && (GetKeyState(VK_SHIFT) & KF_UP)) {
-        const t_size start = m_alternate_selection ? focus : m_shift_start;
+        const size_t start = m_alternate_selection ? focus : m_shift_start;
         const pfc::bit_array_range array_select(
-            std::min(start, t_size(target_item)), abs(int(start - (target_item))) + 1);
+            std::min(start, size_t(target_item)), abs(int(start - (target_item))) + 1);
         if (m_alternate_selection && !focus_sel)
             set_selection_state(array_select, pfc::bit_array_not(array_select), true);
         else if (m_alternate_selection)
@@ -298,9 +298,9 @@ int ListView::get_default_group_height()
         ret = 1;
     return ret;
 }
-void ListView::on_focus_change(t_size index_prev, t_size index_new)
+void ListView::on_focus_change(size_t index_prev, size_t index_new)
 {
-    t_size count = m_items.size();
+    size_t count = m_items.size();
     if (index_prev < count)
         invalidate_items(index_prev, 1);
     if (index_new < count)
@@ -312,9 +312,9 @@ void ListView::invalidate_all(bool b_children, bool non_client)
     RedrawWindow(get_wnd(), nullptr, nullptr, flags);
 }
 
-void ListView::update_items(t_size index, t_size count)
+void ListView::update_items(size_t index, size_t count)
 {
-    t_size i;
+    size_t i;
     for (i = 0; i < count; i++)
         m_items[i + index]->m_subitems.resize(0);
     invalidate_items(index, count);
@@ -341,13 +341,13 @@ void ListView::update_all_items()
     update_items(0, m_items.size());
 }
 
-void ListView::invalidate_items(t_size index, t_size count)
+void ListView::invalidate_items(size_t index, size_t count)
 {
 #if 0
         RedrawWindow(get_wnd(), NULL, NULL, RDW_INVALIDATE | (b_update_display ? RDW_UPDATENOW : 0));
 #else
     if (count) {
-        // t_size header_height = get_header_height();
+        // size_t header_height = get_header_height();
         const auto rc_client = get_items_rect();
         const auto groups = gsl::narrow<int>(get_item_display_group_count(index));
         RECT rc_invalidate = {0, get_item_position(index) - m_scroll_position + rc_client.top - groups * m_group_height,
@@ -363,9 +363,9 @@ void ListView::invalidate_items(t_size index, t_size count)
 
 void ListView::invalidate_items(const pfc::bit_array& mask)
 {
-    t_size i;
-    t_size start;
-    t_size count = get_item_count();
+    size_t i;
+    size_t start;
+    size_t count = get_item_count();
     for (i = 0; i < count; i++) {
         start = i;
         while (i < count && mask[i]) {
@@ -377,9 +377,9 @@ void ListView::invalidate_items(const pfc::bit_array& mask)
     }
 }
 
-void ListView::invalidate_item_group_info_area(t_size index)
+void ListView::invalidate_item_group_info_area(size_t index)
 {
-    t_size count = 0;
+    size_t count = 0;
     get_item_group(index, m_group_count ? m_group_count - 1 : 0, index, count);
     {
         const auto rc_client = get_items_rect();
@@ -399,14 +399,14 @@ void ListView::invalidate_item_group_info_area(t_size index)
     }
 }
 
-void ListView::get_item_group(t_size index, t_size level, t_size& index_start, t_size& count)
+void ListView::get_item_group(size_t index, size_t level, size_t& index_start, size_t& count)
 {
     if (m_group_count == 0) {
         index_start = 0;
         count = m_items.size();
     } else {
-        t_size end = index;
-        t_size start = index;
+        size_t end = index;
+        size_t start = index;
         while (m_items[start]->m_groups[level] == m_items[index]->m_groups[level]) {
             index_start = start;
             if (start == 0)
@@ -420,7 +420,7 @@ void ListView::get_item_group(t_size index, t_size level, t_size& index_start, t
     }
 }
 
-void ListView::set_highlight_item(t_size index)
+void ListView::set_highlight_item(size_t index)
 {
     if (m_highlight_item_index != index) {
         m_highlight_item_index = index;
@@ -436,7 +436,7 @@ void ListView::remove_highlight_item()
     }
 }
 
-void ListView::set_highlight_selected_item(t_size index)
+void ListView::set_highlight_selected_item(size_t index)
 {
     if (m_highlight_selected_item_index != index) {
         m_highlight_selected_item_index = index;
@@ -452,7 +452,7 @@ void ListView::remove_highlight_selected_item()
     }
 }
 
-void ListView::set_insert_mark(t_size index)
+void ListView::set_insert_mark(size_t index)
 {
     if (m_insert_mark_index != index) {
         m_insert_mark_index = index;
@@ -524,9 +524,9 @@ void ListView::on_search_string_change(WCHAR c)
         return;
     }
 
-    t_size focus = get_focus_item();
-    t_size i = 0;
-    t_size count = m_items.size();
+    size_t focus = get_focus_item();
+    size_t i = 0;
+    size_t count = m_items.size();
     if (focus == pfc_infinite || focus > m_items.size())
         focus = 0;
     else if (b_all_same) {
@@ -538,7 +538,7 @@ void ListView::on_search_string_change(WCHAR c)
     const auto context = create_search_context();
 
     for (i = 0; i < count; i++) {
-        t_size j = (i + focus) % count;
+        size_t j = (i + focus) % count;
         t_item_ptr item = m_items[j];
 
         const char* p_compare = context->get_item_text(j);

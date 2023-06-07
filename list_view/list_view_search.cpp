@@ -50,7 +50,7 @@ void ListView::show_search_box(const char* label, bool b_focus)
 
 #if 0
             HTHEME thm = OpenThemeData(m_search_editbox, L"Edit");
-            t_size i;
+            size_t i;
             for (i = TMT_RESERVEDLOW; i < TMT_RESERVEDHIGH; i++)
             {
                 COLORREF cr = 0;
@@ -156,8 +156,8 @@ LRESULT ListView::on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
             RECT rc;
             GetClientRect(m_search_editbox, &rc);
             HTHEME thm = OpenThemeData(m_search_editbox, L"SearchBox");//SearchBox
-            t_size step = rc.right / 10;
-            t_size i;
+            size_t step = rc.right / 10;
+            size_t i;
             for (i = 0; i < 10; i++)
             {
                 rc.left = i*step;

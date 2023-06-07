@@ -2,7 +2,7 @@
 
 namespace uih {
 
-void ListView::ensure_visible(t_size index, EnsureVisibleMode mode)
+void ListView::ensure_visible(size_t index, EnsureVisibleMode mode)
 {
     if (index > m_items.size())
         return;
@@ -120,13 +120,13 @@ void ListView::update_vertical_scroll_info(bool redraw)
 {
     const auto rc = get_items_rect();
 
-    t_size old_scroll_position = m_scroll_position;
+    size_t old_scroll_position = m_scroll_position;
     SCROLLINFO scroll;
     memset(&scroll, 0, sizeof(SCROLLINFO));
     scroll.cbSize = sizeof(SCROLLINFO);
     scroll.fMask = SIF_RANGE | SIF_PAGE | SIF_POS;
     scroll.nMin = 0;
-    t_size count = m_items.size();
+    size_t count = m_items.size();
     scroll.nMax = count ? get_item_group_bottom(count - 1) : 0;
     scroll.nPage = RECT_CY(rc);
     scroll.nPos = m_scroll_position;

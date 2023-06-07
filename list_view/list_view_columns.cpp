@@ -14,17 +14,17 @@ int ListView::get_columns_display_width()
         [](auto&& value, auto&& column) { return value + column.m_display_size; });
 }
 
-int ListView::get_column_display_width(t_size index)
+int ListView::get_column_display_width(size_t index)
 {
     return m_columns.at(index).m_display_size;
 }
 
-t_size ListView::get_column_count()
+size_t ListView::get_column_count()
 {
     return m_columns.size();
 }
 
-uih::alignment ListView::get_column_alignment(t_size index)
+uih::alignment ListView::get_column_alignment(size_t index)
 {
     uih::alignment ret = uih::ALIGN_LEFT;
     assert(index < get_column_count());
@@ -79,7 +79,7 @@ void ListView::update_column_sizes()
     else
         display_width = 0;
 
-    t_size count = m_columns.size();
+    size_t count = m_columns.size();
 
     for (auto&& column : m_columns)
         column.m_display_size = column.m_size;
@@ -94,7 +94,7 @@ void ListView::update_column_sizes()
         deltas.set_count(count);
         sized.fill_null();
         deltas.fill_null();
-        t_size sized_count = count;
+        size_t sized_count = count;
         int width_difference = display_width - width;
 
         while (width_difference && total_weight && sized_count) {

@@ -42,8 +42,8 @@ CDataObject::CDataObject()
 
 CDataObject::~CDataObject()
 {
-    t_size i;
-    t_size count = m_data_entries.get_count();
+    size_t i;
+    size_t count = m_data_entries.get_count();
 
     for (i = 0; i < count; i++)
         ReleaseStgMedium(&m_data_entries[i].sm);
@@ -86,7 +86,7 @@ STDMETHODIMP_(ULONG) CDataObject::Release()
     return m_cRefCount;
 }
 
-HRESULT CDataObject::_GetStgMediumAddRef(t_size index, STGMEDIUM* pstgmOut)
+HRESULT CDataObject::_GetStgMediumAddRef(size_t index, STGMEDIUM* pstgmOut)
 {
     HRESULT hres = S_OK;
     STGMEDIUM* pstgmIn = &m_data_entries[index].sm;
@@ -119,7 +119,7 @@ STDMETHODIMP CDataObject::GetData(LPFORMATETC pFE, LPSTGMEDIUM pSM)
 
     ZeroMemory(pSM, sizeof(STGMEDIUM));
 
-    t_size index;
+    size_t index;
     HRESULT hr = _FindFormatEtc(pFE, index, true);
     if (SUCCEEDED(hr)) {
         hr = _GetStgMediumAddRef(index, pSM);
@@ -139,7 +139,7 @@ STDMETHODIMP CDataObject::GetDataHere(LPFORMATETC pFE, LPSTGMEDIUM pSM)
     return E_NOTIMPL;
 }
 
-HRESULT CDataObject::_FindFormatEtc(LPFORMATETC pFE, t_size& index, bool b_checkTymed)
+HRESULT CDataObject::_FindFormatEtc(LPFORMATETC pFE, size_t& index, bool b_checkTymed)
 {
     if (!pFE)
         return DV_E_FORMATETC;
@@ -163,7 +163,7 @@ HRESULT CDataObject::_FindFormatEtc(LPFORMATETC pFE, t_size& index, bool b_check
 
 STDMETHODIMP CDataObject::QueryGetData(LPFORMATETC pFE)
 {
-    t_size index;
+    size_t index;
     return _FindFormatEtc(pFE, index, true);
 }
 
@@ -177,7 +177,7 @@ STDMETHODIMP CDataObject::SetData(LPFORMATETC pFE, LPSTGMEDIUM pSM, BOOL fReleas
     if (pFE->ptd != nullptr)
         return DV_E_DVTARGETDEVICE;
 
-    t_size index = 0;
+    size_t index = 0;
     if (FAILED(_FindFormatEtc(pFE, index, false))) {
         // index = m_data_entries.get_count();
         m_data_entries.insert_item(t_data_entry(), index);
@@ -201,7 +201,7 @@ STDMETHODIMP CDataObject::SetData(LPFORMATETC pFE, LPSTGMEDIUM pSM, BOOL fReleas
         m_data_entries[index].sm.pUnkForRelease = nullptr;
     }
 
-    // for (t_size i = 0, count = m_data_entries.get_count(); i<count; i++)
+    // for (size_t i = 0, count = m_data_entries.get_count(); i<count; i++)
     //     console::formatter() << i << ": " << (int)m_data_entries[i].fe.cfFormat << " " <<
     //     (int)m_data_entries[i].fe.dwAspect << " " << (int)m_data_entries[i].fe.lindex;
     // m_data_entries.sort_t(t_data_entry::g_compare_formatetc);
@@ -217,9 +217,9 @@ STDMETHODIMP CDataObject::EnumFormatEtc(DWORD dwDir, LPENUMFORMATETC* ppEnum)
 
     switch (dwDir) {
     case DATADIR_GET: {
-        t_size count = m_data_entries.get_count();
+        size_t count = m_data_entries.get_count();
         pfc::array_staticsize_t<FORMATETC> data(count);
-        for (t_size i = 0; i < count; i++)
+        for (size_t i = 0; i < count; i++)
             data[i] = m_data_entries[i].fe;
         // Note: SHCreateStdEnumFmtEtc is deprecated, but still contained in current
         // versions of Windows

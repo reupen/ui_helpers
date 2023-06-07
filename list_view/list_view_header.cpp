@@ -70,7 +70,7 @@ void ListView::build_header()
     if (m_wnd_header) {
         pfc::vartoggle_t<bool> toggle(m_ignore_column_size_change_notification, true);
 
-        t_size header_count = Header_GetItemCount(m_wnd_header);
+        size_t header_count = Header_GetItemCount(m_wnd_header);
         for (; header_count; header_count--)
             Header_DeleteItem(m_wnd_header, header_count - 1);
 
@@ -160,7 +160,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
         const auto lpnmh = reinterpret_cast<LPNMHEADERW>(lpnm);
         if (!m_autosize) {
             if (lpnmh->iItem != -1 && (!m_have_indent_column || lpnmh->iItem)) {
-                t_size realIndex = lpnmh->iItem;
+                size_t realIndex = lpnmh->iItem;
                 if (m_have_indent_column)
                     realIndex--;
                 if (realIndex < m_columns.size()) {
@@ -229,7 +229,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
                             update_scroll_info();*/
                         }
                     } else if (!m_autosize) {
-                        t_size realIndex = lpnmh->iItem;
+                        size_t realIndex = lpnmh->iItem;
                         if (m_have_indent_column)
                             realIndex--;
                         if (realIndex < m_columns.size() && m_columns[realIndex].m_display_size != lpnmh->pitem->cxy) {
@@ -247,7 +247,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
     case HDN_ITEMCLICK: {
         auto lpnmh = (LPNMHEADER)lpnm;
         if (lpnmh->iItem != -1 && (!m_have_indent_column || lpnmh->iItem)) {
-            t_size realIndex = lpnmh->iItem;
+            size_t realIndex = lpnmh->iItem;
             if (m_have_indent_column)
                 realIndex--;
             if (realIndex < m_columns.size()) {

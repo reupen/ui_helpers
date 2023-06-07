@@ -44,8 +44,8 @@ public:
     STDMETHOD(EnumDAdvise)(LPENUMSTATDATA*);
 
 private:
-    HRESULT _FindFormatEtc(LPFORMATETC lpfe, t_size& index, bool b_checkTymed);
-    HRESULT _GetStgMediumAddRef(t_size index, STGMEDIUM* pstgmOut);
+    HRESULT _FindFormatEtc(LPFORMATETC lpfe, size_t& index, bool b_checkTymed);
+    HRESULT _GetStgMediumAddRef(size_t index, STGMEDIUM* pstgmOut);
 
     class t_data_entry {
     public:
