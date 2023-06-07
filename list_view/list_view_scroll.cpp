@@ -2,7 +2,7 @@
 
 namespace uih {
 
-void ListView::ensure_visible(t_size index, EnsureVisibleMode mode)
+void ListView::ensure_visible(size_t index, EnsureVisibleMode mode)
 {
     if (index > m_items.size())
         return;
@@ -116,17 +116,17 @@ void ListView::scroll_from_scroll_bar(short scroll_bar_command, bool b_horizonta
     scroll(pos, b_horizontal);
 }
 
-void ListView::_update_scroll_info_vertical(bool redraw)
+void ListView::update_vertical_scroll_info(bool redraw)
 {
     const auto rc = get_items_rect();
 
-    t_size old_scroll_position = m_scroll_position;
+    size_t old_scroll_position = m_scroll_position;
     SCROLLINFO scroll;
     memset(&scroll, 0, sizeof(SCROLLINFO));
     scroll.cbSize = sizeof(SCROLLINFO);
     scroll.fMask = SIF_RANGE | SIF_PAGE | SIF_POS;
     scroll.nMin = 0;
-    t_size count = m_items.size();
+    size_t count = m_items.size();
     scroll.nMax = count ? get_item_group_bottom(count - 1) : 0;
     scroll.nPage = RECT_CY(rc);
     scroll.nPos = m_scroll_position;
@@ -141,7 +141,7 @@ void ListView::_update_scroll_info_vertical(bool redraw)
         invalidate_all();
 }
 
-void ListView::_update_scroll_info_horizontal(bool redraw)
+void ListView::update_horizontal_scroll_info(bool redraw)
 {
     auto rc = get_items_rect();
 
@@ -184,10 +184,10 @@ void ListView::update_scroll_info(bool b_vertical, bool b_horizontal, bool redra
     // god this is a bit complicated when showing h scrollbar causes need for v scrollbar (and vv)
 
     if (b_vertical) {
-        _update_scroll_info_vertical(redraw);
+        update_vertical_scroll_info(redraw);
     }
     if (b_horizontal) {
-        _update_scroll_info_horizontal(redraw);
+        update_horizontal_scroll_info(redraw);
     }
 }
 

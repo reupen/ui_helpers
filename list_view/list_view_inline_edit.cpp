@@ -42,18 +42,18 @@ void ListView::set_inline_edit_rect() const
     Edit_SetRect(m_wnd_inline_edit, &rc);
 }
 
-void ListView::activate_inline_editing(t_size column_start)
+void ListView::activate_inline_editing(size_t column_start)
 {
     size_t count = m_columns.size();
     if (count) {
-        t_size focus = get_focus_item();
+        size_t focus = get_focus_item();
         if (focus != pfc_infinite) {
-            t_size i;
-            t_size pcount = m_items.size();
+            size_t i;
+            size_t pcount = m_items.size();
             pfc::bit_array_bittable sel(pcount);
             get_selection_state(sel);
 
-            pfc::list_t<t_size> indices;
+            pfc::list_t<size_t> indices;
             indices.prealloc(32);
             for (i = 0; i < pcount; i++)
                 if (sel[i])
@@ -73,7 +73,7 @@ void ListView::activate_inline_editing(t_size column_start)
     }
 }
 
-void ListView::activate_inline_editing(const pfc::list_base_const_t<t_size>& indices, t_size column)
+void ListView::activate_inline_editing(const pfc::list_base_const_t<size_t>& indices, size_t column)
 {
     size_t count = m_columns.size();
     if (column < count) {
@@ -82,12 +82,12 @@ void ListView::activate_inline_editing(const pfc::list_base_const_t<t_size>& ind
         }
     }
 }
-void ListView::activate_inline_editing(t_size index, t_size column)
+void ListView::activate_inline_editing(size_t index, size_t column)
 {
-    activate_inline_editing(pfc::list_single_ref_t<t_size>(index), column);
+    activate_inline_editing(pfc::list_single_ref_t<size_t>(index), column);
 }
 
-LRESULT WINAPI ListView::g_on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
+LRESULT WINAPI ListView::s_on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 {
     ListView* p_this;
     LRESULT rv;
@@ -118,19 +118,19 @@ LRESULT ListView::on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
         switch (wp) {
         case VK_TAB: {
             size_t count = m_columns.size();
-            t_size indices_count = m_inline_edit_indices.get_count();
+            size_t indices_count = m_inline_edit_indices.get_count();
             assert(indices_count);
             if (count && indices_count) {
                 bool back = (GetKeyState(VK_SHIFT) & KF_UP) != 0;
                 if (back) {
-                    t_size column = m_inline_edit_column;
-                    t_size row = m_inline_edit_indices[0];
+                    size_t column = m_inline_edit_column;
+                    size_t row = m_inline_edit_indices[0];
                     pfc::string8_fast_aggressive temp;
                     bool found = false;
 
                     if (indices_count == 1) {
                         do {
-                            pfc::list_single_ref_t<t_size> indices(row);
+                            pfc::list_single_ref_t<size_t> indices(row);
                             while (column > 0
                                 && !((found = notify_before_create_inline_edit(indices, --column, false)))) {}
                             if (!found)
@@ -138,7 +138,7 @@ LRESULT ListView::on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
                         } while (!found && row > 0 && --row >= 0);
 
                         if (found) {
-                            pfc::list_single_ref_t<t_size> indices(row);
+                            pfc::list_single_ref_t<size_t> indices(row);
                             create_inline_edit(indices, column);
                         }
                     } else {
@@ -150,15 +150,15 @@ LRESULT ListView::on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
                         }
                     }
                 } else {
-                    t_size column = m_inline_edit_column + 1;
-                    t_size row = m_inline_edit_indices[0];
-                    t_size row_count = m_items.size();
+                    size_t column = m_inline_edit_column + 1;
+                    size_t row = m_inline_edit_indices[0];
+                    size_t row_count = m_items.size();
                     pfc::string8_fast_aggressive temp;
                     bool found = false;
 
                     if (indices_count == 1) {
                         do {
-                            pfc::list_single_ref_t<t_size> indices(row);
+                            pfc::list_single_ref_t<size_t> indices(row);
                             while (column < count
                                 && !((found = notify_before_create_inline_edit(indices, column, false)))) {
                                 column++;
@@ -168,7 +168,7 @@ LRESULT ListView::on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
                         } while (!found && ++row < row_count);
 
                         if (found) {
-                            pfc::list_single_ref_t<t_size> indices(row);
+                            pfc::list_single_ref_t<size_t> indices(row);
                             create_inline_edit(indices, column);
                         }
 
@@ -202,9 +202,9 @@ LRESULT ListView::on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
     return CallWindowProc(m_proc_inline_edit, wnd, msg, wp, lp);
 }
 
-void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices, size_t column)
+void ListView::create_inline_edit(const pfc::list_base_const_t<size_t>& indices, size_t column)
 {
-    t_size indices_count = indices.get_count();
+    size_t indices_count = indices.get_count();
     if (!indices_count)
         return;
     if (!(column < m_columns.size()) || m_selecting) {
@@ -213,8 +213,8 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
     }
 
     {
-        t_size item_count = m_items.size();
-        for (t_size j = 0; j < indices_count; j++) {
+        size_t item_count = m_items.size();
+        for (size_t j = 0; j < indices_count; j++) {
             if (indices[j] >= item_count)
                 return;
         }
@@ -300,7 +300,7 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
     }
 
     pfc::string8 text;
-    t_size flags = 0;
+    size_t flags = 0;
     mmh::ComPtr<IUnknown> pAutoCompleteEntries;
     if (!notify_create_inline_edit(indices, column, text, flags, pAutoCompleteEntries)) {
         m_inline_edit_save = false;
@@ -332,7 +332,7 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<t_size>& indices,
 
         SetWindowLongPtr(m_wnd_inline_edit, GWLP_USERDATA, reinterpret_cast<LPARAM>(this));
         m_proc_inline_edit = reinterpret_cast<WNDPROC>(
-            SetWindowLongPtr(m_wnd_inline_edit, GWLP_WNDPROC, reinterpret_cast<LPARAM>(g_on_inline_edit_message)));
+            SetWindowLongPtr(m_wnd_inline_edit, GWLP_WNDPROC, reinterpret_cast<LPARAM>(s_on_inline_edit_message)));
 
         enhance_edit_control(m_wnd_inline_edit);
 

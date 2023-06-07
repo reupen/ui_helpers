@@ -24,7 +24,7 @@ void ListView::show_search_box(const char* label, bool b_focus)
 
         SetWindowLongPtr(m_search_editbox, GWLP_USERDATA, (LPARAM)(this));
         m_proc_search_edit
-            = (WNDPROC)SetWindowLongPtr(m_search_editbox, GWLP_WNDPROC, (LPARAM)(g_on_search_edit_message));
+            = (WNDPROC)SetWindowLongPtr(m_search_editbox, GWLP_WNDPROC, (LPARAM)(s_on_search_edit_message));
         // SetWindowPos(m_wnd_inline_edit,HWND_TOP,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);
         SendMessage(m_search_editbox, WM_SETFONT, (WPARAM)m_items_font.get(), MAKELONG(TRUE, 0));
         SetWindowTheme(m_search_editbox, L"SearchBoxEdit", nullptr);
@@ -50,7 +50,7 @@ void ListView::show_search_box(const char* label, bool b_focus)
 
 #if 0
             HTHEME thm = OpenThemeData(m_search_editbox, L"Edit");
-            t_size i;
+            size_t i;
             for (i = TMT_RESERVEDLOW; i < TMT_RESERVEDHIGH; i++)
             {
                 COLORREF cr = 0;
@@ -106,7 +106,7 @@ int ListView::get_search_box_height() const
     return ret;
 }
 
-LRESULT WINAPI ListView::g_on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
+LRESULT WINAPI ListView::s_on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 {
     ListView* p_this;
     LRESULT rv;
@@ -146,7 +146,7 @@ LRESULT ListView::on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
         break;
     case WM_MOUSEMOVE: {
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
-        __search_box_update_hot_status(pt);
+        update_search_box_hot_status(pt);
     } break;
 #if 0
         case WM_PAINT:
@@ -156,8 +156,8 @@ LRESULT ListView::on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
             RECT rc;
             GetClientRect(m_search_editbox, &rc);
             HTHEME thm = OpenThemeData(m_search_editbox, L"SearchBox");//SearchBox
-            t_size step = rc.right / 10;
-            t_size i;
+            size_t step = rc.right / 10;
+            size_t i;
             for (i = 0; i < 10; i++)
             {
                 rc.left = i*step;
@@ -174,7 +174,7 @@ LRESULT ListView::on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
     return CallWindowProc(m_proc_search_edit, wnd, msg, wp, lp);
 }
 
-void ListView::__search_box_update_hot_status(const POINT& pt)
+void ListView::update_search_box_hot_status(const POINT& pt)
 {
     POINT pts = pt;
     MapWindowPoints(get_wnd(), HWND_DESKTOP, &pts, 1);

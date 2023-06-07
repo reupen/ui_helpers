@@ -23,7 +23,7 @@ bool ListView::render_drag_image(LPSHDRAGIMAGE lpsdi)
         != 0;
 }
 
-bool ListView::format_drag_text(t_size selection_count, pfc::string8& p_out)
+bool ListView::format_drag_text(size_t selection_count, pfc::string8& p_out)
 {
     auto show_text = should_show_drag_text(selection_count);
     if (show_text) {

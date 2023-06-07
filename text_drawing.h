@@ -150,5 +150,5 @@ BOOL text_out_colours_tab(HDC dc, const char* display, size_t display_len, int l
     alignment align, unsigned* p_width = nullptr, bool b_set_default_colours = true,
     bool b_vertical_align_centre = true, int* p_position = nullptr, int tab_origin = 0);
 
-void remove_color_marks(const char* src, pfc::string_base& out, t_size len = pfc_infinite);
+void remove_color_marks(const char* src, pfc::string_base& out, size_t len = pfc_infinite);
 } // namespace uih

@@ -9,7 +9,7 @@ void ListView::hit_test_ex(POINT pt_client, ListView::HitTestResult& result)
 
     result.column = pfc_infinite;
     const int first_column_left = -m_horizontal_scroll_position + get_total_indentation();
-    const t_size column_count = m_columns.size();
+    const size_t column_count = m_columns.size();
     int last_column_right = first_column_left;
 
     for (size_t column_index{0}; column_index < column_count; column_index++) {
@@ -90,7 +90,7 @@ void ListView::hit_test_ex(POINT pt_client, ListView::HitTestResult& result)
     result.category = HitTestCategory::NotOnItem;
 }
 
-ListView::ItemVisibility ListView::get_item_visibility(t_size index)
+ListView::ItemVisibility ListView::get_item_visibility(size_t index)
 {
     const auto item_area_height = get_item_area_height();
     const auto item_start_position = get_item_position(index);
@@ -114,7 +114,7 @@ ListView::ItemVisibility ListView::get_item_visibility(t_size index)
     return ItemVisibility::FullyVisible;
 }
 
-bool ListView::is_partially_visible(t_size index)
+bool ListView::is_partially_visible(size_t index)
 {
     const auto item_visibility = get_item_visibility(index);
 
@@ -122,7 +122,7 @@ bool ListView::is_partially_visible(t_size index)
         || item_visibility == ItemVisibility::ObscuredBelow;
 }
 
-bool ListView::is_fully_visible(t_size index)
+bool ListView::is_fully_visible(size_t index)
 {
     return get_item_visibility(index) == ItemVisibility::FullyVisible;
 }

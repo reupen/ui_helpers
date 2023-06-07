@@ -198,8 +198,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             }
             else */
             if (b_shift_down && m_selection_mode == SelectionMode::Multiple) {
-                t_size focus = get_focus_item();
-                t_size start = m_alternate_selection ? focus : m_shift_start;
+                size_t focus = get_focus_item();
+                size_t start = m_alternate_selection ? focus : m_shift_start;
                 pfc::bit_array_range br(std::min(start, hit_result.index), abs(t_ssize(start - hit_result.index)) + 1);
                 if (m_lbutton_down_ctrl && !m_alternate_selection) {
                     set_selection_state(br, br, true);
@@ -228,8 +228,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             SetCapture(wnd);
         } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
             if (m_selection_mode == SelectionMode::Multiple) {
-                t_size index = 0;
-                t_size count = 0;
+                size_t index = 0;
+                size_t count = 0;
                 if (!m_lbutton_down_ctrl) {
                     get_item_group(hit_result.index, hit_result.group_level, index, count);
                     set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
@@ -252,7 +252,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 if (!m_inline_edit_prevent && 1 && get_item_selected(m_selecting_start) && true /*m_prev_sel*/) {
                     {
                         exit_inline_edit();
-                        pfc::list_t<t_size> indices;
+                        pfc::list_t<size_t> indices;
                         indices.add_item(m_selecting_start);
                         if (notify_before_create_inline_edit(indices, m_selecting_start_column, true)) {
                             m_inline_edit_indices = indices;
@@ -284,8 +284,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                     }
                 } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
                     if (hit_result.index < m_items.size() && hit_result.group_level < m_group_count) {
-                        t_size index = 0;
-                        t_size count = 0;
+                        size_t index = 0;
+                        size_t count = 0;
                         get_item_group(hit_result.index, hit_result.group_level, index, count);
                         if (count) {
                             set_selection_state(pfc::bit_array_range(index, count),
@@ -336,8 +336,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             } else if (get_focus_item() != hit_result.index)
                 set_focus_item(hit_result.index);
         } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
-            t_size index = 0;
-            t_size count = 0;
+            size_t index = 0;
+            size_t count = 0;
             get_item_group(hit_result.index, hit_result.group_level, index, count);
             set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
             if (count)
@@ -362,7 +362,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                     if (m_tooltip_last_index != hit_result.index || m_tooltip_last_column != hit_result.column) {
                         int cx = 0;
                         {
-                            t_size i;
+                            size_t i;
                             // if (hit_result.column == 0)
                             cx = get_total_indentation();
                             // else
@@ -437,7 +437,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             }
         }
         if (m_selecting && m_selection_mode == SelectionMode::Multiple) {
-            // t_size index;
+            // size_t index;
             if (!m_selecting_move) {
                 HitTestResult hit_result;
                 hit_test_ex(pt, hit_result);
@@ -496,7 +496,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 
                                 set_selection_state(pfc::bit_array_true(),
                                     pfc::bit_array_range(std::min(hit_result.index, m_selecting_start),
-                                        (t_size)abs(int(m_selecting_start - hit_result.index)) + 1));
+                                        (size_t)abs(int(m_selecting_start - hit_result.index)) + 1));
                                 set_focus_item(hit_result.index);
                             }
                         }
@@ -513,7 +513,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         if (hit_result.category == HitTestCategory::OnUnobscuredItem) {
             exit_inline_edit();
             m_inline_edit_prevent = true;
-            t_size focus = get_focus_item();
+            size_t focus = get_focus_item();
             if (focus != pfc_infinite)
                 execute_default_action(focus, hit_result.column, false, (wp & MK_CONTROL) != 0);
             return 0;
@@ -593,7 +593,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         return DefWindowProc(wnd, msg, wp, lp) | DLGC_WANTARROWS;
     case WM_SHOWWINDOW:
         if (wp == TRUE && lp == 0 && !m_shown) {
-            t_size focus = get_focus_item();
+            size_t focus = get_focus_item();
             if (focus != pfc_infinite)
                 ensure_visible(focus);
             m_shown = true;
@@ -731,7 +731,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             scroll_from_scroll_bar(SB_LINEDOWN);
             return 0;
         case EDIT_TIMER_ID: {
-            create_inline_edit(pfc::list_t<t_size>(m_inline_edit_indices), m_inline_edit_column);
+            create_inline_edit(pfc::list_t<size_t>(m_inline_edit_indices), m_inline_edit_column);
             if (m_timer_inline_edit) {
                 KillTimer(wnd, EDIT_TIMER_ID);
                 m_timer_inline_edit = false;

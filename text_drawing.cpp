@@ -20,11 +20,11 @@ bool check_colour_marks(const char* src, unsigned int len = -1)
     return false;
 }
 
-void remove_color_marks(const char* src, pfc::string_base& out, t_size len)
+void remove_color_marks(const char* src, pfc::string_base& out, size_t len)
 {
     out.reset();
     const char* ptr = src;
-    while (*src && static_cast<t_size>(src - ptr) < len) {
+    while (*src && static_cast<size_t>(src - ptr) < len) {
         if (*src == 3) {
             src++;
             while (*src && *src != 3)
@@ -51,7 +51,7 @@ void get_text_size(HDC dc, const char* src, int len, SIZE& sz)
         return;
 
     pfc::stringcvt::string_wide_from_utf8 wstr(src, gsl::narrow<size_t>(len));
-    t_size wlen = wstr.length();
+    size_t wlen = wstr.length();
 
     UniscribeTextRenderer p_ScriptString(dc, wstr, gsl::narrow<int>(wlen), NULL, false);
     p_ScriptString.get_output_size(sz);
@@ -128,7 +128,7 @@ BOOL text_out_colours_ellipsis(HDC dc, const char* src_c, size_t src_c_len, int 
 
     {
         const wchar_t* src = wstr.get_ptr();
-        t_size wLen = wstr.length();
+        size_t wLen = wstr.length();
 
         const wchar_t* p_start = src;
         const wchar_t* p_block_start = src;

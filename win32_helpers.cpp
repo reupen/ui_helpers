@@ -103,7 +103,7 @@ HTREEITEM tree_view_insert_item_simple(HWND wnd_tree, const WCHAR* sz_text, LPAR
     return TreeView_InsertItem(wnd_tree, &is);
 }
 
-t_size tree_view_get_child_index(HWND wnd_tv, HTREEITEM ti)
+size_t tree_view_get_child_index(HWND wnd_tv, HTREEITEM ti)
 {
     HTREEITEM item = ti;
     unsigned n = 0;
@@ -320,7 +320,7 @@ int combo_box_add_string_data(HWND wnd, const TCHAR* str, LPARAM data)
     return index;
 }
 
-int combo_box_find_item_by_data(HWND wnd, t_size id)
+int combo_box_find_item_by_data(HWND wnd, size_t id)
 {
     int count = ComboBox_GetCount(wnd);
     for (int i = 0; i < count; i++)

@@ -6,18 +6,16 @@ namespace uih {
 
 class ListView {
 public:
-    enum {
-        IDC_HEADER = 1001,
-        IDC_TOOLTIP = 1002,
-        IDC_INLINEEDIT = 667,
-        IDC_SEARCHBOX = 668,
-    };
+    static constexpr short IDC_HEADER = 1001;
+    static constexpr short IDC_TOOLTIP = 1002;
+    static constexpr short IDC_INLINEEDIT = 667;
+    static constexpr short IDC_SEARCHBOX = 668;
+
+    static constexpr unsigned MSG_KILL_INLINE_EDIT = WM_USER + 3;
 
     enum { TIMER_SCROLL_UP = 1001, TIMER_SCROLL_DOWN = 1002, TIMER_END_SEARCH, EDIT_TIMER_ID, TIMER_BASE };
 
-    enum { MSG_KILL_INLINE_EDIT = WM_USER + 3 };
-
-    using ColourData = uih::lv::ColourData;
+    using ColourData = lv::ColourData;
 
     class Column {
     public:
@@ -25,14 +23,16 @@ public:
         int m_size{0};
         int m_display_size{0};
         int m_autosize_weight{1};
-        uih::alignment m_alignment{uih::ALIGN_LEFT};
+        alignment m_alignment{ALIGN_LEFT};
 
-        Column(const char* title, int cx, int p_autosize_weight = 1, uih::alignment alignment = uih::ALIGN_LEFT)
+        Column(const char* title, int cx, int p_autosize_weight = 1, alignment alignment = ALIGN_LEFT)
             : m_title(title)
             , m_size(cx)
             , m_display_size(cx)
             , m_autosize_weight(p_autosize_weight)
-            , m_alignment(alignment){};
+            , m_alignment(alignment)
+        {
+        }
 
         Column() = default;
     };
@@ -86,75 +86,6 @@ public:
         SizedInsertItem() : InsertItem(subitem_count, group_count) {}
     };
 
-protected:
-    enum EdgeStyle {
-        edge_none,
-        edge_sunken,
-        edge_grey,
-        edge_solid,
-    };
-
-    class Item;
-    class Group;
-
-    using t_group_ptr = pfc::refcounted_object_ptr_t<Group>;
-    using t_item_ptr = pfc::refcounted_object_ptr_t<Item>;
-
-    class Group : public pfc::refcounted_object_root {
-    public:
-        pfc::string8 m_text;
-    };
-
-    class Item : public pfc::refcounted_object_root {
-    public:
-        t_uint8 m_line_count{1};
-        string_array m_subitems;
-        std::vector<t_group_ptr> m_groups;
-
-        t_size m_display_index{0};
-        int m_display_position{0};
-        bool m_selected{false};
-
-        void update_line_count()
-        {
-            m_line_count = 1;
-            for (auto&& subitem : m_subitems) {
-                t_uint8 lc = 1;
-                const char* ptr = subitem.c_str();
-                while (*ptr) {
-                    if (*ptr == '\n') {
-                        if (++lc == 255)
-                            break;
-                    }
-                    ptr++;
-                }
-                m_line_count = std::max(m_line_count, lc);
-            }
-        }
-
-    private:
-    };
-
-    class ListViewSearchContextBase {
-    public:
-        virtual ~ListViewSearchContextBase() = default;
-
-        virtual const char* get_item_text(size_t index) = 0;
-
-    protected:
-    };
-
-    class DefaultListViewSearchContext : public ListViewSearchContextBase {
-    public:
-        explicit DefaultListViewSearchContext(ListView* list_view) : m_list_view(list_view) {}
-
-        const char* get_item_text(size_t index) override { return m_list_view->get_item_text(index, 0); }
-
-    private:
-        ListView* m_list_view{};
-    };
-
-public:
     enum class SelectionMode {
         Multiple,
         /** Single selection, right-click changes selection, can deselect all items */
@@ -163,7 +94,42 @@ public:
         SingleStrict
     };
 
-    ListView(std::unique_ptr<uih::lv::RendererBase> renderer = std::make_unique<uih::lv::DefaultRenderer>())
+    enum class HitTestCategory {
+        NotOnItem,
+        AboveViewport,
+        BelowViewport,
+        OnUnobscuredItem,
+        OnItemObscuredAbove,
+        OnItemObscuredBelow,
+        LeftOfItem,
+        RightOfItem,
+        OnGroupHeader,
+        LeftOfGroupHeader,
+        RightOfGroupHeader,
+    };
+
+    struct HitTestResult {
+        HitTestCategory category{};
+        size_t index{};
+        size_t insertion_index{};
+        size_t group_level{};
+        size_t column{};
+    };
+
+    enum class ItemVisibility {
+        FullyVisible = 1,
+        ObscuredAbove,
+        ObscuredBelow,
+        AboveViewport,
+        BelowViewport,
+    };
+
+    enum class EnsureVisibleMode {
+        PreferCentringItem = 1,
+        PreferMinimalScrolling = 2,
+    };
+
+    ListView(std::unique_ptr<lv::RendererBase> renderer = std::make_unique<lv::DefaultRenderer>())
         : m_renderer{std::move(renderer)}
     {
         m_dragging_initial_point.x = 0;
@@ -171,11 +137,11 @@ public:
         m_dragging_rmb_initial_point.x = 0;
         m_dragging_rmb_initial_point.y = 0;
 
-        auto window_config = uih::ContainerWindowConfig{L"NGLV"};
+        auto window_config = ContainerWindowConfig{L"NGLV"};
         window_config.window_ex_styles = 0u;
         window_config.window_styles = WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_TABSTOP | WS_BORDER;
         window_config.class_styles = CS_DBLCLKS | CS_HREDRAW;
-        m_container_window = std::make_unique<uih::ContainerWindow>(
+        m_container_window = std::make_unique<ContainerWindow>(
             window_config, [this](auto&&... args) { return on_message(std::forward<decltype(args)>(args)...); });
     }
 
@@ -185,7 +151,7 @@ public:
      * \param window_pos    Initial window position
      * \return              Window handle of the created list view
      */
-    HWND create(HWND wnd_parent, uih::WindowPosition window_pos = {}, bool use_dialog_units = false)
+    HWND create(HWND wnd_parent, WindowPosition window_pos = {}, bool use_dialog_units = false)
     {
         return m_container_window->create(wnd_parent, window_pos, nullptr, use_dialog_units);
     }
@@ -199,24 +165,24 @@ public:
      * \brief   Gets the list view window handle.
      * \return  List view window handle
      */
-    HWND get_wnd() const { return m_container_window->get_wnd(); }
+    [[nodiscard]] HWND get_wnd() const { return m_container_window->get_wnd(); }
 
     int calculate_header_height();
     void set_columns(std::vector<Column> columns);
     void set_column_widths(std::vector<int> widths);
-    void set_group_count(t_size count, bool b_update_columns = true);
+    void set_group_count(size_t count, bool b_update_columns = true);
 
-    t_size get_group_count() const { return m_group_count; }
+    [[nodiscard]] size_t get_group_count() const { return m_group_count; }
 
     int get_columns_width();
     int get_columns_display_width();
-    int get_column_display_width(t_size index);
-    uih::alignment get_column_alignment(t_size index);
-    t_size get_column_count();
+    int get_column_display_width(size_t index);
+    alignment get_column_alignment(size_t index);
+    size_t get_column_count();
 
     void _set_scroll_position(int val) { m_scroll_position = val; }
 
-    int _get_scroll_position() const { return m_scroll_position; }
+    [[nodiscard]] int _get_scroll_position() const { return m_scroll_position; }
 
     void set_show_header(bool b_val);
     void set_show_tooltips(bool b_val);
@@ -257,95 +223,58 @@ public:
     void update_column_sizes();
 
     ItemTransaction start_transaction();
-    void insert_items(t_size index_start, t_size count, const InsertItem* items);
+    void insert_items(size_t index_start, size_t count, const InsertItem* items);
 
     template <class TItems>
-    void replace_items(t_size index_start, const TItems& items)
+    void replace_items(size_t index_start, const TItems& items)
     {
         replace_items(index_start, items.get_size(), items.get_ptr());
     }
-    void replace_items(t_size index_start, t_size count, const InsertItem* items);
-    void remove_item(t_size index);
+    void replace_items(size_t index_start, size_t count, const InsertItem* items);
+    void remove_item(size_t index);
     void remove_items(const pfc::bit_array& mask);
     void remove_all_items();
 
-    enum class HitTestCategory {
-        NotOnItem,
-        AboveViewport,
-        BelowViewport,
-        OnUnobscuredItem,
-        OnItemObscuredAbove,
-        OnItemObscuredBelow,
-        LeftOfItem,
-        RightOfItem,
-        OnGroupHeader,
-        LeftOfGroupHeader,
-        RightOfGroupHeader,
-    };
-
-    struct HitTestResult {
-        HitTestCategory category{};
-        t_size index{};
-        t_size insertion_index{};
-        t_size group_level{};
-        t_size column{};
-    };
-
-    enum class ItemVisibility {
-        FullyVisible = 1,
-        ObscuredAbove,
-        ObscuredBelow,
-        AboveViewport,
-        BelowViewport,
-    };
-
     void hit_test_ex(POINT pt_client, HitTestResult& result);
     void update_scroll_info(bool b_vertical = true, bool b_horizontal = true, bool redraw = true);
-    void _update_scroll_info_vertical(bool redraw = true);
-    void _update_scroll_info_horizontal(bool redraw = true);
-    ItemVisibility get_item_visibility(t_size index);
-    bool is_partially_visible(t_size index);
-    bool is_fully_visible(t_size index);
+    ItemVisibility get_item_visibility(size_t index);
+    bool is_partially_visible(size_t index);
+    bool is_fully_visible(size_t index);
 
-    enum class EnsureVisibleMode {
-        PreferCentringItem = 1,
-        PreferMinimalScrolling = 2,
-    };
-
-    void ensure_visible(t_size index, EnsureVisibleMode mode = EnsureVisibleMode::PreferCentringItem);
+    void ensure_visible(size_t index, EnsureVisibleMode mode = EnsureVisibleMode::PreferCentringItem);
 
     void scroll(int position, bool b_horizontal = false, bool suppress_scroll_window = false);
     void scroll_from_scroll_bar(short scroll_bar_command, bool b_horizontal = false);
 
-    void get_item_group(t_size index, t_size level, t_size& index_start, t_size& count);
-    void set_insert_mark(t_size index);
+    void get_item_group(size_t index, size_t level, size_t& index_start, size_t& count);
+    void set_insert_mark(size_t index);
     void remove_insert_mark();
 
-    void set_highlight_item(t_size index);
+    void set_highlight_item(size_t index);
     void remove_highlight_item();
-    void set_highlight_selected_item(t_size index);
+    void set_highlight_selected_item(size_t index);
     void remove_highlight_selected_item();
 
     /** Rect relative to main window client area */
     void get_header_rect(LPRECT rc) const;
 
     /** Current height*/
-    int get_header_height() const;
+    [[nodiscard]] int get_header_height() const;
     [[nodiscard]] RECT get_items_rect() const;
-    int get_item_area_height() const;
+    [[nodiscard]] int get_item_area_height() const;
 
-    int get_items_top() const { return get_items_rect().top; }
+    [[nodiscard]] int get_items_top() const { return get_items_rect().top; }
 
     void get_search_box_rect(LPRECT rc) const;
-    int get_search_box_height() const;
+    [[nodiscard]] int get_search_box_height() const;
 
     void invalidate_all(bool b_children = false, bool non_client = false);
-    void invalidate_items(t_size index, t_size count);
+    void invalidate_items(size_t index, size_t count);
 
     void invalidate_items(const pfc::bit_array& mask);
-    void invalidate_item_group_info_area(t_size index);
+    void invalidate_item_group_info_area(size_t index);
 
-    void update_items(t_size index, t_size count);
+    void update_items(size_t index, size_t count);
     void update_all_items();
 
     // Current implementation clears sub-items.
@@ -384,9 +313,9 @@ public:
     int get_default_item_height();
     int get_default_group_height();
 
-    int get_item_height() const { return m_item_height; }
+    [[nodiscard]] int get_item_height() const { return m_item_height; }
 
-    int get_item_height(t_size index) const
+    [[nodiscard]] int get_item_height(size_t index) const
     {
         int ret = 1;
         if (m_variable_height_items && index < m_items.size())
@@ -398,7 +327,7 @@ public:
 
     void clear_all_items() { m_items.clear(); }
 
-    int get_item_group_header_total_height(size_t index) const
+    [[nodiscard]] int get_item_group_header_total_height(size_t index) const
     {
         if (index >= m_items.size())
             return 0;
@@ -406,7 +335,7 @@ public:
         return gsl::narrow<int>(get_item_display_group_count(index)) * m_group_height;
     }
 
-    int get_item_position(t_size index, bool b_include_headers = false) const
+    [[nodiscard]] int get_item_position(size_t index, bool b_include_headers = false) const
     {
         if (index >= m_items.size())
             return 0;
@@ -419,7 +348,7 @@ public:
         return position;
     }
 
-    int get_item_position_bottom(t_size index) const
+    [[nodiscard]] int get_item_position_bottom(size_t index) const
     {
         if (index >= m_items.size())
             return 0;
@@ -429,10 +358,10 @@ public:
 
     int get_group_minimum_inner_height() { return get_show_group_info_area() ? get_group_info_area_total_height() : 0; }
 
-    int get_item_group_bottom(t_size index, bool b_include_headers = false)
+    int get_item_group_bottom(size_t index, bool b_include_headers = false)
     {
-        t_size gstart = index;
-        t_size gcount = 0;
+        size_t gstart = index;
+        size_t gcount = 0;
         get_item_group(index, m_group_count ? m_group_count - 1 : 0, gstart, gcount);
         int ret = 0;
         if (gcount)
@@ -455,35 +384,34 @@ public:
         notification_source_rmb,
     };
 
-    bool copy_selected_items_as_text(t_size default_single_item_column = pfc_infinite);
+    bool copy_selected_items_as_text(size_t default_single_item_column = pfc_infinite);
 
-    // CLIENT FUNCTIONS
     void get_selection_state(pfc::bit_array_var& out);
     void set_selection_state(const pfc::bit_array& p_affected, const pfc::bit_array& p_status, bool b_notify = true,
         notification_source_t p_notification_source = notification_source_unknown);
-    t_size get_focus_item();
-    void set_focus_item(t_size index, bool b_notify = true);
-    bool get_item_selected(t_size index);
+    size_t get_focus_item();
+    void set_focus_item(size_t index, bool b_notify = true);
+    bool get_item_selected(size_t index);
 
-    bool is_range_selected(t_size index, t_size count)
+    bool is_range_selected(size_t index, size_t count)
     {
-        t_size i;
+        size_t i;
         for (i = 0; i < count; i++)
             if (!get_item_selected(i + index))
                 return false;
         return count != 0;
     }
 
-    t_size get_selection_count(t_size max = pfc_infinite);
+    size_t get_selection_count(size_t max = pfc_infinite);
 
-    t_size get_selected_item_single()
+    size_t get_selected_item_single()
     {
-        t_size numSelected = get_selection_count(2);
-        t_size index = 0;
-        if (numSelected == 1) {
+        size_t num_selected = get_selection_count(2);
+        size_t index = 0;
+        if (num_selected == 1) {
             pfc::bit_array_bittable mask(get_item_count());
             get_selection_state(mask);
-            t_size count = get_item_count();
+            size_t count = get_item_count();
             while (index < count) {
                 if (mask[index])
                     break;
@@ -494,17 +422,17 @@ public:
         return index;
     }
 
-    void sort_by_column(t_size index, bool b_descending, bool b_selection_only = false)
+    void sort_by_column(size_t index, bool b_descending, bool b_selection_only = false)
     {
         notify_sort_column(index, b_descending, b_selection_only);
         if (!b_selection_only)
             set_sort_column(index, b_descending);
     }
 
-    size_t get_sort_column() const { return m_sort_column_index; }
-    bool get_sort_direction() const { return m_sort_direction; }
+    [[nodiscard]] size_t get_sort_column() const { return m_sort_column_index; }
+    [[nodiscard]] bool get_sort_direction() const { return m_sort_direction; }
 
-    void update_item_data(t_size index)
+    void update_item_data(size_t index)
     {
         notify_update_item_data(index);
         // if (m_variable_height_items)
@@ -513,128 +441,121 @@ public:
             //__calculate_item_positions(index+1);
             // scrollbars?
         }
-    };
+    }
 
-    // SELECTION HELPERS
-    void set_item_selected(t_size index, bool b_state);
+    void set_item_selected(size_t index, bool b_state);
     void set_item_selected_single(
-        t_size index, bool b_notify = true, notification_source_t p_notification_source = notification_source_unknown);
-
-    // CLIENT NOTIFICATION
-    virtual void notify_on_selection_change(const pfc::bit_array& p_affected, const pfc::bit_array& p_status,
-        notification_source_t p_notification_source){};
-
-    virtual void notify_on_focus_item_change(t_size new_index){};
-
-    virtual void notify_on_initialisation(){}; // set settings here
-    virtual void notify_on_create(){}; // populate list here
-    virtual void notify_on_destroy(){};
-
-    virtual bool notify_on_keyboard_keydown_filter(UINT msg, WPARAM wp, LPARAM lp) { return false; };
-
-    virtual bool notify_on_contextmenu_header(const POINT& pt, const HDHITTESTINFO& ht) { return false; };
-
-    virtual bool notify_on_contextmenu(const POINT& pt, bool from_keyboard) { return false; };
-
-    virtual bool notify_on_timer(UINT_PTR timerid) { return false; };
-
-    virtual void notify_on_time_change(){};
-
-    virtual void notify_on_menu_select(WPARAM wp, LPARAM lp){};
-
-    virtual bool notify_on_middleclick(bool on_item, t_size index) { return false; };
-
-    virtual bool notify_on_doubleleftclick_nowhere() { return false; };
-
-    virtual void notify_sort_column(t_size index, bool b_descending, bool b_selection_only){};
-
-    virtual bool notify_on_keyboard_keydown_remove() { return false; };
-
-    virtual bool notify_on_keyboard_keydown_undo() { return false; };
-
-    virtual bool notify_on_keyboard_keydown_redo() { return false; };
-
-    virtual bool notify_on_keyboard_keydown_cut() { return false; };
-
-    virtual bool notify_on_keyboard_keydown_copy()
-    {
-        copy_selected_items_as_text();
-        return true;
-    };
-
-    virtual bool notify_on_keyboard_keydown_paste() { return false; };
-
-    virtual bool notify_on_keyboard_keydown_search() { return false; };
-
-    virtual void notify_on_set_focus(HWND wnd_lost){};
-
-    virtual void notify_on_kill_focus(HWND wnd_receiving){};
-
-    virtual void notify_on_column_size_change(t_size index, int new_width){};
-
-    virtual void notify_on_group_info_area_size_change(int new_width){};
-
-    virtual void notify_on_header_rearrange(t_size index_from, t_size index_to){};
-
-    string_array& get_item_subitems(t_size index) { return m_items[index]->m_subitems; } // hmmm
-    // const Item * get_item(t_size index) {return m_items[index].get_ptr();}
-    virtual void notify_update_item_data(t_size index){};
-
-    virtual t_size get_highlight_item() { return pfc_infinite; }
-
-    virtual void execute_default_action(t_size index, t_size column, bool b_keyboard, bool b_ctrl){};
-
-    virtual void move_selection(int delta){};
-
-    virtual bool do_drag_drop(WPARAM wp) { return false; };
+        size_t index, bool b_notify = true, notification_source_t p_notification_source = notification_source_unknown);
 
     bool disable_redrawing();
     void enable_redrawing();
 
-    const char* get_item_text(t_size index, t_size column);
+    const char* get_item_text(size_t index, size_t column);
 
-    t_size get_item_count() { return m_items.size(); }
+    size_t get_item_count() { return m_items.size(); }
 
-    void activate_inline_editing(t_size column_start = 0);
-    void activate_inline_editing(const pfc::list_base_const_t<t_size>& indices, t_size column);
-    void activate_inline_editing(t_size index, t_size column);
+    void activate_inline_editing(size_t column_start = 0);
+    void activate_inline_editing(const pfc::list_base_const_t<size_t>& indices, size_t column);
+    void activate_inline_editing(size_t index, size_t column);
+
+    void create_timer_scroll_up();
+    void create_timer_scroll_down();
+    void destroy_timer_scroll_up();
+    void destroy_timer_scroll_down();
+
+    enum inline_edit_flags_t {
+        inline_edit_uppercase = 1 << 0,
+        inline_edit_autocomplete = 1 << 1,
+    };
 
 protected:
-    // STORAGE
-    virtual t_size storage_get_focus_item();
-    virtual void storage_set_focus_item(t_size index);
-    virtual void storage_get_selection_state(pfc::bit_array_var& out);
-    virtual bool storage_set_selection_state(const pfc::bit_array& p_affected, const pfc::bit_array& p_status,
-        pfc::bit_array_var* p_changed = nullptr); // return: hint if sel didnt change
-    virtual bool storage_get_item_selected(t_size index);
-    virtual t_size storage_get_selection_count(t_size max);
+    enum EdgeStyle {
+        edge_none,
+        edge_sunken,
+        edge_grey,
+        edge_solid,
+    };
 
-    /*virtual void storage_insert_items(t_size index_start, const pfc::list_base_const_t<InsertItem> & items);
-    virtual void storage_replace_items(t_size index_start, const pfc::list_base_const_t<InsertItem> & items);
-    virtual void storage_remove_items(const pfc::bit_array & p_mask);
-    virtual void storaget_set_item_subitems(t_size index, t_string_list_cref_fast p_subitems);
-    virtual t_string_list_cref_fast storaget_get_item_subitems(t_size index);*/
+    class Item;
+    class Group;
 
-    virtual Item* storage_create_item() { return new Item; }
+    using t_group_ptr = pfc::refcounted_object_ptr_t<Group>;
+    using t_item_ptr = pfc::refcounted_object_ptr_t<Item>;
 
-    virtual Group* storage_create_group() { return new Group; }
+    class Group : public pfc::refcounted_object_root {
+    public:
+        pfc::string8 m_text;
+    };
 
+    class Item : public pfc::refcounted_object_root {
+    public:
+        t_uint8 m_line_count{1};
+        string_array m_subitems;
+        std::vector<t_group_ptr> m_groups;
+
+        size_t m_display_index{0};
+        int m_display_position{0};
+        bool m_selected{false};
+
+        void update_line_count()
+        {
+            m_line_count = 1;
+            for (auto&& subitem : m_subitems) {
+                t_uint8 lc = 1;
+                const char* ptr = subitem.c_str();
+                while (*ptr) {
+                    if (*ptr == '\n') {
+                        if (++lc == 255)
+                            break;
+                    }
+                    ptr++;
+                }
+                m_line_count = std::max(m_line_count, lc);
+            }
+        }
+    };
+
+    class ListViewSearchContextBase {
+    public:
+        virtual ~ListViewSearchContextBase() = default;
+
+        virtual const char* get_item_text(size_t index) = 0;
+    };
+
+    class DefaultListViewSearchContext : public ListViewSearchContextBase {
+    public:
+        explicit DefaultListViewSearchContext(ListView* list_view) : m_list_view(list_view) {}
+
+        const char* get_item_text(size_t index) override { return m_list_view->get_item_text(index, 0); }
+
+    private:
+        ListView* m_list_view{};
+    };
+
+    virtual void notify_on_selection_change(
+        const pfc::bit_array& p_affected, const pfc::bit_array& p_status, notification_source_t p_notification_source)
+    {
+    }
+
+    virtual void render_get_colour_data(ColourData& p_out);
     virtual std::unique_ptr<ListViewSearchContextBase> create_search_context()
     {
         return std::make_unique<DefaultListViewSearchContext>(this);
     }
 
-    Item* get_item(t_size index) { return m_items[index].get_ptr(); }
+    Item* get_item(size_t index) { return m_items[index].get_ptr(); }
 
-    t_size get_item_display_index(t_size index) { return m_items[index]->m_display_index; }
+    string_array& get_item_subitems(size_t index) { return m_items[index]->m_subitems; }
 
-    t_size get_item_display_group_count(t_size index) const
+    size_t get_item_display_index(size_t index) { return m_items[index]->m_display_index; }
+
+    [[nodiscard]] size_t get_item_display_group_count(size_t index) const
     {
         if (index == 0)
             return m_group_count;
 
-        t_size counter = 0;
-        t_size i = m_group_count;
+        size_t counter = 0;
+        size_t i = m_group_count;
         while (i && m_items[index]->m_groups[i - 1] != m_items[index - 1]->m_groups[i - 1]) {
             i--;
             counter++;
@@ -642,7 +563,7 @@ protected:
         return counter;
     }
 
-    void on_focus_change(t_size index_prev, t_size index_new);
+    void on_focus_change(size_t index_prev, size_t index_new);
 
     void set_group_level_indentation_enabled(bool b_val)
     {
@@ -692,7 +613,7 @@ protected:
         }
     }
 
-    bool is_header_column_real(t_size index)
+    bool is_header_column_real(size_t index)
     {
         if (m_have_indent_column)
             return index != 0;
@@ -700,7 +621,7 @@ protected:
         return true;
     }
 
-    t_size header_column_to_real_column(t_size index)
+    size_t header_column_to_real_column(size_t index)
     {
         if (m_have_indent_column && index != pfc_infinite)
             return index - 1;
@@ -712,7 +633,6 @@ protected:
 
     int get_total_indentation() { return get_item_indentation() + get_group_info_area_total_width(); }
 
-    virtual void render_get_colour_data(ColourData& p_out);
     ColourData render_get_colour_data()
     {
         ColourData data;
@@ -723,21 +643,7 @@ protected:
     COLORREF get_group_text_colour_default();
     bool get_group_text_colour_default(COLORREF& cr);
 
-    virtual bool render_drag_image(LPSHDRAGIMAGE lpsdi);
-
-    virtual icon_ptr get_drag_image_icon() { return nullptr; }
-
-    virtual t_size get_drag_item_count() /*const*/ { return get_selection_count(); };
-
-    virtual bool should_show_drag_text(t_size selection_count) { return selection_count > 1; }
-
-    virtual bool format_drag_text(t_size selection_count, pfc::string8& p_out);
-
-    virtual const char* get_drag_unit_singular() const { return "item"; }
-
-    virtual const char* get_drag_unit_plural() const { return "items"; }
-
-    void set_sort_column(t_size index, bool b_direction);
+    void set_sort_column(size_t index, bool b_direction);
 
     void clear_sort_column() { set_sort_column(pfc_infinite, false); }
 
@@ -746,25 +652,88 @@ protected:
     bool is_search_box_open();
     void focus_search_box();
 
-    void __search_box_update_hot_status(const POINT& pt);
-
-    virtual void notify_on_search_box_contents_change(const char* p_str){};
-
-    virtual void notify_on_search_box_close(){};
-
-public:
-    void create_timer_scroll_up();
-    void create_timer_scroll_down();
-    void destroy_timer_scroll_up();
-    void destroy_timer_scroll_down();
-
-    enum inline_edit_flags_t {
-        inline_edit_uppercase = 1 << 0,
-        inline_edit_autocomplete = 1 << 1,
-    };
-
 private:
-    unsigned calculate_scroll_timer_speed() const;
+    virtual void notify_on_focus_item_change(size_t new_index) {}
+
+    virtual void notify_on_initialisation() {} // set settings here
+    virtual void notify_on_create() {} // populate list here
+    virtual void notify_on_destroy() {}
+    virtual bool notify_on_keyboard_keydown_filter(UINT msg, WPARAM wp, LPARAM lp) { return false; }
+    virtual bool notify_on_contextmenu_header(const POINT& pt, const HDHITTESTINFO& ht) { return false; }
+    virtual bool notify_on_contextmenu(const POINT& pt, bool from_keyboard) { return false; }
+    virtual bool notify_on_timer(UINT_PTR timerid) { return false; }
+    virtual void notify_on_time_change() {}
+    virtual void notify_on_menu_select(WPARAM wp, LPARAM lp) {}
+    virtual bool notify_on_middleclick(bool on_item, size_t index) { return false; }
+    virtual bool notify_on_doubleleftclick_nowhere() { return false; }
+    virtual void notify_sort_column(size_t index, bool b_descending, bool b_selection_only) {}
+    virtual bool notify_on_keyboard_keydown_remove() { return false; }
+    virtual bool notify_on_keyboard_keydown_undo() { return false; }
+    virtual bool notify_on_keyboard_keydown_redo() { return false; }
+    virtual bool notify_on_keyboard_keydown_cut() { return false; }
+
+    virtual bool notify_on_keyboard_keydown_copy()
+    {
+        copy_selected_items_as_text();
+        return true;
+    }
+
+    virtual bool notify_on_keyboard_keydown_paste() { return false; }
+    virtual bool notify_on_keyboard_keydown_search() { return false; }
+    virtual void notify_on_set_focus(HWND wnd_lost) {}
+    virtual void notify_on_kill_focus(HWND wnd_receiving) {}
+    virtual void notify_on_column_size_change(size_t index, int new_width) {}
+    virtual void notify_on_group_info_area_size_change(int new_width) {}
+    virtual void notify_on_header_rearrange(size_t index_from, size_t index_to) {}
+    virtual void notify_update_item_data(size_t index) {}
+
+    virtual size_t get_highlight_item() { return pfc_infinite; }
+    virtual void execute_default_action(size_t index, size_t column, bool b_keyboard, bool b_ctrl) {}
+    virtual void move_selection(int delta) {}
+    virtual bool do_drag_drop(WPARAM wp) { return false; }
+
+    virtual size_t storage_get_focus_item();
+    virtual void storage_set_focus_item(size_t index);
+    virtual void storage_get_selection_state(pfc::bit_array_var& out);
+    virtual bool storage_set_selection_state(
+        const pfc::bit_array& p_affected, const pfc::bit_array& p_status, pfc::bit_array_var* p_changed = nullptr);
+    virtual bool storage_get_item_selected(size_t index);
+    virtual size_t storage_get_selection_count(size_t max);
+
+    virtual Item* storage_create_item() { return new Item; }
+    virtual Group* storage_create_group() { return new Group; }
+
+    virtual bool render_drag_image(LPSHDRAGIMAGE lpsdi);
+    virtual icon_ptr get_drag_image_icon() { return nullptr; }
+    virtual size_t get_drag_item_count() /*const*/ { return get_selection_count(); }
+    virtual bool should_show_drag_text(size_t selection_count) { return selection_count > 1; }
+    virtual bool format_drag_text(size_t selection_count, pfc::string8& p_out);
+    [[nodiscard]] virtual const char* get_drag_unit_singular() const { return "item"; }
+    [[nodiscard]] virtual const char* get_drag_unit_plural() const { return "items"; }
+
+    virtual void notify_on_search_box_contents_change(const char* p_str) {}
+    virtual void notify_on_search_box_close() {}
+
+    virtual bool notify_before_create_inline_edit(
+        const pfc::list_base_const_t<size_t>& indices, size_t column, bool b_source_mouse)
+    {
+        return false;
+    }
+
+    virtual bool notify_create_inline_edit(const pfc::list_base_const_t<size_t>& indices, size_t column,
+        pfc::string_base& p_test, size_t& p_flags, mmh::ComPtr<IUnknown>& pAutocompleteEntries)
+    {
+        return true;
+    }
+
+    virtual void notify_save_inline_edit(const char* value) {}
+
+    virtual void notify_exit_inline_edit() {}
+
+    void update_vertical_scroll_info(bool redraw = true);
+    void update_horizontal_scroll_info(bool redraw = true);
+
+    [[nodiscard]] unsigned calculate_scroll_timer_speed() const;
 
     void create_timer_search();
     void destroy_timer_search();
@@ -776,41 +745,26 @@ private:
     LRESULT on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 
     void render_items(HDC dc, const RECT& rc_update, int cx);
-    void __insert_items_v3(t_size index_start, t_size count, const InsertItem* items);
-    void __replace_items_v2(t_size index_start, t_size count, const InsertItem* items);
-    void __remove_item(t_size index);
-    void __remove_items(const pfc::bit_array& mask);
-    void __calculate_item_positions(t_size index_start = 0);
+    void insert_items_in_internal_state(size_t index_start, size_t count, const InsertItem* items);
+    void replace_items_in_internal_state(size_t index_start, size_t count, const InsertItem* items);
+    void remove_item_in_internal_state(size_t index);
+    void remove_items_in_internal_state(const pfc::bit_array& mask);
+    void calculate_item_positions(size_t index_start = 0);
 
-    static LRESULT WINAPI g_on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
+    static LRESULT WINAPI s_on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
     LRESULT on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 
-    void create_inline_edit(const pfc::list_base_const_t<t_size>& indices, size_t column);
+    void create_inline_edit(const pfc::list_base_const_t<size_t>& indices, size_t column);
     void save_inline_edit();
     void exit_inline_edit();
-
-    virtual bool notify_before_create_inline_edit(
-        const pfc::list_base_const_t<t_size>& indices, size_t column, bool b_source_mouse)
-    {
-        return false;
-    };
-
-    virtual bool notify_create_inline_edit(const pfc::list_base_const_t<t_size>& indices, size_t column,
-        pfc::string_base& p_test, t_size& p_flags, mmh::ComPtr<IUnknown>& pAutocompleteEntries)
-    {
-        return true;
-    };
-
-    virtual void notify_save_inline_edit(const char* value){};
-
-    virtual void notify_exit_inline_edit(){};
+    void set_inline_edit_window_theme() const;
+    void set_inline_edit_rect() const;
 
     void on_search_string_change(WCHAR c);
 
-    static LRESULT WINAPI g_on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
+    static LRESULT WINAPI s_on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
     LRESULT on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
-    void set_inline_edit_window_theme() const;
-    void set_inline_edit_rect() const;
+    void update_search_box_hot_status(const POINT& pt);
 
     void reset_columns();
 
@@ -824,11 +778,11 @@ private:
     void build_header();
     void update_header();
 
-    void create_tooltip(/*t_size index, t_size column, */ const char* str);
+    void create_tooltip(/*size_t index, size_t column, */ const char* str);
     void destroy_tooltip();
     void set_tooltip_window_theme() const;
-    bool is_item_clipped(t_size index, t_size column);
-    int get_text_width(const char* text, t_size length);
+    bool is_item_clipped(size_t index, size_t column);
+    int get_text_width(const char* text, size_t length);
 
     wil::unique_hfont m_items_font;
     wil::unique_hfont m_header_font;
@@ -850,9 +804,8 @@ private:
     bool m_timer_inline_edit{false};
     bool m_inline_edit_prevent{false};
     bool m_inline_edit_prevent_kill{false};
-    t_size m_inline_edit_column{std::numeric_limits<t_size>::max()};
-    pfc::list_t<t_size> m_inline_edit_indices;
-    // mmh::ComPtr<IUnknown> m_inline_edit_autocomplete_entries;
+    size_t m_inline_edit_column{std::numeric_limits<size_t>::max()};
+    pfc::list_t<size_t> m_inline_edit_indices;
     mmh::ComPtr<IAutoComplete> m_inline_edit_autocomplete;
     wil::unique_hbrush m_edit_background_brush;
     COLORREF m_dark_edit_background_colour{};
@@ -869,25 +822,25 @@ private:
     bool m_selecting_move{false};
     bool m_selecting_moved{false};
     bool m_dragging_rmb{false};
-    t_size m_selecting_start{std::numeric_limits<t_size>::max()};
-    t_size m_selecting_start_column{std::numeric_limits<t_size>::max()};
+    size_t m_selecting_start{std::numeric_limits<size_t>::max()};
+    size_t m_selecting_start_column{std::numeric_limits<size_t>::max()};
     HitTestResult m_lbutton_down_hittest;
     int m_scroll_position{0};
     int m_horizontal_scroll_position{0};
-    t_size m_group_count{0};
+    size_t m_group_count{0};
     int m_item_height{1};
     int m_group_height{1};
-    t_size m_shift_start{std::numeric_limits<t_size>::max()};
+    size_t m_shift_start{std::numeric_limits<size_t>::max()};
     bool m_timer_scroll_up{false};
     bool m_timer_scroll_down{false};
     bool m_lbutton_down_ctrl{false};
-    t_size m_insert_mark_index{std::numeric_limits<t_size>::max()};
-    t_size m_highlight_item_index{std::numeric_limits<t_size>::max()};
-    t_size m_highlight_selected_item_index{std::numeric_limits<t_size>::max()};
+    size_t m_insert_mark_index{std::numeric_limits<size_t>::max()};
+    size_t m_highlight_item_index{std::numeric_limits<size_t>::max()};
+    size_t m_highlight_selected_item_index{std::numeric_limits<size_t>::max()};
     POINT m_dragging_initial_point{0};
     POINT m_dragging_rmb_initial_point{0};
     bool m_shown{false};
-    t_size m_focus_index{std::numeric_limits<t_size>::max()};
+    size_t m_focus_index{std::numeric_limits<size_t>::max()};
     bool m_autosize{false};
     bool m_initialised{false};
     bool m_always_show_focus{false};
@@ -905,12 +858,12 @@ private:
     bool m_limit_tooltips_to_clipped_items{true};
     HWND m_wnd_tooltip{nullptr};
     RECT m_rc_tooltip{0};
-    t_size m_tooltip_last_index{std::numeric_limits<t_size>::max()};
-    t_size m_tooltip_last_column{std::numeric_limits<t_size>::max()};
+    size_t m_tooltip_last_index{std::numeric_limits<size_t>::max()};
+    size_t m_tooltip_last_column{std::numeric_limits<size_t>::max()};
 
     bool m_sorting_enabled{false};
     bool m_show_sort_indicators{true};
-    t_size m_sort_column_index{std::numeric_limits<t_size>::max()};
+    size_t m_sort_column_index{std::numeric_limits<size_t>::max()};
     bool m_sort_direction{false};
     EdgeStyle m_edge_style{edge_grey};
     bool m_sizing{false};
@@ -939,8 +892,9 @@ private:
     /**
      * \brief The underlying container window.
      */
-    std::unique_ptr<uih::ContainerWindow> m_container_window;
-    std::unique_ptr<uih::ContainerWindow> m_dummy_theme_window;
-    std::unique_ptr<uih::lv::RendererBase> m_renderer;
+    std::unique_ptr<ContainerWindow> m_container_window;
+    std::unique_ptr<ContainerWindow> m_dummy_theme_window;
+    std::unique_ptr<lv::RendererBase> m_renderer;
 };
+
 } // namespace uih

@@ -33,7 +33,7 @@ bool ListView::on_wm_keydown(WPARAM wp, LPARAM lp)
     }
     case VK_SPACE: {
         if (is_ctrl_down) {
-            const t_size focus = get_focus_item();
+            const size_t focus = get_focus_item();
 
             if (focus != pfc_infinite)
                 set_item_selected(focus, !get_item_selected(focus));
@@ -42,14 +42,14 @@ bool ListView::on_wm_keydown(WPARAM wp, LPARAM lp)
         return false;
     }
     case VK_RETURN: {
-        const t_size focus = get_focus_item();
+        const size_t focus = get_focus_item();
         if (focus != pfc_infinite)
             execute_default_action(focus, pfc_infinite, true, is_ctrl_down);
         return true;
     }
     case VK_SHIFT:
         if (!(HIWORD(lp) & KF_REPEAT)) {
-            t_size focus = get_focus_item();
+            size_t focus = get_focus_item();
             m_shift_start = focus != pfc_infinite ? focus : 0;
         }
         return false;

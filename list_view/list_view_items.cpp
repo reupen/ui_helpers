@@ -4,7 +4,7 @@
 
 namespace uih {
 
-const char* ListView::get_item_text(t_size index, t_size column)
+const char* ListView::get_item_text(size_t index, size_t column)
 {
     if (index >= m_items.size())
         return "";
@@ -20,7 +20,7 @@ ListView::ItemTransaction::~ItemTransaction() noexcept
     if (!m_start_index)
         return;
 
-    m_list_view.__calculate_item_positions(*m_start_index);
+    m_list_view.calculate_item_positions(*m_start_index);
     m_list_view.update_scroll_info(true, true, false);
     m_list_view.invalidate_all(false, true);
 }
@@ -28,12 +28,12 @@ ListView::ItemTransaction::~ItemTransaction() noexcept
 void ListView::ItemTransaction::insert_items(size_t index_start, size_t count, const InsertItem* items)
 {
     m_start_index = std::min(index_start, m_start_index.value_or(index_start));
-    m_list_view.__insert_items_v3(index_start, count, items);
+    m_list_view.insert_items_in_internal_state(index_start, count, items);
 }
 
 void ListView::ItemTransaction::remove_items(const pfc::bit_array& mask)
 {
-    m_list_view.__remove_items(mask);
+    m_list_view.remove_items_in_internal_state(mask);
     m_start_index = 0;
 }
 
@@ -42,27 +42,27 @@ ListView::ItemTransaction ListView::start_transaction()
     return {*this};
 }
 
-void ListView::insert_items(t_size index_start, t_size count, const InsertItem* items)
+void ListView::insert_items(size_t index_start, size_t count, const InsertItem* items)
 {
-    __insert_items_v3(index_start, count, items);
-    __calculate_item_positions(index_start);
+    insert_items_in_internal_state(index_start, count, items);
+    calculate_item_positions(index_start);
     // profiler(pvt_render);
     update_scroll_info();
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
-void ListView::replace_items(t_size index_start, t_size count, const InsertItem* items)
+void ListView::replace_items(size_t index_start, size_t count, const InsertItem* items)
 {
-    __replace_items_v2(index_start, count, items);
-    __calculate_item_positions(index_start);
+    replace_items_in_internal_state(index_start, count, items);
+    calculate_item_positions(index_start);
     update_scroll_info();
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
 void ListView::remove_items(const pfc::bit_array& mask)
 {
-    __remove_items(mask);
-    __calculate_item_positions();
+    remove_items_in_internal_state(mask);
+    calculate_item_positions();
     update_scroll_info();
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
@@ -78,21 +78,21 @@ void ListView::remove_all_items()
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
-void ListView::__replace_items_v2(t_size index_start, t_size countl, const InsertItem* items)
+void ListView::replace_items_in_internal_state(size_t index_start, size_t countl, const InsertItem* items)
 {
     std::vector<t_item_ptr> items_prev(m_items);
-    t_size l;
-    t_size countitems = m_items.size();
-    t_size newgroupcount = 0;
-    t_size oldgroupcount = 0;
+    size_t l;
+    size_t countitems = m_items.size();
+    size_t newgroupcount = 0;
+    size_t oldgroupcount = 0;
 
     // Calculate old group count
     {
-        t_size countl2 = index_start + countl < countitems ? countl + 1 : countl;
+        size_t countl2 = index_start + countl < countitems ? countl + 1 : countl;
         for (l = 0; l < countl2; l++) {
-            t_size i;
-            t_size count = m_group_count;
-            t_size index = l + index_start;
+            size_t i;
+            size_t count = m_group_count;
+            size_t index = l + index_start;
             for (i = 0; i < count; i++) {
                 if ((!index || m_items[index - 1]->m_groups[i] != m_items[index]->m_groups[i]))
                     oldgroupcount++;
@@ -103,9 +103,9 @@ void ListView::__replace_items_v2(t_size index_start, t_size countl, const Inser
 
     {
         for (l = 0; l < countl; l++) {
-            t_size i;
-            t_size count = m_group_count;
-            t_size index = l + index_start;
+            size_t i;
+            size_t count = m_group_count;
+            size_t index = l + index_start;
             t_item_ptr item;
             t_item_ptr item_old;
             item_old = m_items[index];
@@ -149,7 +149,7 @@ void ListView::__replace_items_v2(t_size index_start, t_size countl, const Inser
                     t_group_ptr test;
                     {
                         test = m_items[index + 1]->m_groups[i];
-                        t_size j = index + 1;
+                        size_t j = index + 1;
                         while (j < countitems && test == m_items[j]->m_groups[i]) {
                             m_items[j]->m_groups[i] = item->m_groups[i];
                             j++;
@@ -175,7 +175,7 @@ void ListView::__replace_items_v2(t_size index_start, t_size countl, const Inser
                             if (m_items[index + 1]->m_groups[i] != m_items[index]->m_groups[i]) {
                                 t_group_ptr newgroup = storage_create_group();
                                 newgroup->m_text = (items_prev[index]->m_groups[i]->m_text);
-                                t_size j = index + 1;
+                                size_t j = index + 1;
                                 while (j < countitems && items_prev[index]->m_groups[i] == items_prev[j]->m_groups[i]) {
                                     m_items[j]->m_groups[i] = newgroup;
                                     j++;
@@ -188,11 +188,11 @@ void ListView::__replace_items_v2(t_size index_start, t_size countl, const Inser
         }
     }
     {
-        t_size countl2 = index_start + countl < countitems ? countl + 1 : countl;
+        size_t countl2 = index_start + countl < countitems ? countl + 1 : countl;
         for (l = 0; l < countl2; l++) {
-            t_size i;
-            t_size count = m_group_count;
-            t_size index = l + index_start;
+            size_t i;
+            size_t count = m_group_count;
+            size_t index = l + index_start;
             for (i = 0; i < count; i++) {
                 if ((!index || m_items[index - 1]->m_groups[i] != m_items[index]->m_groups[i]))
                     newgroupcount++;
@@ -200,7 +200,7 @@ void ListView::__replace_items_v2(t_size index_start, t_size countl, const Inser
         }
     }
     {
-        t_size j = index_start + countl;
+        size_t j = index_start + countl;
 
         // console::formatter() << newgroupcount << " " << oldgroupcount;
 
@@ -211,9 +211,9 @@ void ListView::__replace_items_v2(t_size index_start, t_size countl, const Inser
     }
 }
 
-void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const InsertItem* items)
+void ListView::insert_items_in_internal_state(size_t index_start, size_t pcountitems, const InsertItem* items)
 {
-    t_size countl = pcountitems;
+    size_t countl = pcountitems;
     m_items.insert(m_items.begin() + index_start, countl, t_item_ptr());
 
     if (m_highlight_selected_item_index != pfc_infinite && m_highlight_selected_item_index >= index_start)
@@ -222,16 +222,16 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
     const std::optional<std::vector<t_item_ptr>> items_prev
         = m_group_count > 0 ? std::make_optional(m_items) : std::nullopt;
 
-    t_size countitems = m_items.size();
-    t_size newgroupcount = 0;
-    t_size oldgroupcount = 0;
+    size_t countitems = m_items.size();
+    size_t newgroupcount = 0;
+    size_t oldgroupcount = 0;
 
     // Calculate old group count
     {
-        t_size index = index_start + countl;
+        size_t index = index_start + countl;
         if (index < countitems) {
-            t_size i;
-            t_size count = m_group_count;
+            size_t i;
+            size_t count = m_group_count;
             for (i = 0; i < count; i++) {
                 if ((!index_start || m_items[index_start - 1]->m_groups[i] != m_items[index]->m_groups[i]))
                     oldgroupcount++;
@@ -245,8 +245,8 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
         t_item_ptr* p_items = m_items.data();
 
         concurrency::parallel_for(size_t{0}, countl, [this, p_items, index_start, items](size_t l) {
-            t_size count = m_group_count;
-            t_size index = l + index_start;
+            size_t count = m_group_count;
+            size_t index = l + index_start;
             Item* item;
             item = storage_create_item();
             p_items[index] = item;
@@ -255,9 +255,9 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
         });
 
         for (size_t l = 0; l < countl; l++) {
-            t_size i;
-            t_size count = m_group_count;
-            t_size index = l + index_start;
+            size_t i;
+            size_t count = m_group_count;
+            size_t index = l + index_start;
             Item* item = p_items[index].get_ptr();
 
             item->m_display_index = index ? p_items[index - 1]->m_display_index + 1 : 0;
@@ -292,7 +292,7 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
                     t_group_ptr test;
                     {
                         test = m_items[index + 1]->m_groups[i];
-                        t_size j = index + 1;
+                        size_t j = index + 1;
                         while (j < countitems && test == m_items[j]->m_groups[i]) {
                             m_items[j]->m_groups[i] = item->m_groups[i];
                             j++;
@@ -310,18 +310,18 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
         }
     }
     {
-        t_size index = index_start + countl;
+        size_t index = index_start + countl;
         if (m_group_count > 0 && index_start && index < countitems) {
             const auto& items_prev_value = *items_prev;
 
-            const t_size index_prev = index_start - 1;
-            const t_size count = m_group_count;
-            for (t_size i = 0; i < count; i++) {
+            const size_t index_prev = index_start - 1;
+            const size_t count = m_group_count;
+            for (size_t i = 0; i < count; i++) {
                 if (items_prev_value[index_prev]->m_groups[i] == items_prev_value[index]->m_groups[i]) {
                     if (m_items[index]->m_groups[i] != m_items[index - 1]->m_groups[i]) {
                         t_group_ptr newgroup = storage_create_group();
                         newgroup->m_text = (items_prev_value[index_prev]->m_groups[i]->m_text);
-                        t_size j = index;
+                        size_t j = index;
                         while (j < countitems
                             && items_prev_value[index_prev]->m_groups[i] == items_prev_value[j]->m_groups[i]) {
                             m_items[j]->m_groups[i] = newgroup;
@@ -335,11 +335,11 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
 
     // Determine new group count
     {
-        t_size countl2 = index_start + countl < countitems ? countl + 1 : countl;
+        size_t countl2 = index_start + countl < countitems ? countl + 1 : countl;
         for (size_t l = 0; l < countl2; l++) {
-            t_size i;
-            t_size count = m_group_count;
-            t_size index = l + index_start;
+            size_t i;
+            size_t count = m_group_count;
+            size_t index = l + index_start;
             for (i = 0; i < count; i++) {
                 if ((!index || m_items[index - 1]->m_groups[i] != m_items[index]->m_groups[i]))
                     newgroupcount++;
@@ -349,8 +349,8 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
 
     // Correct subsequent display indices
     {
-        const t_size j_start = index_start + countl;
-        t_size j = j_start;
+        const size_t j_start = index_start + countl;
+        size_t j = j_start;
 
         // console::formatter() << newgroupcount << " " << oldgroupcount;
 
@@ -361,7 +361,7 @@ void ListView::__insert_items_v3(t_size index_start, t_size pcountitems, const I
     }
 }
 
-void ListView::__calculate_item_positions(t_size index_start)
+void ListView::calculate_item_positions(size_t index_start)
 {
     if (index_start >= get_item_count())
         return;
@@ -378,8 +378,8 @@ void ListView::__calculate_item_positions(t_size index_start)
         else
             y_pointer = get_item_position(index_start - 1) + get_item_height(index_start - 1);
     }
-    t_size i;
-    t_size count = m_items.size();
+    size_t i;
+    size_t count = m_items.size();
     int group_height_counter = 0;
     const auto group_minimum_inner_height = get_group_minimum_inner_height();
     for (i = index_start; i < count; i++) {
@@ -396,32 +396,32 @@ void ListView::__calculate_item_positions(t_size index_start)
     }
 }
 
-void ListView::remove_item(t_size index)
+void ListView::remove_item(size_t index)
 {
     if (m_timer_inline_edit)
         exit_inline_edit();
-    __remove_item(index);
-    __calculate_item_positions();
+    remove_item_in_internal_state(index);
+    calculate_item_positions();
     update_scroll_info();
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
-void ListView::__remove_items(const pfc::bit_array& mask)
+void ListView::remove_items_in_internal_state(const pfc::bit_array& mask)
 {
     if (m_timer_inline_edit)
         exit_inline_edit();
 
     for (size_t i = m_items.size(); i; i--) {
         if (mask[i - 1])
-            __remove_item(i - 1);
+            remove_item_in_internal_state(i - 1);
     }
 }
 
-void ListView::__remove_item(t_size index)
+void ListView::remove_item_in_internal_state(size_t index)
 {
-    t_size gc = 0;
-    t_size k;
-    t_size count2 = m_items[index]->m_groups.size();
+    size_t gc = 0;
+    size_t k;
+    size_t count2 = m_items[index]->m_groups.size();
 
     // if (index)
     {
@@ -440,10 +440,10 @@ void ListView::__remove_item(t_size index)
 
     if (index < m_items.size()) {
         int item_height = m_item_height;
-        t_size j;
+        size_t j;
         if (index) {
-            t_size i;
-            t_size count = m_items[index]->m_groups.size();
+            size_t i;
+            size_t count = m_items[index]->m_groups.size();
             for (i = 0; i < count; i++) {
                 if (!GROUP_STRING_COMPARE(
                         m_items[index - 1]->m_groups[i]->m_text, m_items[index]->m_groups[i]->m_text)) {
