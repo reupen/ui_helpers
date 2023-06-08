@@ -2,6 +2,38 @@
 
 namespace uih {
 
+lv::SavedScrollPosition ListView::save_scroll_position() const
+{
+    // Work out where the scroll position is proportionally in the item at the
+    // scroll position, or between the previous and next items if the scroll
+    // position is between items
+
+    const auto previous_item_index = get_item_at_or_before(m_scroll_position);
+    const auto next_item_index = get_item_at_or_after(m_scroll_position);
+    const auto next_item_bottom = get_item_position_bottom(next_item_index);
+    const auto previous_item_top = get_item_position(previous_item_index);
+
+    // If next_item_bottom == previous_item_bottom == 0, there are probably no items
+    const auto proportional_position = next_item_bottom != previous_item_top
+        ? static_cast<double>(m_scroll_position - previous_item_top)
+            / static_cast<double>(next_item_bottom - previous_item_top)
+        : 0.0;
+
+    return {previous_item_index, next_item_index, proportional_position};
+}
+
+void ListView::restore_scroll_position(const lv::SavedScrollPosition& position)
+{
+    const auto new_next_item_bottom = get_item_position_bottom(position.next_item_index);
+    const auto new_previous_item_top = get_item_position(position.previous_item_index);
+    const auto new_position
+        = position.proportional_position * static_cast<double>(new_next_item_bottom - new_previous_item_top)
+        + new_previous_item_top;
+    const auto new_position_rounded = gsl::narrow<int>(std::lround(new_position));
+
+    update_scroll_info(true, true, true, new_position_rounded);
+}
+
 void ListView::ensure_visible(size_t index, EnsureVisibleMode mode)
 {
     if (index > m_items.size())
@@ -116,28 +148,24 @@ void ListView::scroll_from_scroll_bar(short scroll_bar_command, bool b_horizonta
     scroll(pos, b_horizontal);
 }
 
-void ListView::update_vertical_scroll_info(bool redraw)
+void ListView::update_vertical_scroll_info(bool redraw, std::optional<int> new_vertical_position)
 {
     const auto rc = get_items_rect();
+    const auto old_scroll_position = m_scroll_position;
 
-    size_t old_scroll_position = m_scroll_position;
-    SCROLLINFO scroll;
-    memset(&scroll, 0, sizeof(SCROLLINFO));
+    SCROLLINFO scroll{};
     scroll.cbSize = sizeof(SCROLLINFO);
     scroll.fMask = SIF_RANGE | SIF_PAGE | SIF_POS;
     scroll.nMin = 0;
-    size_t count = m_items.size();
+    const auto count = m_items.size();
     scroll.nMax = count ? get_item_group_bottom(count - 1) : 0;
     scroll.nPage = RECT_CY(rc);
-    scroll.nPos = m_scroll_position;
-    bool b_old_show = (GetWindowLongPtr(get_wnd(), GWL_STYLE) & WS_VSCROLL) != 0;
-    ;
+    scroll.nPos = new_vertical_position.value_or(m_scroll_position);
+
     m_scroll_position = SetScrollInfo(get_wnd(), SB_VERT, &scroll, redraw);
     GetScrollInfo(get_wnd(), SB_VERT, &scroll);
-    bool b_show = (GetWindowLongPtr(get_wnd(), GWL_STYLE) & WS_VSCROLL) != 0; // scroll.nPage < (UINT)scroll.nMax;
-    // if (b_old_show != b_show)
-    // BOOL ret = ShowScrollBar(get_wnd(), SB_VERT, b_show);
-    if (m_scroll_position != old_scroll_position /* || b_old_show != b_show*/)
+
+    if (new_vertical_position || m_scroll_position != old_scroll_position)
         invalidate_all();
 }
 
@@ -179,12 +207,13 @@ void ListView::update_horizontal_scroll_info(bool redraw)
     }
 }
 
-void ListView::update_scroll_info(bool b_vertical, bool b_horizontal, bool redraw)
+void ListView::update_scroll_info(
+    bool b_vertical, bool b_horizontal, bool redraw, std::optional<int> new_vertical_position)
 {
-    // god this is a bit complicated when showing h scrollbar causes need for v scrollbar (and vv)
+    // Note the dependency between the two scroll bars – showing one can cause the other to be required
 
     if (b_vertical) {
-        update_vertical_scroll_info(redraw);
+        update_vertical_scroll_info(redraw, new_vertical_position);
     }
     if (b_horizontal) {
         update_horizontal_scroll_info(redraw);

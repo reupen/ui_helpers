@@ -2,33 +2,17 @@
 
 namespace uih {
 
+void ListView::on_first_show()
+{
+    if (const size_t focus = get_focus_item(); focus != std::numeric_limits<size_t>::max())
+        ensure_visible(focus);
+}
+
 void ListView::refresh_item_positions()
 {
-    // Work out where the scroll position is proportionally in the item at the
-    // scroll position, or between the previous and next items if the scroll
-    // position is between items
-    const auto previous_item_index = get_item_at_or_before(m_scroll_position);
-    const auto next_item_index = get_item_at_or_after(m_scroll_position);
-    const auto next_item_bottom = get_item_position_bottom(next_item_index);
-    const auto previous_item_top = get_item_position(previous_item_index);
-    // If next_item_bottom == previous_item_bottom == 0, there are probably no items
-    const auto proportional_position = next_item_bottom != previous_item_top
-        ? static_cast<double>(m_scroll_position - previous_item_top)
-            / static_cast<double>(next_item_bottom - previous_item_top)
-        : 0.0;
-
+    const auto position = save_scroll_position();
     calculate_item_positions();
-    update_scroll_info();
-
-    // Restore the scroll position
-    const auto new_next_item_bottom = get_item_position_bottom(next_item_index);
-    const auto new_previous_item_top = get_item_position(previous_item_index);
-    const auto new_position = proportional_position * static_cast<double>(new_next_item_bottom - new_previous_item_top)
-        + new_previous_item_top;
-    const auto new_position_rounded = gsl::narrow<int>(std::lround(new_position));
-    scroll(new_position_rounded, false, true);
-
-    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
+    restore_scroll_position(position);
 }
 
 bool ListView::copy_selected_items_as_text(size_t default_single_item_column)

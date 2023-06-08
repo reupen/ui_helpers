@@ -42,12 +42,17 @@ ListView::ItemTransaction ListView::start_transaction()
     return {*this};
 }
 
-void ListView::insert_items(size_t index_start, size_t count, const InsertItem* items)
+void ListView::insert_items(size_t index_start, size_t count, const InsertItem* items,
+    const std::optional<lv::SavedScrollPosition>& saved_scroll_position)
 {
     insert_items_in_internal_state(index_start, count, items);
     calculate_item_positions(index_start);
-    // profiler(pvt_render);
-    update_scroll_info();
+
+    if (saved_scroll_position)
+        restore_scroll_position(*saved_scroll_position);
+    else
+        update_scroll_info();
+
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
