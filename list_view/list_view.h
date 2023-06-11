@@ -4,6 +4,16 @@
 
 namespace uih {
 
+namespace lv {
+
+struct SavedScrollPosition {
+    int32_t previous_item_index{};
+    int32_t next_item_index{};
+    double proportional_position{};
+};
+
+} // namespace lv
+
 class ListView {
 public:
     static constexpr short IDC_HEADER = 1001;
@@ -180,6 +190,9 @@ public:
     alignment get_column_alignment(size_t index);
     size_t get_column_count();
 
+    lv::SavedScrollPosition save_scroll_position() const;
+    void restore_scroll_position(const lv::SavedScrollPosition& position);
+
     void _set_scroll_position(int val) { m_scroll_position = val; }
 
     [[nodiscard]] int _get_scroll_position() const { return m_scroll_position; }
@@ -223,7 +236,8 @@ public:
     void update_column_sizes();
 
     ItemTransaction start_transaction();
-    void insert_items(size_t index_start, size_t count, const InsertItem* items);
+    void insert_items(size_t index_start, size_t count, const InsertItem* items,
+        const std::optional<lv::SavedScrollPosition>& saved_scroll_position = std::nullopt);
 
     template <class TItems>
     void replace_items(size_t index_start, const TItems& items)
@@ -236,7 +250,8 @@ public:
     void remove_all_items();
 
     void hit_test_ex(POINT pt_client, HitTestResult& result);
-    void update_scroll_info(bool b_vertical = true, bool b_horizontal = true, bool redraw = true);
+    void update_scroll_info(bool b_vertical = true, bool b_horizontal = true, bool redraw = true,
+        std::optional<int> new_vertical_position = std::nullopt);
     ItemVisibility get_item_visibility(size_t index);
     bool is_partially_visible(size_t index);
     bool is_fully_visible(size_t index);
@@ -653,6 +668,8 @@ protected:
     void focus_search_box();
 
 private:
+    virtual void on_first_show();
+
     virtual void notify_on_focus_item_change(size_t new_index) {}
 
     virtual void notify_on_initialisation() {} // set settings here
@@ -730,7 +747,7 @@ private:
 
     virtual void notify_exit_inline_edit() {}
 
-    void update_vertical_scroll_info(bool redraw = true);
+    void update_vertical_scroll_info(bool redraw = true, std::optional<int> new_vertical_position = std::nullopt);
     void update_horizontal_scroll_info(bool redraw = true);
 
     [[nodiscard]] unsigned calculate_scroll_timer_speed() const;

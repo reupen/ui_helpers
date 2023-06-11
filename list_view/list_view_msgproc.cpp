@@ -593,9 +593,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         return DefWindowProc(wnd, msg, wp, lp) | DLGC_WANTARROWS;
     case WM_SHOWWINDOW:
         if (wp == TRUE && lp == 0 && !m_shown) {
-            size_t focus = get_focus_item();
-            if (focus != pfc_infinite)
-                ensure_visible(focus);
+            on_first_show();
             m_shown = true;
         }
         break;
