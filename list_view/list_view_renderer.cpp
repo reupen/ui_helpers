@@ -335,8 +335,10 @@ void lv::DefaultRenderer::render_focus_rect(RendererContext context, bool should
         }
     }
 
-    if (context.colours.m_use_custom_active_item_frame) {
-        draw_rect_outline(context.dc, rc, context.colours.m_active_item_frame, scale_dpi_value(1));
+    if (context.colours.m_use_custom_active_item_frame || (context.m_use_dark_mode && context.colours.m_themed)) {
+        const auto colour
+            = context.colours.m_use_custom_active_item_frame ? context.colours.m_active_item_frame : RGB(119, 119, 119);
+        draw_rect_outline(context.dc, rc, colour, scale_dpi_value(1));
     } else if (!should_hide_focus) {
         // We only obey should_hide_focus for traditional dotted focus rectangles, similar to how
         // Windows behaves
