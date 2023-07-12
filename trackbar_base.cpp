@@ -10,6 +10,8 @@ BOOL TrackbarBase::create_tooltip(const TCHAR* text, POINT pt)
         WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, get_wnd(),
         nullptr, mmh::get_current_instance(), nullptr);
 
+    set_tooltip_theme();
+
     SetWindowPos(m_wnd_tooltip, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
     TOOLINFO ti{};
@@ -20,7 +22,7 @@ BOOL TrackbarBase::create_tooltip(const TCHAR* text, POINT pt)
     ti.hinst = mmh::get_current_instance();
     ti.lpszText = const_cast<TCHAR*>(text);
 
-    uih::tooltip_add_tool(m_wnd_tooltip, &ti);
+    tooltip_add_tool(m_wnd_tooltip, &ti);
 
     m_cursor_height = get_pointer_height();
 
@@ -28,6 +30,13 @@ BOOL TrackbarBase::create_tooltip(const TCHAR* text, POINT pt)
     SendMessage(m_wnd_tooltip, TTM_TRACKACTIVATE, TRUE, reinterpret_cast<LPARAM>(&ti));
 
     return TRUE;
+}
+
+void TrackbarBase::set_tooltip_theme() const
+{
+    if (m_wnd_tooltip) {
+        SetWindowTheme(m_wnd_tooltip, m_are_tooltips_dark ? L"DarkMode_Explorer" : nullptr, nullptr);
+    }
 }
 
 void TrackbarBase::destroy_tooltip()
@@ -69,6 +78,12 @@ void TrackbarBase::set_show_tooltips(bool val)
     m_show_tooltips = val;
     if (!val)
         destroy_tooltip();
+}
+
+void TrackbarBase::set_are_tooltips_dark(bool are_tooltips_dark)
+{
+    m_are_tooltips_dark = are_tooltips_dark;
+    set_tooltip_theme();
 }
 
 void TrackbarBase::set_position_internal(unsigned pos)
