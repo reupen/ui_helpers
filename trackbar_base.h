@@ -297,6 +297,11 @@ public:
     void set_show_tooltips(bool b_show);
 
     /**
+     * \brief Set whether tooltips are dark themed.
+     */
+    void set_are_tooltips_dark(bool are_tooltips_dark);
+
+    /**
      * Default constructor for TrackbarBase class
      */
     TrackbarBase()
@@ -362,7 +367,7 @@ private:
 
     /**
      * Used internally by the track bar.\n
-     * Used to calulate the position at a given point.
+     * Used to calculate the position at a given point.
      *
      * \param [in]    pt            Client co-ordinate to test.
      * \return                      Position at pt specified.
@@ -377,6 +382,11 @@ private:
      * \param [in]    pt            Position of the mouse pointer, in screen co-ordinates.
      */
     BOOL create_tooltip(const TCHAR* text, POINT pt);
+
+    /**
+     * \brief Set the window theme of the tooltip.
+     */
+    void set_tooltip_theme() const;
 
     /**
      * Used internally by the track bar.\n
@@ -442,6 +452,8 @@ private:
      * Show tooltips state.
      */
     bool m_show_tooltips{false};
+
+    bool m_are_tooltips_dark{};
 
     /**
      * Window focus was obtained from.
