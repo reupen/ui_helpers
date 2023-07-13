@@ -326,8 +326,6 @@ BOOL text_out_colours_tab(HDC dc, const char* display, size_t display_len, int l
 
     auto ptr = display_len;
     int tab_ptr = 0;
-    int written = 0;
-    int clip_x = clip.right;
     RECT t_clip = clip;
 
     do {

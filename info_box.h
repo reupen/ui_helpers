@@ -234,7 +234,7 @@ private:
             }
             break;
         case WM_CLOSE:
-            auto container_window{move(m_container_window)};
+            auto container_window{std::move(m_container_window)};
             container_window->destroy();
             return 0;
         }

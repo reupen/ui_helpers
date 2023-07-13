@@ -1,4 +1,4 @@
-#include "../stdafx.h"
+#include "stdafx.h"
 
 namespace uih {
 
@@ -246,10 +246,9 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     }
         return 0;
     case WM_LBUTTONUP: {
-        POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
         if (m_selecting_move && !m_selecting_moved && !m_lbutton_down_ctrl) {
             if (m_selecting_start < m_items.size()) {
-                if (!m_inline_edit_prevent && 1 && get_item_selected(m_selecting_start) && true /*m_prev_sel*/) {
+                if (!m_inline_edit_prevent && get_item_selected(m_selecting_start)) {
                     {
                         exit_inline_edit();
                         pfc::list_t<size_t> indices;

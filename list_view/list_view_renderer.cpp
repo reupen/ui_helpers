@@ -1,4 +1,4 @@
-#include "../stdafx.h"
+#include "stdafx.h"
 
 namespace uih {
 
@@ -69,7 +69,6 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
 
         size_t j;
         size_t countj = m_items[i]->m_groups.size();
-        size_t counter = 0;
         for (j = 0; j < countj; j++) {
             if (!i || m_items[i]->m_groups[j] != m_items[i - 1]->m_groups[j]) {
                 t_group_ptr p_group = m_items[i]->m_groups[j];
@@ -85,8 +84,6 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
                 }
                 m_renderer->render_group(
                     context, i, j, p_group->m_text.get_ptr(), cx_space * level_spacing_size, j, rc);
-
-                counter++;
             }
         }
 
@@ -253,7 +250,7 @@ void lv::DefaultRenderer::render_item(RendererContext context, size_t index, std
 {
     int theme_state = NULL;
     if (b_selected) {
-        if (b_highlight || b_focused && b_window_focused)
+        if (b_highlight || (b_focused && b_window_focused))
             theme_state = LISS_HOTSELECTED;
         else if (b_window_focused)
             theme_state = LISS_SELECTED;

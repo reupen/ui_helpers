@@ -107,7 +107,7 @@ size_t tree_view_get_child_index(HWND wnd_tv, HTREEITEM ti)
 {
     HTREEITEM item = ti;
     unsigned n = 0;
-    while (item = TreeView_GetPrevSibling(wnd_tv, item))
+    while ((item = TreeView_GetPrevSibling(wnd_tv, item)))
         n++;
     return n;
 }

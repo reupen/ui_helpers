@@ -14,12 +14,10 @@ void paint_subclassed_window_with_buffering(HWND wnd, WNDPROC window_proc)
 
 void draw_rect_outline(HDC dc, const RECT& rc, COLORREF colour, int width)
 {
-    wil::unique_hpen pen(CreatePen(PS_SOLID | PS_INSIDEFRAME, width, colour));
-    HBRUSH old_brush = SelectBrush(dc, GetStockObject(NULL_BRUSH));
-    HPEN old_pen = SelectPen(dc, pen.get());
+    const wil::unique_hpen pen(CreatePen(PS_SOLID | PS_INSIDEFRAME, width, colour));
+    auto _selected_brush = wil::SelectObject(dc, GetStockObject(NULL_BRUSH));
+    auto _selected_pen = wil::SelectObject(dc, pen.get());
     Rectangle(dc, rc.left, rc.top, rc.right, rc.bottom);
-    SelectBrush(dc, old_brush);
-    SelectPen(dc, pen.get());
 }
 
 } // namespace uih

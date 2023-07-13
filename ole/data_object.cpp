@@ -6,7 +6,7 @@
  * The licence terms for the relevant Windows SDK are contained in windows-sdk-6.1-licence.html.
  */
 
-#include "../stdafx.h"
+#include "stdafx.h"
 
 /**************************************************************************
 THIS CODE AND INFORMATION IS PROVIDED 'AS IS' WITHOUT WARRANTY OF
@@ -148,16 +148,15 @@ HRESULT CDataObject::_FindFormatEtc(LPFORMATETC pFE, size_t& index, bool b_check
         return DV_E_DVTARGETDEVICE;
 
     index = 0;
-    bool b_found;
-    if (b_found = m_data_entries.bsearch_t(t_data_entry::g_compare_formatetc_value, pFE, index)) {
+
+    if (m_data_entries.bsearch_t(t_data_entry::g_compare_formatetc_value, pFE, index)) {
         if (!b_checkTymed || (m_data_entries[index].fe.tymed & pFE->tymed)) // why & ?
         {
             return S_OK;
         }
         return DV_E_TYMED;
     }
-    // console::formatter() << "_FindFormatEtc" << ": " << (int)pFE->cfFormat << " " << (int)pFE->dwAspect << " " <<
-    // (int)pFE->lindex << " " << b_found << " " << index;
+
     return DV_E_FORMATETC;
 }
 
