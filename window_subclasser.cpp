@@ -11,7 +11,7 @@ struct WindowState {
 
 std::unordered_map<HWND, WindowState> state_map;
 
-LRESULT handle_subclassed_window_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
+LRESULT __stdcall handle_subclassed_window_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 {
     const auto& state = state_map.at(wnd);
     const auto wnd_proc = state.wnd_proc;

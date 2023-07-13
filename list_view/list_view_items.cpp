@@ -1,4 +1,4 @@
-#include "../stdafx.h"
+#include "stdafx.h"
 
 #define GROUP_STRING_COMPARE strcmp
 
@@ -444,7 +444,6 @@ void ListView::remove_item_in_internal_state(size_t index)
     m_items.erase(m_items.begin() + index);
 
     if (index < m_items.size()) {
-        int item_height = m_item_height;
         size_t j;
         if (index) {
             size_t i;

@@ -130,8 +130,7 @@ void ContainerWindow::register_class()
 
 void ContainerWindow::deregister_class()
 {
-    const auto unregistered = UnregisterClass(m_config.class_name, mmh::get_current_instance());
-    assert(unregistered);
+    assert(UnregisterClass(m_config.class_name, mmh::get_current_instance()));
 }
 
 } // namespace uih
