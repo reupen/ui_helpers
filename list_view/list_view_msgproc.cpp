@@ -742,7 +742,13 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         };
         break;
     case MSG_KILL_INLINE_EDIT:
+        m_inline_edit_prevent_kill = true;
+
+        if (wp == TRUE)
+            save_inline_edit();
+
         exit_inline_edit();
+        m_inline_edit_prevent_kill = false;
         return 0;
     case WM_CONTEXTMENU: {
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};

@@ -353,7 +353,7 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<size_t>& indices,
                   const auto lpmhs = reinterpret_cast<LPMOUSEHOOKSTRUCT>(lp);
 
                   if (code == HC_ACTION && is_click && m_wnd_inline_edit && lpmhs->hwnd != m_wnd_inline_edit)
-                      PostMessage(get_wnd(), MSG_KILL_INLINE_EDIT, 0, 0);
+                      PostMessage(get_wnd(), MSG_KILL_INLINE_EDIT, TRUE, 0);
 
                   return false;
               });

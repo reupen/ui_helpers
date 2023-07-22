@@ -340,7 +340,11 @@ public:
         return ret;
     }
 
-    void clear_all_items() { m_items.clear(); }
+    void clear_all_items()
+    {
+        m_items.clear();
+        PostMessage(get_wnd(), MSG_KILL_INLINE_EDIT, 0, 0);
+    }
 
     [[nodiscard]] int get_item_group_header_total_height(size_t index) const
     {
