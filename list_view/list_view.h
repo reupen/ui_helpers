@@ -340,7 +340,11 @@ public:
         return ret;
     }
 
-    void clear_all_items() { m_items.clear(); }
+    void clear_all_items()
+    {
+        m_items.clear();
+        PostMessage(get_wnd(), MSG_KILL_INLINE_EDIT, 0, 0);
+    }
 
     [[nodiscard]] int get_item_group_header_total_height(size_t index) const
     {
@@ -805,17 +809,19 @@ private:
     wil::unique_hfont m_header_font;
     wil::unique_hfont m_group_font;
 
+    bool m_use_dark_mode{};
     wil::unique_htheme m_list_view_theme;
     wil::unique_htheme m_items_view_theme;
     wil::unique_htheme m_header_theme;
     wil::unique_htheme m_dd_theme;
 
-    HWND m_wnd_header{nullptr};
-    HWND m_wnd_inline_edit{nullptr};
-    WNDPROC m_proc_inline_edit{nullptr};
-    WNDPROC m_proc_original_inline_edit{nullptr};
+    HWND m_wnd_header{};
+
+    HWND m_wnd_inline_edit{};
+    WNDPROC m_proc_inline_edit{};
+    WNDPROC m_proc_original_inline_edit{};
+    std::unique_ptr<EventToken> m_inline_edit_mouse_hook;
     pfc::string8 m_inline_edit_initial_text;
-    bool m_use_dark_mode{};
     bool m_inline_edit_save{false};
     bool m_inline_edit_saving{false};
     bool m_timer_inline_edit{false};

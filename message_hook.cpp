@@ -78,4 +78,37 @@ void deregister_message_hook(MessageHookType p_type, MessageHook* p_hook)
         g_hooks[type_index].m_hook = nullptr;
     }
 }
+
+class CallbackMessageHook : public MessageHook {
+public:
+    explicit CallbackMessageHook(MessageHookCallback callback) : m_callback(std::move(callback)) {}
+
+private:
+    bool on_hooked_message(MessageHookType type, int code, WPARAM wp, LPARAM lp) override
+    {
+        return m_callback(code, wp, lp);
+    }
+
+    MessageHookCallback m_callback;
+};
+
+struct MessageHookToken : EventToken {
+    MessageHookToken(MessageHookType type, MessageHookCallback callback)
+        : m_type(type)
+        , m_callback_wrapper(std::move(callback))
+    {
+        register_message_hook(m_type, &m_callback_wrapper);
+    }
+    ~MessageHookToken() override { deregister_message_hook(m_type, &m_callback_wrapper); }
+
+private:
+    MessageHookType m_type;
+    CallbackMessageHook m_callback_wrapper;
+};
+
+std::unique_ptr<EventToken> register_message_hook(MessageHookType type, MessageHookCallback callback)
+{
+    return std::make_unique<MessageHookToken>(type, std::move(callback));
+}
+
 } // namespace uih
