@@ -223,7 +223,7 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<size_t>& indices,
     const auto indices_spread = indices[indices_count - 1] - indices[0] + 1;
     const auto items_top = get_item_position(indices[0]);
     const auto items_bottom = get_item_position_bottom(indices[indices_count - 1]);
-    int indices_total_height = std::min(items_bottom - items_top, MAXLONG);
+    const int indices_total_height = std::min(items_bottom - items_top, MAXLONG);
 
     if (m_timer_inline_edit) {
         KillTimer(get_wnd(), EDIT_TIMER_ID);
@@ -345,6 +345,20 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<size_t>& indices,
         get_window_text(m_wnd_inline_edit, m_inline_edit_initial_text);
     }
 
+    if (!m_inline_edit_mouse_hook && m_wnd_inline_edit) {
+        m_inline_edit_mouse_hook
+            = register_message_hook(MessageHookType::type_mouse, [this](int code, WPARAM wp, LPARAM lp) -> bool {
+                  const auto is_click
+                      = wp == WM_LBUTTONDOWN || wp == WM_RBUTTONDOWN || wp == WM_MBUTTONDOWN || wp == WM_XBUTTONDOWN;
+                  const auto lpmhs = reinterpret_cast<LPMOUSEHOOKSTRUCT>(lp);
+
+                  if (code == HC_ACTION && is_click && m_wnd_inline_edit && lpmhs->hwnd != m_wnd_inline_edit)
+                      PostMessage(get_wnd(), MSG_KILL_INLINE_EDIT, 0, 0);
+
+                  return false;
+              });
+    }
+
     set_inline_edit_rect();
 
     SendMessage(m_wnd_inline_edit, EM_SETSEL, 0, -1);
@@ -374,7 +388,7 @@ void ListView::save_inline_edit()
 
 void ListView::exit_inline_edit()
 {
-    // m_inline_edit_autocomplete_entries.release();
+    m_inline_edit_mouse_hook.reset();
     m_inline_edit_autocomplete.release();
     if (m_wnd_inline_edit) {
         DestroyWindow(m_wnd_inline_edit);

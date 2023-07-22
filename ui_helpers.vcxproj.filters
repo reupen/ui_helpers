@@ -47,6 +47,7 @@
       <Filter>Trackbar</Filter>
     </ClInclude>
     <ClInclude Include="window_subclasser.h" />
+    <ClInclude Include="event_token.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="message_hook.cpp" />
