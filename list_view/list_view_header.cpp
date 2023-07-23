@@ -201,7 +201,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
                 if (m_have_indent_column && lpnmh->iItem == 0) {
                     int min_indent = get_item_indentation();
                     if (get_show_group_info_area())
-                        min_indent += get_default_indentation_step();
+                        min_indent += get_indentation_step();
                     if (lpnmh->pitem->cxy < min_indent) {
                         ret = TRUE;
                         return true;
@@ -216,7 +216,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
             if (lpnmh->pitem->mask & HDI_WIDTH) {
                 if (lpnmh->iItem != -1) {
                     if (m_have_indent_column && lpnmh->iItem == 0) {
-                        int new_size = lpnmh->pitem->cxy - get_item_indentation() - get_default_indentation_step();
+                        int new_size = lpnmh->pitem->cxy - get_item_indentation() - get_indentation_step();
                         if (new_size >= 0 && new_size != get_group_info_area_width()) {
                             /*set_group_info_area_size(new_size);
                             if (m_autosize)

@@ -584,15 +584,31 @@ protected:
 
     void on_focus_change(size_t index_prev, size_t index_new);
 
-    void set_group_level_indentation_enabled(bool b_val)
+    void set_group_level_indentation_enabled(bool group_level_indentation_enabled)
     {
-        m_group_level_indentation_enabled = b_val;
+        m_group_level_indentation_enabled = group_level_indentation_enabled;
 
-        // FIXME set after creation?
+        if (m_initialised) {
+            update_column_sizes();
+            build_header();
+            refresh_item_positions();
+        }
+    }
+
+    void set_group_level_indentation_amount(std::optional<int> group_level_indentation_amount)
+    {
+        m_group_level_indentation_amount = group_level_indentation_amount;
+
+        if (m_initialised) {
+            update_column_sizes();
+            build_header();
+            refresh_item_positions();
+        }
     }
 
     int get_item_indentation();
-    int get_default_indentation_step();
+    int get_indentation_step(HDC dc = nullptr) const;
+    int get_default_indentation_step(HDC dc = nullptr) const;
 
     void set_group_info_area_size(int width, int height)
     {
@@ -611,12 +627,18 @@ protected:
 
     int get_group_info_area_total_width()
     {
-        return get_show_group_info_area() ? m_group_info_area_width + get_default_indentation_step() : 0;
+        return get_show_group_info_area() ? m_group_info_area_width + get_indentation_step() : 0;
     }
 
     int get_group_info_area_total_height()
     {
-        return get_show_group_info_area() ? m_group_info_area_height + get_default_indentation_step() : 0;
+        if (!get_show_group_info_area())
+            return 0;
+
+        if (!m_group_level_indentation_enabled)
+            return m_group_info_area_height + get_default_indentation_step();
+
+        return get_show_group_info_area() ? m_group_info_area_height + get_indentation_step() : 0;
     }
 
     void set_show_group_info_area(bool val)
@@ -908,6 +930,7 @@ private:
     // gdi_object_t<HBRUSH>::ptr_t m_search_box_hot_brush, m_search_box_nofocus_brush;
 
     bool m_group_level_indentation_enabled{true};
+    std::optional<int> m_group_level_indentation_amount;
 
     std::vector<t_item_ptr> m_items;
     std::vector<Column> m_columns;

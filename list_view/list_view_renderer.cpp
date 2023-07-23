@@ -9,21 +9,34 @@ int ListView::get_item_indentation()
     const auto rc = get_items_rect();
     int ret = rc.left;
     if (m_group_count)
-        ret += get_default_indentation_step() * gsl::narrow<int>(m_group_count);
+        ret += get_indentation_step() * gsl::narrow<int>(m_group_count);
     return ret;
 }
-int ListView::get_default_indentation_step()
+
+int ListView::get_indentation_step(HDC dc) const
 {
-    int ret = 0;
-    if (m_group_level_indentation_enabled) {
-        HDC dc = GetDC(get_wnd());
-        HFONT font_old = SelectFont(dc, m_items_font.get());
-        const int cx_space = uih::get_text_width(dc, " ", 1);
-        SelectFont(dc, font_old);
-        ReleaseDC(get_wnd(), dc);
-        ret = cx_space * _level_spacing_size;
+    if (!m_group_level_indentation_enabled)
+        return 0;
+
+    if (m_group_level_indentation_amount)
+        return *m_group_level_indentation_amount;
+
+    return get_default_indentation_step(dc);
+}
+
+int ListView::get_default_indentation_step(HDC dc) const
+{
+    int cx_space{};
+
+    if (dc) {
+        cx_space = uih::get_text_width(dc, " ", 1);
+    } else {
+        const auto dc_ = wil::GetDC(get_wnd());
+        auto _ = wil::SelectObject(dc_.get(), m_items_font.get());
+        cx_space = uih::get_text_width(dc_.get(), " ", 1);
     }
-    return ret;
+
+    return cx_space * _level_spacing_size;
 }
 
 void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
@@ -32,7 +45,6 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
     const lv::RendererContext context
         = {colours, m_use_dark_mode, get_wnd(), dc, m_list_view_theme.get(), m_items_view_theme.get()};
 
-    const int level_spacing_size = m_group_level_indentation_enabled ? _level_spacing_size : 0;
     // OffsetWindowOrgEx(dc, m_horizontal_scroll_position, 0, NULL);
     size_t highlight_index = get_highlight_item();
     size_t index_focus = get_focus_item();
@@ -49,8 +61,8 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
 
     size_t i;
     size_t count = m_items.size();
-    const int cx_space = uih::get_text_width(dc, " ", 1);
-    const int item_preindentation = cx_space * level_spacing_size * gsl::narrow<int>(m_group_count) + rc_items.left;
+    const auto indentation_step = get_indentation_step(dc);
+    const int item_preindentation = indentation_step * gsl::narrow<int>(m_group_count) + rc_items.left;
     const int item_indentation = item_preindentation + get_group_info_area_total_width();
     cx = get_columns_display_width() + item_indentation;
 
@@ -82,8 +94,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
                     // OffsetWindowOrgEx(dc, -m_horizontal_scroll_position, 0, NULL);
                     break; // CRUDE
                 }
-                m_renderer->render_group(
-                    context, i, j, p_group->m_text.get_ptr(), cx_space * level_spacing_size, j, rc);
+                m_renderer->render_group(context, i, j, p_group->m_text.get_ptr(), indentation_step, j, rc);
             }
         }
 
