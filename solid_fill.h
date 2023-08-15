@@ -123,7 +123,7 @@ private:
         }
         }
         return DefWindowProc(wnd, msg, wp, lp);
-    };
+    }
 
     Mode m_mode{Mode::SolidFill};
     std::wstring m_theme_class;

@@ -79,7 +79,7 @@ public:
     HWND create(
         HWND wnd_parent, WindowPosition window_position, LPVOID create_param = nullptr, bool use_dialog_units = false);
     void destroy();
-    HWND get_wnd() const { return m_wnd; };
+    HWND get_wnd() const { return m_wnd; }
 
 private:
     static LRESULT WINAPI s_on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);

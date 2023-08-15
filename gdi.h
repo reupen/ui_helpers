@@ -18,7 +18,7 @@ public:
             m_memory_dc.get(), m_paint_rect.left, m_paint_rect.top, SRCCOPY);
     }
 
-    [[nodiscard]] HDC get() const { return m_memory_dc.get(); };
+    [[nodiscard]] HDC get() const { return m_memory_dc.get(); }
 
 private:
     RECT m_paint_rect{};
