@@ -35,7 +35,7 @@ void ListView::set_focus_item(size_t index, bool b_notify)
         if (b_notify)
             notify_on_focus_item_change(index);
     }
-};
+}
 
 bool ListView::get_item_selected(size_t index)
 {
@@ -87,7 +87,7 @@ size_t ListView::storage_get_focus_item()
 void ListView::storage_set_focus_item(size_t index)
 {
     m_focus_index = index;
-};
+}
 
 void ListView::storage_get_selection_state(pfc::bit_array_var& out) // storage
 {

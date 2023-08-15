@@ -3,7 +3,11 @@
 namespace uih {
 class Menu {
 public:
-    enum Flags { flag_checked = (1 << 0), flag_radiochecked = (1 << 1), flag_default = (1 << 2) };
+    enum Flags {
+        flag_checked = (1 << 0),
+        flag_radiochecked = (1 << 1),
+        flag_default = (1 << 2)
+    };
 
     Menu() { m_handle = CreatePopupMenu(); }
     ~Menu()

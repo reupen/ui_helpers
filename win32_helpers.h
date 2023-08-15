@@ -145,7 +145,7 @@ public:
         value = _value;
         dpi = _dpi;
     }
-    TInteger get_scaled_value() const { return scale_dpi_value(value, dpi); };
+    TInteger get_scaled_value() const { return scale_dpi_value(value, dpi); }
 
     IntegerAndDpi(TInteger _value = NULL, uint32_t _dpi = USER_DEFAULT_SCREEN_DPI) : value(_value), dpi(_dpi){};
 };

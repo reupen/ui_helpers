@@ -23,7 +23,13 @@ public:
 
     static constexpr unsigned MSG_KILL_INLINE_EDIT = WM_USER + 3;
 
-    enum { TIMER_SCROLL_UP = 1001, TIMER_SCROLL_DOWN = 1002, TIMER_END_SEARCH, EDIT_TIMER_ID, TIMER_BASE };
+    enum {
+        TIMER_SCROLL_UP = 1001,
+        TIMER_SCROLL_DOWN = 1002,
+        TIMER_END_SEARCH,
+        EDIT_TIMER_ID,
+        TIMER_BASE
+    };
 
     using ColourData = lv::ColourData;
 

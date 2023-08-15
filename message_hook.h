@@ -2,8 +2,8 @@
 
 namespace uih {
 enum class MessageHookType {
-    type_keyboard
-    = 0, // return true in on_hooked_message to prevent the message from being passed to other hooks / actual win proc
+    type_keyboard = 0, // return true in on_hooked_message to prevent the message from being passed to other hooks /
+                       // actual win proc
     type_get_message, // returning true in on_hooked_message stops further hooks being called only. (not recommended!)
     type_message_filter, // WH_MSGFILTER
     type_mouse, // WH_MOUSE
