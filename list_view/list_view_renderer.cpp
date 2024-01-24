@@ -299,6 +299,7 @@ void lv::DefaultRenderer::render_item(RendererContext context, size_t index, std
                                             : context.colours.m_background))
                 .get());
     }
+
     RECT rc_subitem = rc;
 
     for (size_t column_index{0}; column_index < sub_items.size(); ++column_index) {
@@ -323,6 +324,19 @@ void lv::DefaultRenderer::render_focus_rect(RendererContext context, bool should
             context.items_view_theme, theming::items_view_part_focus_rect, theming::items_view_state_focus_rect_normal);
 
     if (use_themed_rect) {
+        auto _ = gsl::finally([&context, result = SaveDC(context.dc)] {
+            if (result)
+                RestoreDC(context.dc, -1);
+        });
+
+        RECT content_rc{};
+        const auto hr = GetThemeBackgroundContentRect(context.items_view_theme, context.dc,
+            theming::items_view_part_focus_rect, theming::items_view_state_focus_rect_normal, &rc, &content_rc);
+
+        if (SUCCEEDED(hr)) {
+            ExcludeClipRect(context.dc, content_rc.left, content_rc.top, content_rc.right, content_rc.bottom);
+        }
+
         DrawThemeBackground(context.items_view_theme, context.dc, theming::items_view_part_focus_rect,
             theming::items_view_state_focus_rect_normal, &rc, nullptr);
 
