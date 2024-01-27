@@ -87,6 +87,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         break;*/
     case WM_THEMECHANGED:
         reopen_themes();
+        RedrawWindow(wnd, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE);
         break;
     case WM_TIMECHANGE:
         notify_on_time_change();

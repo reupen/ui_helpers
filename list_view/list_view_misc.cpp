@@ -563,6 +563,8 @@ void ListView::reopen_themes()
             m_header_theme.reset(OpenThemeData(theme_wnd, L"DarkMode_ItemsView::Header"));
         m_dd_theme.reset(OpenThemeData(get_wnd(), VSCLASS_DRAGDROP));
     }
+
+    m_is_high_contrast_active = is_high_contrast_active();
 }
 
 void ListView::close_themes()

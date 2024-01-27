@@ -42,8 +42,8 @@ int ListView::get_default_indentation_step(HDC dc) const
 void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
 {
     ColourData colours = render_get_colour_data();
-    const lv::RendererContext context
-        = {colours, m_use_dark_mode, get_wnd(), dc, m_list_view_theme.get(), m_items_view_theme.get()};
+    const lv::RendererContext context = {colours, m_use_dark_mode, m_is_high_contrast_active, get_wnd(), dc,
+        m_list_view_theme.get(), m_items_view_theme.get()};
 
     // OffsetWindowOrgEx(dc, m_horizontal_scroll_position, 0, NULL);
     size_t highlight_index = get_highlight_item();

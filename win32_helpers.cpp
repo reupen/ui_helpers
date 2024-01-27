@@ -27,6 +27,14 @@ bool are_keyboard_cues_enabled()
     return a != 0;
 }
 
+bool is_high_contrast_active()
+{
+    HIGHCONTRAST hc{};
+    hc.cbSize = sizeof(HIGHCONTRAST);
+    SystemParametersInfo(SPI_GETHIGHCONTRAST, sizeof(hc), &hc, 0);
+    return (hc.dwFlags & HCF_HIGHCONTRASTON) != 0;
+}
+
 void tree_view_set_explorer_theme(HWND wnd, bool b_reduce_indent)
 {
     if (mmh::is_windows_vista_or_newer()) {
