@@ -25,6 +25,7 @@ struct RendererSubItem {
 struct RendererContext {
     ColourData colours{};
     bool m_use_dark_mode{};
+    bool m_is_high_contrast_active{};
     HWND wnd{};
     HDC dc{};
     HTHEME list_view_theme{};

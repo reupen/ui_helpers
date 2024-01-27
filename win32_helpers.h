@@ -29,6 +29,7 @@ inline KeyboardLParam& GetKeyboardLParam(LPARAM& lp)
 }
 
 bool are_keyboard_cues_enabled();
+bool is_high_contrast_active();
 
 BOOL set_process_dpi_aware();
 

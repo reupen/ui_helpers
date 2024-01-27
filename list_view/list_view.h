@@ -934,6 +934,7 @@ private:
     bool m_search_box_hot{false};
     // HTHEME m_search_box_theme;
     // gdi_object_t<HBRUSH>::ptr_t m_search_box_hot_brush, m_search_box_nofocus_brush;
+    bool m_is_high_contrast_active{};
 
     bool m_group_level_indentation_enabled{true};
     std::optional<int> m_group_level_indentation_amount;
