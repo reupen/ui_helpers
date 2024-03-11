@@ -163,7 +163,6 @@ void ListView::update_vertical_scroll_info(bool redraw, std::optional<int> new_v
     scroll.nPos = new_vertical_position.value_or(m_scroll_position);
 
     m_scroll_position = SetScrollInfo(get_wnd(), SB_VERT, &scroll, redraw);
-    GetScrollInfo(get_wnd(), SB_VERT, &scroll);
 
     if (new_vertical_position || m_scroll_position != old_scroll_position)
         invalidate_all();
@@ -210,14 +209,22 @@ void ListView::update_horizontal_scroll_info(bool redraw)
 void ListView::update_scroll_info(
     bool b_vertical, bool b_horizontal, bool redraw, std::optional<int> new_vertical_position)
 {
+    // Scroll bar updates can cause WM_SIZE (if one of the scroll bars was
+    // shown or hidden), leading to recursive scroll bar updates and
+    // misbehaviour
+    if (m_scroll_bar_update_in_progress)
+        return;
+
+    m_scroll_bar_update_in_progress = true;
+    auto _ = gsl::finally([this] { m_scroll_bar_update_in_progress = false; });
+
     // Note the dependency between the two scroll bars – showing one can cause the other to be required
 
-    if (b_vertical) {
+    if (b_vertical)
         update_vertical_scroll_info(redraw, new_vertical_position);
-    }
-    if (b_horizontal) {
+
+    if (b_horizontal)
         update_horizontal_scroll_info(redraw);
-    }
 }
 
 unsigned ListView::calculate_scroll_timer_speed() const
