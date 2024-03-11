@@ -878,6 +878,7 @@ private:
     HitTestResult m_lbutton_down_hittest;
     int m_scroll_position{0};
     int m_horizontal_scroll_position{0};
+    bool m_scroll_bar_update_in_progress{};
     size_t m_group_count{0};
     int m_item_height{1};
     int m_group_height{1};
