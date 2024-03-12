@@ -18,7 +18,7 @@ public:
      *
      * \see TrackbarBase::set_range
      */
-    virtual void on_position_change(unsigned pos, bool b_tracking){};
+    virtual void on_position_change(unsigned pos, bool b_tracking) {};
 
     /**
      * Called to retrieve tooltip text when tracking
@@ -28,7 +28,7 @@ public:
      *
      * \see TrackbarBase::set_range, TrackbarBase::set_show_tooltips
      */
-    virtual void get_tooltip_text(unsigned pos, TrackbarString& p_out){};
+    virtual void get_tooltip_text(unsigned pos, TrackbarString& p_out) {};
 
     /**
      * Called when the escape or return key changes state whilst the
