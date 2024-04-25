@@ -32,8 +32,11 @@
 #include <Usp10.h>
 #include <CommonControls.h>
 #include <intsafe.h>
+#include <dwrite_3.h>
 
+#include <wil/com.h>
 #include <wil/resource.h>
+#include <wil/win32_helpers.h>
 
 #include "../mmh/stdafx.h"
 
@@ -63,6 +66,8 @@
 #include "gdi.h"
 #include "uniscribe.h"
 #include "uniscribe_text_out.h"
+#include "direct_write.h"
+#include "direct_write_text_out.h"
 #include "list_view/list_view.h"
 #include "drag_image.h"
 #include "info_box.h"

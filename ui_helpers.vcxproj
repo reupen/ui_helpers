@@ -152,6 +152,7 @@
   <ItemGroup>
     <ClInclude Include="container_window.h" />
     <ClInclude Include="dialog.h" />
+    <ClInclude Include="direct_write.h" />
     <ClInclude Include="dpi.h" />
     <ClInclude Include="drag_image.h" />
     <ClInclude Include="event_token.h" />
@@ -169,6 +170,7 @@
     <ClInclude Include="solid_fill.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="uniscribe_text_out.h" />
+    <ClInclude Include="direct_write_text_out.h" />
     <ClInclude Include="theming.h" />
     <ClInclude Include="trackbar.h" />
     <ClInclude Include="trackbar_base.h" />
@@ -179,6 +181,7 @@
   <ItemGroup>
     <ClCompile Include="container_window.cpp" />
     <ClCompile Include="dialog.cpp" />
+    <ClCompile Include="direct_write.cpp" />
     <ClCompile Include="dpi.cpp" />
     <ClCompile Include="drag_image.cpp" />
     <ClCompile Include="gdi.cpp" />
@@ -209,6 +212,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="uniscribe_text_out.cpp" />
+    <ClCompile Include="direct_write_text_out.cpp" />
     <ClCompile Include="trackbar.cpp" />
     <ClCompile Include="trackbar_base.cpp" />
     <ClCompile Include="win32_helpers.cpp" />
