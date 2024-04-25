@@ -168,10 +168,11 @@
     <ClInclude Include="info_box.h" />
     <ClInclude Include="solid_fill.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="text_drawing.h" />
+    <ClInclude Include="uniscribe_text_out.h" />
     <ClInclude Include="theming.h" />
     <ClInclude Include="trackbar.h" />
     <ClInclude Include="trackbar_base.h" />
+    <ClInclude Include="uniscribe.h" />
     <ClInclude Include="win32_helpers.h" />
     <ClInclude Include="window_subclasser.h" />
   </ItemGroup>
@@ -207,7 +208,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="text_drawing.cpp" />
+    <ClCompile Include="uniscribe_text_out.cpp" />
     <ClCompile Include="trackbar.cpp" />
     <ClCompile Include="trackbar_base.cpp" />
     <ClCompile Include="win32_helpers.cpp" />

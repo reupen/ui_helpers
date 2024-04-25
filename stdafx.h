@@ -61,7 +61,8 @@
 #include "theming.h"
 
 #include "gdi.h"
-#include "text_drawing.h"
+#include "uniscribe.h"
+#include "uniscribe_text_out.h"
 #include "list_view/list_view.h"
 #include "drag_image.h"
 #include "info_box.h"
