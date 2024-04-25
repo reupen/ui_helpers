@@ -350,10 +350,30 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<size_t>& indices,
             = register_message_hook(MessageHookType::type_mouse, [this](int code, WPARAM wp, LPARAM lp) -> bool {
                   const auto is_click
                       = wp == WM_LBUTTONDOWN || wp == WM_RBUTTONDOWN || wp == WM_MBUTTONDOWN || wp == WM_XBUTTONDOWN;
+                  const auto is_nc_click = wp == WM_NCLBUTTONDOWN || wp == WM_NCRBUTTONDOWN || wp == WM_NCMBUTTONDOWN
+                      || wp == WM_NCXBUTTONDOWN;
                   const auto lpmhs = reinterpret_cast<LPMOUSEHOOKSTRUCT>(lp);
 
-                  if (code == HC_ACTION && is_click && m_wnd_inline_edit && lpmhs->hwnd != m_wnd_inline_edit)
-                      PostMessage(get_wnd(), MSG_KILL_INLINE_EDIT, TRUE, 0);
+                  if (code == HC_ACTION && (is_click || is_nc_click) && m_wnd_inline_edit
+                      && lpmhs->hwnd != m_wnd_inline_edit) {
+                      const auto is_autocomplete_window
+                          = [is_nc_click, wnd_inline_edit = m_wnd_inline_edit, wnd = lpmhs->hwnd] {
+                                if (is_nc_click || wnd == wnd_inline_edit || wnd == nullptr)
+                                    return false;
+
+                                const auto parent = GetAncestor(wnd, GA_PARENT);
+
+                                if (parent == nullptr)
+                                    return false;
+
+                                std::array<wchar_t, 128> class_name{};
+                                GetClassName(parent, class_name.data(), gsl::narrow<int>(class_name.size()));
+                                return wcsncmp(L"Auto-Suggest Dropdown", class_name.data(), class_name.size()) == 0;
+                            }();
+
+                      if (!is_autocomplete_window)
+                          PostMessage(get_wnd(), MSG_KILL_INLINE_EDIT, TRUE, 0);
+                  }
 
                   return false;
               });
