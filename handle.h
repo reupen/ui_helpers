@@ -35,7 +35,7 @@ public:
     bool is_valid() const { return t_release::is_valid(m_handle); }
 
     handle_container_t() { t_release::set_invalid(m_handle); }
-    handle_container_t(t_handle value) : m_handle(value){};
+    handle_container_t(t_handle value) : m_handle(value) {};
     handle_container_t(t_self&& value) { set(value.detach()); }
     handle_container_t(const t_self& value) = delete;
 
