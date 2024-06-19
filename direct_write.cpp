@@ -1,0 +1,344 @@
+#include "stdafx.h"
+
+namespace uih::direct_write {
+
+namespace {
+
+constexpr COLORREF direct_write_colour_to_colorref(DWRITE_COLOR_F colour)
+{
+    constexpr auto transform_channel
+        = [](auto value) { return gsl::narrow_cast<uint8_t>(std::clamp(std::round(value * 255.0f), 0.0f, 255.0f)); };
+
+    return RGB(transform_channel(colour.r), transform_channel(colour.g), transform_channel(colour.b));
+}
+
+class __declspec(uuid("E50EB289-73D3-481C-B726-09B88105539A")) ColourEffect : public IUnknown {
+public:
+    explicit ColourEffect(COLORREF colour) : m_colour(colour) {}
+
+    COLORREF GetColour() const { return m_colour; }
+
+    HRESULT STDMETHODCALLTYPE QueryInterface(const IID& riid, void** ppvObject) noexcept override
+    {
+        if (__uuidof(ColourEffect) == riid) {
+            AddRef();
+            *ppvObject = this;
+        } else if (__uuidof(IUnknown) == riid) {
+            AddRef();
+            *ppvObject = static_cast<IUnknown*>(this);
+        } else {
+            *ppvObject = nullptr;
+            return E_FAIL;
+        }
+
+        return S_OK;
+    }
+
+    ULONG STDMETHODCALLTYPE AddRef() noexcept override { return ++m_ref_count; }
+
+    ULONG STDMETHODCALLTYPE Release() noexcept override
+    {
+        if (--m_ref_count == 0) {
+            delete this;
+            return 0;
+        }
+
+        return m_ref_count;
+    }
+
+private:
+    std::atomic<ULONG> m_ref_count{};
+    COLORREF m_colour{};
+};
+
+class GdiTextRenderer : public IDWriteTextRenderer {
+public:
+    GdiTextRenderer(wil::com_ptr<IDWriteFactory> factory, IDWriteBitmapRenderTarget* bitmapRenderTarget,
+        IDWriteRenderingParams* renderingParams, COLORREF default_colour);
+
+    HRESULT STDMETHODCALLTYPE QueryInterface(const IID& riid, void** ppvObject) noexcept override
+    {
+        if (__uuidof(IDWriteTextRenderer) == riid) {
+            AddRef();
+            *ppvObject = this;
+        } else if (__uuidof(IDWritePixelSnapping) == riid) {
+            AddRef();
+            *ppvObject = static_cast<IDWritePixelSnapping*>(this);
+        } else if (__uuidof(IUnknown) == riid) {
+            AddRef();
+            *ppvObject = static_cast<IUnknown*>(this);
+        } else {
+            *ppvObject = nullptr;
+            return E_FAIL;
+        }
+
+        return S_OK;
+    }
+
+    ULONG STDMETHODCALLTYPE AddRef() noexcept override { return ++m_ref_count; }
+
+    ULONG STDMETHODCALLTYPE Release() noexcept override
+    {
+        if (--m_ref_count == 0) {
+            delete this;
+            return 0;
+        }
+
+        return m_ref_count;
+    }
+
+    HRESULT STDMETHODCALLTYPE IsPixelSnappingDisabled(void* clientDrawingContext, BOOL* isDisabled) noexcept override
+    {
+        *isDisabled = FALSE;
+        return S_OK;
+    }
+
+    HRESULT STDMETHODCALLTYPE GetCurrentTransform(
+        void* clientDrawingContext, DWRITE_MATRIX* transform) noexcept override
+    {
+        return m_render_target->GetCurrentTransform(transform);
+    }
+
+    HRESULT STDMETHODCALLTYPE GetPixelsPerDip(void* clientDrawingContext, FLOAT* pixelsPerDip) noexcept override
+    {
+        *pixelsPerDip = m_render_target->GetPixelsPerDip();
+        return S_OK;
+    }
+
+    HRESULT STDMETHODCALLTYPE DrawGlyphRun(void* clientDrawingContext, FLOAT baselineOriginX, FLOAT baselineOriginY,
+        DWRITE_MEASURING_MODE measuringMode, const DWRITE_GLYPH_RUN* glyphRun,
+        const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription, IUnknown* clientDrawingEffect) noexcept override
+    {
+        wil::com_ptr_t<ColourEffect> colour_effect;
+        if (clientDrawingEffect) {
+            colour_effect = wil::try_com_query<ColourEffect>(clientDrawingEffect);
+        }
+
+        const COLORREF colour = colour_effect ? colour_effect->GetColour() : m_default_colour;
+
+        wil::com_ptr_t<IDWriteColorGlyphRunEnumerator> colour_glyph_run_enumerator;
+
+        try {
+            colour_glyph_run_enumerator = GetColorGlyphEnumerator(
+                clientDrawingContext, baselineOriginX, baselineOriginY, measuringMode, glyphRun, glyphRunDescription);
+        }
+        CATCH_RETURN()
+
+        if (!colour_glyph_run_enumerator) {
+            return m_render_target->DrawGlyphRun(
+                baselineOriginX, baselineOriginY, measuringMode, glyphRun, m_rendering_params.get(), colour);
+        }
+
+        while (true) {
+            BOOL has_run{};
+
+            RETURN_IF_FAILED(colour_glyph_run_enumerator->MoveNext(&has_run));
+
+            if (!has_run)
+                return S_OK;
+
+            const DWRITE_COLOR_GLYPH_RUN* colour_glyph_run{};
+            RETURN_IF_FAILED(colour_glyph_run_enumerator->GetCurrentRun(&colour_glyph_run));
+
+            const auto colour_run_colour = colour_glyph_run->paletteIndex == 0xffff
+                ? colour
+                : direct_write_colour_to_colorref(colour_glyph_run->runColor);
+
+            RETURN_IF_FAILED(
+                m_render_target->DrawGlyphRun(colour_glyph_run->baselineOriginX, colour_glyph_run->baselineOriginY,
+                    measuringMode, &colour_glyph_run->glyphRun, m_rendering_params.get(), colour_run_colour));
+        }
+    }
+
+    HRESULT STDMETHODCALLTYPE DrawUnderline(void* clientDrawingContext, FLOAT baselineOriginX, FLOAT baselineOriginY,
+        const DWRITE_UNDERLINE* underline, IUnknown* clientDrawingEffect) noexcept override
+    {
+        return E_NOTIMPL;
+    }
+
+    HRESULT STDMETHODCALLTYPE DrawStrikethrough(void* clientDrawingContext, FLOAT baselineOriginX,
+        FLOAT baselineOriginY, const DWRITE_STRIKETHROUGH* strikethrough,
+        IUnknown* clientDrawingEffect) noexcept override
+    {
+        return E_NOTIMPL;
+    }
+
+    HRESULT STDMETHODCALLTYPE DrawInlineObject(void* clientDrawingContext, FLOAT originX, FLOAT originY,
+        IDWriteInlineObject* inlineObject, BOOL isSideways, BOOL isRightToLeft,
+        IUnknown* clientDrawingEffect) noexcept override
+    {
+        return inlineObject->Draw(
+            clientDrawingContext, this, originX, originY, isSideways, isRightToLeft, clientDrawingEffect);
+    }
+
+private:
+    wil::com_ptr_t<IDWriteColorGlyphRunEnumerator> GetColorGlyphEnumerator(void* clientDrawingContext,
+        FLOAT baselineOriginX, FLOAT baselineOriginY, DWRITE_MEASURING_MODE measuringMode,
+        const DWRITE_GLYPH_RUN* glyphRun, const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription)
+    {
+        auto factory = m_factory.try_query<IDWriteFactory2>();
+
+        if (!factory)
+            return {};
+
+        DWRITE_MATRIX transform{};
+        THROW_IF_FAILED(GetCurrentTransform(clientDrawingContext, &transform));
+
+        wil::com_ptr_t<IDWriteColorGlyphRunEnumerator> enumerator;
+
+        const auto hr = factory->TranslateColorGlyphRun(
+            baselineOriginX, baselineOriginY, glyphRun, glyphRunDescription, measuringMode, &transform, 0, &enumerator);
+
+        if (hr == DWRITE_E_NOCOLOR)
+            return {};
+
+        THROW_IF_FAILED(hr);
+
+        return enumerator;
+    }
+
+    std::atomic<ULONG> m_ref_count{};
+    wil::com_ptr_t<IDWriteFactory> m_factory;
+    wil::com_ptr<IDWriteBitmapRenderTarget> m_render_target;
+    wil::com_ptr<IDWriteRenderingParams> m_rendering_params;
+    COLORREF m_default_colour{};
+};
+
+GdiTextRenderer::GdiTextRenderer(wil::com_ptr<IDWriteFactory> factory, IDWriteBitmapRenderTarget* bitmapRenderTarget,
+    IDWriteRenderingParams* renderingParams, COLORREF default_colour)
+    : m_factory(std::move(factory))
+    , m_render_target(bitmapRenderTarget)
+    , m_rendering_params(renderingParams)
+    , m_default_colour(default_colour)
+{
+}
+
+} // namespace
+
+DWRITE_TEXT_METRICS TextLayout::get_metrics() const
+{
+    DWRITE_TEXT_METRICS metrics{};
+    THROW_IF_FAILED(m_text_layout->GetMetrics(&metrics));
+    return metrics;
+}
+
+void TextLayout::set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const
+{
+    const auto colour_effect = wil::com_ptr<ColourEffect>(new ColourEffect(colour));
+    THROW_IF_FAILED(m_text_layout->SetDrawingEffect(colour_effect.get(), text_range));
+}
+
+void TextLayout::render(HDC dc, RECT rect, float x, float y, COLORREF default_colour) const
+{
+    const auto metrics = get_metrics();
+
+    const auto bitmap_width
+        = std::min(wil::rect_width(rect), gsl::narrow_cast<long>(metrics.width * m_scaling_factor + 1));
+    const auto bitmap_height = wil::rect_height(rect);
+    const auto source_x = rect.left + gsl::narrow_cast<int>(x)
+        + (bitmap_width < wil::rect_width(rect) ? gsl::narrow_cast<int>(metrics.left * m_scaling_factor) : 0);
+    const auto source_y = rect.top;
+
+    wil::com_ptr_t<IDWriteBitmapRenderTarget> bitmap_render_target;
+    THROW_IF_FAILED(m_gdi_interop->CreateBitmapRenderTarget(dc, bitmap_width, bitmap_height, &bitmap_render_target));
+    THROW_IF_FAILED(bitmap_render_target->SetPixelsPerDip(m_scaling_factor));
+
+    wil::com_ptr_t<IDWriteRenderingParams> dw_rendering_params;
+    THROW_IF_FAILED(m_factory->CreateRenderingParams(&dw_rendering_params));
+
+    const auto memory_dc = bitmap_render_target->GetMemoryDC();
+
+    wil::com_ptr_t<IDWriteTextRenderer> renderer
+        = new GdiTextRenderer(m_factory, bitmap_render_target.get(), dw_rendering_params.get(), default_colour);
+
+    BitBlt(memory_dc, 0, 0, bitmap_width, bitmap_height, dc, source_x, source_y, SRCCOPY);
+
+    THROW_IF_FAILED(m_text_layout->Draw(NULL, renderer.get(), 0, y / m_scaling_factor));
+
+    BitBlt(dc, source_x, source_y, bitmap_width, bitmap_height, memory_dc, 0, 0, SRCCOPY);
+}
+
+void TextFormat::set_alignment(DWRITE_TEXT_ALIGNMENT alignment) const
+{
+    THROW_IF_FAILED(m_text_format->SetTextAlignment(alignment));
+}
+
+void TextFormat::enable_trimming_sign() const
+{
+    DWRITE_TRIMMING trimming{DWRITE_TRIMMING_GRANULARITY_CHARACTER, 0, 0};
+    THROW_IF_FAILED(m_text_format->SetTrimming(&trimming, m_trimming_sign.get()));
+}
+
+void TextFormat::disable_trimming_sign() const
+{
+    DWRITE_TRIMMING trimming{DWRITE_TRIMMING_GRANULARITY_NONE, 0, 0};
+    THROW_IF_FAILED(m_text_format->SetTrimming(&trimming, nullptr));
+}
+
+int TextFormat::measure_text_width(std::wstring_view text) const
+{
+    try {
+        auto text_layout = create_text_layout(text, 65536.0f, 65536.0f);
+        auto metrics = text_layout.get_metrics();
+        return gsl::narrow_cast<int>((metrics.left + metrics.width) * TextLayout::s_default_scaling_factor() + 1);
+    }
+    CATCH_LOG();
+
+    return 0;
+}
+
+int TextFormat::measure_text_width(std::string_view text) const
+{
+    const auto utf16_text = pfc::stringcvt::string_wide_from_utf8(text.data(), text.length());
+    return measure_text_width({utf16_text.get_ptr(), utf16_text.length()});
+}
+
+TextLayout TextFormat::create_text_layout(std::wstring_view text, float max_width, float max_height) const
+{
+    wil::com_ptr_t<IDWriteTextLayout> text_layout;
+    THROW_IF_FAILED(m_factory->CreateTextLayout(
+        text.data(), gsl::narrow<uint32_t>(text.length()), m_text_format.get(), max_width, max_height, &text_layout));
+
+    return {m_factory, m_gdi_interop, text_layout};
+}
+
+Context::Context()
+{
+    THROW_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), m_factory.put_unknown()));
+    THROW_IF_FAILED(m_factory->GetGdiInterop(&m_gdi_interop));
+}
+
+TextFormat Context::create_text_format(const LOGFONT& log_font)
+{
+    wil::com_ptr_t<IDWriteFont> dw_font;
+    THROW_IF_FAILED(m_gdi_interop->CreateFontFromLOGFONT(&log_font, &dw_font));
+
+    wil::com_ptr_t<IDWriteFontFamily> dw_font_family;
+    THROW_IF_FAILED(dw_font->GetFontFamily(&dw_font_family));
+
+    wil::com_ptr_t<IDWriteLocalizedStrings> dw_family_names;
+    THROW_IF_FAILED(dw_font_family->GetFamilyNames(&dw_family_names));
+
+    uint32_t length{};
+    THROW_IF_FAILED(dw_family_names->GetStringLength(0, &length));
+
+    std::vector<wchar_t> family_name(length + 1, 0);
+
+    THROW_IF_FAILED(dw_family_names->GetString(0, family_name.data(), length + 1));
+
+    const auto font_size
+        = static_cast<float>(-MulDiv(log_font.lfHeight, USER_DEFAULT_SCREEN_DPI, uih::get_system_dpi_cached().cx));
+
+    wil::com_ptr_t<IDWriteTextFormat> text_format;
+    THROW_IF_FAILED(m_factory->CreateTextFormat(family_name.data(), NULL, dw_font->GetWeight(), dw_font->GetStyle(),
+        dw_font->GetStretch(), font_size, L"", &text_format));
+
+    wil::com_ptr_t<IDWriteInlineObject> trimming_sign;
+    THROW_IF_FAILED(m_factory->CreateEllipsisTrimmingSign(text_format.get(), &trimming_sign));
+
+    THROW_IF_FAILED(text_format->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
+
+    return {m_factory, m_gdi_interop, text_format, trimming_sign};
+}
+
+} // namespace uih::direct_write

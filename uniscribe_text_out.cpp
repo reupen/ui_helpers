@@ -1,8 +1,5 @@
 #include "stdafx.h"
 
-SCRIPT_DIGITSUBSTITUTE uih::UniscribeTextRenderer::m_sdg;
-bool uih::UniscribeTextRenderer::m_sdg_valid;
-
 #define ELLIPSIS "\xe2\x80\xa6" //"\x85"
 #define ELLIPSIS_LEN 3
 
