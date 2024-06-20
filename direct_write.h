@@ -58,7 +58,8 @@ class Context {
 public:
     Context();
 
-    TextFormat create_text_format(const LOGFONT& log_font);
+    TextFormat create_text_format(const LOGFONT& log_font, float font_size);
+    std::optional<TextFormat> create_text_format_with_fallback(const LOGFONT& log_font, float font_size) noexcept;
 
 private:
     wil::com_ptr_t<IDWriteFactory> m_factory;

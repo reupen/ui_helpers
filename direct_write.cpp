@@ -308,7 +308,7 @@ Context::Context()
     THROW_IF_FAILED(m_factory->GetGdiInterop(&m_gdi_interop));
 }
 
-TextFormat Context::create_text_format(const LOGFONT& log_font)
+TextFormat Context::create_text_format(const LOGFONT& log_font, float font_size)
 {
     wil::com_ptr_t<IDWriteFont> dw_font;
     THROW_IF_FAILED(m_gdi_interop->CreateFontFromLOGFONT(&log_font, &dw_font));
@@ -326,12 +326,12 @@ TextFormat Context::create_text_format(const LOGFONT& log_font)
 
     THROW_IF_FAILED(dw_family_names->GetString(0, family_name.data(), length + 1));
 
-    const auto font_size
-        = static_cast<float>(-MulDiv(log_font.lfHeight, USER_DEFAULT_SCREEN_DPI, uih::get_system_dpi_cached().cx));
+    const auto fallback_font_size = 20.0f * gsl::narrow_cast<float>(USER_DEFAULT_SCREEN_DPI)
+        / gsl::narrow_cast<float>(get_system_dpi_cached().cx);
 
     wil::com_ptr_t<IDWriteTextFormat> text_format;
     THROW_IF_FAILED(m_factory->CreateTextFormat(family_name.data(), NULL, dw_font->GetWeight(), dw_font->GetStyle(),
-        dw_font->GetStretch(), font_size, L"", &text_format));
+        dw_font->GetStretch(), font_size > 0 ? font_size : fallback_font_size, L"", &text_format));
 
     wil::com_ptr_t<IDWriteInlineObject> trimming_sign;
     THROW_IF_FAILED(m_factory->CreateEllipsisTrimmingSign(text_format.get(), &trimming_sign));
@@ -339,6 +339,24 @@ TextFormat Context::create_text_format(const LOGFONT& log_font)
     THROW_IF_FAILED(text_format->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
 
     return {m_factory, m_gdi_interop, text_format, trimming_sign};
+}
+
+std::optional<TextFormat> Context::create_text_format_with_fallback(const LOGFONT& log_font, float font_size) noexcept
+{
+    try {
+        return create_text_format(log_font, font_size);
+    }
+    CATCH_LOG()
+
+    LOGFONT icon_font{};
+    if (SystemParametersInfo(SPI_GETICONTITLELOGFONT, 0, &icon_font, 0)) {
+        try {
+            return create_text_format(icon_font, font_size);
+        }
+        CATCH_LOG()
+    }
+
+    return {};
 }
 
 } // namespace uih::direct_write
