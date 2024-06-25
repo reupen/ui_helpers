@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+using namespace std::string_view_literals;
+
 namespace uih::direct_write {
 
 namespace {
@@ -228,16 +230,27 @@ void TextLayout::set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const
     THROW_IF_FAILED(m_text_layout->SetDrawingEffect(colour_effect.get(), text_range));
 }
 
-void TextLayout::render(HDC dc, RECT rect, float x, float y, COLORREF default_colour) const
+void TextLayout::render(HDC dc, RECT rect, COLORREF default_colour) const
 {
     const auto metrics = get_metrics();
 
-    const auto bitmap_width
-        = std::min(wil::rect_width(rect), gsl::narrow_cast<long>(metrics.width * m_scaling_factor + 1));
-    const auto bitmap_height = wil::rect_height(rect);
-    const auto source_x = rect.left + gsl::narrow_cast<int>(x)
-        + (bitmap_width < wil::rect_width(rect) ? gsl::narrow_cast<int>(metrics.left * m_scaling_factor) : 0);
-    const auto source_y = rect.top;
+    const auto draw_left_px = gsl::narrow_cast<long>(metrics.left * m_scaling_factor);
+    const auto draw_left_dip = gsl::narrow_cast<float>(draw_left_px) / m_scaling_factor;
+
+    const auto draw_right_px = gsl::narrow_cast<long>((metrics.left + metrics.width) * m_scaling_factor + 1);
+
+    const auto draw_top_px = gsl::narrow_cast<long>(metrics.top * m_scaling_factor);
+    const auto draw_top_dip = gsl::narrow_cast<float>(draw_top_px) / m_scaling_factor;
+
+    const auto draw_bottom_px = gsl::narrow_cast<long>((metrics.top + metrics.height) * m_scaling_factor + 1);
+
+    const auto rect_width = wil::rect_width(rect);
+    const auto rect_height = wil::rect_height(rect);
+
+    const auto bitmap_width = std::min(rect_width, draw_right_px - draw_left_px);
+    const auto bitmap_height = std::min(rect_height, draw_bottom_px - draw_top_px);
+    const auto source_x = rect.left + (bitmap_width < rect_width ? draw_left_px : 0l);
+    const auto source_y = rect.top + (bitmap_height < rect_height ? draw_top_px : 0);
 
     wil::com_ptr_t<IDWriteBitmapRenderTarget> bitmap_render_target;
     THROW_IF_FAILED(m_gdi_interop->CreateBitmapRenderTarget(dc, bitmap_width, bitmap_height, &bitmap_render_target));
@@ -253,7 +266,7 @@ void TextLayout::render(HDC dc, RECT rect, float x, float y, COLORREF default_co
 
     BitBlt(memory_dc, 0, 0, bitmap_width, bitmap_height, dc, source_x, source_y, SRCCOPY);
 
-    THROW_IF_FAILED(m_text_layout->Draw(NULL, renderer.get(), 0, y / m_scaling_factor));
+    THROW_IF_FAILED(m_text_layout->Draw(NULL, renderer.get(), -draw_left_dip, -draw_top_dip));
 
     BitBlt(dc, source_x, source_y, bitmap_width, bitmap_height, memory_dc, 0, 0, SRCCOPY);
 }
@@ -275,14 +288,31 @@ void TextFormat::disable_trimming_sign() const
     THROW_IF_FAILED(m_text_format->SetTrimming(&trimming, nullptr));
 }
 
+int TextFormat::get_minimum_height() const
+{
+    try {
+        auto max_size = 65536.0f;
+        const auto text_layout = create_text_layout(L""sv, max_size, max_size);
+        const auto metrics = text_layout.get_metrics();
+        auto top_half = max_size / 2 - metrics.top;
+        auto bottom_half = metrics.top + metrics.height - max_size / 2;
+
+        return gsl::narrow_cast<int>(
+            std::max(top_half, bottom_half) * 2.0f * TextLayout::s_default_scaling_factor() + 1);
+    }
+    CATCH_LOG()
+
+    return 1;
+}
+
 int TextFormat::measure_text_width(std::wstring_view text) const
 {
     try {
-        auto text_layout = create_text_layout(text, 65536.0f, 65536.0f);
-        auto metrics = text_layout.get_metrics();
+        const auto text_layout = create_text_layout(text, 65536.0f, 65536.0f);
+        const auto metrics = text_layout.get_metrics();
         return gsl::narrow_cast<int>((metrics.left + metrics.width) * TextLayout::s_default_scaling_factor() + 1);
     }
-    CATCH_LOG();
+    CATCH_LOG()
 
     return 0;
 }
@@ -304,7 +334,8 @@ TextLayout TextFormat::create_text_layout(std::wstring_view text, float max_widt
 
 Context::Context()
 {
-    THROW_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), m_factory.put_unknown()));
+    THROW_IF_FAILED(
+        DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory1), m_factory.put_unknown()));
     THROW_IF_FAILED(m_factory->GetGdiInterop(&m_gdi_interop));
 }
 
@@ -337,21 +368,26 @@ TextFormat Context::create_text_format(const LOGFONT& log_font, float font_size)
     THROW_IF_FAILED(m_factory->CreateEllipsisTrimmingSign(text_format.get(), &trimming_sign));
 
     THROW_IF_FAILED(text_format->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
+    THROW_IF_FAILED(text_format->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
 
     return {m_factory, m_gdi_interop, text_format, trimming_sign};
 }
 
-std::optional<TextFormat> Context::create_text_format_with_fallback(const LOGFONT& log_font, float font_size) noexcept
+std::optional<TextFormat> Context::create_text_format_with_fallback(
+    const LOGFONT& log_font, std::optional<float> font_size) noexcept
 {
+    const auto resolved_size = font_size.value_or(-log_font.lfHeight * gsl::narrow<float>(USER_DEFAULT_SCREEN_DPI)
+        / gsl::narrow<float>(get_system_dpi_cached().cx));
+
     try {
-        return create_text_format(log_font, font_size);
+        return create_text_format(log_font, resolved_size);
     }
     CATCH_LOG()
 
     LOGFONT icon_font{};
     if (SystemParametersInfo(SPI_GETICONTITLELOGFONT, 0, &icon_font, 0)) {
         try {
-            return create_text_format(icon_font, font_size);
+            return create_text_format(icon_font, resolved_size);
         }
         CATCH_LOG()
     }

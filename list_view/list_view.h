@@ -227,9 +227,9 @@ public:
         m_dark_edit_background_colour = background_colour;
     }
     void set_vertical_item_padding(int val);
-    void set_font(const LPLOGFONT lplf);
-    void set_group_font(const LPLOGFONT lplf);
-    void set_header_font(const LPLOGFONT lplf);
+    void set_font(const LOGFONT& log_font, std::optional<float> font_size = std::nullopt);
+    void set_group_font(const LOGFONT& log_font, std::optional<float> font_size = std::nullopt);
+    void set_header_font(const LOGFONT& log_font);
     void set_sorting_enabled(bool b_val);
     void set_show_sort_indicators(bool b_val);
     void set_edge_style(uint32_t b_val);
@@ -700,6 +700,11 @@ protected:
     void focus_search_box();
 
 private:
+    struct FontConfig {
+        LOGFONT log_font{};
+        std::optional<float> size;
+    };
+
     virtual void on_first_show();
 
     virtual void notify_on_focus_item_change(size_t new_index) {}
@@ -821,6 +826,9 @@ private:
     void reopen_themes();
     void close_themes();
 
+    void refresh_items_font();
+    void refresh_group_font();
+
     void create_header();
     void destroy_header();
     void set_header_window_theme() const;
@@ -831,11 +839,10 @@ private:
     void destroy_tooltip();
     void set_tooltip_window_theme() const;
     bool is_item_clipped(size_t index, size_t column);
-    int get_text_width(const char* text, size_t length);
+    int get_tooltip_text_width(const char* text, size_t length) const;
 
     wil::unique_hfont m_items_font;
     wil::unique_hfont m_header_font;
-    wil::unique_hfont m_group_font;
 
     bool m_use_dark_mode{};
     wil::unique_htheme m_list_view_theme;
@@ -862,12 +869,12 @@ private:
     COLORREF m_dark_edit_background_colour{};
     COLORREF m_dark_edit_text_colour{RGB(255, 255, 255)};
 
-    LOGFONT m_lf_items{0};
-    LOGFONT m_lf_header{0};
-    LOGFONT m_lf_group_header{0};
-    bool m_lf_items_valid{false};
-    bool m_lf_header_valid{false};
-    bool m_lf_group_header_valid{false};
+    std::optional<FontConfig> m_items_font_config{};
+    std::optional<FontConfig> m_group_font_config{};
+    std::optional<LOGFONT> m_header_log_font{};
+    direct_write::Context::Ptr m_direct_write_context;
+    std::optional<direct_write::TextFormat> m_items_text_format;
+    std::optional<direct_write::TextFormat> m_group_text_format;
 
     bool m_selecting{false};
     bool m_selecting_move{false};

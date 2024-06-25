@@ -269,7 +269,8 @@ void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
 
 int ListView::get_default_item_height()
 {
-    int ret = uih::get_font_height(m_items_font.get()) + m_vertical_item_padding;
+    const auto font_height = m_items_text_format ? m_items_text_format->get_minimum_height() : 0;
+    int ret = font_height + m_vertical_item_padding;
     if (ret < 1)
         ret = 1;
     return ret;
@@ -277,11 +278,13 @@ int ListView::get_default_item_height()
 
 int ListView::get_default_group_height()
 {
-    int ret = uih::get_font_height(m_group_font.get()) + m_vertical_item_padding;
+    const auto font_height = m_group_text_format ? m_items_text_format->get_minimum_height() : 0;
+    int ret = font_height + m_vertical_item_padding;
     if (ret < 1)
         ret = 1;
     return ret;
 }
+
 void ListView::on_focus_change(size_t index_prev, size_t index_new)
 {
     size_t count = m_items.size();
@@ -290,6 +293,7 @@ void ListView::on_focus_change(size_t index_prev, size_t index_new)
     if (index_new < count)
         invalidate_items(index_new, 1);
 }
+
 void ListView::invalidate_all(bool b_children, bool non_client)
 {
     auto flags = RDW_INVALIDATE | (b_children ? RDW_ALLCHILDREN : 0) | (non_client ? RDW_FRAME : 0);
@@ -601,41 +605,64 @@ void ListView::set_vertical_item_padding(int val)
     }
 }
 
-void ListView::set_font(const LPLOGFONT lplf)
+void ListView::set_font(const LOGFONT& log_font, std::optional<float> font_size)
 {
-    m_lf_items = *lplf;
-    m_lf_items_valid = true;
+    m_items_font_config = {log_font, font_size};
+
     if (m_initialised) {
         exit_inline_edit();
         destroy_tooltip();
-        m_items_font.reset(CreateFontIndirect(lplf));
-        m_item_height = get_default_item_height();
+
+        refresh_items_font();
+
         if (m_group_count)
             update_header();
+
         refresh_item_positions();
     }
 }
 
-void ListView::set_group_font(const LPLOGFONT lplf)
+void ListView::set_group_font(const LOGFONT& log_font, std::optional<float> font_size)
 {
-    m_lf_group_header = *lplf;
-    m_lf_group_header_valid = true;
+    m_group_font_config = {log_font, font_size};
+
     if (m_initialised) {
         exit_inline_edit();
         destroy_tooltip();
-        m_group_font.reset(CreateFontIndirect(lplf));
-        m_group_height = get_default_group_height();
+
+        refresh_group_font();
         refresh_item_positions();
     }
 }
 
-void ListView::set_header_font(const LPLOGFONT lplf)
+void ListView::refresh_items_font()
 {
-    m_lf_header = *lplf;
-    m_lf_header_valid = true;
+    if (m_direct_write_context && m_items_font_config)
+        m_items_text_format = m_direct_write_context->create_text_format_with_fallback(
+            m_items_font_config->log_font, m_items_font_config->size);
+
+    if (m_items_font_config)
+        m_items_font.reset(CreateFontIndirect(&m_items_font_config->log_font));
+
+    m_item_height = get_default_item_height();
+}
+
+void ListView::refresh_group_font()
+{
+    if (m_direct_write_context && m_group_font_config)
+        m_group_text_format = m_direct_write_context->create_text_format_with_fallback(
+            m_group_font_config->log_font, m_group_font_config->size);
+
+    m_group_height = get_default_group_height();
+}
+
+void ListView::set_header_font(const LOGFONT& log_font)
+{
+    m_header_log_font = log_font;
+
     if (m_initialised && m_wnd_header) {
         SendMessage(m_wnd_header, WM_SETFONT, NULL, MAKELPARAM(FALSE, 0));
-        m_header_font.reset(CreateFontIndirect(lplf));
+        m_header_font.reset(CreateFontIndirect(&log_font));
         SendMessage(m_wnd_header, WM_SETFONT, (WPARAM)m_header_font.get(), MAKELPARAM(TRUE, 0));
         on_size();
     }

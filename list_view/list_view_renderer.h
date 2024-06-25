@@ -30,6 +30,8 @@ struct RendererContext {
     HDC dc{};
     HTHEME list_view_theme{};
     HTHEME items_view_theme{};
+    std::optional<direct_write::TextFormat> m_item_text_format;
+    std::optional<direct_write::TextFormat> m_group_text_format;
 };
 
 class RendererBase {
