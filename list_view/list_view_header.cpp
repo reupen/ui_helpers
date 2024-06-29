@@ -17,7 +17,7 @@ void ListView::create_header()
     // if (m_show_header)
     {
         if (!m_wnd_header) {
-            m_header_font.reset(m_lf_header_valid ? CreateFontIndirect(&m_lf_header) : uih::create_icon_font());
+            m_header_font.reset(m_header_log_font ? CreateFontIndirect(&*m_header_log_font) : create_icon_font());
             m_wnd_header = CreateWindowEx(0, WC_HEADER, _T("NGLVH"),
                 WS_CHILD | (0) | /*(m_autosize ? 0x0800  : NULL) |*/ HDS_HOTTRACK
                     | (m_allow_header_rearrange ? HDS_DRAGDROP : NULL) | HDS_HORZ | HDS_FULLDRAG

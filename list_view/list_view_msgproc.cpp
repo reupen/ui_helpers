@@ -23,22 +23,33 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             = std::make_unique<ContainerWindow>(ContainerWindowConfig{L"list_view_dummy_theme_window_FJg96cJ"});
         m_dummy_theme_window->create(wnd, {-1, -1, 0, 0});
 
+        m_direct_write_context = direct_write::Context::s_create();
         notify_on_initialisation();
 
         set_window_theme();
         reopen_themes();
 
-        m_items_font.reset(m_lf_items_valid ? CreateFontIndirect(&m_lf_items) : uih::create_icon_font());
-        m_group_font.reset(m_lf_group_header_valid
-                ? CreateFontIndirect(&m_lf_group_header)
-                : (m_lf_items_valid ? CreateFontIndirect(&m_lf_items) : uih::create_icon_font()));
-        m_item_height = get_default_item_height();
-        m_group_height = get_default_group_height();
+        if (!m_items_font_config || !m_group_font_config) {
+            LOGFONT icon_font{};
+            if (SystemParametersInfo(SPI_GETICONTITLELOGFONT, 0, &icon_font, 0)) {
+                if (!m_items_font_config)
+                    m_items_font_config = {icon_font};
+
+                if (!m_group_font_config)
+                    m_group_font_config = {icon_font};
+            }
+        }
+
+        refresh_items_font();
+        refresh_group_font();
+
         if (m_show_header)
             create_header();
+
         m_initialised = true;
         notify_on_create();
         build_header();
+
         if (m_wnd_header)
             ShowWindow(m_wnd_header, SW_SHOWNORMAL);
         return 0;
@@ -50,11 +61,11 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         destroy_header();
         close_themes();
         m_items_font.reset();
-        m_group_font.reset();
         m_dummy_theme_window->destroy();
         m_dummy_theme_window.reset();
         m_items.clear();
         m_columns.clear();
+        m_direct_write_context.reset();
         notify_on_destroy();
         return 0;
     /*case WM_WINDOWPOSCHANGED:
@@ -385,7 +396,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                             a.y = (get_item_position(hit_result.index) - m_scroll_position) + get_items_top();
                             ClientToScreen(get_wnd(), &a);
 
-                            int text_cx = get_text_width(temp, temp.length());
+                            int text_cx = get_tooltip_text_width(temp, temp.length());
                             const auto font_height = get_font_height(m_items_font.get());
 
                             m_rc_tooltip.top = a.y + ((m_item_height - font_height) / 2);

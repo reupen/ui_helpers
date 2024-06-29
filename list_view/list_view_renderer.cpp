@@ -1,5 +1,8 @@
 #include "stdafx.h"
 
+using namespace std::string_view_literals;
+using namespace uih::literals::spx;
+
 namespace uih {
 
 const int _level_spacing_size = 3;
@@ -26,24 +29,17 @@ int ListView::get_indentation_step(HDC dc) const
 
 int ListView::get_default_indentation_step(HDC dc) const
 {
-    int cx_space{};
+    if (!m_items_text_format)
+        return 0;
 
-    if (dc) {
-        cx_space = uih::get_text_width(dc, " ", 1);
-    } else {
-        const auto dc_ = wil::GetDC(get_wnd());
-        auto _ = wil::SelectObject(dc_.get(), m_items_font.get());
-        cx_space = uih::get_text_width(dc_.get(), " ", 1);
-    }
-
-    return cx_space * _level_spacing_size;
+    return m_items_text_format->measure_text_width(L" "sv) * _level_spacing_size;
 }
 
 void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
 {
     ColourData colours = render_get_colour_data();
     const lv::RendererContext context = {colours, m_use_dark_mode, m_is_high_contrast_active, get_wnd(), dc,
-        m_list_view_theme.get(), m_items_view_theme.get()};
+        m_list_view_theme.get(), m_items_view_theme.get(), m_items_text_format, m_group_text_format};
 
     // OffsetWindowOrgEx(dc, m_horizontal_scroll_position, 0, NULL);
     size_t highlight_index = get_highlight_item();
@@ -74,7 +70,6 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
     size_t i_end = gsl::narrow<size_t>(get_item_at_or_after(
         (rc_update.bottom > rc_items.top + 1 ? rc_update.bottom - rc_items.top - 1 : 0) + m_scroll_position));
     for (; i <= i_end && i < count; i++) {
-        HFONT fnt_old = SelectFont(dc, m_group_font.get());
         size_t item_group_start = NULL;
         size_t item_group_count = NULL;
         get_item_group(i, m_group_count ? m_group_count - 1 : 0, item_group_start, item_group_count);
@@ -97,8 +92,6 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
                 m_renderer->render_group(context, i, j, p_group->m_text.get_ptr(), indentation_step, j, rc);
             }
         }
-
-        SelectFont(dc, fnt_old);
 
         if (b_show_group_info_area && (i == i_start || i == item_group_start)) {
             int height = (std::max)(m_item_height * gsl::narrow<int>(item_group_count), get_group_info_area_height());
@@ -232,21 +225,24 @@ bool ListView::get_group_text_colour_default(COLORREF& cr)
 void lv::DefaultRenderer::render_group(RendererContext context, size_t item_index, size_t group_index,
     std::string_view text, int indentation, size_t level, RECT rc)
 {
+    if (!context.m_group_text_format)
+        return;
+
     COLORREF cr = context.colours.m_group_text;
 
-    int text_right = NULL;
-
     render_group_background(context, &rc);
-    uih::text_out_colours_tab(context.dc, text.data(), text.size(),
-        uih::scale_dpi_value(1) + indentation * gsl::narrow<int>(level), uih::scale_dpi_value(3), &rc, false, cr, false,
-        true, uih::ALIGN_LEFT, nullptr, true, true, &text_right);
 
-    auto line_height = scale_dpi_value(1);
-    auto line_top = rc.top + RECT_CY(rc) / 2 - line_height / 2;
+    const auto x_offset = 1_spx + indentation * gsl::narrow<int>(level);
+    const auto border = 3_spx;
+    const auto text_width = direct_write::text_out_columns_and_colours(
+        *context.m_group_text_format, context.dc, text, x_offset, border, rc, false, cr, true, false);
+
+    const auto line_height = 1_spx;
+    const auto line_top = rc.top + wil::rect_height(rc) / 2 - line_height / 2;
     RECT rc_line = {
-        text_right + scale_dpi_value(7),
+        rc.left + x_offset + border * 2 + text_width + 3_spx,
         line_top,
-        rc.right - scale_dpi_value(4),
+        rc.right - 4_spx,
         line_top + line_height,
     };
 
@@ -305,9 +301,12 @@ void lv::DefaultRenderer::render_item(RendererContext context, size_t index, std
     for (size_t column_index{0}; column_index < sub_items.size(); ++column_index) {
         auto& sub_item = sub_items[column_index];
         rc_subitem.right = rc_subitem.left + sub_item.width;
-        text_out_colours_tab(context.dc, sub_item.text.data(), sub_item.text.size(),
-            scale_dpi_value(1) + (column_index == 0 ? indentation : 0), scale_dpi_value(3), &rc_subitem, b_selected,
-            cr_text, m_enable_item_tab_columns, true, sub_item.alignment);
+
+        if (context.m_item_text_format)
+            direct_write::text_out_columns_and_colours(*context.m_item_text_format, context.dc, sub_item.text,
+                1_spx + (column_index == 0 ? indentation : 0), 3_spx, rc_subitem, b_selected, cr_text, true,
+                m_enable_item_tab_columns, sub_item.alignment);
+
         rc_subitem.left = rc_subitem.right;
     }
 
@@ -373,36 +372,31 @@ void lv::DefaultRenderer::render_background(RendererContext context, const RECT*
     FillRect(context.dc, rc, wil::unique_hbrush(CreateSolidBrush(context.colours.m_background)).get());
 }
 
-int ListView::get_text_width(const char* text, size_t length)
+int ListView::get_tooltip_text_width(const char* text, size_t length) const
 {
     int ret = 0;
     HDC hdc = GetDC(get_wnd());
+
     if (hdc) {
         HFONT fnt_old = SelectFont(hdc, m_items_font.get());
         ret = uih::get_text_width(hdc, text, gsl::narrow<int>(strlen(text)));
         SelectFont(hdc, fnt_old);
         ReleaseDC(get_wnd(), hdc);
     }
+
     return ret;
 }
 
 bool ListView::is_item_clipped(size_t index, size_t column)
 {
-    HDC hdc = GetDC(get_wnd());
-    if (!hdc)
+    if (!m_items_text_format)
         return false;
 
-    pfc::string8 text = get_item_text(index, column);
-    HFONT fnt_old = SelectFont(hdc, m_items_font.get());
-    int width = get_text_width_colour(hdc, text, gsl::narrow<int>(text.length()));
-    SelectFont(hdc, fnt_old);
-    ReleaseDC(get_wnd(), hdc);
+    const pfc::string8 text = get_item_text(index, column);
+    const auto render_text = uih::remove_colour_codes({text.c_str(), text.get_length()});
+    const auto text_width = m_items_text_format->measure_text_width(render_text);
     const auto col_width = m_columns[column].m_display_size;
-    // if (column == 0) width += get_total_indentation();
-
-    return (width + scale_dpi_value(3) * 2 + scale_dpi_value(1) > col_width);
-    // return (width+2+(columns[col]->align == ALIGN_LEFT ? 2 : columns[col]->align == ALIGN_RIGHT ? 1 : 0) >
-    // col_width);//we use 3 for the spacing, 1 for column divider
+    return text_width + 3_spx * 2 + 1_spx > col_width;
 }
 
 } // namespace uih

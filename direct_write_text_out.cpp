@@ -6,15 +6,15 @@ namespace uih::direct_write {
 
 namespace {
 
-int text_out_colours(const TextFormat& text_format, HDC dc, std::string_view text, int x_offset, const RECT& rect,
-    bool selected, DWORD default_color, alignment align, bool enable_colour_codes)
+int text_out_colours(const TextFormat& text_format, HDC dc, std::string_view text, const RECT& rect, bool selected,
+    DWORD default_color, alignment align, bool enable_colour_codes)
 {
     struct ColouredTextSegment {
         COLORREF colour{};
         size_t character_count{};
     };
 
-    if (is_rect_null_or_reversed(&rect) || rect.right <= rect.left + x_offset)
+    if (is_rect_null_or_reversed(&rect) || rect.right <= rect.left)
         return 0;
 
     const pfc::stringcvt::string_wide_from_utf8 utf16_text(text.data(), text.size());
@@ -94,10 +94,8 @@ int text_out_colours(const TextFormat& text_format, HDC dc, std::string_view tex
         }
 
         const auto metrics = layout.get_metrics();
-        const float y_offset
-            = (gsl::narrow_cast<float>(wil::rect_height(rect)) - metrics.height * scaling_factor) * 0.5f;
 
-        layout.render(dc, rect, gsl::narrow_cast<float>(x_offset), y_offset, default_color);
+        layout.render(dc, rect, default_color);
 
         return gsl::narrow_cast<int>(metrics.width * scaling_factor + 1);
     }
@@ -108,14 +106,14 @@ int text_out_colours(const TextFormat& text_format, HDC dc, std::string_view tex
 
 } // namespace
 
-void text_out_columns_and_colours(const TextFormat& text_format, HDC dc, std::string_view text, int x_offset,
-    int border, const RECT& rect, bool selected, COLORREF default_colour, bool enable_colour_codes,
-    bool enable_tab_columns, alignment align)
+int text_out_columns_and_colours(const TextFormat& text_format, HDC dc, std::string_view text, int x_offset, int border,
+    const RECT& rect, bool selected, COLORREF default_colour, bool enable_colour_codes, bool enable_tab_columns,
+    alignment align, bool enable_ellipses)
 {
     RECT adjusted_rect = rect;
 
     if (is_rect_null_or_reversed(&adjusted_rect))
-        return;
+        return 0;
 
     int tab_count = 0;
 
@@ -128,15 +126,19 @@ void text_out_columns_and_colours(const TextFormat& text_format, HDC dc, std::st
     }
 
     if (tab_count == 0) {
-        adjusted_rect.left += border;
+        adjusted_rect.left += border + x_offset;
         adjusted_rect.right -= border;
 
-        text_format.enable_trimming_sign();
-        text_out_colours(
-            text_format, dc, text, x_offset, adjusted_rect, selected, default_colour, align, enable_colour_codes);
-        return;
+        if (enable_ellipses)
+            text_format.enable_trimming_sign();
+        else
+            text_format.disable_trimming_sign();
+
+        return text_out_colours(
+            text_format, dc, text, adjusted_rect, selected, default_colour, align, enable_colour_codes);
     }
 
+    // Ellipses always disabled when using tab columns
     text_format.disable_trimming_sign();
 
     adjusted_rect.left += x_offset;
@@ -160,7 +162,7 @@ void text_out_columns_and_colours(const TextFormat& text_format, HDC dc, std::st
                 cell_rect.left = std::min(
                     adjusted_rect.right - MulDiv(cell_index, total_width, tab_count) + border, cell_rect.right);
 
-            const int cell_render_width = text_out_colours(text_format, dc, cell_text, 0, cell_rect, selected,
+            const int cell_render_width = text_out_colours(text_format, dc, cell_text, cell_rect, selected,
                 default_colour, cell_index == 0 ? ALIGN_RIGHT : ALIGN_LEFT, enable_colour_codes);
 
             if (cell_index == 0)
@@ -174,6 +176,8 @@ void text_out_columns_and_colours(const TextFormat& text_format, HDC dc, std::st
             cell_index++;
         }
     } while (position > 0);
+
+    return total_width;
 }
 
 } // namespace uih::direct_write

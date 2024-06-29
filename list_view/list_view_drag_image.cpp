@@ -12,9 +12,9 @@ bool ListView::render_drag_image(LPSHDRAGIMAGE lpsdi)
 
     auto icon = get_drag_image_icon();
 
-    LOGFONT lf;
-    if (m_lf_items_valid)
-        lf = m_lf_items;
+    LOGFONT lf{};
+    if (m_items_font_config)
+        lf = m_items_font_config->log_font;
     else
         GetObject(m_items_font.get(), sizeof(lf), &lf);
 

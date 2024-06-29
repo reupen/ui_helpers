@@ -18,7 +18,7 @@ public:
     }
 
     DWRITE_TEXT_METRICS get_metrics() const;
-    void render(HDC dc, RECT rect, float x, float y, COLORREF default_colour) const;
+    void render(HDC dc, RECT rect, COLORREF default_colour) const;
     void set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const;
 
 private:
@@ -43,6 +43,7 @@ public:
     void enable_trimming_sign() const;
     void disable_trimming_sign() const;
 
+    [[nodiscard]] int get_minimum_height() const;
     [[nodiscard]] int measure_text_width(std::wstring_view text) const;
     [[nodiscard]] int measure_text_width(std::string_view text) const;
     [[nodiscard]] TextLayout create_text_layout(std::wstring_view text, float max_width, float max_height) const;
@@ -56,13 +57,30 @@ private:
 
 class Context {
 public:
+    using Ptr = std::shared_ptr<Context>;
+
+    static Ptr s_create()
+    {
+        auto ptr = s_ptr.lock();
+
+        if (!ptr) {
+            ptr = std::make_shared<Context>();
+            s_ptr = ptr;
+        }
+
+        return ptr;
+    }
+
     Context();
 
     TextFormat create_text_format(const LOGFONT& log_font, float font_size);
-    std::optional<TextFormat> create_text_format_with_fallback(const LOGFONT& log_font, float font_size) noexcept;
+    std::optional<TextFormat> create_text_format_with_fallback(
+        const LOGFONT& log_font, std::optional<float> font_size) noexcept;
 
 private:
-    wil::com_ptr_t<IDWriteFactory> m_factory;
+    inline static std::weak_ptr<Context> s_ptr;
+
+    wil::com_ptr_t<IDWriteFactory1> m_factory;
     wil::com_ptr_t<IDWriteGdiInterop> m_gdi_interop;
 };
 
