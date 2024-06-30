@@ -65,6 +65,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         m_dummy_theme_window.reset();
         m_items.clear();
         m_columns.clear();
+        m_items_text_format.reset();
+        m_group_text_format.reset();
         m_direct_write_context.reset();
         notify_on_destroy();
         return 0;
