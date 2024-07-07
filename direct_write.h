@@ -18,7 +18,7 @@ public:
     }
 
     DWRITE_TEXT_METRICS get_metrics() const;
-    void render(HDC dc, RECT rect, COLORREF default_colour) const;
+    void render(HDC dc, RECT rect, COLORREF default_colour, float x_origin_offset = 0.0f) const;
     void set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const;
 
 private:
@@ -26,6 +26,14 @@ private:
     wil::com_ptr_t<IDWriteFactory> m_factory;
     wil::com_ptr_t<IDWriteGdiInterop> m_gdi_interop;
     wil::com_ptr_t<IDWriteTextLayout> m_text_layout;
+};
+
+struct TextPosition {
+    int left{};
+    float left_remainder_dip{};
+    int top{};
+    int width{};
+    int height{};
 };
 
 class TextFormat {
@@ -44,8 +52,9 @@ public:
     void disable_trimming_sign() const;
 
     [[nodiscard]] int get_minimum_height() const;
+    [[nodiscard]] TextPosition measure_text_position(
+        std::wstring_view text, int height, float max_width = 65536.0f) const;
     [[nodiscard]] int measure_text_width(std::wstring_view text) const;
-    [[nodiscard]] int measure_text_width(std::string_view text) const;
     [[nodiscard]] TextLayout create_text_layout(std::wstring_view text, float max_width, float max_height) const;
 
 private:

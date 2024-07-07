@@ -793,7 +793,7 @@ private:
     void destroy_timer_search();
 
     void process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat);
-    bool on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret);
+    std::optional<LRESULT> on_wm_notify_header(LPNMHDR lpnm);
     bool on_wm_keydown(WPARAM wp, LPARAM lp);
 
     LRESULT on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
@@ -838,8 +838,10 @@ private:
     void create_tooltip(/*size_t index, size_t column, */ const char* str);
     void destroy_tooltip();
     void set_tooltip_window_theme() const;
+    void calculate_tooltip_position(size_t item_index, size_t column_index, std::string_view text);
+    std::optional<LRESULT> on_wm_notify_tooltip(LPNMHDR lpnm);
+    void render_tooltip_text(HWND wnd, HDC dc, COLORREF colour) const;
     bool is_item_clipped(size_t index, size_t column);
-    int get_tooltip_text_width(const char* text, size_t length) const;
 
     wil::unique_hfont m_items_font;
     wil::unique_hfont m_header_font;
@@ -849,6 +851,7 @@ private:
     wil::unique_htheme m_items_view_theme;
     wil::unique_htheme m_header_theme;
     wil::unique_htheme m_dd_theme;
+    wil::unique_htheme m_tooltip_theme;
 
     HWND m_wnd_header{};
 
@@ -916,7 +919,9 @@ private:
     bool m_show_tooltips{true};
     bool m_limit_tooltips_to_clipped_items{true};
     HWND m_wnd_tooltip{nullptr};
-    RECT m_rc_tooltip{0};
+    RECT m_tooltip_text_rect{};
+    RECT m_tooltip_placement_rect{};
+    float m_tooltip_text_left_offset{};
     size_t m_tooltip_last_index{std::numeric_limits<size_t>::max()};
     size_t m_tooltip_last_column{std::numeric_limits<size_t>::max()};
 

@@ -372,21 +372,6 @@ void lv::DefaultRenderer::render_background(RendererContext context, const RECT*
     FillRect(context.dc, rc, wil::unique_hbrush(CreateSolidBrush(context.colours.m_background)).get());
 }
 
-int ListView::get_tooltip_text_width(const char* text, size_t length) const
-{
-    int ret = 0;
-    HDC hdc = GetDC(get_wnd());
-
-    if (hdc) {
-        HFONT fnt_old = SelectFont(hdc, m_items_font.get());
-        ret = uih::get_text_width(hdc, text, gsl::narrow<int>(strlen(text)));
-        SelectFont(hdc, fnt_old);
-        ReleaseDC(get_wnd(), hdc);
-    }
-
-    return ret;
-}
-
 bool ListView::is_item_clipped(size_t index, size_t column)
 {
     if (!m_items_text_format)
@@ -394,7 +379,7 @@ bool ListView::is_item_clipped(size_t index, size_t column)
 
     const pfc::string8 text = get_item_text(index, column);
     const auto render_text = uih::remove_colour_codes({text.c_str(), text.get_length()});
-    const auto text_width = m_items_text_format->measure_text_width(render_text);
+    const auto text_width = m_items_text_format->measure_text_width(mmh::to_utf16(render_text));
     const auto col_width = m_columns[column].m_display_size;
     return text_width + 3_spx * 2 + 1_spx > col_width;
 }

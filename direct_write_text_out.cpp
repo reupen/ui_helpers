@@ -72,12 +72,7 @@ int text_out_colours(const TextFormat& text_format, HDC dc, std::string_view tex
 
     std::wstring_view render_text = enable_colour_codes ? text_without_colours : utf16_text_view;
 
-    if (align == ALIGN_CENTRE)
-        text_format.set_alignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-    else if (align == ALIGN_RIGHT)
-        text_format.set_alignment(DWRITE_TEXT_ALIGNMENT_TRAILING);
-    else
-        text_format.set_alignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+    text_format.set_alignment(get_text_alignment(align));
 
     try {
         const auto scaling_factor = TextLayout::s_default_scaling_factor();
@@ -105,6 +100,18 @@ int text_out_colours(const TextFormat& text_format, HDC dc, std::string_view tex
 }
 
 } // namespace
+
+DWRITE_TEXT_ALIGNMENT get_text_alignment(alignment alignment_)
+{
+    switch (alignment_) {
+    case ALIGN_CENTRE:
+        return DWRITE_TEXT_ALIGNMENT_CENTER;
+    case ALIGN_RIGHT:
+        return DWRITE_TEXT_ALIGNMENT_TRAILING;
+    default:
+        return DWRITE_TEXT_ALIGNMENT_LEADING;
+    }
+}
 
 int text_out_columns_and_colours(const TextFormat& text_format, HDC dc, std::string_view text, int x_offset, int border,
     const RECT& rect, bool selected, COLORREF default_colour, bool enable_colour_codes, bool enable_tab_columns,

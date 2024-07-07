@@ -90,7 +90,8 @@ HWND handle_tab_down(HWND wnd);
  * \return              Window rect of wnd in wnd_parent co-ordinate space
  */
 RECT get_relative_rect(HWND wnd, HWND wnd_parent);
-bool get_window_text(HWND wnd, pfc::string_base& out);
+std::wstring get_window_text(HWND wnd);
+void get_window_text(HWND wnd, pfc::string_base& out);
 void set_window_font(HWND wnd, HFONT font, bool redraw = true);
 HFONT get_window_font(HWND wnd);
 
