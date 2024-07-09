@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+using namespace uih::literals::spx;
+
 namespace uih {
 
 LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
@@ -368,20 +370,12 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 HitTestResult hit_result;
                 hit_test_ex(pt, hit_result);
 
-                if ((hit_result.category == HitTestCategory::OnUnobscuredItem
+                if (m_items_text_format
+                    && (hit_result.category == HitTestCategory::OnUnobscuredItem
                         || hit_result.category == HitTestCategory::OnItemObscuredBelow
                         || hit_result.category == HitTestCategory::OnItemObscuredAbove)
                     && hit_result.column != -1) {
                     if (m_tooltip_last_index != hit_result.index || m_tooltip_last_column != hit_result.column) {
-                        int cx = 0;
-                        {
-                            size_t i;
-                            // if (hit_result.column == 0)
-                            cx = get_total_indentation();
-                            // else
-                            for (i = 0; i < hit_result.column; i++)
-                                cx += m_columns[i].m_display_size;
-                        }
                         bool is_clipped = is_item_clipped(hit_result.index, hit_result.column);
                         if (!m_limit_tooltips_to_clipped_items || is_clipped) {
                             pfc::string8 temp;
@@ -393,26 +387,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                             }
                             create_tooltip(temp);
 
-                            POINT a;
-                            a.x = cx + scale_dpi_value(1) + scale_dpi_value(3) - m_horizontal_scroll_position;
-                            a.y = (get_item_position(hit_result.index) - m_scroll_position) + get_items_top();
-                            ClientToScreen(get_wnd(), &a);
-
-                            int text_cx = get_tooltip_text_width(temp, temp.length());
-                            const auto font_height = get_font_height(m_items_font.get());
-
-                            m_rc_tooltip.top = a.y + ((m_item_height - font_height) / 2);
-                            // We don't get enough bottom-padding by default, so font_height / 10 is used to add
-                            // more
-                            m_rc_tooltip.bottom = m_rc_tooltip.top + font_height + font_height / 10;
-                            m_rc_tooltip.left = a.x;
-                            m_rc_tooltip.right = a.x + text_cx; // m_columns[hit_result.column].m_display_size;
-
-                            // if (!is_clipped)
-                            //{
-                            // if (m_columns[hit_result.column].m_alignment == uih::ALIGN_RIGHT)
-                            // m_rc_tooltip.left = m_rc_tooltip.right - uih::get_text_width(temp);
-                            //}
+                            calculate_tooltip_position(
+                                hit_result.index, hit_result.column, {temp.get_ptr(), temp.get_length()});
                         } else
                             destroy_tooltip();
                     }
@@ -709,25 +685,17 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         }
         break;
     }
-    case WM_NOTIFY:
-        if (m_wnd_header && ((LPNMHDR)lp)->hwndFrom == m_wnd_header) {
-            LRESULT ret = 0;
-            if (on_wm_notify_header((LPNMHDR)lp, ret))
-                return ret;
-        } else if (m_wnd_tooltip && ((LPNMHDR)lp)->hwndFrom == m_wnd_tooltip) {
-            switch (((LPNMHDR)lp)->code) {
-            case TTN_SHOW: {
-                RECT rc = m_rc_tooltip;
-
-                SendMessage(m_wnd_tooltip, TTM_ADJUSTRECT, TRUE, (LPARAM)&rc);
-
-                SetWindowPos(
-                    m_wnd_tooltip, nullptr, rc.left, rc.top, RECT_CX(rc), RECT_CY(rc), SWP_NOZORDER | SWP_NOACTIVATE);
-                return TRUE;
-            }
-            }
+    case WM_NOTIFY: {
+        const auto lpnm = reinterpret_cast<LPNMHDR>(lp);
+        if (m_wnd_header && lpnm->hwndFrom == m_wnd_header) {
+            if (auto result = on_wm_notify_header(lpnm))
+                return *result;
+        } else if (m_wnd_tooltip && lpnm->hwndFrom == m_wnd_tooltip) {
+            if (auto result = on_wm_notify_tooltip(lpnm))
+                return *result;
         }
         break;
+    }
     case WM_TIMER:
         switch (wp) {
         case TIMER_END_SEARCH: {

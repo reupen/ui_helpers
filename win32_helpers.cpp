@@ -395,22 +395,31 @@ RECT get_relative_rect(HWND wnd, HWND wnd_parent)
     return rc;
 }
 
-bool get_window_text(HWND wnd, pfc::string_base& out)
+std::wstring get_window_text(HWND wnd)
 {
     const auto buffer_size = GetWindowTextLength(wnd) + 1;
+
     if (buffer_size <= 0)
-        return false;
+        return {};
 
-    pfc::array_staticsize_t<wchar_t> buffer(buffer_size);
-    pfc::fill_array_t(buffer, 0);
-    const auto chars_written = GetWindowText(wnd, buffer.get_ptr(), buffer_size);
+    std::wstring text;
+    text.resize(buffer_size);
+
+    const auto chars_written = GetWindowText(wnd, text.data(), buffer_size);
+
     if (chars_written <= 0)
-        return false;
+        return {};
 
-    const auto utf8_size = pfc::stringcvt::estimate_wide_to_utf8(buffer.get_ptr(), chars_written);
+    text.resize(chars_written);
+    return text;
+}
+
+void get_window_text(HWND wnd, pfc::string_base& out)
+{
+    auto text = get_window_text(wnd);
+    const auto utf8_size = pfc::stringcvt::estimate_wide_to_utf8(text.data(), text.size());
     auto utf8_buffer = pfc::string_buffer(out, utf8_size);
-    pfc::stringcvt::convert_wide_to_utf8(utf8_buffer, utf8_size, buffer.get_ptr(), chars_written);
-    return true;
+    pfc::stringcvt::convert_wide_to_utf8(utf8_buffer, utf8_size, text.data(), text.size());
 }
 
 void set_window_font(HWND wnd, HFONT font, bool redraw)

@@ -230,7 +230,7 @@ void TextLayout::set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const
     THROW_IF_FAILED(m_text_layout->SetDrawingEffect(colour_effect.get(), text_range));
 }
 
-void TextLayout::render(HDC dc, RECT rect, COLORREF default_colour) const
+void TextLayout::render(HDC dc, RECT rect, COLORREF default_colour, float x_origin_offset) const
 {
     const auto metrics = get_metrics();
 
@@ -266,7 +266,7 @@ void TextLayout::render(HDC dc, RECT rect, COLORREF default_colour) const
 
     BitBlt(memory_dc, 0, 0, bitmap_width, bitmap_height, dc, source_x, source_y, SRCCOPY);
 
-    THROW_IF_FAILED(m_text_layout->Draw(NULL, renderer.get(), -draw_left_dip, -draw_top_dip));
+    THROW_IF_FAILED(m_text_layout->Draw(NULL, renderer.get(), -draw_left_dip + x_origin_offset, -draw_top_dip));
 
     BitBlt(dc, source_x, source_y, bitmap_width, bitmap_height, memory_dc, 0, 0, SRCCOPY);
 }
@@ -305,22 +305,38 @@ int TextFormat::get_minimum_height() const
     return 1;
 }
 
+TextPosition TextFormat::measure_text_position(std::wstring_view text, int height, float max_width) const
+{
+    try {
+        const auto is_right_aligned = m_text_format->GetTextAlignment() == DWRITE_TEXT_ALIGNMENT_TRAILING;
+        const auto text_layout
+            = create_text_layout(text, max_width, static_cast<float>(height) / TextLayout::s_default_scaling_factor());
+        const auto metrics = text_layout.get_metrics();
+        const auto scaling_factor = TextLayout::s_default_scaling_factor();
+        const auto left = gsl::narrow_cast<int>((metrics.left) * scaling_factor);
+        const auto left_remainder_dip = metrics.left - gsl::narrow_cast<float>(left) / scaling_factor;
+
+        // When left == 1, right-aligned text seems to be rendered as if left == 0. This is corrected for below.
+        return {is_right_aligned && left == 1 ? 0 : left, left_remainder_dip,
+            gsl::narrow_cast<int>((metrics.top) * scaling_factor),
+            gsl::narrow_cast<int>((metrics.width) * scaling_factor + 1),
+            gsl::narrow_cast<int>((metrics.height) * scaling_factor + 1)};
+    }
+    CATCH_LOG()
+
+    return {};
+}
+
 int TextFormat::measure_text_width(std::wstring_view text) const
 {
     try {
         const auto text_layout = create_text_layout(text, 65536.0f, 65536.0f);
         const auto metrics = text_layout.get_metrics();
-        return gsl::narrow_cast<int>((metrics.left + metrics.width) * TextLayout::s_default_scaling_factor() + 1);
+        return gsl::narrow_cast<int>((metrics.width) * TextLayout::s_default_scaling_factor() + 1);
     }
     CATCH_LOG()
 
     return 0;
-}
-
-int TextFormat::measure_text_width(std::string_view text) const
-{
-    const auto utf16_text = pfc::stringcvt::string_wide_from_utf8(text.data(), text.length());
-    return measure_text_width({utf16_text.get_ptr(), utf16_text.length()});
 }
 
 TextLayout TextFormat::create_text_layout(std::wstring_view text, float max_width, float max_height) const

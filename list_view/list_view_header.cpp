@@ -122,38 +122,35 @@ void ListView::build_header()
     }
 }
 
-bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
+std::optional<LRESULT> ListView::on_wm_notify_header(LPNMHDR lpnm)
 {
     switch (lpnm->code) {
     case NM_CUSTOMDRAW: {
         if (!m_header_theme)
-            return false;
+            return {};
 
         const auto lpcd = reinterpret_cast<LPNMCUSTOMDRAW>(lpnm);
         switch (lpcd->dwDrawStage) {
         case CDDS_PREPAINT:
-            ret = CDRF_NOTIFYITEMDRAW;
-            return true;
+            return CDRF_NOTIFYITEMDRAW;
 
         case CDDS_ITEMPREPAINT: {
             auto cr{RGB(255, 0, 0)};
             if (!SUCCEEDED(GetThemeColor(m_header_theme.get(), HP_HEADERITEM, 0, TMT_TEXTCOLOR, &cr)))
-                return false;
+                return {};
 
             SetTextColor(lpcd->hdc, cr);
-            ret = CDRF_NEWFONT;
-            return true;
+            return CDRF_NEWFONT;
         }
         default:
-            return false;
+            return {};
         }
     }
     case HDN_BEGINTRACKA:
     case HDN_BEGINTRACKW: {
         const auto lpnmh = reinterpret_cast<LPNMHEADERW>(lpnm);
         if (m_autosize && (!get_show_group_info_area() || lpnmh->iItem)) {
-            ret = TRUE;
-            return true;
+            return TRUE;
         }
     } break;
     case HDN_DIVIDERDBLCLICK: {
@@ -203,8 +200,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
                     if (get_show_group_info_area())
                         min_indent += get_indentation_step();
                     if (lpnmh->pitem->cxy < min_indent) {
-                        ret = TRUE;
-                        return true;
+                        return TRUE;
                     }
                 }
             }
@@ -218,15 +214,7 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
                     if (m_have_indent_column && lpnmh->iItem == 0) {
                         int new_size = lpnmh->pitem->cxy - get_item_indentation() - get_indentation_step();
                         if (new_size >= 0 && new_size != get_group_info_area_width()) {
-                            /*set_group_info_area_size(new_size);
-                            if (m_autosize)
-                            {
-                                update_column_sizes();
-                                update_header();
-                            }*/
                             notify_on_group_info_area_size_change(new_size);
-                            /*invalidate_all();
-                            update_scroll_info();*/
                         }
                     } else if (!m_autosize) {
                         size_t realIndex = lpnmh->iItem;
@@ -256,16 +244,6 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
             }
         }
     } break;
-    /*case HDN_BEGINDRAG:
-        {
-            LPNMHEADER lpnmh = (LPNMHEADER)lpnm;
-            if (lpnmh->iItem == 0 && m_have_indent_column)
-            {
-                ret = TRUE;
-                return true;
-            }
-        }
-        break;*/
     case HDN_ENDDRAG: {
         auto lpnmh = (LPNMHEADER)lpnm;
         if (lpnmh->iButton == 0) {
@@ -282,10 +260,9 @@ bool ListView::on_wm_notify_header(LPNMHDR lpnm, LRESULT& ret)
             }
         }
     }
-        ret = TRUE;
-        return true;
+        return TRUE;
     }
-    return false;
+    return {};
 }
 
 void ListView::get_header_rect(LPRECT rc) const
@@ -336,4 +313,5 @@ void ListView::update_header()
         // RedrawWindow(m_wnd_header, NULL, NULL, RDW_INVALIDATE|(b_update?RDW_UPDATENOW:0));
     }
 }
+
 } // namespace uih
