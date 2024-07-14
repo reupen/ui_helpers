@@ -224,6 +224,13 @@ DWRITE_TEXT_METRICS TextLayout::get_metrics() const
     return metrics;
 }
 
+DWRITE_OVERHANG_METRICS TextLayout::get_overhang_metrics() const
+{
+    DWRITE_OVERHANG_METRICS overhang_metrics{};
+    THROW_IF_FAILED(m_text_layout->GetOverhangMetrics(&overhang_metrics));
+    return overhang_metrics;
+}
+
 void TextLayout::set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const
 {
     const auto colour_effect = wil::com_ptr<ColourEffect>(new ColourEffect(colour));
@@ -232,17 +239,20 @@ void TextLayout::set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const
 
 void TextLayout::render(HDC dc, RECT rect, COLORREF default_colour, float x_origin_offset) const
 {
-    const auto metrics = get_metrics();
+    const auto layout_width = m_text_layout->GetMaxWidth();
+    const auto layout_height = m_text_layout->GetMaxHeight();
+    const auto overhang_metrics = get_overhang_metrics();
 
-    const auto draw_left_px = gsl::narrow_cast<long>(metrics.left * m_scaling_factor);
+    const auto draw_left_px = std::max(0l, gsl::narrow_cast<long>((-overhang_metrics.left) * m_scaling_factor));
     const auto draw_left_dip = gsl::narrow_cast<float>(draw_left_px) / m_scaling_factor;
 
-    const auto draw_right_px = gsl::narrow_cast<long>((metrics.left + metrics.width) * m_scaling_factor + 1);
+    const auto draw_right_px = gsl::narrow_cast<long>((layout_width + overhang_metrics.right) * m_scaling_factor + 1);
 
-    const auto draw_top_px = gsl::narrow_cast<long>(metrics.top * m_scaling_factor);
+    const auto draw_top_px = std::max(0l, gsl::narrow_cast<long>((-overhang_metrics.top) * m_scaling_factor));
     const auto draw_top_dip = gsl::narrow_cast<float>(draw_top_px) / m_scaling_factor;
 
-    const auto draw_bottom_px = gsl::narrow_cast<long>((metrics.top + metrics.height) * m_scaling_factor + 1);
+    const auto draw_bottom_px
+        = gsl::narrow_cast<long>((layout_height + overhang_metrics.bottom) * m_scaling_factor + 1);
 
     const auto rect_width = wil::rect_width(rect);
     const auto rect_height = wil::rect_height(rect);
@@ -250,7 +260,7 @@ void TextLayout::render(HDC dc, RECT rect, COLORREF default_colour, float x_orig
     const auto bitmap_width = std::min(rect_width, draw_right_px - draw_left_px);
     const auto bitmap_height = std::min(rect_height, draw_bottom_px - draw_top_px);
     const auto source_x = rect.left + (bitmap_width < rect_width ? draw_left_px : 0l);
-    const auto source_y = rect.top + (bitmap_height < rect_height ? draw_top_px : 0);
+    const auto source_y = rect.top + (bitmap_height < rect_height ? draw_top_px : 0l);
 
     wil::com_ptr_t<IDWriteBitmapRenderTarget> bitmap_render_target;
     THROW_IF_FAILED(m_gdi_interop->CreateBitmapRenderTarget(dc, bitmap_width, bitmap_height, &bitmap_render_target));
@@ -308,7 +318,6 @@ int TextFormat::get_minimum_height() const
 TextPosition TextFormat::measure_text_position(std::wstring_view text, int height, float max_width) const
 {
     try {
-        const auto is_right_aligned = m_text_format->GetTextAlignment() == DWRITE_TEXT_ALIGNMENT_TRAILING;
         const auto text_layout
             = create_text_layout(text, max_width, static_cast<float>(height) / TextLayout::s_default_scaling_factor());
         const auto metrics = text_layout.get_metrics();
@@ -316,9 +325,7 @@ TextPosition TextFormat::measure_text_position(std::wstring_view text, int heigh
         const auto left = gsl::narrow_cast<int>((metrics.left) * scaling_factor);
         const auto left_remainder_dip = metrics.left - gsl::narrow_cast<float>(left) / scaling_factor;
 
-        // When left == 1, right-aligned text seems to be rendered as if left == 0. This is corrected for below.
-        return {is_right_aligned && left == 1 ? 0 : left, left_remainder_dip,
-            gsl::narrow_cast<int>((metrics.top) * scaling_factor),
+        return {left, left_remainder_dip, gsl::narrow_cast<int>((metrics.top) * scaling_factor),
             gsl::narrow_cast<int>((metrics.width) * scaling_factor + 1),
             gsl::narrow_cast<int>((metrics.height) * scaling_factor + 1)};
     }
