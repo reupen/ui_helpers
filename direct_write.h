@@ -18,6 +18,7 @@ public:
     }
 
     DWRITE_TEXT_METRICS get_metrics() const;
+    DWRITE_OVERHANG_METRICS get_overhang_metrics() const;
     void render(HDC dc, RECT rect, COLORREF default_colour, float x_origin_offset = 0.0f) const;
     void set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const;
 
