@@ -1,6 +1,7 @@
 #ifndef _UI_HELPERS_H_
 #define _UI_HELPERS_H_
 
+#define _SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING
 #define OEMRESOURCE
 
 #include <algorithm>
