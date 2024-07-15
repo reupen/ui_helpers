@@ -39,9 +39,11 @@ struct TextPosition {
 
 class TextFormat {
 public:
-    TextFormat(wil::com_ptr_t<IDWriteFactory> factory, wil::com_ptr_t<IDWriteGdiInterop> gdi_interop,
-        wil::com_ptr_t<IDWriteTextFormat> text_format, wil::com_ptr_t<IDWriteInlineObject> trimming_sign)
-        : m_factory(std::move(factory))
+    TextFormat(std::shared_ptr<class Context> context, wil::com_ptr_t<IDWriteFactory> factory,
+        wil::com_ptr_t<IDWriteGdiInterop> gdi_interop, wil::com_ptr_t<IDWriteTextFormat> text_format,
+        wil::com_ptr_t<IDWriteInlineObject> trimming_sign)
+        : m_context(std::move(context))
+        , m_factory(std::move(factory))
         , m_gdi_interop(std::move(gdi_interop))
         , m_text_format(std::move(text_format))
         , m_trimming_sign(std::move(trimming_sign))
@@ -59,13 +61,14 @@ public:
     [[nodiscard]] TextLayout create_text_layout(std::wstring_view text, float max_width, float max_height) const;
 
 private:
+    std::shared_ptr<Context> m_context;
     wil::com_ptr_t<IDWriteFactory> m_factory;
     wil::com_ptr_t<IDWriteGdiInterop> m_gdi_interop;
     wil::com_ptr_t<IDWriteTextFormat> m_text_format;
     wil::com_ptr_t<IDWriteInlineObject> m_trimming_sign;
 };
 
-class Context {
+class Context : public std::enable_shared_from_this<Context> {
 public:
     using Ptr = std::shared_ptr<Context>;
 
@@ -86,12 +89,14 @@ public:
     TextFormat create_text_format(const LOGFONT& log_font, float font_size);
     std::optional<TextFormat> create_text_format_with_fallback(
         const LOGFONT& log_font, std::optional<float> font_size) noexcept;
+    wil::com_ptr_t<IDWriteTypography> get_default_typography();
 
 private:
     inline static std::weak_ptr<Context> s_ptr;
 
     wil::com_ptr_t<IDWriteFactory1> m_factory;
     wil::com_ptr_t<IDWriteGdiInterop> m_gdi_interop;
+    wil::com_ptr_t<IDWriteTypography> m_default_typography;
 };
 
 } // namespace uih::direct_write

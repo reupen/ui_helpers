@@ -348,9 +348,14 @@ int TextFormat::measure_text_width(std::wstring_view text) const
 
 TextLayout TextFormat::create_text_layout(std::wstring_view text, float max_width, float max_height) const
 {
+    const auto text_length = gsl::narrow<uint32_t>(text.length());
+
     wil::com_ptr_t<IDWriteTextLayout> text_layout;
     THROW_IF_FAILED(m_factory->CreateTextLayout(
-        text.data(), gsl::narrow<uint32_t>(text.length()), m_text_format.get(), max_width, max_height, &text_layout));
+        text.data(), text_length, m_text_format.get(), max_width, max_height, &text_layout));
+
+    const auto typography = m_context->get_default_typography();
+    THROW_IF_FAILED(text_layout->SetTypography(typography.get(), {0, text_length}));
 
     return {m_factory, m_gdi_interop, text_layout};
 }
@@ -393,7 +398,7 @@ TextFormat Context::create_text_format(const LOGFONT& log_font, float font_size)
     THROW_IF_FAILED(text_format->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
     THROW_IF_FAILED(text_format->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
 
-    return {m_factory, m_gdi_interop, text_format, trimming_sign};
+    return {shared_from_this(), m_factory, m_gdi_interop, text_format, trimming_sign};
 }
 
 std::optional<TextFormat> Context::create_text_format_with_fallback(
@@ -416,6 +421,17 @@ std::optional<TextFormat> Context::create_text_format_with_fallback(
     }
 
     return {};
+}
+
+wil::com_ptr_t<IDWriteTypography> Context::get_default_typography()
+{
+    if (!m_default_typography) {
+        THROW_IF_FAILED(m_factory->CreateTypography(&m_default_typography));
+
+        THROW_IF_FAILED(m_default_typography->AddFontFeature({DWRITE_FONT_FEATURE_TAG_TABULAR_FIGURES, 1}));
+    }
+
+    return m_default_typography;
 }
 
 } // namespace uih::direct_write
