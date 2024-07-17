@@ -239,20 +239,20 @@ void TextLayout::set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const
 
 void TextLayout::render(HDC dc, RECT rect, COLORREF default_colour, float x_origin_offset) const
 {
+    const auto scaling_factor = get_default_scaling_factor();
     const auto layout_width = m_text_layout->GetMaxWidth();
     const auto layout_height = m_text_layout->GetMaxHeight();
     const auto overhang_metrics = get_overhang_metrics();
 
-    const auto draw_left_px = std::max(0l, gsl::narrow_cast<long>((-overhang_metrics.left) * m_scaling_factor));
-    const auto draw_left_dip = gsl::narrow_cast<float>(draw_left_px) / m_scaling_factor;
+    const auto draw_left_px = std::max(0l, gsl::narrow_cast<long>((-overhang_metrics.left) * scaling_factor));
+    const auto draw_left_dip = gsl::narrow_cast<float>(draw_left_px) / scaling_factor;
 
-    const auto draw_right_px = gsl::narrow_cast<long>((layout_width + overhang_metrics.right) * m_scaling_factor + 1);
+    const auto draw_right_px = gsl::narrow_cast<long>((layout_width + overhang_metrics.right) * scaling_factor + 1);
 
-    const auto draw_top_px = std::max(0l, gsl::narrow_cast<long>((-overhang_metrics.top) * m_scaling_factor));
-    const auto draw_top_dip = gsl::narrow_cast<float>(draw_top_px) / m_scaling_factor;
+    const auto draw_top_px = std::max(0l, gsl::narrow_cast<long>((-overhang_metrics.top) * scaling_factor));
+    const auto draw_top_dip = gsl::narrow_cast<float>(draw_top_px) / scaling_factor;
 
-    const auto draw_bottom_px
-        = gsl::narrow_cast<long>((layout_height + overhang_metrics.bottom) * m_scaling_factor + 1);
+    const auto draw_bottom_px = gsl::narrow_cast<long>((layout_height + overhang_metrics.bottom) * scaling_factor + 1);
 
     const auto rect_width = wil::rect_width(rect);
     const auto rect_height = wil::rect_height(rect);
@@ -264,7 +264,7 @@ void TextLayout::render(HDC dc, RECT rect, COLORREF default_colour, float x_orig
 
     wil::com_ptr_t<IDWriteBitmapRenderTarget> bitmap_render_target;
     THROW_IF_FAILED(m_gdi_interop->CreateBitmapRenderTarget(dc, bitmap_width, bitmap_height, &bitmap_render_target));
-    THROW_IF_FAILED(bitmap_render_target->SetPixelsPerDip(m_scaling_factor));
+    THROW_IF_FAILED(bitmap_render_target->SetPixelsPerDip(scaling_factor));
 
     wil::com_ptr_t<IDWriteRenderingParams> dw_rendering_params;
     THROW_IF_FAILED(m_factory->CreateRenderingParams(&dw_rendering_params));
@@ -298,17 +298,16 @@ void TextFormat::disable_trimming_sign() const
     THROW_IF_FAILED(m_text_format->SetTrimming(&trimming, nullptr));
 }
 
-int TextFormat::get_minimum_height() const
+int TextFormat::get_minimum_height(std::wstring_view text) const
 {
     try {
         auto max_size = 65536.0f;
-        const auto text_layout = create_text_layout(L""sv, max_size, max_size);
+        const auto text_layout = create_text_layout(text, max_size, max_size);
         const auto metrics = text_layout.get_metrics();
         auto top_half = max_size / 2 - metrics.top;
         auto bottom_half = metrics.top + metrics.height - max_size / 2;
 
-        return gsl::narrow_cast<int>(
-            std::max(top_half, bottom_half) * 2.0f * TextLayout::s_default_scaling_factor() + 1);
+        return gsl::narrow_cast<int>(std::max(top_half, bottom_half) * 2.0f * get_default_scaling_factor() + 1);
     }
     CATCH_LOG()
 
@@ -318,16 +317,15 @@ int TextFormat::get_minimum_height() const
 TextPosition TextFormat::measure_text_position(std::wstring_view text, int height, float max_width) const
 {
     try {
-        const auto text_layout
-            = create_text_layout(text, max_width, static_cast<float>(height) / TextLayout::s_default_scaling_factor());
+        const auto scaling_factor = get_default_scaling_factor();
+        const auto text_layout = create_text_layout(text, max_width, static_cast<float>(height) / scaling_factor);
         const auto metrics = text_layout.get_metrics();
-        const auto scaling_factor = TextLayout::s_default_scaling_factor();
-        const auto left = gsl::narrow_cast<int>((metrics.left) * scaling_factor);
+        const auto left = gsl::narrow_cast<int>(metrics.left * scaling_factor);
         const auto left_remainder_dip = metrics.left - gsl::narrow_cast<float>(left) / scaling_factor;
 
         return {left, left_remainder_dip, gsl::narrow_cast<int>((metrics.top) * scaling_factor),
-            gsl::narrow_cast<int>((metrics.width) * scaling_factor + 1),
-            gsl::narrow_cast<int>((metrics.height) * scaling_factor + 1)};
+            gsl::narrow_cast<int>(metrics.width * scaling_factor + 1),
+            gsl::narrow_cast<int>(metrics.height * scaling_factor + 1)};
     }
     CATCH_LOG()
 
@@ -339,7 +337,7 @@ int TextFormat::measure_text_width(std::wstring_view text) const
     try {
         const auto text_layout = create_text_layout(text, 65536.0f, 65536.0f);
         const auto metrics = text_layout.get_metrics();
-        return gsl::narrow_cast<int>((metrics.width) * TextLayout::s_default_scaling_factor() + 1);
+        return gsl::narrow_cast<int>(metrics.width * get_default_scaling_factor() + 1);
     }
     CATCH_LOG()
 
@@ -367,30 +365,45 @@ Context::Context()
     THROW_IF_FAILED(m_factory->GetGdiInterop(&m_gdi_interop));
 }
 
-TextFormat Context::create_text_format(const LOGFONT& log_font, float font_size)
+LOGFONT Context::create_log_font(const wil::com_ptr_t<IDWriteFont>& font) const
 {
-    wil::com_ptr_t<IDWriteFont> dw_font;
-    THROW_IF_FAILED(m_gdi_interop->CreateFontFromLOGFONT(&log_font, &dw_font));
+    LOGFONT log_font{};
+    BOOL is_system_font{};
+    THROW_IF_FAILED(m_gdi_interop->ConvertFontToLOGFONT(font.get(), &log_font, &is_system_font));
+    return log_font;
+}
 
-    wil::com_ptr_t<IDWriteFontFamily> dw_font_family;
-    THROW_IF_FAILED(dw_font->GetFontFamily(&dw_font_family));
+wil::com_ptr_t<IDWriteFont> Context::create_font(const LOGFONT& log_font) const
+{
+    wil::com_ptr_t<IDWriteFont> font;
+    THROW_IF_FAILED(m_gdi_interop->CreateFontFromLOGFONT(&log_font, &font));
+    return font;
+}
 
-    wil::com_ptr_t<IDWriteLocalizedStrings> dw_family_names;
-    THROW_IF_FAILED(dw_font_family->GetFamilyNames(&dw_family_names));
+TextFormat Context::create_text_format(const wil::com_ptr_t<IDWriteFont>& font, float font_size)
+{
+    wil::com_ptr_t<IDWriteFontFamily> font_family;
+    THROW_IF_FAILED(font->GetFontFamily(&font_family));
+
+    return create_text_format(font_family, font->GetWeight(), font->GetStyle(), font->GetStretch(), font_size);
+}
+
+TextFormat Context::create_text_format(const wil::com_ptr_t<IDWriteFontFamily>& font_family,
+    DWRITE_FONT_WEIGHT font_weight, DWRITE_FONT_STYLE font_style, DWRITE_FONT_STRETCH font_stretch, float font_size)
+{
+    wil::com_ptr_t<IDWriteLocalizedStrings> family_names;
+    THROW_IF_FAILED(font_family->GetFamilyNames(&family_names));
 
     uint32_t length{};
-    THROW_IF_FAILED(dw_family_names->GetStringLength(0, &length));
+    THROW_IF_FAILED(family_names->GetStringLength(0, &length));
 
     std::vector<wchar_t> family_name(length + 1, 0);
 
-    THROW_IF_FAILED(dw_family_names->GetString(0, family_name.data(), length + 1));
-
-    const auto fallback_font_size = 20.0f * gsl::narrow_cast<float>(USER_DEFAULT_SCREEN_DPI)
-        / gsl::narrow_cast<float>(get_system_dpi_cached().cx);
+    THROW_IF_FAILED(family_names->GetString(0, family_name.data(), length + 1));
 
     wil::com_ptr_t<IDWriteTextFormat> text_format;
-    THROW_IF_FAILED(m_factory->CreateTextFormat(family_name.data(), NULL, dw_font->GetWeight(), dw_font->GetStyle(),
-        dw_font->GetStretch(), font_size > 0 ? font_size : fallback_font_size, L"", &text_format));
+    THROW_IF_FAILED(m_factory->CreateTextFormat(
+        family_name.data(), NULL, font_weight, font_style, font_stretch, font_size, L"", &text_format));
 
     wil::com_ptr_t<IDWriteInlineObject> trimming_sign;
     THROW_IF_FAILED(m_factory->CreateEllipsisTrimmingSign(text_format.get(), &trimming_sign));
@@ -398,29 +411,45 @@ TextFormat Context::create_text_format(const LOGFONT& log_font, float font_size)
     THROW_IF_FAILED(text_format->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
     THROW_IF_FAILED(text_format->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
 
+    if (auto text_format_2 = text_format.try_query<IDWriteTextFormat2>(); text_format_2) {
+        DWRITE_LINE_SPACING spacing{DWRITE_LINE_SPACING_METHOD_DEFAULT, 0, 0, 0, DWRITE_FONT_LINE_GAP_USAGE_DISABLED};
+        THROW_IF_FAILED(text_format_2->SetLineSpacing(&spacing));
+    }
+
     return {shared_from_this(), m_factory, m_gdi_interop, text_format, trimming_sign};
+}
+
+TextFormat Context::create_text_format(const LOGFONT& log_font, float font_size)
+{
+    const auto font = create_font(log_font);
+    return create_text_format(font, font_size > 0 ? font_size : px_to_dip(20.0f));
 }
 
 std::optional<TextFormat> Context::create_text_format_with_fallback(
     const LOGFONT& log_font, std::optional<float> font_size) noexcept
 {
-    const auto resolved_size = font_size.value_or(-log_font.lfHeight * gsl::narrow<float>(USER_DEFAULT_SCREEN_DPI)
-        / gsl::narrow<float>(get_system_dpi_cached().cx));
+    const auto resolved_size = font_size.value_or(-px_to_dip(gsl::narrow_cast<float>(log_font.lfHeight)));
 
     try {
         return create_text_format(log_font, resolved_size);
     }
     CATCH_LOG()
 
-    LOGFONT icon_font{};
-    if (SystemParametersInfo(SPI_GETICONTITLELOGFONT, 0, &icon_font, 0)) {
-        try {
-            return create_text_format(icon_font, resolved_size);
-        }
-        CATCH_LOG()
+    try {
+        return create_icon_font_text_format(resolved_size);
     }
+    CATCH_LOG()
 
     return {};
+}
+
+TextFormat Context::create_icon_font_text_format(std::optional<float> font_size)
+{
+    LOGFONT log_font{};
+    THROW_IF_WIN32_BOOL_FALSE(SystemParametersInfo(SPI_GETICONTITLELOGFONT, 0, &log_font, 0));
+
+    const auto resolved_size = font_size.value_or(-px_to_dip(gsl::narrow_cast<float>(log_font.lfHeight)));
+    return create_text_format(log_font, resolved_size);
 }
 
 wil::com_ptr_t<IDWriteTypography> Context::get_default_typography()
@@ -432,6 +461,125 @@ wil::com_ptr_t<IDWriteTypography> Context::get_default_typography()
     }
 
     return m_default_typography;
+}
+
+std::vector<Font> FontFamily::fonts() const
+{
+    std::vector<Font> fonts;
+
+    auto count = family->GetFontCount();
+
+    for (auto index : std::ranges::views::iota(0u, count)) {
+        wil::com_ptr_t<IDWriteFont> font;
+        THROW_IF_FAILED(family->GetFont(index, &font));
+
+        wil::com_ptr_t<IDWriteLocalizedStrings> localised_names;
+        THROW_IF_FAILED(font->GetFaceNames(&localised_names));
+        fonts.emplace_back(std::move(font), get_localised_string(localised_names));
+    }
+
+    return fonts;
+}
+
+std::vector<FontFamily> Context::get_font_families() const
+{
+    std::vector<FontFamily> families;
+
+    wil::com_ptr_t<IDWriteFontCollection> font_collection;
+    THROW_IF_FAILED(m_factory->GetSystemFontCollection(&font_collection));
+
+    const auto family_count = font_collection->GetFontFamilyCount();
+
+    for (auto index : std::ranges::views::iota(0u, family_count)) {
+        wil::com_ptr_t<IDWriteFontFamily> family;
+        THROW_IF_FAILED(font_collection->GetFontFamily(index, &family));
+
+        wil::com_ptr_t<IDWriteLocalizedStrings> family_localised_names;
+        THROW_IF_FAILED(family->GetFamilyNames(&family_localised_names));
+
+        std::array<wchar_t, LOCALE_NAME_MAX_LENGTH> locale_name;
+        uint32_t locale_index{};
+        BOOL exists{};
+
+        if (GetUserDefaultLocaleName(locale_name.data(), LOCALE_NAME_MAX_LENGTH))
+            THROW_IF_FAILED(family_localised_names->FindLocaleName(locale_name.data(), &locale_index, &exists));
+
+        if (!exists)
+            THROW_IF_FAILED(family_localised_names->FindLocaleName(L"en-us", &locale_index, &exists));
+
+        if (!exists)
+            locale_index = 0;
+
+        uint32_t name_length{};
+        THROW_IF_FAILED(family_localised_names->GetStringLength(locale_index, &name_length));
+
+        std::wstring localised_name;
+        localised_name.resize(name_length);
+
+        THROW_IF_FAILED(family_localised_names->GetString(locale_index, localised_name.data(), name_length + 1));
+
+        wil::com_ptr_t<IDWriteFont> first_font;
+        THROW_IF_FAILED(family->GetFont(0, &first_font));
+
+        const auto is_symbol_font = first_font->IsSymbolFont() != 0;
+
+        families.emplace_back(std::move(family), std::move(localised_name), is_symbol_font);
+    }
+
+    mmh::in_place_sort(
+        families,
+        [](auto&& left, auto&& right) {
+            return StrCmpLogicalW(left.localised_name.c_str(), right.localised_name.c_str());
+        },
+        false);
+
+    return families;
+}
+
+std::wstring get_localised_string(const wil::com_ptr_t<IDWriteLocalizedStrings>& localised_strings)
+{
+    std::array<wchar_t, LOCALE_NAME_MAX_LENGTH> locale_name;
+    uint32_t locale_index{};
+    BOOL exists{};
+
+    if (GetUserDefaultLocaleName(locale_name.data(), LOCALE_NAME_MAX_LENGTH))
+        THROW_IF_FAILED(localised_strings->FindLocaleName(locale_name.data(), &locale_index, &exists));
+
+    if (!exists)
+        THROW_IF_FAILED(localised_strings->FindLocaleName(L"en-us", &locale_index, &exists));
+
+    if (!exists)
+        locale_index = 0;
+
+    uint32_t name_length{};
+    THROW_IF_FAILED(localised_strings->GetStringLength(locale_index, &name_length));
+
+    std::wstring localised_string;
+    localised_string.resize(name_length);
+
+    THROW_IF_FAILED(localised_strings->GetString(locale_index, localised_string.data(), name_length + 1));
+
+    return localised_string;
+}
+
+float get_default_scaling_factor()
+{
+    return gsl::narrow_cast<float>(get_system_dpi_cached().cx) / gsl::narrow_cast<float>(USER_DEFAULT_SCREEN_DPI);
+}
+
+float pt_to_dip(float point_size)
+{
+    return point_size * gsl::narrow_cast<float>(USER_DEFAULT_SCREEN_DPI) / 72.0f;
+}
+
+float px_to_dip(float px, float scaling_factor)
+{
+    return px / scaling_factor;
+}
+
+float dip_to_px(float dip, float scaling_factor)
+{
+    return dip * scaling_factor;
 }
 
 } // namespace uih::direct_write

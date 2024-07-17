@@ -75,7 +75,7 @@ int text_out_colours(const TextFormat& text_format, HDC dc, std::string_view tex
     text_format.set_alignment(get_text_alignment(align));
 
     try {
-        const auto scaling_factor = TextLayout::s_default_scaling_factor();
+        const auto scaling_factor = get_default_scaling_factor();
 
         const auto layout = text_format.create_text_layout(render_text,
             gsl::narrow_cast<float>(wil::rect_width(rect)) / scaling_factor,

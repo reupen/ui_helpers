@@ -12,18 +12,12 @@ public:
     {
     }
 
-    static float s_default_scaling_factor()
-    {
-        return gsl::narrow_cast<float>(get_system_dpi_cached().cx) / gsl::narrow_cast<float>(USER_DEFAULT_SCREEN_DPI);
-    }
-
     DWRITE_TEXT_METRICS get_metrics() const;
     DWRITE_OVERHANG_METRICS get_overhang_metrics() const;
     void render(HDC dc, RECT rect, COLORREF default_colour, float x_origin_offset = 0.0f) const;
     void set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const;
 
 private:
-    const float m_scaling_factor{s_default_scaling_factor()};
     wil::com_ptr_t<IDWriteFactory> m_factory;
     wil::com_ptr_t<IDWriteGdiInterop> m_gdi_interop;
     wil::com_ptr_t<IDWriteTextLayout> m_text_layout;
@@ -54,7 +48,7 @@ public:
     void enable_trimming_sign() const;
     void disable_trimming_sign() const;
 
-    [[nodiscard]] int get_minimum_height() const;
+    [[nodiscard]] int get_minimum_height(std::wstring_view text = std::wstring_view(L"", 0)) const;
     [[nodiscard]] TextPosition measure_text_position(
         std::wstring_view text, int height, float max_width = 65536.0f) const;
     [[nodiscard]] int measure_text_width(std::wstring_view text) const;
@@ -66,6 +60,19 @@ private:
     wil::com_ptr_t<IDWriteGdiInterop> m_gdi_interop;
     wil::com_ptr_t<IDWriteTextFormat> m_text_format;
     wil::com_ptr_t<IDWriteInlineObject> m_trimming_sign;
+};
+
+struct Font {
+    wil::com_ptr_t<IDWriteFont> font;
+    std::wstring localised_name;
+};
+
+struct FontFamily {
+    wil::com_ptr_t<IDWriteFontFamily> family;
+    std::wstring localised_name;
+    bool is_symbol_font{};
+
+    std::vector<Font> fonts() const;
 };
 
 class Context : public std::enable_shared_from_this<Context> {
@@ -86,10 +93,17 @@ public:
 
     Context();
 
+    LOGFONT create_log_font(const wil::com_ptr_t<IDWriteFont>& font) const;
+    wil::com_ptr_t<IDWriteFont> create_font(const LOGFONT& log_font) const;
+    TextFormat create_text_format(const wil::com_ptr_t<IDWriteFont>& font, float font_size);
+    TextFormat create_text_format(const wil::com_ptr_t<IDWriteFontFamily>& font_family, DWRITE_FONT_WEIGHT font_weight,
+        DWRITE_FONT_STYLE font_style, DWRITE_FONT_STRETCH font_stretch, float font_size);
     TextFormat create_text_format(const LOGFONT& log_font, float font_size);
     std::optional<TextFormat> create_text_format_with_fallback(
         const LOGFONT& log_font, std::optional<float> font_size) noexcept;
+    TextFormat create_icon_font_text_format(std::optional<float> font_size);
     wil::com_ptr_t<IDWriteTypography> get_default_typography();
+    std::vector<FontFamily> get_font_families() const;
 
 private:
     inline static std::weak_ptr<Context> s_ptr;
@@ -98,5 +112,12 @@ private:
     wil::com_ptr_t<IDWriteGdiInterop> m_gdi_interop;
     wil::com_ptr_t<IDWriteTypography> m_default_typography;
 };
+
+std::wstring get_localised_string(const wil::com_ptr_t<IDWriteLocalizedStrings>& localised_strings);
+float get_default_scaling_factor();
+
+float dip_to_px(float dip, float scaling_factor = get_default_scaling_factor());
+float px_to_dip(float px, float scaling_factor = get_default_scaling_factor());
+float pt_to_dip(float point_size);
 
 } // namespace uih::direct_write
