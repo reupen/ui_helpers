@@ -411,6 +411,11 @@ TextFormat Context::create_text_format(const wil::com_ptr_t<IDWriteFontFamily>& 
     THROW_IF_FAILED(text_format->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
     THROW_IF_FAILED(text_format->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
 
+    if (auto text_format_2 = text_format.try_query<IDWriteTextFormat2>(); text_format_2) {
+        DWRITE_LINE_SPACING spacing{DWRITE_LINE_SPACING_METHOD_DEFAULT, 0, 0, 0, DWRITE_FONT_LINE_GAP_USAGE_DISABLED};
+        THROW_IF_FAILED(text_format_2->SetLineSpacing(&spacing));
+    }
+
     return {shared_from_this(), m_factory, m_gdi_interop, text_format, trimming_sign};
 }
 
