@@ -2,6 +2,14 @@
 
 namespace uih::dpi {
 
+class DpiAwareFunctionUnavailableError : public std::exception {
+public:
+    [[nodiscard]] const char* what() const override
+    {
+        return "This DPI-aware function is not available.";
+    }
+};
+
 template <class Value, class ReleaseFunc>
 class DpiContextHandle {
 public:
