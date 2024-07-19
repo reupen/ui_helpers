@@ -6,13 +6,13 @@ BOOL system_parameters_info_for_dpi(unsigned action, unsigned param, void* data,
 {
     using SystemParametersInfoForDpiProc = BOOL(__stdcall*)(UINT, UINT, PVOID, UINT, UINT);
 
-    const wil::unique_hmodule user32(THROW_LAST_ERROR_IF_NULL(LoadLibrary(L"user32.dll")));
+    const wil::unique_hmodule user32(LOG_LAST_ERROR_IF_NULL(LoadLibrary(L"user32.dll")));
 
     const auto system_parameters_info_for_dpi_proc
         = reinterpret_cast<SystemParametersInfoForDpiProc>(GetProcAddress(user32.get(), "SystemParametersInfoForDpi"));
 
     if (!system_parameters_info_for_dpi_proc)
-        return SystemParametersInfo(action, param, data, 0);
+        throw DpiAwareFunctionUnavailableError();
 
     return system_parameters_info_for_dpi_proc(action, param, data, 0, dpi);
 }
@@ -21,13 +21,13 @@ BOOL system_parameters_info_for_dpi(unsigned action, unsigned param, void* data,
 {
     using GetSystemMetricsForDpiProc = int(__stdcall*)(int, UINT);
 
-    const wil::unique_hmodule user32(THROW_LAST_ERROR_IF_NULL(LoadLibrary(L"user32.dll")));
+    const wil::unique_hmodule user32(LOG_LAST_ERROR_IF_NULL(LoadLibrary(L"user32.dll")));
 
     const auto get_system_metrics_for_dpi_proc
         = reinterpret_cast<GetSystemMetricsForDpiProc>(GetProcAddress(user32.get(), "GetSystemMetricsForDpi"));
 
     if (!get_system_metrics_for_dpi_proc)
-        return GetSystemMetrics(index);
+        throw DpiAwareFunctionUnavailableError();
 
     return get_system_metrics_for_dpi_proc(index, dpi);
 }
