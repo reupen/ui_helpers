@@ -227,8 +227,10 @@ public:
         m_dark_edit_background_colour = background_colour;
     }
     void set_vertical_item_padding(int val);
-    void set_font(const LOGFONT& log_font, std::optional<float> font_size = std::nullopt);
-    void set_group_font(const LOGFONT& log_font, std::optional<float> font_size = std::nullopt);
+    void set_font_from_log_font(const LOGFONT& log_font);
+    void set_font(wil::com_ptr_t<IDWriteTextFormat> text_format, const LOGFONT& log_font);
+    void set_font(std::optional<direct_write::TextFormat> text_format, const LOGFONT& log_font);
+    void set_group_font(wil::com_ptr_t<IDWriteTextFormat> text_format);
     void set_header_font(const LOGFONT& log_font);
     void set_sorting_enabled(bool b_val);
     void set_show_sort_indicators(bool b_val);
@@ -700,9 +702,9 @@ protected:
     void focus_search_box();
 
 private:
-    struct FontConfig {
+    struct ItemsFontConfig {
+        wil::com_ptr_t<IDWriteTextFormat> text_format;
         LOGFONT log_font{};
-        std::optional<float> size;
     };
 
     virtual void on_first_show();
@@ -872,8 +874,7 @@ private:
     COLORREF m_dark_edit_background_colour{};
     COLORREF m_dark_edit_text_colour{RGB(255, 255, 255)};
 
-    std::optional<FontConfig> m_items_font_config{};
-    std::optional<FontConfig> m_group_font_config{};
+    std::optional<LOGFONT> m_items_log_font{};
     std::optional<LOGFONT> m_header_log_font{};
     direct_write::Context::Ptr m_direct_write_context;
     std::optional<direct_write::TextFormat> m_items_text_format;
