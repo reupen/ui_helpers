@@ -605,9 +605,35 @@ void ListView::set_vertical_item_padding(int val)
     }
 }
 
-void ListView::set_font(const LOGFONT& log_font, std::optional<float> font_size)
+void ListView::set_font_from_log_font(const LOGFONT& log_font)
 {
-    m_items_font_config = {log_font, font_size};
+    std::optional<direct_write::TextFormat> text_format;
+
+    if (m_direct_write_context) {
+        text_format = m_direct_write_context->create_text_format_with_fallback(log_font);
+    }
+
+    set_font(text_format, log_font);
+}
+
+void ListView::set_font(wil::com_ptr_t<IDWriteTextFormat> text_format, const LOGFONT& log_font)
+{
+    std::optional<direct_write::TextFormat> wrapped_text_format;
+
+    if (m_direct_write_context) {
+        try {
+            wrapped_text_format = m_direct_write_context->wrap_text_format(std::move(text_format));
+        }
+        CATCH_LOG();
+    }
+
+    set_font(wrapped_text_format, log_font);
+}
+
+void ListView::set_font(std::optional<direct_write::TextFormat> text_format, const LOGFONT& log_font)
+{
+    m_items_log_font = log_font;
+    m_items_text_format = std::move(text_format);
 
     if (m_initialised) {
         exit_inline_edit();
@@ -622,9 +648,10 @@ void ListView::set_font(const LOGFONT& log_font, std::optional<float> font_size)
     }
 }
 
-void ListView::set_group_font(const LOGFONT& log_font, std::optional<float> font_size)
+void ListView::set_group_font(wil::com_ptr_t<IDWriteTextFormat> text_format)
 {
-    m_group_font_config = {log_font, font_size};
+    if (m_direct_write_context)
+        m_group_text_format = m_direct_write_context->wrap_text_format(std::move(text_format));
 
     if (m_initialised) {
         exit_inline_edit();
@@ -637,22 +664,14 @@ void ListView::set_group_font(const LOGFONT& log_font, std::optional<float> font
 
 void ListView::refresh_items_font()
 {
-    if (m_direct_write_context && m_items_font_config)
-        m_items_text_format = m_direct_write_context->create_text_format_with_fallback(
-            m_items_font_config->log_font, m_items_font_config->size);
-
-    if (m_items_font_config)
-        m_items_font.reset(CreateFontIndirect(&m_items_font_config->log_font));
+    if (m_items_log_font)
+        m_items_font.reset(CreateFontIndirect(&*m_items_log_font));
 
     m_item_height = get_default_item_height();
 }
 
 void ListView::refresh_group_font()
 {
-    if (m_direct_write_context && m_group_font_config)
-        m_group_text_format = m_direct_write_context->create_text_format_with_fallback(
-            m_group_font_config->log_font, m_group_font_config->size);
-
     m_group_height = get_default_group_height();
 }
 

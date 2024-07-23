@@ -93,16 +93,29 @@ public:
 
     Context();
 
+    const wil::com_ptr_t<IDWriteFactory1>& factory() { return m_factory; }
+
     LOGFONT create_log_font(const wil::com_ptr_t<IDWriteFont>& font) const;
     wil::com_ptr_t<IDWriteFont> create_font(const LOGFONT& log_font) const;
     TextFormat create_text_format(const wil::com_ptr_t<IDWriteFont>& font, float font_size);
-    TextFormat create_text_format(const wil::com_ptr_t<IDWriteFontFamily>& font_family, DWRITE_FONT_WEIGHT font_weight,
-        DWRITE_FONT_STYLE font_style, DWRITE_FONT_STRETCH font_stretch, float font_size);
+
+    TextFormat create_text_format(const wil::com_ptr_t<IDWriteFontFamily>& font_family, DWRITE_FONT_WEIGHT weight,
+        DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style, float font_size);
+
+    TextFormat create_text_format(const wchar_t* family_name, DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch,
+        DWRITE_FONT_STYLE style, float font_size);
+
     TextFormat create_text_format(const LOGFONT& log_font, float font_size);
+
     std::optional<TextFormat> create_text_format_with_fallback(
-        const LOGFONT& log_font, std::optional<float> font_size) noexcept;
-    TextFormat create_icon_font_text_format(std::optional<float> font_size);
+        const LOGFONT& log_font, std::optional<float> font_size = {}) noexcept;
+
+    TextFormat wrap_text_format(wil::com_ptr_t<IDWriteTextFormat> text_format);
+
     wil::com_ptr_t<IDWriteTypography> get_default_typography();
+
+    std::optional<std::wstring> get_face_name(const wchar_t* family_name, DWRITE_FONT_WEIGHT weight,
+        DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style) const;
     std::vector<FontFamily> get_font_families() const;
 
 private:

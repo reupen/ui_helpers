@@ -385,11 +385,11 @@ TextFormat Context::create_text_format(const wil::com_ptr_t<IDWriteFont>& font, 
     wil::com_ptr_t<IDWriteFontFamily> font_family;
     THROW_IF_FAILED(font->GetFontFamily(&font_family));
 
-    return create_text_format(font_family, font->GetWeight(), font->GetStyle(), font->GetStretch(), font_size);
+    return create_text_format(font_family, font->GetWeight(), font->GetStretch(), font->GetStyle(), font_size);
 }
 
-TextFormat Context::create_text_format(const wil::com_ptr_t<IDWriteFontFamily>& font_family,
-    DWRITE_FONT_WEIGHT font_weight, DWRITE_FONT_STYLE font_style, DWRITE_FONT_STRETCH font_stretch, float font_size)
+TextFormat Context::create_text_format(const wil::com_ptr_t<IDWriteFontFamily>& font_family, DWRITE_FONT_WEIGHT weight,
+    DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style, float font_size)
 {
     wil::com_ptr_t<IDWriteLocalizedStrings> family_names;
     THROW_IF_FAILED(font_family->GetFamilyNames(&family_names));
@@ -401,22 +401,17 @@ TextFormat Context::create_text_format(const wil::com_ptr_t<IDWriteFontFamily>& 
 
     THROW_IF_FAILED(family_names->GetString(0, family_name.data(), length + 1));
 
+    return create_text_format(family_name.data(), weight, stretch, style, font_size);
+}
+
+TextFormat Context::create_text_format(const wchar_t* family_name, DWRITE_FONT_WEIGHT weight,
+    DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style, float font_size)
+{
     wil::com_ptr_t<IDWriteTextFormat> text_format;
-    THROW_IF_FAILED(m_factory->CreateTextFormat(
-        family_name.data(), NULL, font_weight, font_style, font_stretch, font_size, L"", &text_format));
+    THROW_IF_FAILED(
+        m_factory->CreateTextFormat(family_name, NULL, weight, style, stretch, font_size, L"", &text_format));
 
-    wil::com_ptr_t<IDWriteInlineObject> trimming_sign;
-    THROW_IF_FAILED(m_factory->CreateEllipsisTrimmingSign(text_format.get(), &trimming_sign));
-
-    THROW_IF_FAILED(text_format->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
-    THROW_IF_FAILED(text_format->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
-
-    if (auto text_format_2 = text_format.try_query<IDWriteTextFormat2>(); text_format_2) {
-        DWRITE_LINE_SPACING spacing{DWRITE_LINE_SPACING_METHOD_DEFAULT, 0, 0, 0, DWRITE_FONT_LINE_GAP_USAGE_DISABLED};
-        THROW_IF_FAILED(text_format_2->SetLineSpacing(&spacing));
-    }
-
-    return {shared_from_this(), m_factory, m_gdi_interop, text_format, trimming_sign};
+    return wrap_text_format(text_format);
 }
 
 TextFormat Context::create_text_format(const LOGFONT& log_font, float font_size)
@@ -436,20 +431,29 @@ std::optional<TextFormat> Context::create_text_format_with_fallback(
     CATCH_LOG()
 
     try {
-        return create_icon_font_text_format(resolved_size);
+        return create_text_format(L"", static_cast<DWRITE_FONT_WEIGHT>(std::clamp(log_font.lfWeight, 1l, 999l)),
+            DWRITE_FONT_STRETCH_NORMAL, log_font.lfItalic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL,
+            resolved_size);
     }
     CATCH_LOG()
 
     return {};
 }
 
-TextFormat Context::create_icon_font_text_format(std::optional<float> font_size)
+TextFormat Context::wrap_text_format(wil::com_ptr_t<IDWriteTextFormat> text_format)
 {
-    LOGFONT log_font{};
-    THROW_IF_WIN32_BOOL_FALSE(SystemParametersInfo(SPI_GETICONTITLELOGFONT, 0, &log_font, 0));
+    wil::com_ptr_t<IDWriteInlineObject> trimming_sign;
+    THROW_IF_FAILED(m_factory->CreateEllipsisTrimmingSign(text_format.get(), &trimming_sign));
 
-    const auto resolved_size = font_size.value_or(-px_to_dip(gsl::narrow_cast<float>(log_font.lfHeight)));
-    return create_text_format(log_font, resolved_size);
+    THROW_IF_FAILED(text_format->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
+    THROW_IF_FAILED(text_format->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+
+    if (auto text_format_2 = text_format.try_query<IDWriteTextFormat2>(); text_format_2) {
+        DWRITE_LINE_SPACING spacing{DWRITE_LINE_SPACING_METHOD_DEFAULT, 0, 0, 0, DWRITE_FONT_LINE_GAP_USAGE_DISABLED};
+        THROW_IF_FAILED(text_format_2->SetLineSpacing(&spacing));
+    }
+
+    return {shared_from_this(), m_factory, m_gdi_interop, std::move(text_format), trimming_sign};
 }
 
 wil::com_ptr_t<IDWriteTypography> Context::get_default_typography()
@@ -461,6 +465,36 @@ wil::com_ptr_t<IDWriteTypography> Context::get_default_typography()
     }
 
     return m_default_typography;
+}
+
+std::optional<std::wstring> Context::get_face_name(
+    const wchar_t* family_name, DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style) const
+{
+    wil::com_ptr_t<IDWriteFontCollection> font_collection;
+    try {
+        THROW_IF_FAILED(m_factory->GetSystemFontCollection(&font_collection));
+
+        BOOL exists{};
+        uint32_t index{};
+        THROW_IF_FAILED(font_collection->FindFamilyName(family_name, &index, &exists));
+
+        if (!exists)
+            return {};
+
+        wil::com_ptr_t<IDWriteFontFamily> font_family;
+        THROW_IF_FAILED(font_collection->GetFontFamily(index, &font_family));
+
+        wil::com_ptr_t<IDWriteFont> font;
+        THROW_IF_FAILED(font_family->GetFirstMatchingFont(weight, stretch, style, &font));
+
+        wil::com_ptr_t<IDWriteLocalizedStrings> face_names;
+        font->GetFaceNames(&face_names);
+
+        return get_localised_string(face_names);
+    } catch (...) {
+        LOG_CAUGHT_EXCEPTION();
+        return {};
+    }
 }
 
 std::vector<Font> FontFamily::fonts() const
