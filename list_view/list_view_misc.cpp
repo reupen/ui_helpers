@@ -620,11 +620,11 @@ void ListView::set_font(wil::com_ptr_t<IDWriteTextFormat> text_format, const LOG
 {
     std::optional<direct_write::TextFormat> wrapped_text_format;
 
-    if (m_direct_write_context) {
+    if (m_direct_write_context && text_format) {
         try {
             wrapped_text_format = m_direct_write_context->wrap_text_format(std::move(text_format));
         }
-        CATCH_LOG();
+        CATCH_LOG()
     }
 
     set_font(wrapped_text_format, log_font);
@@ -650,8 +650,10 @@ void ListView::set_font(std::optional<direct_write::TextFormat> text_format, con
 
 void ListView::set_group_font(wil::com_ptr_t<IDWriteTextFormat> text_format)
 {
-    if (m_direct_write_context)
+    if (m_direct_write_context && text_format)
         m_group_text_format = m_direct_write_context->wrap_text_format(std::move(text_format));
+    else
+        m_group_text_format.reset();
 
     if (m_initialised) {
         exit_inline_edit();
