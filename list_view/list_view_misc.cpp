@@ -278,7 +278,7 @@ int ListView::get_default_item_height()
 
 int ListView::get_default_group_height()
 {
-    const auto font_height = m_group_text_format ? m_items_text_format->get_minimum_height() : 0;
+    const auto font_height = m_group_text_format ? m_group_text_format->get_minimum_height() : 0;
     int ret = font_height + m_vertical_item_padding;
     if (ret < 1)
         ret = 1;
