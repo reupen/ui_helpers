@@ -324,7 +324,7 @@ TextPosition TextFormat::measure_text_position(std::wstring_view text, int heigh
         const auto left_remainder_dip = metrics.left - gsl::narrow_cast<float>(left) / scaling_factor;
 
         return {left, left_remainder_dip, gsl::narrow_cast<int>((metrics.top) * scaling_factor),
-            gsl::narrow_cast<int>(metrics.width * scaling_factor + 1),
+            gsl::narrow_cast<int>(metrics.widthIncludingTrailingWhitespace * scaling_factor + 1),
             gsl::narrow_cast<int>(metrics.height * scaling_factor + 1)};
     }
     CATCH_LOG()
@@ -337,7 +337,7 @@ int TextFormat::measure_text_width(std::wstring_view text) const
     try {
         const auto text_layout = create_text_layout(text, 65536.0f, 65536.0f);
         const auto metrics = text_layout.get_metrics();
-        return gsl::narrow_cast<int>(metrics.width * get_default_scaling_factor() + 1);
+        return gsl::narrow_cast<int>(metrics.widthIncludingTrailingWhitespace * get_default_scaling_factor() + 1);
     }
     CATCH_LOG()
 
