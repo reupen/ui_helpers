@@ -153,6 +153,8 @@ public:
         m_dragging_rmb_initial_point.x = 0;
         m_dragging_rmb_initial_point.y = 0;
 
+        m_vertical_item_padding = scale_dpi_value(4);
+
         auto window_config = ContainerWindowConfig{L"NGLV"};
         window_config.window_ex_styles = 0u;
         window_config.window_styles = WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_TABSTOP | WS_BORDER;
@@ -909,7 +911,7 @@ private:
     bool m_always_show_focus{false};
     bool m_show_header{true};
     bool m_ignore_column_size_change_notification{false};
-    int m_vertical_item_padding{4};
+    int m_vertical_item_padding{};
 
     bool m_variable_height_items{false};
 
