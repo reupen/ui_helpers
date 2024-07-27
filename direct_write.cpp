@@ -239,28 +239,37 @@ void TextLayout::set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const
 
 void TextLayout::render(HDC dc, RECT rect, COLORREF default_colour, float x_origin_offset) const
 {
+    const auto metrics = get_metrics();
+
+    if (metrics.width <= 0.0f)
+        return;
+
     const auto scaling_factor = get_default_scaling_factor();
+    const auto overhang_metrics = get_overhang_metrics();
     const auto layout_width = m_text_layout->GetMaxWidth();
     const auto layout_height = m_text_layout->GetMaxHeight();
-    const auto overhang_metrics = get_overhang_metrics();
-
-    const auto draw_left_px = std::max(0l, gsl::narrow_cast<long>((-overhang_metrics.left) * scaling_factor));
-    const auto draw_left_dip = gsl::narrow_cast<float>(draw_left_px) / scaling_factor;
-
-    const auto draw_right_px = gsl::narrow_cast<long>((layout_width + overhang_metrics.right) * scaling_factor + 1);
-
-    const auto draw_top_px = std::max(0l, gsl::narrow_cast<long>((-overhang_metrics.top) * scaling_factor));
-    const auto draw_top_dip = gsl::narrow_cast<float>(draw_top_px) / scaling_factor;
-
-    const auto draw_bottom_px = gsl::narrow_cast<long>((layout_height + overhang_metrics.bottom) * scaling_factor + 1);
-
     const auto rect_width = wil::rect_width(rect);
     const auto rect_height = wil::rect_height(rect);
 
+    const auto draw_left_px = std::max(0l, gsl::narrow_cast<long>((-overhang_metrics.left) * scaling_factor) - 1);
+    const auto draw_right_px = std::min(
+        rect_width, gsl::narrow_cast<long>((layout_width + overhang_metrics.right) * scaling_factor + 1.0f) + 1);
+
+    const auto draw_top_px = std::max(0l, gsl::narrow_cast<long>((-overhang_metrics.top) * scaling_factor) - 1);
+    const auto draw_bottom_px = std::min(
+        rect_height, gsl::narrow_cast<long>((layout_height + overhang_metrics.bottom) * scaling_factor + 1.0f) + 1);
+
     const auto bitmap_width = std::min(rect_width, draw_right_px - draw_left_px);
     const auto bitmap_height = std::min(rect_height, draw_bottom_px - draw_top_px);
-    const auto source_x = rect.left + (bitmap_width < rect_width ? draw_left_px : 0l);
-    const auto source_y = rect.top + (bitmap_height < rect_height ? draw_top_px : 0l);
+
+    const auto is_shrunk_width = bitmap_width < rect_width;
+    const auto is_shrunk_height = bitmap_height < rect_height;
+
+    const auto source_x = rect.left + (is_shrunk_width ? draw_left_px : 0l);
+    const auto source_y = rect.top + (is_shrunk_height ? draw_top_px : 0l);
+
+    const auto draw_left_dip = is_shrunk_width ? gsl::narrow_cast<float>(draw_left_px) / scaling_factor : 0.0f;
+    const auto draw_top_dip = is_shrunk_height ? gsl::narrow_cast<float>(draw_top_px) / scaling_factor : 0.0f;
 
     wil::com_ptr_t<IDWriteBitmapRenderTarget> bitmap_render_target;
     THROW_IF_FAILED(m_gdi_interop->CreateBitmapRenderTarget(dc, bitmap_width, bitmap_height, &bitmap_render_target));
