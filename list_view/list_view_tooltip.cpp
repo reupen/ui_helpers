@@ -88,7 +88,7 @@ void ListView::calculate_tooltip_position(size_t item_index, size_t column_index
     const auto& column = m_columns[column_index];
 
     try {
-        m_items_text_format->set_alignment(direct_write::get_text_alignment(column.m_alignment));
+        m_items_text_format->set_text_alignment(direct_write::get_text_alignment(column.m_alignment));
         m_items_text_format->enable_trimming_sign();
     }
     CATCH_LOG()
@@ -173,7 +173,7 @@ void ListView::render_tooltip_text(HWND wnd, HDC dc, COLORREF colour) const
     if (m_items_text_format) {
         try {
             m_items_text_format->disable_trimming_sign();
-            m_items_text_format->set_alignment();
+            m_items_text_format->set_text_alignment();
             const auto scaling_factor = direct_write::get_default_scaling_factor();
 
             const auto text_layout = m_items_text_format->create_text_layout(text,
