@@ -12,10 +12,20 @@ public:
     {
     }
 
+    float get_max_height() const noexcept;
+    float get_max_width() const noexcept;
     DWRITE_TEXT_METRICS get_metrics() const;
     DWRITE_OVERHANG_METRICS get_overhang_metrics() const;
-    void render(HDC dc, RECT rect, COLORREF default_colour, float x_origin_offset = 0.0f) const;
+    void render_with_transparent_background(
+        HDC dc, RECT output_rect, COLORREF default_colour, float x_origin_offset = 0.0f) const;
+    void render_with_solid_background(HDC dc, float x_origin, float y_origin, RECT clip_rect,
+        COLORREF background_colour, COLORREF default_text_colour) const;
     void set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const;
+    void set_max_height(float value) const;
+    void set_max_width(float value) const;
+    void set_underline(bool is_underlined, DWRITE_TEXT_RANGE text_range) const;
+    void set_font(const wchar_t* font_family, DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch,
+        DWRITE_FONT_STYLE style, float size, DWRITE_TEXT_RANGE text_range) const;
 
 private:
     wil::com_ptr_t<IDWriteFactory> m_factory;
@@ -34,18 +44,18 @@ struct TextPosition {
 class TextFormat {
 public:
     TextFormat(std::shared_ptr<class Context> context, wil::com_ptr_t<IDWriteFactory> factory,
-        wil::com_ptr_t<IDWriteGdiInterop> gdi_interop, wil::com_ptr_t<IDWriteTextFormat> text_format,
-        wil::com_ptr_t<IDWriteInlineObject> trimming_sign)
+        wil::com_ptr_t<IDWriteGdiInterop> gdi_interop, wil::com_ptr_t<IDWriteTextFormat> text_format)
         : m_context(std::move(context))
         , m_factory(std::move(factory))
         , m_gdi_interop(std::move(gdi_interop))
         , m_text_format(std::move(text_format))
-        , m_trimming_sign(std::move(trimming_sign))
     {
     }
 
-    void set_alignment(DWRITE_TEXT_ALIGNMENT alignment = DWRITE_TEXT_ALIGNMENT_LEADING) const;
-    void enable_trimming_sign() const;
+    void set_text_alignment(DWRITE_TEXT_ALIGNMENT value = DWRITE_TEXT_ALIGNMENT_LEADING) const;
+    void set_paragraph_alignment(DWRITE_PARAGRAPH_ALIGNMENT value) const;
+    void set_word_wrapping(DWRITE_WORD_WRAPPING value) const;
+    void enable_trimming_sign();
     void disable_trimming_sign() const;
 
     [[nodiscard]] int get_minimum_height(std::wstring_view text = std::wstring_view(L"", 0)) const;
@@ -110,7 +120,7 @@ public:
     std::optional<TextFormat> create_text_format_with_fallback(
         const LOGFONT& log_font, std::optional<float> font_size = {}) noexcept;
 
-    TextFormat wrap_text_format(wil::com_ptr_t<IDWriteTextFormat> text_format);
+    TextFormat wrap_text_format(wil::com_ptr_t<IDWriteTextFormat> text_format, bool set_defaults = true);
 
     wil::com_ptr_t<IDWriteTypography> get_default_typography();
 

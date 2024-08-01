@@ -16,7 +16,7 @@ int text_out_colours(const TextFormat& text_format, HDC dc, std::string_view tex
         ? process_colour_codes(mmh::to_utf16(text), selected)
         : std::tuple(mmh::to_utf16(text), std::vector<ColouredTextSegment>{});
 
-    text_format.set_alignment(get_text_alignment(align));
+    text_format.set_text_alignment(get_text_alignment(align));
 
     try {
         const auto scaling_factor = get_default_scaling_factor();
@@ -31,7 +31,7 @@ int text_out_colours(const TextFormat& text_format, HDC dc, std::string_view tex
 
         const auto metrics = layout.get_metrics();
 
-        layout.render(dc, rect, default_color);
+        layout.render_with_transparent_background(dc, rect, default_color);
 
         return gsl::narrow_cast<int>(metrics.width * scaling_factor + 1);
     }
@@ -54,7 +54,7 @@ DWRITE_TEXT_ALIGNMENT get_text_alignment(alignment alignment_)
     }
 }
 
-int text_out_columns_and_colours(const TextFormat& text_format, HDC dc, std::string_view text, int x_offset, int border,
+int text_out_columns_and_colours(TextFormat& text_format, HDC dc, std::string_view text, int x_offset, int border,
     const RECT& rect, bool selected, COLORREF default_colour, bool enable_colour_codes, bool enable_tab_columns,
     alignment align, bool enable_ellipses)
 {
