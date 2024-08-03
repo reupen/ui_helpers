@@ -9,68 +9,12 @@ namespace {
 int text_out_colours(const TextFormat& text_format, HDC dc, std::string_view text, const RECT& rect, bool selected,
     DWORD default_color, alignment align, bool enable_colour_codes)
 {
-    struct ColouredTextSegment {
-        COLORREF colour{};
-        size_t character_count{};
-    };
-
     if (is_rect_null_or_reversed(&rect) || rect.right <= rect.left)
         return 0;
 
-    const pfc::stringcvt::string_wide_from_utf8 utf16_text(text.data(), text.size());
-    const std::wstring_view utf16_text_view(utf16_text.get_ptr(), utf16_text.length());
-    std::vector<ColouredTextSegment> segments;
-    std::wstring text_without_colours;
-
-    size_t offset{};
-    COLORREF cr_current = default_color;
-    while (enable_colour_codes) {
-        const size_t index = utf16_text_view.find(L"\3"sv, offset);
-
-        const auto fragment_length = index == std::wstring_view::npos ? std::wstring_view::npos : index - offset;
-        const auto fragment = utf16_text_view.substr(offset, fragment_length);
-
-        if (!fragment.empty()) {
-            segments.emplace_back(cr_current, fragment.length());
-            text_without_colours.append(fragment);
-        }
-
-        if (index == std::wstring_view::npos)
-            break;
-
-        offset = utf16_text_view.find(L"\3"sv, index + 1);
-
-        if (offset == std::wstring_view::npos)
-            break;
-
-        const auto colour_code = utf16_text_view.substr(index + 1, offset - index - 1);
-        const auto bar_index = colour_code.find(L'|');
-        const auto non_selected_colour_hex = colour_code.substr(0, bar_index);
-
-        ++offset;
-
-        if (non_selected_colour_hex.empty()) {
-            cr_current = default_color;
-            continue;
-        }
-
-        COLORREF non_selected_colour = mmh::strtoul_n(
-            non_selected_colour_hex.data(), std::min(size_t{6}, non_selected_colour_hex.length()), 0x10);
-
-        if (!selected)
-            cr_current = non_selected_colour;
-        else {
-            if (bar_index == std::wstring_view::npos) {
-                cr_current = 0xffffff - non_selected_colour;
-            } else {
-                const auto selected_colour_hex = colour_code.substr(0, bar_index);
-                cr_current = mmh::strtoul_n(
-                    selected_colour_hex.data(), std::min(size_t{6}, selected_colour_hex.length()), 0x10);
-            }
-        }
-    }
-
-    std::wstring_view render_text = enable_colour_codes ? text_without_colours : utf16_text_view;
+    auto [render_text, segments] = enable_colour_codes
+        ? process_colour_codes(mmh::to_utf16(text), selected)
+        : std::tuple(mmh::to_utf16(text), std::vector<ColouredTextSegment>{});
 
     text_format.set_alignment(get_text_alignment(align));
 
@@ -81,11 +25,8 @@ int text_out_colours(const TextFormat& text_format, HDC dc, std::string_view tex
             gsl::narrow_cast<float>(wil::rect_width(rect)) / scaling_factor,
             gsl::narrow_cast<float>(wil::rect_height(rect)) / scaling_factor);
 
-        size_t position{};
-
-        for (auto& [colour, character_count] : segments) {
-            layout.set_colour(colour, {gsl::narrow<uint32_t>(position), gsl::narrow<uint32_t>(character_count)});
-            position += character_count;
+        for (auto& [colour, start_character, character_count] : segments) {
+            layout.set_colour(colour, {gsl::narrow<uint32_t>(start_character), gsl::narrow<uint32_t>(character_count)});
         }
 
         const auto metrics = layout.get_metrics();
