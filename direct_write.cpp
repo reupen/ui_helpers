@@ -155,7 +155,30 @@ public:
     HRESULT STDMETHODCALLTYPE DrawUnderline(void* clientDrawingContext, FLOAT baselineOriginX, FLOAT baselineOriginY,
         const DWRITE_UNDERLINE* underline, IUnknown* clientDrawingEffect) noexcept override
     {
-        return E_NOTIMPL;
+        const auto x_start = baselineOriginX;
+        const auto x_end = x_start
+            + underline->width * (underline->readingDirection == DWRITE_READING_DIRECTION_RIGHT_TO_LEFT ? -1 : 1);
+        const auto y_start = baselineOriginY + underline->offset;
+        const auto y_end = y_start + underline->thickness;
+
+        wil::com_ptr_t<ColourEffect> colour_effect;
+        if (clientDrawingEffect) {
+            colour_effect = wil::try_com_query<ColourEffect>(clientDrawingEffect);
+        }
+
+        const COLORREF colour = colour_effect ? colour_effect->GetColour() : m_default_colour;
+
+        const auto dc = m_render_target->GetMemoryDC();
+        const auto scaling_factor = m_render_target->GetPixelsPerDip();
+
+        const auto scale_value
+            = [scaling_factor](float value) { return gsl::narrow_cast<int>(value * scaling_factor + 0.5); };
+
+        RECT underline_rect = {scale_value(x_start), scale_value(y_start), scale_value(x_end), scale_value(y_end)};
+        wil::unique_hbrush brush(CreateSolidBrush(colour));
+        FillRect(dc, &underline_rect, brush.get());
+
+        return S_OK;
     }
 
     HRESULT STDMETHODCALLTYPE DrawStrikethrough(void* clientDrawingContext, FLOAT baselineOriginX,
@@ -217,6 +240,16 @@ GdiTextRenderer::GdiTextRenderer(wil::com_ptr<IDWriteFactory> factory, IDWriteBi
 
 } // namespace
 
+float TextLayout::get_max_height() const noexcept
+{
+    return m_text_layout->GetMaxHeight();
+}
+
+float TextLayout::get_max_width() const noexcept
+{
+    return m_text_layout->GetMaxWidth();
+}
+
 DWRITE_TEXT_METRICS TextLayout::get_metrics() const
 {
     DWRITE_TEXT_METRICS metrics{};
@@ -237,7 +270,33 @@ void TextLayout::set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const
     THROW_IF_FAILED(m_text_layout->SetDrawingEffect(colour_effect.get(), text_range));
 }
 
-void TextLayout::render(HDC dc, RECT rect, COLORREF default_colour, float x_origin_offset) const
+void TextLayout::set_max_height(float value) const
+{
+    THROW_IF_FAILED(m_text_layout->SetMaxHeight(value));
+}
+
+void TextLayout::set_max_width(float value) const
+{
+    THROW_IF_FAILED(m_text_layout->SetMaxWidth(value));
+}
+
+void TextLayout::set_underline(bool is_underlined, DWRITE_TEXT_RANGE text_range) const
+{
+    THROW_IF_FAILED(m_text_layout->SetUnderline(is_underlined, text_range));
+}
+
+void TextLayout::set_font(const wchar_t* font_family, DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch,
+    DWRITE_FONT_STYLE style, float size, DWRITE_TEXT_RANGE text_range) const
+{
+    THROW_IF_FAILED(m_text_layout->SetFontFamilyName(font_family, text_range));
+    THROW_IF_FAILED(m_text_layout->SetFontWeight(weight, text_range));
+    THROW_IF_FAILED(m_text_layout->SetFontStretch(stretch, text_range));
+    THROW_IF_FAILED(m_text_layout->SetFontStyle(style, text_range));
+    THROW_IF_FAILED(m_text_layout->SetFontSize(size, text_range));
+}
+
+void TextLayout::render_with_transparent_background(
+    HDC dc, RECT output_rect, COLORREF default_colour, float x_origin_offset) const
 {
     const auto metrics = get_metrics();
 
@@ -248,14 +307,15 @@ void TextLayout::render(HDC dc, RECT rect, COLORREF default_colour, float x_orig
     const auto overhang_metrics = get_overhang_metrics();
     const auto layout_width = m_text_layout->GetMaxWidth();
     const auto layout_height = m_text_layout->GetMaxHeight();
-    const auto rect_width = wil::rect_width(rect);
-    const auto rect_height = wil::rect_height(rect);
+    const auto rect_width = wil::rect_width(output_rect);
+    const auto rect_height = wil::rect_height(output_rect);
 
-    const auto draw_left_px = std::max(0l, gsl::narrow_cast<long>((-overhang_metrics.left) * scaling_factor) - 1);
-    const auto draw_right_px = std::min(
-        rect_width, gsl::narrow_cast<long>((layout_width + overhang_metrics.right) * scaling_factor + 1.0f) + 1);
+    const auto draw_left_px
+        = std::max(0l, gsl::narrow_cast<long>((x_origin_offset - overhang_metrics.left) * scaling_factor) - 1);
+    const auto draw_right_px = std::min(rect_width,
+        gsl::narrow_cast<long>((x_origin_offset + layout_width + overhang_metrics.right) * scaling_factor + 1.0f) + 1);
 
-    const auto draw_top_px = std::max(0l, gsl::narrow_cast<long>((-overhang_metrics.top) * scaling_factor) - 1);
+    const auto draw_top_px = std::max(0l, gsl::narrow_cast<long>(-overhang_metrics.top * scaling_factor) - 1);
     const auto draw_bottom_px = std::min(
         rect_height, gsl::narrow_cast<long>((layout_height + overhang_metrics.bottom) * scaling_factor + 1.0f) + 1);
 
@@ -265,8 +325,8 @@ void TextLayout::render(HDC dc, RECT rect, COLORREF default_colour, float x_orig
     const auto is_shrunk_width = bitmap_width < rect_width;
     const auto is_shrunk_height = bitmap_height < rect_height;
 
-    const auto source_x = rect.left + (is_shrunk_width ? draw_left_px : 0l);
-    const auto source_y = rect.top + (is_shrunk_height ? draw_top_px : 0l);
+    const auto source_x = output_rect.left + (is_shrunk_width ? draw_left_px : 0l);
+    const auto source_y = output_rect.top + (is_shrunk_height ? draw_top_px : 0l);
 
     const auto draw_left_dip = is_shrunk_width ? gsl::narrow_cast<float>(draw_left_px) / scaling_factor : 0.0f;
     const auto draw_top_dip = is_shrunk_height ? gsl::narrow_cast<float>(draw_top_px) / scaling_factor : 0.0f;
@@ -290,13 +350,63 @@ void TextLayout::render(HDC dc, RECT rect, COLORREF default_colour, float x_orig
     BitBlt(dc, source_x, source_y, bitmap_width, bitmap_height, memory_dc, 0, 0, SRCCOPY);
 }
 
-void TextFormat::set_alignment(DWRITE_TEXT_ALIGNMENT alignment) const
+void TextLayout::render_with_solid_background(HDC dc, float x_origin, float y_origin, RECT clip_rect,
+    COLORREF background_colour, COLORREF default_text_colour) const
 {
-    THROW_IF_FAILED(m_text_format->SetTextAlignment(alignment));
+    const auto bitmap_width = wil::rect_width(clip_rect);
+    const auto bitmap_height = wil::rect_height(clip_rect);
+    const auto scaling_factor = get_default_scaling_factor();
+
+    wil::com_ptr_t<IDWriteBitmapRenderTarget> bitmap_render_target;
+    THROW_IF_FAILED(m_gdi_interop->CreateBitmapRenderTarget(dc, bitmap_width, bitmap_height, &bitmap_render_target));
+    THROW_IF_FAILED(bitmap_render_target->SetPixelsPerDip(scaling_factor));
+
+    const auto memory_dc = bitmap_render_target->GetMemoryDC();
+    OffsetWindowOrgEx(memory_dc, clip_rect.left, clip_rect.top, nullptr);
+
+    const wil::unique_hbrush fill_brush(CreateSolidBrush(background_colour));
+    FillRect(memory_dc, &clip_rect, fill_brush.get());
+
+    const auto metrics = get_metrics();
+
+    wil::com_ptr_t<IDWriteRenderingParams> dw_rendering_params;
+    THROW_IF_FAILED(m_factory->CreateRenderingParams(&dw_rendering_params));
+
+    DWRITE_MATRIX transform{1.0f, 0.0f, 0.0f, 1.0f, -px_to_dip(gsl::narrow_cast<float>(clip_rect.left)),
+        -px_to_dip(gsl::narrow_cast<float>(clip_rect.top))};
+
+    THROW_IF_FAILED(bitmap_render_target->SetCurrentTransform(&transform));
+
+    const wil::com_ptr_t<IDWriteTextRenderer> renderer
+        = new GdiTextRenderer(m_factory, bitmap_render_target.get(), dw_rendering_params.get(), default_text_colour);
+
+    THROW_IF_FAILED(m_text_layout->Draw(NULL, renderer.get(), x_origin, y_origin));
+
+    BitBlt(dc, clip_rect.left, clip_rect.top, bitmap_width, bitmap_height, memory_dc, clip_rect.left, clip_rect.top,
+        SRCCOPY);
 }
 
-void TextFormat::enable_trimming_sign() const
+void TextFormat::set_text_alignment(DWRITE_TEXT_ALIGNMENT value) const
 {
+    THROW_IF_FAILED(m_text_format->SetTextAlignment(value));
+}
+
+void TextFormat::set_paragraph_alignment(DWRITE_PARAGRAPH_ALIGNMENT value) const
+{
+    THROW_IF_FAILED(m_text_format->SetParagraphAlignment(value));
+}
+
+void TextFormat::set_word_wrapping(DWRITE_WORD_WRAPPING value) const
+{
+    THROW_IF_FAILED(m_text_format->SetWordWrapping(value));
+}
+
+void TextFormat::enable_trimming_sign()
+{
+    if (!m_trimming_sign) {
+        THROW_IF_FAILED(m_factory->CreateEllipsisTrimmingSign(m_text_format.get(), &m_trimming_sign));
+    }
+
     DWRITE_TRIMMING trimming{DWRITE_TRIMMING_GRANULARITY_CHARACTER, 0, 0};
     THROW_IF_FAILED(m_text_format->SetTrimming(&trimming, m_trimming_sign.get()));
 }
@@ -310,13 +420,10 @@ void TextFormat::disable_trimming_sign() const
 int TextFormat::get_minimum_height(std::wstring_view text) const
 {
     try {
-        auto max_size = 65536.0f;
+        constexpr auto max_size = 65536.0f;
         const auto text_layout = create_text_layout(text, max_size, max_size);
         const auto metrics = text_layout.get_metrics();
-        auto top_half = max_size / 2 - metrics.top;
-        auto bottom_half = metrics.top + metrics.height - max_size / 2;
-
-        return gsl::narrow_cast<int>(std::max(top_half, bottom_half) * 2.0f * get_default_scaling_factor() + 1);
+        return gsl::narrow_cast<int>(metrics.height * get_default_scaling_factor() + 1);
     }
     CATCH_LOG()
 
@@ -449,20 +556,19 @@ std::optional<TextFormat> Context::create_text_format_with_fallback(
     return {};
 }
 
-TextFormat Context::wrap_text_format(wil::com_ptr_t<IDWriteTextFormat> text_format)
+TextFormat Context::wrap_text_format(wil::com_ptr_t<IDWriteTextFormat> text_format, bool set_defaults)
 {
-    wil::com_ptr_t<IDWriteInlineObject> trimming_sign;
-    THROW_IF_FAILED(m_factory->CreateEllipsisTrimmingSign(text_format.get(), &trimming_sign));
-
-    THROW_IF_FAILED(text_format->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
-    THROW_IF_FAILED(text_format->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+    if (set_defaults) {
+        THROW_IF_FAILED(text_format->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
+        THROW_IF_FAILED(text_format->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER));
+    }
 
     if (auto text_format_2 = text_format.try_query<IDWriteTextFormat2>(); text_format_2) {
         DWRITE_LINE_SPACING spacing{DWRITE_LINE_SPACING_METHOD_DEFAULT, 0, 0, 0, DWRITE_FONT_LINE_GAP_USAGE_DISABLED};
         THROW_IF_FAILED(text_format_2->SetLineSpacing(&spacing));
     }
 
-    return {shared_from_this(), m_factory, m_gdi_interop, std::move(text_format), trimming_sign};
+    return {shared_from_this(), m_factory, m_gdi_interop, std::move(text_format)};
 }
 
 wil::com_ptr_t<IDWriteTypography> Context::get_default_typography()
