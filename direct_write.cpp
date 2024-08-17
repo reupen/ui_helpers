@@ -367,8 +367,6 @@ void TextLayout::render_with_solid_background(HDC dc, float x_origin, float y_or
     const wil::unique_hbrush fill_brush(CreateSolidBrush(background_colour));
     FillRect(memory_dc, &clip_rect, fill_brush.get());
 
-    const auto metrics = get_metrics();
-
     wil::com_ptr_t<IDWriteRenderingParams> dw_rendering_params;
     THROW_IF_FAILED(m_factory->CreateRenderingParams(&dw_rendering_params));
 
