@@ -5,10 +5,13 @@ namespace uih::direct_write {
 class TextLayout {
 public:
     TextLayout(wil::com_ptr_t<IDWriteFactory> factory, wil::com_ptr_t<IDWriteGdiInterop> gdi_interop,
-        wil::com_ptr_t<IDWriteTextLayout> text_layout)
+        wil::com_ptr_t<IDWriteTextLayout> text_layout, DWRITE_RENDERING_MODE rendering_mode,
+        bool force_greyscale_antialiasing)
         : m_factory(std::move(factory))
         , m_gdi_interop(std::move(gdi_interop))
         , m_text_layout(std::move(text_layout))
+        , m_rendering_mode(rendering_mode)
+        , m_force_greyscale_antialiasing(force_greyscale_antialiasing)
     {
     }
 
@@ -28,9 +31,13 @@ public:
         DWRITE_FONT_STYLE style, float size, DWRITE_TEXT_RANGE text_range) const;
 
 private:
+    wil::com_ptr_t<IDWriteRenderingParams> create_rendering_params() const;
+
     wil::com_ptr_t<IDWriteFactory> m_factory;
     wil::com_ptr_t<IDWriteGdiInterop> m_gdi_interop;
     wil::com_ptr_t<IDWriteTextLayout> m_text_layout;
+    DWRITE_RENDERING_MODE m_rendering_mode{};
+    bool m_force_greyscale_antialiasing{};
 };
 
 struct TextPosition {
@@ -44,11 +51,14 @@ struct TextPosition {
 class TextFormat {
 public:
     TextFormat(std::shared_ptr<class Context> context, wil::com_ptr_t<IDWriteFactory> factory,
-        wil::com_ptr_t<IDWriteGdiInterop> gdi_interop, wil::com_ptr_t<IDWriteTextFormat> text_format)
+        wil::com_ptr_t<IDWriteGdiInterop> gdi_interop, wil::com_ptr_t<IDWriteTextFormat> text_format,
+        DWRITE_RENDERING_MODE rendering_mode, bool force_greyscale_antialiasing)
         : m_context(std::move(context))
         , m_factory(std::move(factory))
         , m_gdi_interop(std::move(gdi_interop))
         , m_text_format(std::move(text_format))
+        , m_rendering_mode(rendering_mode)
+        , m_force_greyscale_antialiasing(force_greyscale_antialiasing)
     {
     }
 
@@ -70,6 +80,8 @@ private:
     wil::com_ptr_t<IDWriteGdiInterop> m_gdi_interop;
     wil::com_ptr_t<IDWriteTextFormat> m_text_format;
     wil::com_ptr_t<IDWriteInlineObject> m_trimming_sign;
+    DWRITE_RENDERING_MODE m_rendering_mode{};
+    bool m_force_greyscale_antialiasing{};
 };
 
 struct Font {
@@ -120,7 +132,9 @@ public:
     std::optional<TextFormat> create_text_format_with_fallback(
         const LOGFONT& log_font, std::optional<float> font_size = {}) noexcept;
 
-    TextFormat wrap_text_format(wil::com_ptr_t<IDWriteTextFormat> text_format, bool set_defaults = true);
+    TextFormat wrap_text_format(wil::com_ptr_t<IDWriteTextFormat> text_format,
+        DWRITE_RENDERING_MODE rendering_mode = DWRITE_RENDERING_MODE_DEFAULT, bool force_greyscale_antialiasing = false,
+        bool set_defaults = true);
 
     wil::com_ptr_t<IDWriteTypography> get_default_typography();
 
