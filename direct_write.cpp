@@ -295,6 +295,20 @@ void TextLayout::set_font(const wchar_t* font_family, DWRITE_FONT_WEIGHT weight,
     THROW_IF_FAILED(m_text_layout->SetFontSize(size, text_range));
 }
 
+wil::com_ptr_t<IDWriteRenderingParams> TextLayout::create_rendering_params() const
+{
+    wil::com_ptr_t<IDWriteRenderingParams> default_rendering_params;
+    THROW_IF_FAILED(m_factory->CreateRenderingParams(&default_rendering_params));
+
+    wil::com_ptr_t<IDWriteRenderingParams> custom_rendering_params;
+    THROW_IF_FAILED(m_factory->CreateCustomRenderingParams(default_rendering_params->GetGamma(),
+        default_rendering_params->GetEnhancedContrast(), default_rendering_params->GetClearTypeLevel(),
+        m_force_greyscale_antialiasing ? DWRITE_PIXEL_GEOMETRY_FLAT : default_rendering_params->GetPixelGeometry(),
+        m_rendering_mode, &custom_rendering_params));
+
+    return custom_rendering_params;
+}
+
 void TextLayout::render_with_transparent_background(
     HDC dc, RECT output_rect, COLORREF default_colour, float x_origin_offset) const
 {
@@ -335,13 +349,11 @@ void TextLayout::render_with_transparent_background(
     THROW_IF_FAILED(m_gdi_interop->CreateBitmapRenderTarget(dc, bitmap_width, bitmap_height, &bitmap_render_target));
     THROW_IF_FAILED(bitmap_render_target->SetPixelsPerDip(scaling_factor));
 
-    wil::com_ptr_t<IDWriteRenderingParams> dw_rendering_params;
-    THROW_IF_FAILED(m_factory->CreateRenderingParams(&dw_rendering_params));
-
+    const auto rendering_params = create_rendering_params();
     const auto memory_dc = bitmap_render_target->GetMemoryDC();
 
     wil::com_ptr_t<IDWriteTextRenderer> renderer
-        = new GdiTextRenderer(m_factory, bitmap_render_target.get(), dw_rendering_params.get(), default_colour);
+        = new GdiTextRenderer(m_factory, bitmap_render_target.get(), rendering_params.get(), default_colour);
 
     BitBlt(memory_dc, 0, 0, bitmap_width, bitmap_height, dc, source_x, source_y, SRCCOPY);
 
@@ -367,8 +379,7 @@ void TextLayout::render_with_solid_background(HDC dc, float x_origin, float y_or
     const wil::unique_hbrush fill_brush(CreateSolidBrush(background_colour));
     FillRect(memory_dc, &clip_rect, fill_brush.get());
 
-    wil::com_ptr_t<IDWriteRenderingParams> dw_rendering_params;
-    THROW_IF_FAILED(m_factory->CreateRenderingParams(&dw_rendering_params));
+    const auto rendering_params = create_rendering_params();
 
     DWRITE_MATRIX transform{1.0f, 0.0f, 0.0f, 1.0f, -px_to_dip(gsl::narrow_cast<float>(clip_rect.left)),
         -px_to_dip(gsl::narrow_cast<float>(clip_rect.top))};
@@ -376,7 +387,7 @@ void TextLayout::render_with_solid_background(HDC dc, float x_origin, float y_or
     THROW_IF_FAILED(bitmap_render_target->SetCurrentTransform(&transform));
 
     const wil::com_ptr_t<IDWriteTextRenderer> renderer
-        = new GdiTextRenderer(m_factory, bitmap_render_target.get(), dw_rendering_params.get(), default_text_colour);
+        = new GdiTextRenderer(m_factory, bitmap_render_target.get(), rendering_params.get(), default_text_colour);
 
     THROW_IF_FAILED(m_text_layout->Draw(NULL, renderer.get(), x_origin, y_origin));
 
@@ -469,7 +480,7 @@ TextLayout TextFormat::create_text_layout(std::wstring_view text, float max_widt
     const auto typography = m_context->get_default_typography();
     THROW_IF_FAILED(text_layout->SetTypography(typography.get(), {0, text_length}));
 
-    return {m_factory, m_gdi_interop, text_layout};
+    return {m_factory, m_gdi_interop, text_layout, m_rendering_mode, m_force_greyscale_antialiasing};
 }
 
 Context::Context()
@@ -554,7 +565,8 @@ std::optional<TextFormat> Context::create_text_format_with_fallback(
     return {};
 }
 
-TextFormat Context::wrap_text_format(wil::com_ptr_t<IDWriteTextFormat> text_format, bool set_defaults)
+TextFormat Context::wrap_text_format(wil::com_ptr_t<IDWriteTextFormat> text_format,
+    DWRITE_RENDERING_MODE rendering_mode, bool force_greyscale_antialiasing, bool set_defaults)
 {
     if (set_defaults) {
         THROW_IF_FAILED(text_format->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
@@ -566,7 +578,8 @@ TextFormat Context::wrap_text_format(wil::com_ptr_t<IDWriteTextFormat> text_form
         THROW_IF_FAILED(text_format_2->SetLineSpacing(&spacing));
     }
 
-    return {shared_from_this(), m_factory, m_gdi_interop, std::move(text_format)};
+    return {shared_from_this(), m_factory, m_gdi_interop, std::move(text_format), rendering_mode,
+        force_greyscale_antialiasing};
 }
 
 wil::com_ptr_t<IDWriteTypography> Context::get_default_typography()

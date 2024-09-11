@@ -230,9 +230,8 @@ public:
     }
     void set_vertical_item_padding(int val);
     void set_font_from_log_font(const LOGFONT& log_font);
-    void set_font(wil::com_ptr_t<IDWriteTextFormat> text_format, const LOGFONT& log_font);
     void set_font(std::optional<direct_write::TextFormat> text_format, const LOGFONT& log_font);
-    void set_group_font(wil::com_ptr_t<IDWriteTextFormat> text_format);
+    void set_group_font(std::optional<direct_write::TextFormat> text_format);
     void set_header_font(const LOGFONT& log_font);
     void set_sorting_enabled(bool b_val);
     void set_show_sort_indicators(bool b_val);

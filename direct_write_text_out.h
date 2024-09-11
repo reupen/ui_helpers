@@ -4,8 +4,15 @@ namespace uih::direct_write {
 
 DWRITE_TEXT_ALIGNMENT get_text_alignment(alignment alignment_);
 
+struct TextOutOptions {
+    bool is_selected{};
+    alignment align{ALIGN_LEFT};
+    bool enable_ellipses{};
+    bool enable_colour_codes{true};
+    bool enable_tab_columns{true};
+};
+
 int text_out_columns_and_colours(TextFormat& text_format, HDC dc, std::string_view text, int x_offset, int border,
-    const RECT& rect, bool selected, COLORREF default_colour, bool enable_colour_codes, bool enable_tab_columns,
-    alignment align = uih::ALIGN_LEFT, bool enable_ellipses = true);
+    const RECT& rect, COLORREF default_colour, TextOutOptions options = {});
 
 } // namespace uih::direct_write

@@ -55,8 +55,7 @@ DWRITE_TEXT_ALIGNMENT get_text_alignment(alignment alignment_)
 }
 
 int text_out_columns_and_colours(TextFormat& text_format, HDC dc, std::string_view text, int x_offset, int border,
-    const RECT& rect, bool selected, COLORREF default_colour, bool enable_colour_codes, bool enable_tab_columns,
-    alignment align, bool enable_ellipses)
+    const RECT& rect, COLORREF default_colour, TextOutOptions options)
 {
     RECT adjusted_rect = rect;
 
@@ -65,7 +64,7 @@ int text_out_columns_and_colours(TextFormat& text_format, HDC dc, std::string_vi
 
     int tab_count = 0;
 
-    if (enable_tab_columns) {
+    if (options.enable_tab_columns) {
         for (size_t n = 0; n < text.length(); n++) {
             if (text[n] == '\t') {
                 tab_count++;
@@ -77,13 +76,13 @@ int text_out_columns_and_colours(TextFormat& text_format, HDC dc, std::string_vi
         adjusted_rect.left += border + x_offset;
         adjusted_rect.right -= border;
 
-        if (enable_ellipses)
+        if (options.enable_ellipses)
             text_format.enable_trimming_sign();
         else
             text_format.disable_trimming_sign();
 
-        return text_out_colours(
-            text_format, dc, text, adjusted_rect, selected, default_colour, align, enable_colour_codes);
+        return text_out_colours(text_format, dc, text, adjusted_rect, options.is_selected, default_colour,
+            options.align, options.enable_colour_codes);
     }
 
     // Ellipses always disabled when using tab columns
@@ -110,8 +109,8 @@ int text_out_columns_and_colours(TextFormat& text_format, HDC dc, std::string_vi
                 cell_rect.left = std::min(
                     adjusted_rect.right - MulDiv(cell_index, total_width, tab_count) + border, cell_rect.right);
 
-            const int cell_render_width = text_out_colours(text_format, dc, cell_text, cell_rect, selected,
-                default_colour, cell_index == 0 ? ALIGN_RIGHT : ALIGN_LEFT, enable_colour_codes);
+            const int cell_render_width = text_out_colours(text_format, dc, cell_text, cell_rect, options.is_selected,
+                default_colour, cell_index == 0 ? ALIGN_RIGHT : ALIGN_LEFT, options.enable_colour_codes);
 
             if (cell_index == 0)
                 cell_rect.left = cell_rect.right - cell_render_width;
