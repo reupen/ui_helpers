@@ -474,8 +474,13 @@ TextLayout TextFormat::create_text_layout(std::wstring_view text, float max_widt
     const auto text_length = gsl::narrow<uint32_t>(text.length());
 
     wil::com_ptr_t<IDWriteTextLayout> text_layout;
-    THROW_IF_FAILED(m_factory->CreateTextLayout(
-        text.data(), text_length, m_text_format.get(), max_width, max_height, &text_layout));
+    if (m_rendering_mode == DWRITE_RENDERING_MODE_GDI_CLASSIC || m_rendering_mode == DWRITE_RENDERING_MODE_GDI_NATURAL)
+        THROW_IF_FAILED(m_factory->CreateGdiCompatibleTextLayout(text.data(), text_length, m_text_format.get(),
+            max_width, max_height, get_default_scaling_factor(), nullptr,
+            m_rendering_mode == DWRITE_RENDERING_MODE_GDI_NATURAL, &text_layout));
+    else
+        THROW_IF_FAILED(m_factory->CreateTextLayout(
+            text.data(), text_length, m_text_format.get(), max_width, max_height, &text_layout));
 
     const auto typography = m_context->get_default_typography();
     THROW_IF_FAILED(text_layout->SetTypography(typography.get(), {0, text_length}));
