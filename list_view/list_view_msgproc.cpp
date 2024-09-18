@@ -42,6 +42,11 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                     }
                 }
 
+                if (!m_header_log_font) {
+                    m_header_log_font = m_items_log_font;
+                    m_header_text_format = m_items_text_format;
+                }
+
                 if (!m_group_text_format && m_direct_write_context)
                     m_group_text_format = m_items_text_format;
             }
@@ -73,6 +78,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         m_items.clear();
         m_columns.clear();
         m_items_text_format.reset();
+        m_header_text_format.reset();
         m_group_text_format.reset();
         m_direct_write_context.reset();
         notify_on_destroy();

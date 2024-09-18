@@ -634,6 +634,19 @@ void ListView::set_font(std::optional<direct_write::TextFormat> text_format, con
     }
 }
 
+void ListView::set_header_font(std::optional<direct_write::TextFormat> text_format, const LOGFONT& log_font)
+{
+    m_header_log_font = log_font;
+    m_header_text_format = std::move(text_format);
+
+    if (m_initialised && m_wnd_header) {
+        SetWindowFont(m_wnd_header, nullptr, FALSE);
+        m_header_font.reset(CreateFontIndirect(&log_font));
+        SetWindowFont(m_wnd_header, m_header_font.get(), TRUE);
+        on_size();
+    }
+}
+
 void ListView::set_group_font(std::optional<direct_write::TextFormat> text_format)
 {
     m_group_text_format = text_format;
@@ -658,18 +671,6 @@ void ListView::refresh_items_font()
 void ListView::refresh_group_font()
 {
     m_group_height = get_default_group_height();
-}
-
-void ListView::set_header_font(const LOGFONT& log_font)
-{
-    m_header_log_font = log_font;
-
-    if (m_initialised && m_wnd_header) {
-        SendMessage(m_wnd_header, WM_SETFONT, NULL, MAKELPARAM(FALSE, 0));
-        m_header_font.reset(CreateFontIndirect(&log_font));
-        SendMessage(m_wnd_header, WM_SETFONT, (WPARAM)m_header_font.get(), MAKELPARAM(TRUE, 0));
-        on_size();
-    }
 }
 
 void ListView::set_sorting_enabled(bool b_val)
