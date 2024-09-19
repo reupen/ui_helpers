@@ -3,6 +3,8 @@
 
 namespace uih {
 
+using namespace literals::spx;
+
 void ListView::destroy_header()
 {
     if (m_wnd_header) {
@@ -17,7 +19,7 @@ void ListView::create_header()
     // if (m_show_header)
     {
         if (!m_wnd_header) {
-            m_header_font.reset(m_header_log_font ? CreateFontIndirect(&*m_header_log_font) : create_icon_font());
+            m_header_font.reset(m_header_log_font ? CreateFontIndirect(&*m_header_log_font) : nullptr);
             m_wnd_header = CreateWindowEx(0, WC_HEADER, _T("NGLVH"),
                 WS_CHILD | (0) | /*(m_autosize ? 0x0800  : NULL) |*/ HDS_HOTTRACK
                     | (m_allow_header_rearrange ? HDS_DRAGDROP : NULL) | HDS_HORZ | HDS_FULLDRAG
@@ -25,7 +27,7 @@ void ListView::create_header()
                 0, 0, 0, 0, get_wnd(), HMENU(IDC_HEADER), mmh::get_current_instance(), nullptr);
 
             set_header_window_theme();
-            SendMessage(m_wnd_header, WM_SETFONT, (WPARAM)m_header_font.get(), MAKELPARAM(FALSE, 0));
+            SetWindowFont(m_wnd_header, m_header_font.get(), FALSE);
 
             if (m_initialised) {
                 build_header();
@@ -74,50 +76,34 @@ void ListView::build_header()
         for (; header_count; header_count--)
             Header_DeleteItem(m_wnd_header, header_count - 1);
 
-        HDITEM hdi;
-        memset(&hdi, 0, sizeof(HDITEM));
+        HDITEM hdi{};
+        hdi.mask = HDI_FORMAT | HDI_WIDTH;
 
-        hdi.mask = HDI_TEXT | HDI_FORMAT | HDI_WIDTH;
-        hdi.fmt = HDF_LEFT | HDF_STRING;
+        int insertion_index = 0;
 
-        pfc::string8 name;
-        pfc::stringcvt::string_wide_from_utf8 wstr;
+        if (const auto indentation = get_total_indentation(); indentation > 0) {
+            hdi.fmt = HDF_LEFT;
+            hdi.cxy = indentation;
+            Header_InsertItem(m_wnd_header, insertion_index++, &hdi);
+            m_have_indent_column = true;
+        } else
+            m_have_indent_column = false;
 
-        {
-            int n;
-            int t = gsl::narrow<int>(m_columns.size());
-            int i = 0;
-            const auto indentation = get_total_indentation();
-            if (indentation /*m_group_count*/) {
-                hdi.fmt = HDF_STRING | HDF_LEFT;
-                hdi.cchTextMax = 0;
-                hdi.pszText = const_cast<wchar_t*>(L"");
+        for (auto&& [column_index, column] : ranges::views::enumerate(m_columns)) {
+            if (column.m_alignment == ALIGN_CENTRE)
+                hdi.fmt |= HDF_CENTER;
+            else if (column.m_alignment == ALIGN_RIGHT)
+                hdi.fmt |= HDF_RIGHT;
+            else
+                hdi.fmt = HDF_LEFT;
 
-                hdi.cxy = indentation;
+            hdi.cxy = column.m_display_size;
 
-                Header_InsertItem(m_wnd_header, i++, &hdi);
-
-                m_have_indent_column = true;
-            } else
-                m_have_indent_column = false;
-            for (n = 0; n < t; n++) {
-                hdi.fmt = HDF_STRING | HDF_LEFT;
-                if (m_columns[n].m_alignment == uih::ALIGN_CENTRE)
-                    hdi.fmt |= HDF_CENTER;
-                else if (m_columns[n].m_alignment == uih::ALIGN_RIGHT)
-                    hdi.fmt |= HDF_RIGHT;
-                hdi.cchTextMax = gsl::narrow<int>(m_columns[n].m_title.length());
-                wstr.convert(m_columns[n].m_title);
-                hdi.pszText = const_cast<wchar_t*>(wstr.get_ptr());
-
-                hdi.cxy = m_columns[n].m_display_size;
-
-                if (m_sort_column_index == n && m_show_sort_indicators) {
-                    hdi.fmt |= (m_sort_direction ? HDF_SORTDOWN : HDF_SORTUP);
-                }
-
-                Header_InsertItem(m_wnd_header, i++, &hdi);
+            if (m_sort_column_index == column_index && m_show_sort_indicators) {
+                hdi.fmt |= (m_sort_direction ? HDF_SORTDOWN : HDF_SORTUP);
             }
+
+            Header_InsertItem(m_wnd_header, insertion_index++, &hdi);
         }
     }
 }
@@ -126,21 +112,29 @@ std::optional<LRESULT> ListView::on_wm_notify_header(LPNMHDR lpnm)
 {
     switch (lpnm->code) {
     case NM_CUSTOMDRAW: {
-        if (!m_header_theme)
-            return {};
-
         const auto lpcd = reinterpret_cast<LPNMCUSTOMDRAW>(lpnm);
         switch (lpcd->dwDrawStage) {
         case CDDS_PREPAINT:
             return CDRF_NOTIFYITEMDRAW;
+        case CDDS_ITEMPREPAINT:
+            return CDRF_NOTIFYPOSTPAINT;
+        case CDDS_ITEMPOSTPAINT: {
+            auto cr{GetTextColor(lpcd->hdc)};
 
-        case CDDS_ITEMPREPAINT: {
-            auto cr{RGB(255, 0, 0)};
-            if (!SUCCEEDED(GetThemeColor(m_header_theme.get(), HP_HEADERITEM, 0, TMT_TEXTCOLOR, &cr)))
-                return {};
+            if (m_header_theme)
+                GetThemeColor(m_header_theme.get(), HP_HEADERITEM, 0, TMT_TEXTCOLOR, &cr);
 
-            SetTextColor(lpcd->hdc, cr);
-            return CDRF_NEWFONT;
+            const auto index = header_column_to_real_column(lpcd->dwItemSpec);
+
+            if (m_header_text_format) {
+                const auto& column = m_columns[index];
+
+                direct_write::text_out_columns_and_colours(*m_header_text_format, lpcd->hdc,
+                    mmh::to_string_view(column.m_title), 0, 4_spx, lpcd->rc, cr,
+                    {.align = column.m_alignment, .enable_colour_codes = false, .enable_tab_columns = false});
+            }
+
+            return CDRF_DODEFAULT;
         }
         default:
             return {};

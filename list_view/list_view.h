@@ -232,7 +232,7 @@ public:
     void set_font_from_log_font(const LOGFONT& log_font);
     void set_font(std::optional<direct_write::TextFormat> text_format, const LOGFONT& log_font);
     void set_group_font(std::optional<direct_write::TextFormat> text_format);
-    void set_header_font(const LOGFONT& log_font);
+    void set_header_font(std::optional<direct_write::TextFormat> text_format, const LOGFONT& log_font);
     void set_sorting_enabled(bool b_val);
     void set_show_sort_indicators(bool b_val);
     void set_edge_style(uint32_t b_val);
@@ -879,6 +879,7 @@ private:
     std::optional<LOGFONT> m_header_log_font{};
     direct_write::Context::Ptr m_direct_write_context;
     std::optional<direct_write::TextFormat> m_items_text_format;
+    std::optional<direct_write::TextFormat> m_header_text_format;
     std::optional<direct_write::TextFormat> m_group_text_format;
 
     bool m_selecting{false};

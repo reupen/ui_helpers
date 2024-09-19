@@ -7,7 +7,7 @@ DWRITE_TEXT_ALIGNMENT get_text_alignment(alignment alignment_);
 struct TextOutOptions {
     bool is_selected{};
     alignment align{ALIGN_LEFT};
-    bool enable_ellipses{};
+    bool enable_ellipses{true};
     bool enable_colour_codes{true};
     bool enable_tab_columns{true};
 };
