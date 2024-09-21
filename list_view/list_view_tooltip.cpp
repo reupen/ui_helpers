@@ -180,7 +180,7 @@ void ListView::render_tooltip_text(HWND wnd, HDC dc, COLORREF colour) const
                 gsl::narrow_cast<float>(wil::rect_width(rc_text)) / scaling_factor,
                 gsl::narrow_cast<float>(wil::rect_height(rc_text)) / scaling_factor);
 
-            text_layout.render_with_transparent_background(dc, rc_text, colour, m_tooltip_text_left_offset);
+            text_layout.render_with_transparent_background(wnd, dc, rc_text, colour, m_tooltip_text_left_offset);
         }
         CATCH_LOG()
     }

@@ -129,7 +129,7 @@ std::optional<LRESULT> ListView::on_wm_notify_header(LPNMHDR lpnm)
             if (m_header_text_format) {
                 const auto& column = m_columns[index];
 
-                direct_write::text_out_columns_and_colours(*m_header_text_format, lpcd->hdc,
+                direct_write::text_out_columns_and_colours(*m_header_text_format, get_wnd(), lpcd->hdc,
                     mmh::to_string_view(column.m_title), 0, 4_spx, lpcd->rc, cr,
                     {.align = column.m_alignment, .enable_colour_codes = false, .enable_tab_columns = false});
             }
