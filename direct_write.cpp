@@ -240,6 +240,29 @@ GdiTextRenderer::GdiTextRenderer(wil::com_ptr<IDWriteFactory> factory, IDWriteBi
 
 } // namespace
 
+wil::com_ptr_t<IDWriteRenderingParams> RenderingParams::get(HWND wnd) const
+{
+    const auto root_window = GetAncestor(wnd, GA_ROOT);
+    const auto monitor = MonitorFromWindow(root_window, MONITOR_DEFAULTTONEAREST);
+
+    if (m_rendering_params && m_monitor == monitor)
+        return m_rendering_params;
+
+    wil::com_ptr_t<IDWriteRenderingParams> default_rendering_params;
+    THROW_IF_FAILED(m_factory->CreateMonitorRenderingParams(monitor, &default_rendering_params));
+
+    wil::com_ptr_t<IDWriteRenderingParams> custom_rendering_params;
+    THROW_IF_FAILED(m_factory->CreateCustomRenderingParams(default_rendering_params->GetGamma(),
+        default_rendering_params->GetEnhancedContrast(), default_rendering_params->GetClearTypeLevel(),
+        m_force_greyscale_antialiasing ? DWRITE_PIXEL_GEOMETRY_FLAT : default_rendering_params->GetPixelGeometry(),
+        m_rendering_mode, &custom_rendering_params));
+
+    m_monitor = monitor;
+    m_rendering_params = custom_rendering_params;
+
+    return custom_rendering_params;
+}
+
 float TextLayout::get_max_height() const noexcept
 {
     return m_text_layout->GetMaxHeight();
@@ -295,22 +318,8 @@ void TextLayout::set_font(const wchar_t* font_family, DWRITE_FONT_WEIGHT weight,
     THROW_IF_FAILED(m_text_layout->SetFontSize(size, text_range));
 }
 
-wil::com_ptr_t<IDWriteRenderingParams> TextLayout::create_rendering_params() const
-{
-    wil::com_ptr_t<IDWriteRenderingParams> default_rendering_params;
-    THROW_IF_FAILED(m_factory->CreateRenderingParams(&default_rendering_params));
-
-    wil::com_ptr_t<IDWriteRenderingParams> custom_rendering_params;
-    THROW_IF_FAILED(m_factory->CreateCustomRenderingParams(default_rendering_params->GetGamma(),
-        default_rendering_params->GetEnhancedContrast(), default_rendering_params->GetClearTypeLevel(),
-        m_force_greyscale_antialiasing ? DWRITE_PIXEL_GEOMETRY_FLAT : default_rendering_params->GetPixelGeometry(),
-        m_rendering_mode, &custom_rendering_params));
-
-    return custom_rendering_params;
-}
-
 void TextLayout::render_with_transparent_background(
-    HDC dc, RECT output_rect, COLORREF default_colour, float x_origin_offset) const
+    HWND wnd, HDC dc, RECT output_rect, COLORREF default_colour, float x_origin_offset) const
 {
     const auto metrics = get_metrics();
 
@@ -349,7 +358,7 @@ void TextLayout::render_with_transparent_background(
     THROW_IF_FAILED(m_gdi_interop->CreateBitmapRenderTarget(dc, bitmap_width, bitmap_height, &bitmap_render_target));
     THROW_IF_FAILED(bitmap_render_target->SetPixelsPerDip(scaling_factor));
 
-    const auto rendering_params = create_rendering_params();
+    const auto rendering_params = m_rendering_params->get(wnd);
     const auto memory_dc = bitmap_render_target->GetMemoryDC();
 
     wil::com_ptr_t<IDWriteTextRenderer> renderer
@@ -362,7 +371,7 @@ void TextLayout::render_with_transparent_background(
     BitBlt(dc, source_x, source_y, bitmap_width, bitmap_height, memory_dc, 0, 0, SRCCOPY);
 }
 
-void TextLayout::render_with_solid_background(HDC dc, float x_origin, float y_origin, RECT clip_rect,
+void TextLayout::render_with_solid_background(HWND wnd, HDC dc, float x_origin, float y_origin, RECT clip_rect,
     COLORREF background_colour, COLORREF default_text_colour) const
 {
     const auto bitmap_width = wil::rect_width(clip_rect);
@@ -379,7 +388,7 @@ void TextLayout::render_with_solid_background(HDC dc, float x_origin, float y_or
     const wil::unique_hbrush fill_brush(CreateSolidBrush(background_colour));
     FillRect(memory_dc, &clip_rect, fill_brush.get());
 
-    const auto rendering_params = create_rendering_params();
+    const auto rendering_params = m_rendering_params->get(wnd);
 
     DWRITE_MATRIX transform{1.0f, 0.0f, 0.0f, 1.0f, -px_to_dip(gsl::narrow_cast<float>(clip_rect.left)),
         -px_to_dip(gsl::narrow_cast<float>(clip_rect.top))};
@@ -473,11 +482,13 @@ TextLayout TextFormat::create_text_layout(std::wstring_view text, float max_widt
 {
     const auto text_length = gsl::narrow<uint32_t>(text.length());
 
+    const auto rendering_mode = m_rendering_params->rendering_mode();
+
     wil::com_ptr_t<IDWriteTextLayout> text_layout;
-    if (m_rendering_mode == DWRITE_RENDERING_MODE_GDI_CLASSIC || m_rendering_mode == DWRITE_RENDERING_MODE_GDI_NATURAL)
+    if (rendering_mode == DWRITE_RENDERING_MODE_GDI_CLASSIC || rendering_mode == DWRITE_RENDERING_MODE_GDI_NATURAL)
         THROW_IF_FAILED(m_factory->CreateGdiCompatibleTextLayout(text.data(), text_length, m_text_format.get(),
             max_width, max_height, get_default_scaling_factor(), nullptr,
-            m_rendering_mode == DWRITE_RENDERING_MODE_GDI_NATURAL, &text_layout));
+            rendering_mode == DWRITE_RENDERING_MODE_GDI_NATURAL, &text_layout));
     else
         THROW_IF_FAILED(m_factory->CreateTextLayout(
             text.data(), text_length, m_text_format.get(), max_width, max_height, &text_layout));
@@ -485,7 +496,7 @@ TextLayout TextFormat::create_text_layout(std::wstring_view text, float max_widt
     const auto typography = m_context->get_default_typography();
     THROW_IF_FAILED(text_layout->SetTypography(typography.get(), {0, text_length}));
 
-    return {m_factory, m_gdi_interop, text_layout, m_rendering_mode, m_force_greyscale_antialiasing};
+    return {m_factory, m_gdi_interop, text_layout, m_rendering_params};
 }
 
 Context::Context()
@@ -583,8 +594,10 @@ TextFormat Context::wrap_text_format(wil::com_ptr_t<IDWriteTextFormat> text_form
         THROW_IF_FAILED(text_format_2->SetLineSpacing(&spacing));
     }
 
-    return {shared_from_this(), m_factory, m_gdi_interop, std::move(text_format), rendering_mode,
-        force_greyscale_antialiasing};
+    const auto rendering_params
+        = std::make_shared<RenderingParams>(m_factory, rendering_mode, force_greyscale_antialiasing);
+
+    return {shared_from_this(), m_factory, m_gdi_interop, std::move(text_format), rendering_params};
 }
 
 wil::com_ptr_t<IDWriteTypography> Context::get_default_typography()

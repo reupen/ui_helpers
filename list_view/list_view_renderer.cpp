@@ -234,8 +234,8 @@ void lv::DefaultRenderer::render_group(RendererContext context, size_t item_inde
 
     const auto x_offset = 1_spx + indentation * gsl::narrow<int>(level);
     const auto border = 3_spx;
-    const auto text_width = direct_write::text_out_columns_and_colours(
-        *context.m_group_text_format, context.dc, text, x_offset, border, rc, cr, {.enable_tab_columns = false});
+    const auto text_width = direct_write::text_out_columns_and_colours(*context.m_group_text_format, context.wnd,
+        context.dc, text, x_offset, border, rc, cr, {.enable_tab_columns = false});
 
     const auto line_height = 1_spx;
     const auto line_top = rc.top + wil::rect_height(rc) / 2 - line_height / 2;
@@ -303,8 +303,8 @@ void lv::DefaultRenderer::render_item(RendererContext context, size_t index, std
         rc_subitem.right = rc_subitem.left + sub_item.width;
 
         if (context.m_item_text_format)
-            direct_write::text_out_columns_and_colours(*context.m_item_text_format, context.dc, sub_item.text,
-                1_spx + (column_index == 0 ? indentation : 0), 3_spx, rc_subitem, cr_text,
+            direct_write::text_out_columns_and_colours(*context.m_item_text_format, context.wnd, context.dc,
+                sub_item.text, 1_spx + (column_index == 0 ? indentation : 0), 3_spx, rc_subitem, cr_text,
                 {.is_selected = b_selected,
                     .align = sub_item.alignment,
                     .enable_tab_columns = m_enable_item_tab_columns});

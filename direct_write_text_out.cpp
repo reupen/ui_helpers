@@ -6,8 +6,8 @@ namespace uih::direct_write {
 
 namespace {
 
-int text_out_colours(const TextFormat& text_format, HDC dc, std::string_view text, const RECT& rect, bool selected,
-    DWORD default_color, alignment align, bool enable_colour_codes)
+int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::string_view text, const RECT& rect,
+    bool selected, DWORD default_color, alignment align, bool enable_colour_codes)
 {
     if (is_rect_null_or_reversed(&rect) || rect.right <= rect.left)
         return 0;
@@ -31,7 +31,7 @@ int text_out_colours(const TextFormat& text_format, HDC dc, std::string_view tex
 
         const auto metrics = layout.get_metrics();
 
-        layout.render_with_transparent_background(dc, rect, default_color);
+        layout.render_with_transparent_background(wnd, dc, rect, default_color);
 
         return gsl::narrow_cast<int>(metrics.width * scaling_factor + 1);
     }
@@ -54,8 +54,8 @@ DWRITE_TEXT_ALIGNMENT get_text_alignment(alignment alignment_)
     }
 }
 
-int text_out_columns_and_colours(TextFormat& text_format, HDC dc, std::string_view text, int x_offset, int border,
-    const RECT& rect, COLORREF default_colour, TextOutOptions options)
+int text_out_columns_and_colours(TextFormat& text_format, HWND wnd, HDC dc, std::string_view text, int x_offset,
+    int border, const RECT& rect, COLORREF default_colour, TextOutOptions options)
 {
     RECT adjusted_rect = rect;
 
@@ -81,7 +81,7 @@ int text_out_columns_and_colours(TextFormat& text_format, HDC dc, std::string_vi
         else
             text_format.disable_trimming_sign();
 
-        return text_out_colours(text_format, dc, text, adjusted_rect, options.is_selected, default_colour,
+        return text_out_colours(text_format, wnd, dc, text, adjusted_rect, options.is_selected, default_colour,
             options.align, options.enable_colour_codes);
     }
 
@@ -109,8 +109,9 @@ int text_out_columns_and_colours(TextFormat& text_format, HDC dc, std::string_vi
                 cell_rect.left = std::min(
                     adjusted_rect.right - MulDiv(cell_index, total_width, tab_count) + border, cell_rect.right);
 
-            const int cell_render_width = text_out_colours(text_format, dc, cell_text, cell_rect, options.is_selected,
-                default_colour, cell_index == 0 ? ALIGN_RIGHT : ALIGN_LEFT, options.enable_colour_codes);
+            const int cell_render_width
+                = text_out_colours(text_format, wnd, dc, cell_text, cell_rect, options.is_selected, default_colour,
+                    cell_index == 0 ? ALIGN_RIGHT : ALIGN_LEFT, options.enable_colour_codes);
 
             if (cell_index == 0)
                 cell_rect.left = cell_rect.right - cell_render_width;

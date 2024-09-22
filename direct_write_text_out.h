@@ -12,7 +12,7 @@ struct TextOutOptions {
     bool enable_tab_columns{true};
 };
 
-int text_out_columns_and_colours(TextFormat& text_format, HDC dc, std::string_view text, int x_offset, int border,
-    const RECT& rect, COLORREF default_colour, TextOutOptions options = {});
+int text_out_columns_and_colours(TextFormat& text_format, HWND wnd, HDC dc, std::string_view text, int x_offset,
+    int border, const RECT& rect, COLORREF default_colour, TextOutOptions options = {});
 
 } // namespace uih::direct_write

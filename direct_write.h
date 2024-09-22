@@ -2,16 +2,38 @@
 
 namespace uih::direct_write {
 
+class RenderingParams {
+public:
+    using Ptr = std::shared_ptr<RenderingParams>;
+
+    RenderingParams(
+        wil::com_ptr_t<IDWriteFactory> factory, DWRITE_RENDERING_MODE rendering_mode, bool force_greyscale_antialiasing)
+        : m_factory(std::move(factory))
+        , m_rendering_mode(rendering_mode)
+        , m_force_greyscale_antialiasing(force_greyscale_antialiasing)
+    {
+    }
+
+    wil::com_ptr_t<IDWriteRenderingParams> get(HWND wnd) const;
+    DWRITE_RENDERING_MODE rendering_mode() const { return m_rendering_mode; }
+
+private:
+    mutable wil::com_ptr_t<IDWriteRenderingParams> m_rendering_params;
+    mutable HMONITOR m_monitor{};
+
+    wil::com_ptr_t<IDWriteFactory> m_factory;
+    DWRITE_RENDERING_MODE m_rendering_mode{};
+    bool m_force_greyscale_antialiasing{};
+};
+
 class TextLayout {
 public:
     TextLayout(wil::com_ptr_t<IDWriteFactory> factory, wil::com_ptr_t<IDWriteGdiInterop> gdi_interop,
-        wil::com_ptr_t<IDWriteTextLayout> text_layout, DWRITE_RENDERING_MODE rendering_mode,
-        bool force_greyscale_antialiasing)
+        wil::com_ptr_t<IDWriteTextLayout> text_layout, RenderingParams::Ptr rendering_params)
         : m_factory(std::move(factory))
         , m_gdi_interop(std::move(gdi_interop))
         , m_text_layout(std::move(text_layout))
-        , m_rendering_mode(rendering_mode)
-        , m_force_greyscale_antialiasing(force_greyscale_antialiasing)
+        , m_rendering_params(std::move(rendering_params))
     {
     }
 
@@ -20,8 +42,8 @@ public:
     DWRITE_TEXT_METRICS get_metrics() const;
     DWRITE_OVERHANG_METRICS get_overhang_metrics() const;
     void render_with_transparent_background(
-        HDC dc, RECT output_rect, COLORREF default_colour, float x_origin_offset = 0.0f) const;
-    void render_with_solid_background(HDC dc, float x_origin, float y_origin, RECT clip_rect,
+        HWND wnd, HDC dc, RECT output_rect, COLORREF default_colour, float x_origin_offset = 0.0f) const;
+    void render_with_solid_background(HWND wnd, HDC dc, float x_origin, float y_origin, RECT clip_rect,
         COLORREF background_colour, COLORREF default_text_colour) const;
     void set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const;
     void set_max_height(float value) const;
@@ -31,13 +53,10 @@ public:
         DWRITE_FONT_STYLE style, float size, DWRITE_TEXT_RANGE text_range) const;
 
 private:
-    wil::com_ptr_t<IDWriteRenderingParams> create_rendering_params() const;
-
     wil::com_ptr_t<IDWriteFactory> m_factory;
     wil::com_ptr_t<IDWriteGdiInterop> m_gdi_interop;
     wil::com_ptr_t<IDWriteTextLayout> m_text_layout;
-    DWRITE_RENDERING_MODE m_rendering_mode{};
-    bool m_force_greyscale_antialiasing{};
+    RenderingParams::Ptr m_rendering_params;
 };
 
 struct TextPosition {
@@ -52,13 +71,12 @@ class TextFormat {
 public:
     TextFormat(std::shared_ptr<class Context> context, wil::com_ptr_t<IDWriteFactory> factory,
         wil::com_ptr_t<IDWriteGdiInterop> gdi_interop, wil::com_ptr_t<IDWriteTextFormat> text_format,
-        DWRITE_RENDERING_MODE rendering_mode, bool force_greyscale_antialiasing)
+        RenderingParams::Ptr rendering_params)
         : m_context(std::move(context))
         , m_factory(std::move(factory))
         , m_gdi_interop(std::move(gdi_interop))
         , m_text_format(std::move(text_format))
-        , m_rendering_mode(rendering_mode)
-        , m_force_greyscale_antialiasing(force_greyscale_antialiasing)
+        , m_rendering_params(std::move(rendering_params))
     {
     }
 
@@ -80,8 +98,7 @@ private:
     wil::com_ptr_t<IDWriteGdiInterop> m_gdi_interop;
     wil::com_ptr_t<IDWriteTextFormat> m_text_format;
     wil::com_ptr_t<IDWriteInlineObject> m_trimming_sign;
-    DWRITE_RENDERING_MODE m_rendering_mode{};
-    bool m_force_greyscale_antialiasing{};
+    RenderingParams::Ptr m_rendering_params;
 };
 
 struct Font {
