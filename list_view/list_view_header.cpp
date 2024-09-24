@@ -124,10 +124,10 @@ std::optional<LRESULT> ListView::on_wm_notify_header(LPNMHDR lpnm)
             if (m_header_theme)
                 GetThemeColor(m_header_theme.get(), HP_HEADERITEM, 0, TMT_TEXTCOLOR, &cr);
 
-            const auto index = header_column_to_real_column(lpcd->dwItemSpec);
+            const auto column_index = get_real_column_index(lpcd->dwItemSpec);
 
-            if (m_header_text_format) {
-                const auto& column = m_columns[index];
+            if (m_header_text_format && column_index) {
+                const auto& column = m_columns[*column_index];
 
                 direct_write::text_out_columns_and_colours(*m_header_text_format, get_wnd(), lpcd->hdc,
                     mmh::to_string_view(column.m_title), 0, 4_spx, lpcd->rc, cr,

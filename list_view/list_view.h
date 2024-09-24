@@ -663,20 +663,16 @@ protected:
         }
     }
 
-    bool is_header_column_real(size_t index)
+    std::optional<size_t> get_real_column_index(size_t header_item_index) const
     {
-        if (m_have_indent_column)
-            return index != 0;
+        if (!m_have_indent_column)
+            return header_item_index;
 
-        return true;
-    }
+        if (m_have_indent_column && header_item_index == 0) {
+            return {};
+        }
 
-    size_t header_column_to_real_column(size_t index)
-    {
-        if (m_have_indent_column && index != pfc_infinite)
-            return index - 1;
-
-        return index;
+        return header_item_index - 1;
     }
 
     bool get_show_group_info_area() { return m_group_count ? m_show_group_info_area : false; }
