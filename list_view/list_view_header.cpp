@@ -42,18 +42,23 @@ void ListView::set_header_window_theme() const
     SetWindowTheme(m_wnd_header, m_use_dark_mode ? L"DarkMode_ItemsView" : nullptr, nullptr);
 }
 
-void ListView::set_show_header(bool b_val)
+void ListView::set_show_header(bool new_value)
 {
-    if (b_val != m_show_header) {
-        m_show_header = b_val;
-        if (m_initialised) {
-            if (m_show_header)
-                create_header();
-            else
-                destroy_header();
-            on_size();
-        }
-    }
+    if (new_value == m_show_header)
+        return;
+
+    m_show_header = new_value;
+
+    if (!m_initialised)
+        return;
+
+    if (m_show_header)
+        create_header();
+    else
+        destroy_header();
+
+    invalidate_all();
+    on_size();
 }
 
 void ListView::reposition_header()

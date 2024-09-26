@@ -205,7 +205,7 @@ public:
 
     [[nodiscard]] int _get_scroll_position() const { return m_scroll_position; }
 
-    void set_show_header(bool b_val);
+    void set_show_header(bool new_value);
     void set_show_tooltips(bool b_val);
     void set_limit_tooltips_to_clipped_items(bool b_val);
     void set_autosize(bool b_val);
