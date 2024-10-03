@@ -104,12 +104,23 @@ private:
 struct Font {
     wil::com_ptr_t<IDWriteFont> font;
     std::wstring localised_name;
+    DWRITE_FONT_WEIGHT weight{};
+    DWRITE_FONT_STRETCH stretch{};
+    DWRITE_FONT_STYLE style{};
+    std::unordered_map<uint32_t, float> axis_values;
+};
+
+struct AxisRange {
+    uint32_t tag{};
+    float min{};
+    float max{};
 };
 
 struct FontFamily {
     wil::com_ptr_t<IDWriteFontFamily> family;
     std::wstring localised_name;
     bool is_symbol_font{};
+    std::vector<AxisRange> axes;
 
     std::vector<Font> fonts() const;
 };
@@ -142,7 +153,7 @@ public:
         DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style, float font_size);
 
     TextFormat create_text_format(const wchar_t* family_name, DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch,
-        DWRITE_FONT_STYLE style, float font_size);
+        DWRITE_FONT_STYLE style, float font_size, const std::unordered_map<uint32_t, float>& axis_values = {});
 
     TextFormat create_text_format(const LOGFONT& log_font, float font_size);
 
@@ -160,6 +171,8 @@ public:
     std::vector<FontFamily> get_font_families() const;
 
 private:
+    wil::com_ptr_t<IDWriteFontCollection> get_font_collection() const;
+
     inline static std::weak_ptr<Context> s_ptr;
 
     wil::com_ptr_t<IDWriteFactory1> m_factory;
