@@ -8,17 +8,16 @@ using TrackbarString = std::basic_string<TCHAR>;
  * Class for host of trackbar control to (optionally) implement to receive callbacks.
  * \see TrackbarBase::set_callback
  */
-class NOVTABLE TrackbarCallback {
-public:
-    /**
-     * Called when thumb position changes.
-     *
-     * \param [in]    pos        Contains new position of track bar thumb
-     * \param [in]    b_tracking Specifies that the user is dragging the thumb if true
-     *
-     * \see TrackbarBase::set_range
-     */
-    virtual void on_position_change(unsigned pos, bool b_tracking) {};
+class NOVTABLE TrackbarCallback{public :
+        /**
+         * Called when thumb position changes.
+         *
+         * \param [in]    pos        Contains new position of track bar thumb
+         * \param [in]    b_tracking Specifies that the user is dragging the thumb if true
+         *
+         * \see TrackbarBase::set_range
+         */
+        virtual void on_position_change(unsigned pos, bool b_tracking){}
 
     /**
      * Called to retrieve tooltip text when tracking
@@ -28,7 +27,7 @@ public:
      *
      * \see TrackbarBase::set_range, TrackbarBase::set_show_tooltips
      */
-    virtual void get_tooltip_text(unsigned pos, TrackbarString& p_out) {};
+    virtual void get_tooltip_text(unsigned pos, TrackbarString& p_out){}
 
     /**
      * Called when the escape or return key changes state whilst the
@@ -41,8 +40,10 @@ public:
      *
      * \return                    whether you processed the key state change
      */
-    virtual bool on_key(WPARAM wp, LPARAM lp) { return false; }
-};
+    virtual bool on_key(WPARAM wp, LPARAM lp){return false;
+} // namespace uih
+}
+;
 
 /**
  * Track bar base class.
