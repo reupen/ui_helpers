@@ -54,7 +54,7 @@ public:
 
 class DefaultRenderer : public RendererBase {
 public:
-    DefaultRenderer(bool enable_item_tab_columns = false) : m_enable_item_tab_columns{enable_item_tab_columns} {};
+    DefaultRenderer(bool enable_item_tab_columns = false) : m_enable_item_tab_columns{enable_item_tab_columns} {}
 
     void render_background(RendererContext context, const RECT* rc) override;
 

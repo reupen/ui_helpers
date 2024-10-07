@@ -876,7 +876,7 @@ std::vector<FontFamily> Context::get_font_families() const
             THROW_IF_FAILED(font_set->GetFirstFontResources(&first_font_resources_set));
 
             for (const auto resources_count = first_font_resources_set->GetFontCount();
-                 const auto font_index : ranges::views::iota(0u, resources_count)) {
+                const auto font_index : ranges::views::iota(0u, resources_count)) {
                 uint32_t resource_axis_count{};
                 HRESULT hr = first_font_resources_set->GetFontAxisRanges(nullptr, 0, &resource_axis_count);
 

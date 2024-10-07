@@ -47,6 +47,7 @@ AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: Yes
 AttributeMacros:
   - __capability
+  - NOVTABLE
 BinPackArguments: true
 BinPackParameters: true
 BitFieldColonSpacing: Both
