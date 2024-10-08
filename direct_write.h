@@ -2,6 +2,8 @@
 
 namespace uih::direct_write {
 
+using AxisValues = std::unordered_map<uint32_t, float>;
+
 class RenderingParams {
 public:
     using Ptr = std::shared_ptr<RenderingParams>;
@@ -107,7 +109,7 @@ struct Font {
     DWRITE_FONT_WEIGHT weight{};
     DWRITE_FONT_STRETCH stretch{};
     DWRITE_FONT_STYLE style{};
-    std::unordered_map<uint32_t, float> axis_values;
+    AxisValues axis_values;
 };
 
 struct AxisRange {
@@ -118,11 +120,18 @@ struct AxisRange {
 
 struct FontFamily {
     wil::com_ptr_t<IDWriteFontFamily> family;
-    std::wstring localised_name;
+    std::wstring wss_name;
+    std::wstring typographic_name;
     bool is_symbol_font{};
     std::vector<AxisRange> axes;
 
     std::vector<Font> fonts() const;
+    const std::wstring& name() const { return typographic_name.empty() ? wss_name : typographic_name; }
+};
+
+struct ResolvedFontNames {
+    std::wstring family_name;
+    std::wstring face_name;
 };
 
 class Context : public std::enable_shared_from_this<Context> {
@@ -153,7 +162,7 @@ public:
         DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style, float font_size);
 
     TextFormat create_text_format(const wchar_t* family_name, DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch,
-        DWRITE_FONT_STYLE style, float font_size, const std::unordered_map<uint32_t, float>& axis_values = {});
+        DWRITE_FONT_STYLE style, float font_size, const AxisValues& axis_values = {});
 
     TextFormat create_text_format(const LOGFONT& log_font, float font_size);
 
@@ -166,13 +175,12 @@ public:
 
     wil::com_ptr_t<IDWriteTypography> get_default_typography();
 
-    std::optional<std::wstring> get_face_name(const wchar_t* family_name, DWRITE_FONT_WEIGHT weight,
-        DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style) const;
+    std::optional<ResolvedFontNames> resolve_font_names(const wchar_t* wss_family_name,
+        const wchar_t* typographic_family_name, DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch,
+        DWRITE_FONT_STYLE style, const AxisValues& axis_values) const;
     std::vector<FontFamily> get_font_families() const;
 
 private:
-    wil::com_ptr_t<IDWriteFontCollection> get_font_collection() const;
-
     inline static std::weak_ptr<Context> s_ptr;
 
     wil::com_ptr_t<IDWriteFactory1> m_factory;
@@ -186,5 +194,9 @@ float get_default_scaling_factor();
 float dip_to_px(float dip, float scaling_factor = get_default_scaling_factor());
 float px_to_dip(float px, float scaling_factor = get_default_scaling_factor());
 float pt_to_dip(float point_size);
+
+#if NTDDI_VERSION >= NTDDI_WIN10_RS3
+std::vector<DWRITE_FONT_AXIS_VALUE> axis_values_to_vector(const AxisValues& values);
+#endif
 
 } // namespace uih::direct_write
