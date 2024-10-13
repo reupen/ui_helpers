@@ -6,6 +6,36 @@ namespace uih::direct_write {
 
 namespace {
 
+wil::com_ptr_t<IDWriteFontCollection3> get_typographic_font_collection(const wil::com_ptr_t<IDWriteFactory1>& factory)
+{
+    const auto factory_8 = factory.try_query<IDWriteFactory8>();
+
+    if (!factory_8)
+        return {};
+
+    wil::com_ptr_t<IDWriteFontCollection3> font_collection;
+    THROW_IF_FAILED(factory_8->GetSystemFontCollection(FALSE, DWRITE_FONT_FAMILY_MODEL_TYPOGRAPHIC, &font_collection));
+
+    return font_collection;
+}
+
+wil::com_ptr_t<IDWriteFontCollection> get_wss_font_collection(const wil::com_ptr_t<IDWriteFactory1>& factory)
+{
+    wil::com_ptr_t<IDWriteFontCollection> font_collection;
+    THROW_IF_FAILED(factory->GetSystemFontCollection(&font_collection));
+    return font_collection;
+}
+
+wil::com_ptr_t<IDWriteFontSet4> get_font_set_4(const wil::com_ptr_t<IDWriteFactory1>& factory)
+{
+    const auto factory_8 = factory.query<IDWriteFactory8>();
+
+    wil::com_ptr_t<IDWriteFontSet2> font_set;
+    THROW_IF_FAILED(factory_8->GetSystemFontSet(FALSE, &font_set));
+
+    return font_set.query<IDWriteFontSet4>();
+}
+
 constexpr COLORREF direct_write_colour_to_colorref(DWRITE_COLOR_F colour)
 {
     constexpr auto transform_channel
@@ -514,6 +544,13 @@ LOGFONT Context::create_log_font(const wil::com_ptr_t<IDWriteFont>& font) const
     return log_font;
 }
 
+LOGFONT Context::create_log_font(const wil::com_ptr_t<IDWriteFontFace>& font_face) const
+{
+    LOGFONT log_font{};
+    THROW_IF_FAILED(m_gdi_interop->ConvertFontFaceToLOGFONT(font_face.get(), &log_font));
+    return log_font;
+}
+
 wil::com_ptr_t<IDWriteFont> Context::create_font(const LOGFONT& log_font) const
 {
     wil::com_ptr_t<IDWriteFont> font;
@@ -530,7 +567,7 @@ TextFormat Context::create_text_format(const wil::com_ptr_t<IDWriteFont>& font, 
 }
 
 TextFormat Context::create_text_format(const wil::com_ptr_t<IDWriteFontFamily>& font_family, DWRITE_FONT_WEIGHT weight,
-    DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style, float font_size)
+    DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style, float font_size, const AxisValues& axis_values)
 {
     wil::com_ptr_t<IDWriteLocalizedStrings> family_names;
     THROW_IF_FAILED(font_family->GetFamilyNames(&family_names));
@@ -542,12 +579,22 @@ TextFormat Context::create_text_format(const wil::com_ptr_t<IDWriteFontFamily>& 
 
     THROW_IF_FAILED(family_names->GetString(0, family_name.data(), length + 1));
 
-    return create_text_format(family_name.data(), weight, stretch, style, font_size);
+    return create_text_format(family_name.data(), weight, stretch, style, font_size, axis_values);
 }
 
 TextFormat Context::create_text_format(const wchar_t* family_name, DWRITE_FONT_WEIGHT weight,
-    DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style, float font_size)
+    DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style, float font_size, const AxisValues& axis_values)
 {
+    if (const auto factory_7 = m_factory.try_query<IDWriteFactory7>(); factory_7 && !axis_values.empty()) {
+        const auto axis_values_vector = axis_values_to_vector(axis_values);
+
+        wil::com_ptr_t<IDWriteTextFormat3> text_format_3;
+        THROW_IF_FAILED(factory_7->CreateTextFormat(family_name, nullptr, axis_values_vector.data(),
+            gsl::narrow<uint32_t>(axis_values_vector.size()), font_size, L"", &text_format_3));
+
+        return wrap_text_format(text_format_3);
+    }
+
     wil::com_ptr_t<IDWriteTextFormat> text_format;
     THROW_IF_FAILED(
         m_factory->CreateTextFormat(family_name, NULL, weight, style, stretch, font_size, L"", &text_format));
@@ -611,41 +658,136 @@ wil::com_ptr_t<IDWriteTypography> Context::get_default_typography()
     return m_default_typography;
 }
 
-std::optional<std::wstring> Context::get_face_name(
-    const wchar_t* family_name, DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style) const
+std::optional<ResolvedFontNames> Context::resolve_font_names(const wchar_t* wss_family_name,
+    const wchar_t* typographic_family_name, DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch,
+    DWRITE_FONT_STYLE style, const AxisValues& axis_values) const
 {
-    wil::com_ptr_t<IDWriteFontCollection> font_collection;
+    const auto family_name = wcsnlen(typographic_family_name, 1) > 0 ? typographic_family_name : wss_family_name;
+
     try {
-        THROW_IF_FAILED(m_factory->GetSystemFontCollection(&font_collection));
-
-        BOOL exists{};
-        uint32_t index{};
-        THROW_IF_FAILED(font_collection->FindFamilyName(family_name, &index, &exists));
-
-        if (!exists)
-            return {};
-
-        wil::com_ptr_t<IDWriteFontFamily> font_family;
-        THROW_IF_FAILED(font_collection->GetFontFamily(index, &font_family));
-
+        const auto typographic_font_collection = get_typographic_font_collection(m_factory);
+        const auto wss_font_collection = get_wss_font_collection(m_factory);
         wil::com_ptr_t<IDWriteFont> font;
-        THROW_IF_FAILED(font_family->GetFirstMatchingFont(weight, stretch, style, &font));
+        wil::com_ptr_t<IDWriteFontFamily> font_family;
+
+        if (typographic_font_collection) {
+            auto axis_values_vector = axis_values_to_vector(axis_values);
+
+            if (axis_values_vector.empty()) {
+                axis_values_vector.resize(DWRITE_STANDARD_FONT_AXIS_COUNT);
+
+                const auto system_font_set = get_font_set_4(m_factory);
+                const auto written_axis_count = system_font_set->ConvertWeightStretchStyleToFontAxisValues(
+                    nullptr, 0, weight, stretch, style, 0, axis_values_vector.data());
+
+                axis_values_vector.resize(written_axis_count);
+            }
+
+            wil::com_ptr_t<IDWriteFontList2> font_list;
+
+            THROW_IF_FAILED(typographic_font_collection->GetMatchingFonts(
+                family_name, axis_values_vector.data(), gsl::narrow<uint32_t>(axis_values_vector.size()), &font_list));
+
+            if (font_list->GetFontCount() == 0)
+                return {};
+
+            THROW_IF_FAILED(font_list->GetFont(0, &font));
+
+            THROW_IF_FAILED(font->GetFontFamily(&font_family));
+        } else {
+            BOOL exists{};
+            uint32_t index{};
+            THROW_IF_FAILED(wss_font_collection->FindFamilyName(wss_family_name, &index, &exists));
+
+            if (!exists)
+                return {};
+
+            THROW_IF_FAILED(wss_font_collection->GetFontFamily(index, &font_family));
+
+            THROW_IF_FAILED(font_family->GetFirstMatchingFont(weight, stretch, style, &font));
+        }
 
         wil::com_ptr_t<IDWriteLocalizedStrings> face_names;
-        font->GetFaceNames(&face_names);
+        THROW_IF_FAILED(font->GetFaceNames(&face_names));
 
-        return get_localised_string(face_names);
-    } catch (...) {
-        LOG_CAUGHT_EXCEPTION();
-        return {};
+        wil::com_ptr_t<IDWriteLocalizedStrings> family_names;
+        THROW_IF_FAILED(font_family->GetFamilyNames(&family_names));
+
+        return ResolvedFontNames{get_localised_string(family_names), get_localised_string(face_names)};
     }
+    CATCH_LOG()
+
+    return {};
+}
+
+std::optional<std::tuple<WeightStretchStyle, LOGFONT>> Context::get_wss_and_logfont_for_axis_values(
+    const wchar_t* typographic_family_name, const AxisValues& axis_values) const
+{
+    try {
+        const auto system_font_set = get_font_set_4(m_factory);
+
+        if (!system_font_set)
+            return {};
+
+        const auto axis_values_vector = axis_values_to_vector(axis_values);
+
+        const auto find_matching_font_face
+            = [&system_font_set, &axis_values_vector](const auto* font_family) -> wil::com_ptr_t<IDWriteFontFace6> {
+            wil::com_ptr_t<IDWriteFontSet4> matching_fonts;
+            THROW_IF_FAILED(system_font_set->GetMatchingFonts(font_family, axis_values_vector.data(),
+                gsl::narrow<uint32_t>(axis_values_vector.size()),
+                DWRITE_FONT_SIMULATIONS_BOLD | DWRITE_FONT_SIMULATIONS_OBLIQUE, &matching_fonts));
+
+            if (matching_fonts->GetFontCount() == 0)
+                return {};
+
+            wil::com_ptr_t<IDWriteFontFace5> font_face_5;
+            THROW_IF_FAILED(matching_fonts->CreateFontFace(0, &font_face_5));
+
+            return font_face_5.query<IDWriteFontFace6>();
+        };
+
+        auto font_face_6 = find_matching_font_face(typographic_family_name);
+
+        if (!font_face_6)
+            return {};
+
+        wil::com_ptr_t<IDWriteLocalizedStrings> family_names;
+        THROW_IF_FAILED(font_face_6->GetFamilyNames(DWRITE_FONT_FAMILY_MODEL_WEIGHT_STRETCH_STYLE, &family_names));
+
+        auto family_name = get_localised_string(family_names);
+
+        // Check if this family name actually exists (yes, sometimes it returns invalid values)
+        font_face_6 = find_matching_font_face(family_name.c_str());
+
+        if (!font_face_6) {
+            font_face_6 = find_matching_font_face(L"Segoe UI");
+
+            if (!font_face_6)
+                return {};
+
+            THROW_IF_FAILED(font_face_6->GetFamilyNames(DWRITE_FONT_FAMILY_MODEL_WEIGHT_STRETCH_STYLE, &family_names));
+
+            family_name = get_localised_string(family_names);
+        }
+
+        const auto wss = WeightStretchStyle{
+            family_name, font_face_6->GetWeight(), font_face_6->GetStretch(), font_face_6->GetStyle()};
+
+        const auto log_font = create_log_font(font_face_6);
+
+        return std::make_tuple(wss, log_font);
+    }
+    CATCH_LOG()
+
+    return {};
 }
 
 std::vector<Font> FontFamily::fonts() const
 {
     std::vector<Font> fonts;
 
-    auto count = family->GetFontCount();
+    const auto count = family->GetFontCount();
 
     for (auto index : std::ranges::views::iota(0u, count)) {
         wil::com_ptr_t<IDWriteFont> font;
@@ -653,7 +795,33 @@ std::vector<Font> FontFamily::fonts() const
 
         wil::com_ptr_t<IDWriteLocalizedStrings> localised_names;
         THROW_IF_FAILED(font->GetFaceNames(&localised_names));
-        fonts.emplace_back(std::move(font), get_localised_string(localised_names));
+
+        std::vector<DWRITE_FONT_AXIS_VALUE> axis_values;
+
+        if (const auto font_3 = font.try_query<IDWriteFont3>()) {
+            wil::com_ptr_t<IDWriteFontFaceReference> font_face_reference;
+            THROW_IF_FAILED(font_3->GetFontFaceReference(&font_face_reference));
+
+            if (const auto font_face_reference_1 = font_face_reference.try_query<IDWriteFontFaceReference1>()) {
+                const auto axis_count = font_face_reference_1->GetFontAxisValueCount();
+
+                axis_values.resize(axis_count);
+                THROW_IF_FAILED(font_face_reference_1->GetFontAxisValues(axis_values.data(), axis_count));
+            }
+        }
+
+        AxisValues axis_values_map;
+
+        for (auto [tag, value] : axis_values) {
+            axis_values_map.insert_or_assign(WI_EnumValue(tag), value);
+        }
+
+        const auto weight = font->GetWeight();
+        const auto stretch = font->GetStretch();
+        const auto style = font->GetStyle();
+
+        fonts.emplace_back(
+            std::move(font), get_localised_string(localised_names), weight, stretch, style, std::move(axis_values_map));
     }
 
     return fonts;
@@ -661,53 +829,112 @@ std::vector<Font> FontFamily::fonts() const
 
 std::vector<FontFamily> Context::get_font_families() const
 {
+    const auto typographic_font_collection = get_typographic_font_collection(m_factory);
+
+    const wil::com_ptr_t<IDWriteFontCollection> font_collection
+        = typographic_font_collection ? typographic_font_collection : get_wss_font_collection(m_factory);
+
     std::vector<FontFamily> families;
-
-    wil::com_ptr_t<IDWriteFontCollection> font_collection;
-    THROW_IF_FAILED(m_factory->GetSystemFontCollection(&font_collection));
-
     const auto family_count = font_collection->GetFontFamilyCount();
 
-    for (auto index : std::ranges::views::iota(0u, family_count)) {
+    for (const auto index : std::ranges::views::iota(0u, family_count)) {
         wil::com_ptr_t<IDWriteFontFamily> family;
         THROW_IF_FAILED(font_collection->GetFontFamily(index, &family));
 
-        wil::com_ptr_t<IDWriteLocalizedStrings> family_localised_names;
-        THROW_IF_FAILED(family->GetFamilyNames(&family_localised_names));
-
-        std::array<wchar_t, LOCALE_NAME_MAX_LENGTH> locale_name;
-        uint32_t locale_index{};
-        BOOL exists{};
-
-        if (GetUserDefaultLocaleName(locale_name.data(), LOCALE_NAME_MAX_LENGTH))
-            THROW_IF_FAILED(family_localised_names->FindLocaleName(locale_name.data(), &locale_index, &exists));
-
-        if (!exists)
-            THROW_IF_FAILED(family_localised_names->FindLocaleName(L"en-us", &locale_index, &exists));
-
-        if (!exists)
-            locale_index = 0;
-
-        uint32_t name_length{};
-        THROW_IF_FAILED(family_localised_names->GetStringLength(locale_index, &name_length));
-
-        std::wstring localised_name;
-        localised_name.resize(name_length);
-
-        THROW_IF_FAILED(family_localised_names->GetString(locale_index, localised_name.data(), name_length + 1));
+        wil::com_ptr_t<IDWriteLocalizedStrings> family_names;
+        THROW_IF_FAILED(family->GetFamilyNames(&family_names));
 
         wil::com_ptr_t<IDWriteFont> first_font;
         THROW_IF_FAILED(family->GetFont(0, &first_font));
 
         const auto is_symbol_font = first_font->IsSymbolFont() != 0;
 
-        families.emplace_back(std::move(family), std::move(localised_name), is_symbol_font);
+        std::vector<DWRITE_FONT_AXIS_RANGE> axis_ranges;
+        std::unordered_map<uint32_t, std::set<std::tuple<float, float>>> unique_axis_ranges_map;
+        std::wstring wss_family_name;
+        std::wstring typographic_family_name;
+
+        if (typographic_font_collection) {
+            typographic_family_name = get_localised_string(family_names);
+
+            const auto family_2 = family.query<IDWriteFontFamily2>();
+
+            wil::com_ptr_t<IDWriteFontSet1> font_set;
+            THROW_IF_FAILED(family_2->GetFontSet(&font_set));
+
+            uint32_t set_axis_count{};
+            HRESULT hr = font_set->GetFontAxisRanges(nullptr, 0, &set_axis_count);
+
+            THROW_HR_IF(hr, hr != E_NOT_SUFFICIENT_BUFFER);
+
+            if (set_axis_count > 0) {
+                axis_ranges.resize(set_axis_count);
+                THROW_IF_FAILED(font_set->GetFontAxisRanges(axis_ranges.data(), set_axis_count, &set_axis_count));
+            }
+
+            wil::com_ptr_t<IDWriteFontSet1> first_font_resources_set;
+            THROW_IF_FAILED(font_set->GetFirstFontResources(&first_font_resources_set));
+
+            for (const auto resources_count = first_font_resources_set->GetFontCount();
+                 const auto font_index : ranges::views::iota(0u, resources_count)) {
+                uint32_t resource_axis_count{};
+                HRESULT hr = first_font_resources_set->GetFontAxisRanges(nullptr, 0, &resource_axis_count);
+
+                THROW_HR_IF(hr, hr != E_NOT_SUFFICIENT_BUFFER);
+
+                std::vector<DWRITE_FONT_AXIS_RANGE> resource_axis_ranges{};
+                if (resource_axis_count > 0) {
+                    resource_axis_ranges.resize(resource_axis_count);
+                    THROW_IF_FAILED(first_font_resources_set->GetFontAxisRanges(
+                        font_index, resource_axis_ranges.data(), resource_axis_count, &resource_axis_count));
+                }
+
+                for (auto&& axis_range : resource_axis_ranges) {
+                    auto& set = unique_axis_ranges_map[WI_EnumValue(axis_range.axisTag)];
+                    set.emplace(axis_range.minValue, axis_range.maxValue);
+                }
+            }
+
+            wil::com_ptr_t<IDWriteFontFace5> font_face;
+            THROW_IF_FAILED(font_set->CreateFontFace(0, &font_face));
+
+            const auto font_face_6 = font_face.query<IDWriteFontFace6>();
+
+            wil::com_ptr<IDWriteLocalizedStrings> wss_family_name_strings;
+            THROW_IF_FAILED(
+                font_face_6->GetFamilyNames(DWRITE_FONT_FAMILY_MODEL_WEIGHT_STRETCH_STYLE, &wss_family_name_strings));
+
+            wss_family_name = get_localised_string(wss_family_name_strings);
+        } else {
+            wss_family_name = get_localised_string(family_names);
+        }
+
+        const auto calculate_is_toggle = [&unique_axis_ranges_map](auto tag) {
+            if (!unique_axis_ranges_map.contains(tag))
+                return false;
+
+            auto& unique_ranges = unique_axis_ranges_map.at(tag);
+
+            return unique_ranges.size() == 2 && ranges::all_of(unique_ranges, [](auto&& element) {
+                return std::get<0>(element) == std::get<1>(element);
+            });
+        };
+
+        const auto axis_ranges_view = axis_ranges | ranges::views::filter([](auto&& range) {
+            return range.minValue != range.maxValue;
+        }) | ranges::views::transform([&calculate_is_toggle](auto&& range) {
+            const auto tag = WI_EnumValue(range.axisTag);
+            return AxisRange{tag, range.minValue, range.maxValue, calculate_is_toggle(tag)};
+        }) | ranges::to<std::vector>;
+
+        families.emplace_back(std::move(family), std::move(wss_family_name), std::move(typographic_family_name),
+            is_symbol_font, axis_ranges_view);
     }
 
     mmh::in_place_sort(
         families,
         [](auto&& left, auto&& right) {
-            return StrCmpLogicalW(left.localised_name.c_str(), right.localised_name.c_str());
+            return StrCmpLogicalW(left.display_name().c_str(), right.display_name().c_str());
         },
         false);
 
@@ -758,6 +985,13 @@ float px_to_dip(float px, float scaling_factor)
 float dip_to_px(float dip, float scaling_factor)
 {
     return dip * scaling_factor;
+}
+
+std::vector<DWRITE_FONT_AXIS_VALUE> axis_values_to_vector(const AxisValues& values)
+{
+    return values | ranges::views::transform([](auto pair) {
+        return DWRITE_FONT_AXIS_VALUE{static_cast<DWRITE_FONT_AXIS_TAG>(pair.first), pair.second};
+    }) | ranges::to<std::vector>;
 }
 
 } // namespace uih::direct_write

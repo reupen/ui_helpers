@@ -1,6 +1,18 @@
 #ifndef _UI_HELPERS_H_
 #define _UI_HELPERS_H_
 
+#ifndef NTDDI_WIN10_CU
+#define NTDDI_WIN10_CU 0x0A00000D
+#endif
+
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT _WIN32_WINNT_WIN10
+#endif
+
+#ifndef NTDDI_VERSION
+#define NTDDI_VERSION NTDDI_WIN10_CU
+#endif
+
 #define _SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING
 #define OEMRESOURCE
 
@@ -9,6 +21,7 @@
 #include <memory>
 #include <optional>
 #include <ranges>
+#include <set>
 #include <span>
 #include <string>
 #include <type_traits>
