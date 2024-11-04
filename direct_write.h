@@ -37,6 +37,7 @@ public:
         , m_text_layout(std::move(text_layout))
         , m_rendering_params(std::move(rendering_params))
     {
+        m_text_layout_4 = m_text_layout.try_query<IDWriteTextLayout4>();
     }
 
     float get_max_height() const noexcept;
@@ -51,13 +52,16 @@ public:
     void set_max_height(float value) const;
     void set_max_width(float value) const;
     void set_underline(bool is_underlined, DWRITE_TEXT_RANGE text_range) const;
-    void set_font(const wchar_t* font_family, DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch,
-        DWRITE_FONT_STYLE style, float size, DWRITE_TEXT_RANGE text_range) const;
+    void set_family(const wchar_t* family_name, DWRITE_TEXT_RANGE text_range) const;
+    void set_size(float size, DWRITE_TEXT_RANGE text_range) const;
+    void set_wss(DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style,
+        DWRITE_TEXT_RANGE text_range) const;
 
 private:
     wil::com_ptr_t<IDWriteFactory> m_factory;
     wil::com_ptr_t<IDWriteGdiInterop> m_gdi_interop;
     wil::com_ptr_t<IDWriteTextLayout> m_text_layout;
+    wil::com_ptr_t<IDWriteTextLayout4> m_text_layout_4;
     RenderingParams::Ptr m_rendering_params;
 };
 
@@ -93,6 +97,9 @@ public:
         std::wstring_view text, int height, float max_width = 65536.0f) const;
     [[nodiscard]] int measure_text_width(std::wstring_view text) const;
     [[nodiscard]] TextLayout create_text_layout(std::wstring_view text, float max_width, float max_height) const;
+    [[nodiscard]] DWRITE_FONT_WEIGHT get_weight() const;
+    [[nodiscard]] DWRITE_FONT_STRETCH get_stretch() const;
+    [[nodiscard]] DWRITE_FONT_STYLE get_style() const;
 
 private:
     std::shared_ptr<Context> m_context;

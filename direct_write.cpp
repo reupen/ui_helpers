@@ -338,14 +338,45 @@ void TextLayout::set_underline(bool is_underlined, DWRITE_TEXT_RANGE text_range)
     THROW_IF_FAILED(m_text_layout->SetUnderline(is_underlined, text_range));
 }
 
-void TextLayout::set_font(const wchar_t* font_family, DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch,
-    DWRITE_FONT_STYLE style, float size, DWRITE_TEXT_RANGE text_range) const
+void TextLayout::set_family(const wchar_t* family_name, DWRITE_TEXT_RANGE text_range) const
 {
-    THROW_IF_FAILED(m_text_layout->SetFontFamilyName(font_family, text_range));
+    THROW_IF_FAILED(m_text_layout->SetFontFamilyName(family_name, text_range));
+}
+
+void TextLayout::set_size(float size, DWRITE_TEXT_RANGE text_range) const
+{
+    THROW_IF_FAILED(m_text_layout->SetFontSize(size, text_range));
+}
+
+void TextLayout::set_wss(
+    DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style, DWRITE_TEXT_RANGE text_range) const
+{
+    if (m_text_layout_4) {
+        const float width = [stretch] {
+            if (stretch == 9)
+                return 200.0f;
+
+            if (stretch == 8)
+                return 150.0f;
+
+            return static_cast<float>(stretch - 1) * 12.5f + 50.0f;
+        }();
+
+        std::array axis_values{
+            DWRITE_FONT_AXIS_VALUE{DWRITE_FONT_AXIS_TAG_WEIGHT, static_cast<float>(weight)},
+            DWRITE_FONT_AXIS_VALUE{DWRITE_FONT_AXIS_TAG_WIDTH, width},
+            DWRITE_FONT_AXIS_VALUE{DWRITE_FONT_AXIS_TAG_ITALIC, style == DWRITE_FONT_STYLE_ITALIC ? 1.0f : 0.0f},
+            DWRITE_FONT_AXIS_VALUE{DWRITE_FONT_AXIS_TAG_SLANT, style == DWRITE_FONT_STYLE_OBLIQUE ? 1.0f : 0.0f},
+        };
+
+        THROW_IF_FAILED(m_text_layout_4->SetFontAxisValues(
+            axis_values.data(), gsl::narrow<UINT32>(axis_values.size()), text_range));
+        return;
+    }
+
     THROW_IF_FAILED(m_text_layout->SetFontWeight(weight, text_range));
     THROW_IF_FAILED(m_text_layout->SetFontStretch(stretch, text_range));
     THROW_IF_FAILED(m_text_layout->SetFontStyle(style, text_range));
-    THROW_IF_FAILED(m_text_layout->SetFontSize(size, text_range));
 }
 
 void TextLayout::render_with_transparent_background(
@@ -527,6 +558,21 @@ TextLayout TextFormat::create_text_layout(std::wstring_view text, float max_widt
     THROW_IF_FAILED(text_layout->SetTypography(typography.get(), {0, text_length}));
 
     return {m_factory, m_gdi_interop, text_layout, m_rendering_params};
+}
+
+DWRITE_FONT_WEIGHT TextFormat::get_weight() const
+{
+    return m_text_format->GetFontWeight();
+}
+
+DWRITE_FONT_STRETCH TextFormat::get_stretch() const
+{
+    return m_text_format->GetFontStretch();
+}
+
+DWRITE_FONT_STYLE TextFormat::get_style() const
+{
+    return m_text_format->GetFontStyle();
 }
 
 Context::Context()
