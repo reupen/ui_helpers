@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+#include "list_view.h"
+
 namespace uih {
 
 bool ListView::is_search_box_open()

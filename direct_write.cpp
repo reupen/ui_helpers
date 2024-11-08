@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+#include "direct_write.h"
+
 using namespace std::string_view_literals;
 
 namespace uih::direct_write {

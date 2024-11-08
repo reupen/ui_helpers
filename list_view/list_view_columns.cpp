@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+#include "list_view.h"
+
 namespace uih {
 
 int ListView::get_columns_width()

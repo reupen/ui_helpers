@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+#include "list_view.h"
+
 namespace uih {
 
 void ListView::get_selection_state(pfc::bit_array_var& out)

@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+#include "list_view.h"
+
 #define GROUP_STRING_COMPARE strcmp
 
 namespace uih {

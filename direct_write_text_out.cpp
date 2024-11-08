@@ -1,5 +1,8 @@
 #include "stdafx.h"
 
+#include "direct_write.h"
+#include "direct_write_text_out.h"
+
 using namespace std::string_view_literals;
 
 namespace uih::direct_write {
