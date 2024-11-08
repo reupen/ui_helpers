@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+#include "list_view.h"
+
 namespace uih {
 
 void ListView::hit_test_ex(POINT pt_client, ListView::HitTestResult& result)

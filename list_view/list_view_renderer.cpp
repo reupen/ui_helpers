@@ -1,5 +1,8 @@
 #include "stdafx.h"
 
+#include "list_view.h"
+#include "../direct_write_text_out.h"
+
 using namespace std::string_view_literals;
 using namespace uih::literals::spx;
 

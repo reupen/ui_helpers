@@ -1,5 +1,7 @@
 #include "stdafx.h"
+
 #include "list_view.h"
+#include "../direct_write_text_out.h"
 
 namespace uih {
 

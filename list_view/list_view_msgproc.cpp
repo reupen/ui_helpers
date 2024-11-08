@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+#include "list_view.h"
+
 using namespace uih::literals::spx;
 
 namespace uih {

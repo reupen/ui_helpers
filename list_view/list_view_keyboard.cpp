@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+#include "list_view.h"
+
 namespace uih {
 
 bool ListView::on_wm_keydown(WPARAM wp, LPARAM lp)

@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+#include "list_view.h"
+
 namespace uih {
 
 lv::SavedScrollPosition ListView::save_scroll_position() const
