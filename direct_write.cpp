@@ -8,6 +8,46 @@ namespace uih::direct_write {
 
 namespace {
 
+float stretch_to_width(DWRITE_FONT_STRETCH stretch)
+{
+    if (stretch == DWRITE_FONT_STRETCH_ULTRA_EXPANDED)
+        return 200.0f;
+
+    if (stretch == DWRITE_FONT_STRETCH_EXTRA_EXPANDED)
+        return 150.0f;
+
+    return static_cast<float>(stretch - 1) * 12.5f + 50.0f;
+}
+
+DWRITE_FONT_STRETCH width_to_stretch(float width)
+{
+    if (width >= 200.0f)
+        return DWRITE_FONT_STRETCH_ULTRA_EXPANDED;
+
+    if (width >= 150.0f)
+        return DWRITE_FONT_STRETCH_EXTRA_EXPANDED;
+
+    if (width >= 125.0f)
+        return DWRITE_FONT_STRETCH_EXPANDED;
+
+    if (width >= 112.5f)
+        return DWRITE_FONT_STRETCH_SEMI_EXPANDED;
+
+    if (width >= 100.0f)
+        return DWRITE_FONT_STRETCH_NORMAL;
+
+    if (width >= 87.5f)
+        return DWRITE_FONT_STRETCH_SEMI_CONDENSED;
+
+    if (width >= 75.0f)
+        return DWRITE_FONT_STRETCH_CONDENSED;
+
+    if (width >= 62.5f)
+        return DWRITE_FONT_STRETCH_EXTRA_CONDENSED;
+
+    return DWRITE_FONT_STRETCH_ULTRA_CONDENSED;
+}
+
 wil::com_ptr_t<IDWriteFontCollection3> get_typographic_font_collection(const wil::com_ptr_t<IDWriteFactory1>& factory)
 {
     const auto factory_8 = factory.try_query<IDWriteFactory8>();
@@ -350,19 +390,13 @@ void TextLayout::set_size(float size, DWRITE_TEXT_RANGE text_range) const
     THROW_IF_FAILED(m_text_layout->SetFontSize(size, text_range));
 }
 
-void TextLayout::set_wss(
-    DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style, DWRITE_TEXT_RANGE text_range) const
+void TextLayout::set_wss(DWRITE_FONT_WEIGHT weight, std::variant<DWRITE_FONT_STRETCH, float> width_or_stretch,
+    DWRITE_FONT_STYLE style, DWRITE_TEXT_RANGE text_range) const
 {
     if (m_text_layout_4) {
-        const float width = [stretch] {
-            if (stretch == 9)
-                return 200.0f;
-
-            if (stretch == 8)
-                return 150.0f;
-
-            return static_cast<float>(stretch - 1) * 12.5f + 50.0f;
-        }();
+        const auto width = std::holds_alternative<float>(width_or_stretch)
+            ? std::get<float>(width_or_stretch)
+            : stretch_to_width(std::get<DWRITE_FONT_STRETCH>(width_or_stretch));
 
         std::array axis_values{
             DWRITE_FONT_AXIS_VALUE{DWRITE_FONT_AXIS_TAG_WEIGHT, static_cast<float>(weight)},
@@ -375,6 +409,10 @@ void TextLayout::set_wss(
             axis_values.data(), gsl::narrow<UINT32>(axis_values.size()), text_range));
         return;
     }
+
+    const auto stretch = std::holds_alternative<DWRITE_FONT_STRETCH>(width_or_stretch)
+        ? std::get<DWRITE_FONT_STRETCH>(width_or_stretch)
+        : width_to_stretch(std::get<float>(width_or_stretch));
 
     THROW_IF_FAILED(m_text_layout->SetFontWeight(weight, text_range));
     THROW_IF_FAILED(m_text_layout->SetFontStretch(stretch, text_range));
@@ -567,8 +605,25 @@ DWRITE_FONT_WEIGHT TextFormat::get_weight() const
     return m_text_format->GetFontWeight();
 }
 
-DWRITE_FONT_STRETCH TextFormat::get_stretch() const
+std::variant<DWRITE_FONT_STRETCH, float> TextFormat::get_stretch() const
 {
+    if (const auto text_format_3 = m_text_format.try_query<IDWriteTextFormat3>(); text_format_3) {
+        const auto axis_count = text_format_3->GetFontAxisValueCount();
+        std::vector<DWRITE_FONT_AXIS_VALUE> axis_values{axis_count};
+        try {
+            THROW_IF_FAILED(text_format_3->GetFontAxisValues(axis_values.data(), axis_count));
+        } catch (...) {
+            LOG_CAUGHT_EXCEPTION();
+            return m_text_format->GetFontStretch();
+        }
+
+        if (const auto iter
+            = ranges::find_if(axis_values, [](auto& value) { return value.axisTag == DWRITE_FONT_AXIS_TAG_WIDTH; });
+            iter != axis_values.end()) {
+            return iter->value;
+        }
+    }
+
     return m_text_format->GetFontStretch();
 }
 
@@ -1030,11 +1085,6 @@ float get_default_scaling_factor()
     return gsl::narrow_cast<float>(get_system_dpi_cached().cx) / gsl::narrow_cast<float>(USER_DEFAULT_SCREEN_DPI);
 }
 
-float pt_to_dip(float point_size)
-{
-    return point_size * gsl::narrow_cast<float>(USER_DEFAULT_SCREEN_DPI) / 72.0f;
-}
-
 float px_to_dip(float px, float scaling_factor)
 {
     return px / scaling_factor;
@@ -1043,6 +1093,16 @@ float px_to_dip(float px, float scaling_factor)
 float dip_to_px(float dip, float scaling_factor)
 {
     return dip * scaling_factor;
+}
+
+float dip_to_pt(float dip)
+{
+    return dip * 72.0f / gsl::narrow_cast<float>(USER_DEFAULT_SCREEN_DPI);
+}
+
+float pt_to_dip(float point_size)
+{
+    return point_size * gsl::narrow_cast<float>(USER_DEFAULT_SCREEN_DPI) / 72.0f;
 }
 
 std::vector<DWRITE_FONT_AXIS_VALUE> axis_values_to_vector(const AxisValues& values)
