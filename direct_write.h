@@ -54,8 +54,8 @@ public:
     void set_underline(bool is_underlined, DWRITE_TEXT_RANGE text_range) const;
     void set_family(const wchar_t* family_name, DWRITE_TEXT_RANGE text_range) const;
     void set_size(float size, DWRITE_TEXT_RANGE text_range) const;
-    void set_wss(DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style,
-        DWRITE_TEXT_RANGE text_range) const;
+    void set_wss(DWRITE_FONT_WEIGHT weight, std::variant<DWRITE_FONT_STRETCH, float> width_or_stretch,
+        DWRITE_FONT_STYLE style, DWRITE_TEXT_RANGE text_range) const;
 
 private:
     wil::com_ptr_t<IDWriteFactory> m_factory;
@@ -98,7 +98,7 @@ public:
     [[nodiscard]] int measure_text_width(std::wstring_view text) const;
     [[nodiscard]] TextLayout create_text_layout(std::wstring_view text, float max_width, float max_height) const;
     [[nodiscard]] DWRITE_FONT_WEIGHT get_weight() const;
-    [[nodiscard]] DWRITE_FONT_STRETCH get_stretch() const;
+    [[nodiscard]] std::variant<DWRITE_FONT_STRETCH, float> get_stretch() const;
     [[nodiscard]] DWRITE_FONT_STYLE get_style() const;
 
 private:
@@ -213,6 +213,7 @@ float get_default_scaling_factor();
 
 float dip_to_px(float dip, float scaling_factor = get_default_scaling_factor());
 float px_to_dip(float px, float scaling_factor = get_default_scaling_factor());
+float dip_to_pt(float dip);
 float pt_to_dip(float point_size);
 
 #if NTDDI_VERSION >= NTDDI_WIN10_RS3
