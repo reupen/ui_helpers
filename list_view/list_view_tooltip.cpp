@@ -92,7 +92,6 @@ void ListView::calculate_tooltip_position(size_t item_index, size_t column_index
 
     try {
         m_items_text_format->set_text_alignment(direct_write::get_text_alignment(column.m_alignment));
-        m_items_text_format->enable_trimming_sign();
     }
     CATCH_LOG()
 
@@ -101,7 +100,7 @@ void ListView::calculate_tooltip_position(size_t item_index, size_t column_index
 
     const auto max_width = std::max(0.0f,
         static_cast<float>(column.m_display_size - 1_spx - 3_spx * 2) / direct_write::get_default_scaling_factor());
-    const auto metrics = m_items_text_format->measure_text_position(utf16_text, m_item_height, max_width);
+    const auto metrics = m_items_text_format->measure_text_position(utf16_text, m_item_height, max_width, true);
 
     m_tooltip_text_left_offset = metrics.left_remainder_dip;
 
@@ -175,7 +174,6 @@ void ListView::render_tooltip_text(HWND wnd, HDC dc, COLORREF colour) const
 
     if (m_items_text_format) {
         try {
-            m_items_text_format->disable_trimming_sign();
             m_items_text_format->set_text_alignment();
             const auto scaling_factor = direct_write::get_default_scaling_factor();
 

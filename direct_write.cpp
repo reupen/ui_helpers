@@ -520,22 +520,6 @@ void TextFormat::set_word_wrapping(DWRITE_WORD_WRAPPING value) const
     THROW_IF_FAILED(m_text_format->SetWordWrapping(value));
 }
 
-void TextFormat::enable_trimming_sign()
-{
-    if (!m_trimming_sign) {
-        THROW_IF_FAILED(m_factory->CreateEllipsisTrimmingSign(m_text_format.get(), &m_trimming_sign));
-    }
-
-    DWRITE_TRIMMING trimming{DWRITE_TRIMMING_GRANULARITY_CHARACTER, 0, 0};
-    THROW_IF_FAILED(m_text_format->SetTrimming(&trimming, m_trimming_sign.get()));
-}
-
-void TextFormat::disable_trimming_sign() const
-{
-    DWRITE_TRIMMING trimming{DWRITE_TRIMMING_GRANULARITY_NONE, 0, 0};
-    THROW_IF_FAILED(m_text_format->SetTrimming(&trimming, nullptr));
-}
-
 int TextFormat::get_minimum_height(std::wstring_view text) const
 {
     try {
@@ -549,11 +533,13 @@ int TextFormat::get_minimum_height(std::wstring_view text) const
     return 1;
 }
 
-TextPosition TextFormat::measure_text_position(std::wstring_view text, int height, float max_width) const
+TextPosition TextFormat::measure_text_position(
+    std::wstring_view text, int height, float max_width, bool enable_ellipsis) const
 {
     try {
         const auto scaling_factor = get_default_scaling_factor();
-        const auto text_layout = create_text_layout(text, max_width, static_cast<float>(height) / scaling_factor);
+        const auto text_layout
+            = create_text_layout(text, max_width, static_cast<float>(height) / scaling_factor, enable_ellipsis);
         const auto metrics = text_layout.get_metrics();
         const auto left = gsl::narrow_cast<int>(metrics.left * scaling_factor);
         const auto left_remainder_dip = metrics.left - gsl::narrow_cast<float>(left) / scaling_factor;
@@ -579,7 +565,8 @@ int TextFormat::measure_text_width(std::wstring_view text) const
     return 0;
 }
 
-TextLayout TextFormat::create_text_layout(std::wstring_view text, float max_width, float max_height) const
+TextLayout TextFormat::create_text_layout(
+    std::wstring_view text, float max_width, float max_height, bool enable_ellipsis) const
 {
     const auto text_length = gsl::narrow<uint32_t>(text.length());
 
@@ -596,6 +583,14 @@ TextLayout TextFormat::create_text_layout(std::wstring_view text, float max_widt
 
     const auto typography = m_context->get_default_typography();
     THROW_IF_FAILED(text_layout->SetTypography(typography.get(), {0, text_length}));
+
+    if (enable_ellipsis) {
+        wil::com_ptr_t<IDWriteInlineObject> trimming_sign;
+        THROW_IF_FAILED(m_factory->CreateEllipsisTrimmingSign(m_text_format.get(), &trimming_sign));
+
+        DWRITE_TRIMMING trimming{DWRITE_TRIMMING_GRANULARITY_CHARACTER, 0, 0};
+        THROW_IF_FAILED(text_layout->SetTrimming(&trimming, trimming_sign.get()));
+    }
 
     return {m_factory, m_gdi_interop, text_layout, m_rendering_params};
 }
