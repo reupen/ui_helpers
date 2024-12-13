@@ -10,7 +10,7 @@ namespace uih::direct_write {
 namespace {
 
 int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::string_view text, const RECT& rect,
-    bool selected, DWORD default_color, alignment align, bool enable_colour_codes)
+    bool selected, DWORD default_color, alignment align, bool enable_colour_codes, bool enable_ellipsis)
 {
     if (is_rect_null_or_reversed(&rect) || rect.right <= rect.left)
         return 0;
@@ -26,7 +26,7 @@ int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::strin
 
         const auto layout = text_format.create_text_layout(render_text,
             gsl::narrow_cast<float>(wil::rect_width(rect)) / scaling_factor,
-            gsl::narrow_cast<float>(wil::rect_height(rect)) / scaling_factor);
+            gsl::narrow_cast<float>(wil::rect_height(rect)) / scaling_factor, enable_ellipsis);
 
         for (auto& [colour, start_character, character_count] : segments) {
             layout.set_colour(colour, {gsl::narrow<uint32_t>(start_character), gsl::narrow<uint32_t>(character_count)});
@@ -79,17 +79,9 @@ int text_out_columns_and_colours(TextFormat& text_format, HWND wnd, HDC dc, std:
         adjusted_rect.left += border + x_offset;
         adjusted_rect.right -= border;
 
-        if (options.enable_ellipses)
-            text_format.enable_trimming_sign();
-        else
-            text_format.disable_trimming_sign();
-
         return text_out_colours(text_format, wnd, dc, text, adjusted_rect, options.is_selected, default_colour,
-            options.align, options.enable_colour_codes);
+            options.align, options.enable_colour_codes, options.enable_ellipses);
     }
-
-    // Ellipses always disabled when using tab columns
-    text_format.disable_trimming_sign();
 
     adjusted_rect.left += x_offset;
     const int total_width = adjusted_rect.right - adjusted_rect.left;
@@ -114,7 +106,7 @@ int text_out_columns_and_colours(TextFormat& text_format, HWND wnd, HDC dc, std:
 
             const int cell_render_width
                 = text_out_colours(text_format, wnd, dc, cell_text, cell_rect, options.is_selected, default_colour,
-                    cell_index == 0 ? ALIGN_RIGHT : ALIGN_LEFT, options.enable_colour_codes);
+                    cell_index == 0 ? ALIGN_RIGHT : ALIGN_LEFT, options.enable_colour_codes, false);
 
             if (cell_index == 0)
                 cell_rect.left = cell_rect.right - cell_render_width;

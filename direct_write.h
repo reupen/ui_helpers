@@ -89,14 +89,13 @@ public:
     void set_text_alignment(DWRITE_TEXT_ALIGNMENT value = DWRITE_TEXT_ALIGNMENT_LEADING) const;
     void set_paragraph_alignment(DWRITE_PARAGRAPH_ALIGNMENT value) const;
     void set_word_wrapping(DWRITE_WORD_WRAPPING value) const;
-    void enable_trimming_sign();
-    void disable_trimming_sign() const;
 
     [[nodiscard]] int get_minimum_height(std::wstring_view text = std::wstring_view(L"", 0)) const;
     [[nodiscard]] TextPosition measure_text_position(
-        std::wstring_view text, int height, float max_width = 65536.0f) const;
+        std::wstring_view text, int height, float max_width = 65536.0f, bool enable_ellipsis = false) const;
     [[nodiscard]] int measure_text_width(std::wstring_view text) const;
-    [[nodiscard]] TextLayout create_text_layout(std::wstring_view text, float max_width, float max_height) const;
+    [[nodiscard]] TextLayout create_text_layout(
+        std::wstring_view text, float max_width, float max_height, bool enable_ellipsis = false) const;
     [[nodiscard]] DWRITE_FONT_WEIGHT get_weight() const;
     [[nodiscard]] std::variant<DWRITE_FONT_STRETCH, float> get_stretch() const;
     [[nodiscard]] DWRITE_FONT_STYLE get_style() const;
@@ -106,7 +105,6 @@ private:
     wil::com_ptr_t<IDWriteFactory> m_factory;
     wil::com_ptr_t<IDWriteGdiInterop> m_gdi_interop;
     wil::com_ptr_t<IDWriteTextFormat> m_text_format;
-    wil::com_ptr_t<IDWriteInlineObject> m_trimming_sign;
     RenderingParams::Ptr m_rendering_params;
 };
 
