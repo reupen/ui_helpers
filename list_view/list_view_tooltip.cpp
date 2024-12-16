@@ -33,7 +33,7 @@ void ListView::create_tooltip(/*size_t index, size_t column, */ const char* str)
     if (IsThemeActive() && IsAppThemed())
         m_tooltip_theme.reset(OpenThemeData(m_wnd_tooltip, L"Tooltip"));
 
-    uih::subclass_window(m_wnd_tooltip, [this](auto wnd, auto msg, auto wp, auto lp) {
+    uih::subclass_window(m_wnd_tooltip, [this](auto _, auto wnd, auto msg, auto wp, auto lp) {
         if (msg == WM_THEMECHANGED && IsThemeActive() && IsAppThemed())
             m_tooltip_theme.reset(OpenThemeData(m_wnd_tooltip, L"Tooltip"));
 

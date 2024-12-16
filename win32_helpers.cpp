@@ -548,7 +548,7 @@ void enhance_edit_control(HWND wnd)
     };
 
     subclass_window(
-        wnd, [send_backspace, delete_text](HWND wnd, UINT msg, WPARAM wp, LPARAM lp) -> std::optional<LRESULT> {
+        wnd, [send_backspace, delete_text](auto _, HWND wnd, UINT msg, WPARAM wp, LPARAM lp) -> std::optional<LRESULT> {
             switch (msg) {
             case WM_KEYDOWN:
                 // If Autocomplete is enabled, it processes Ctrl+Backspace here
