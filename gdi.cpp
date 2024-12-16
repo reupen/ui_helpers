@@ -12,7 +12,8 @@ void paint_subclassed_window_with_buffering(HWND wnd, WNDPROC window_proc)
     CallWindowProc(window_proc, wnd, WM_PRINTCLIENT, reinterpret_cast<WPARAM>(buffered_dc.get()), PRF_CLIENT);
 }
 
-std::optional<LRESULT> handle_subclassed_window_buffered_painting(auto wnd_proc, auto wnd, auto msg, auto wp, auto lp)
+std::optional<LRESULT> handle_subclassed_window_buffered_painting(
+    WNDPROC wnd_proc, HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 {
     switch (msg) {
     case WM_ERASEBKGND:

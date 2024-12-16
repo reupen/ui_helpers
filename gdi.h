@@ -52,7 +52,8 @@ private:
 };
 
 void paint_subclassed_window_with_buffering(HWND wnd, WNDPROC window_proc);
-std::optional<LRESULT> handle_subclassed_window_buffered_painting(auto wnd_proc, auto wnd, auto msg, auto wp, auto lp);
+std::optional<LRESULT> handle_subclassed_window_buffered_painting(
+    WNDPROC wnd_proc, HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 void subclass_window_and_paint_with_buffering(HWND wnd);
 void draw_rect_outline(HDC dc, const RECT& rc, COLORREF colour, int width);
 
