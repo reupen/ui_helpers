@@ -53,4 +53,14 @@ HWND modeless_dialog_box(
         reinterpret_cast<LPARAM>(data.get()));
 }
 
+HWND modeless_dialog_box(
+    LPDLGTEMPLATE dlg_template, HWND wnd, std::function<INT_PTR(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
+{
+    std::shared_ptr<DialogBoxData> data = std ::make_shared<DialogBoxData>(DialogBoxData{std::move(on_message), {}});
+    data->self = data;
+
+    return CreateDialogIndirectParam(
+        mmh::get_current_instance(), dlg_template, wnd, on_dialog_box_message, reinterpret_cast<LPARAM>(data.get()));
+}
+
 } // namespace uih
