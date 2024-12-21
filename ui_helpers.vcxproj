@@ -186,6 +186,7 @@
     <ClCompile Include="dpi.cpp" />
     <ClCompile Include="drag_image.cpp" />
     <ClCompile Include="gdi.cpp" />
+    <ClCompile Include="info_box.cpp" />
     <ClCompile Include="list_view\list_view_columns.cpp" />
     <ClCompile Include="list_view\list_view_drag_image.cpp" />
     <ClCompile Include="list_view\list_view_header.cpp" />

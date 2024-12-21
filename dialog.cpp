@@ -39,7 +39,7 @@ INT_PTR modal_dialog_box(
 {
     const auto data = std ::make_unique<DialogBoxData>(DialogBoxData{std::move(on_message), {}});
 
-    return DialogBoxParam(mmh::get_current_instance(), MAKEINTRESOURCE(resource_id), wnd, on_dialog_box_message,
+    return DialogBoxParam(wil::GetModuleInstanceHandle(), MAKEINTRESOURCE(resource_id), wnd, on_dialog_box_message,
         reinterpret_cast<LPARAM>(data.get()));
 }
 
@@ -49,8 +49,18 @@ HWND modeless_dialog_box(
     std::shared_ptr<DialogBoxData> data = std ::make_shared<DialogBoxData>(DialogBoxData{std::move(on_message), {}});
     data->self = data;
 
-    return CreateDialogParam(mmh::get_current_instance(), MAKEINTRESOURCE(resource_id), wnd, on_dialog_box_message,
+    return CreateDialogParam(wil::GetModuleInstanceHandle(), MAKEINTRESOURCE(resource_id), wnd, on_dialog_box_message,
         reinterpret_cast<LPARAM>(data.get()));
+}
+
+HWND modeless_dialog_box(
+    LPDLGTEMPLATE dlg_template, HWND wnd, std::function<INT_PTR(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
+{
+    std::shared_ptr<DialogBoxData> data = std ::make_shared<DialogBoxData>(DialogBoxData{std::move(on_message), {}});
+    data->self = data;
+
+    return CreateDialogIndirectParam(
+        wil::GetModuleInstanceHandle(), dlg_template, wnd, on_dialog_box_message, reinterpret_cast<LPARAM>(data.get()));
 }
 
 } // namespace uih

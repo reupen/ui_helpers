@@ -124,6 +124,7 @@
     <ClCompile Include="direct_write.cpp" />
     <ClCompile Include="direct_write_text_out.cpp" />
     <ClCompile Include="text_out_helpers.cpp" />
+    <ClCompile Include="info_box.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
