@@ -3,10 +3,9 @@
 namespace uih {
 
 void InfoBox::s_run(HWND wnd_parent, const char* p_title, const char* p_text, INT icon,
-    std::function<void(HWND)> on_creation, std::function<void(HWND)> on_destruction, alignment text_alignment)
+    std::function<std::optional<INT_PTR>(HWND, UINT, WPARAM, LPARAM)> on_before_message, alignment text_alignment)
 {
-    const auto message_window
-        = std::make_shared<InfoBox>(std::move(on_creation), std::move(on_destruction), text_alignment);
+    const auto message_window = std::make_shared<InfoBox>(std::move(on_before_message), text_alignment);
     message_window->create(wnd_parent, p_title, p_text, icon);
 }
 
@@ -69,12 +68,13 @@ void InfoBox::create(HWND wnd_parent, const char* p_title, const char* p_text, I
 
 INT_PTR InfoBox::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 {
+    if (m_on_before_message)
+        if (const auto result = m_on_before_message(wnd, msg, wp, lp); result)
+            return *result;
+
     switch (msg) {
     case WM_INITDIALOG: {
         m_wnd = wnd;
-
-        if (m_on_creation)
-            m_on_creation(wnd);
 
         m_font.reset(create_icon_font());
 
@@ -105,9 +105,6 @@ INT_PTR InfoBox::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         return TRUE;
     }
     case WM_NCDESTROY:
-        if (m_on_destruction)
-            m_on_destruction(wnd);
-
         m_wnd = nullptr;
         m_font.reset();
         break;

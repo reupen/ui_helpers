@@ -6,16 +6,15 @@ namespace uih {
 
 class InfoBox : public std::enable_shared_from_this<InfoBox> {
 public:
-    InfoBox(std::function<void(HWND)> on_creation = nullptr, std::function<void(HWND)> on_destruction = nullptr,
+    InfoBox(std::function<std::optional<INT_PTR>(HWND, UINT, WPARAM, LPARAM)> on_before_message,
         alignment text_alignment = ALIGN_LEFT)
         : m_text_alignment{text_alignment}
-        , m_on_creation(std::move(on_creation))
-        , m_on_destruction(std::move(on_destruction))
+        , m_on_before_message(std::move(on_before_message))
     {
     }
 
     static void s_run(HWND wnd_parent, const char* p_title, const char* p_text, INT icon = OIC_INFORMATION,
-        std::function<void(HWND)> on_creation = nullptr, std::function<void(HWND)> on_destruction = nullptr,
+        std::function<std::optional<INT_PTR>(HWND, UINT, WPARAM, LPARAM)> on_before_message = nullptr,
         alignment text_alignment = ALIGN_LEFT);
 
     int calc_height() const;
@@ -58,8 +57,7 @@ private:
     alignment m_text_alignment{ALIGN_LEFT};
     wil::unique_hfont m_font;
     icon_ptr m_icon;
-    std::function<void(HWND)> m_on_creation;
-    std::function<void(HWND)> m_on_destruction;
+    std::function<std::optional<INT_PTR>(HWND, UINT, WPARAM, LPARAM)> m_on_before_message;
 };
 
 } // namespace uih
