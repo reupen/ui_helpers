@@ -33,26 +33,27 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         set_window_theme();
         reopen_themes();
 
-        if (!m_items_log_font || !m_group_text_format) {
+        if (!m_items_log_font || !m_header_log_font) {
             LOGFONT icon_font{};
             if (SystemParametersInfo(SPI_GETICONTITLELOGFONT, 0, &icon_font, 0)) {
-                if (!m_items_log_font) {
+                if (!m_items_log_font)
                     m_items_log_font = icon_font;
 
-                    if (m_direct_write_context) {
-                        m_items_text_format = m_direct_write_context->create_text_format_with_fallback(icon_font);
-                    }
-                }
-
-                if (!m_header_log_font) {
+                if (!m_header_log_font)
                     m_header_log_font = m_items_log_font;
-                    m_header_text_format = m_items_text_format;
-                }
-
-                if (!m_group_text_format && m_direct_write_context)
-                    m_group_text_format = m_items_text_format;
             }
         }
+
+        if (m_direct_write_context) {
+            if (!m_items_text_format && m_items_log_font)
+                m_items_text_format = m_direct_write_context->create_text_format_with_fallback(*m_items_log_font);
+
+            if (!m_header_text_format && m_header_log_font)
+                m_header_text_format = m_direct_write_context->create_text_format_with_fallback(*m_header_log_font);
+        }
+
+        if (!m_group_text_format)
+            m_group_text_format = m_items_text_format;
 
         refresh_items_font();
         refresh_group_font();
