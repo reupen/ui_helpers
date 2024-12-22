@@ -4,6 +4,18 @@
 
 namespace uih {
 
+enum class InfoBoxType {
+    Neutral,
+    Information,
+    Warning,
+    Error,
+};
+
+enum class InfoBoxModalType {
+    YesNo,
+    OK,
+};
+
 class InfoBox : public std::enable_shared_from_this<InfoBox> {
 public:
     InfoBox(std::function<std::optional<INT_PTR>(HWND, UINT, WPARAM, LPARAM)> on_before_message,
@@ -13,7 +25,12 @@ public:
     {
     }
 
-    static void s_run(HWND wnd_parent, const char* p_title, const char* p_text, INT icon = OIC_INFORMATION,
+    static void s_open_modeless(HWND wnd_parent, const char* title, const char* text, InfoBoxType type,
+        std::function<std::optional<INT_PTR>(HWND, UINT, WPARAM, LPARAM)> on_before_message = nullptr,
+        alignment text_alignment = ALIGN_LEFT);
+
+    static INT_PTR s_open_modal(HWND wnd_parent, const char* title, const char* text, InfoBoxType type,
+        InfoBoxModalType modal_type,
         std::function<std::optional<INT_PTR>(HWND, UINT, WPARAM, LPARAM)> on_before_message = nullptr,
         alignment text_alignment = ALIGN_LEFT);
 
@@ -33,14 +50,14 @@ private:
     static int get_small_padding() { return scale_dpi_value(7); }
     static int get_button_width() { return scale_dpi_value(75); }
 
-    void create(HWND wnd_parent, const char* p_title, const char* p_text, INT oem_icon = OIC_INFORMATION);
+    INT_PTR create(HWND wnd_parent, const char* title, const char* text, InfoBoxType type,
+        std::optional<InfoBoxModalType> modal_type = {});
 
     INT_PTR on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 
     DWORD get_edit_alignment_style() const
     {
         switch (m_text_alignment) {
-        case ALIGN_LEFT:
         default:
             return ES_LEFT;
         case ALIGN_CENTRE:
@@ -51,12 +68,18 @@ private:
     }
 
     HWND m_wnd{};
+    HWND m_wnd_parent{};
     HWND m_wnd_edit{};
-    HWND m_wnd_button{};
+    HWND m_wnd_ok_button{};
+    HWND m_wnd_cancel_button{};
     HWND m_wnd_static{};
+    InfoBoxType m_type{InfoBoxType::Information};
+    std::optional<InfoBoxModalType> m_modal_type;
+    int m_button_height{};
     alignment m_text_alignment{ALIGN_LEFT};
     wil::unique_hfont m_font;
-    icon_ptr m_icon;
+    std::string m_message;
+    wil::unique_hicon m_icon;
     std::function<std::optional<INT_PTR>(HWND, UINT, WPARAM, LPARAM)> m_on_before_message;
 };
 

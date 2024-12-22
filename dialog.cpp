@@ -43,6 +43,15 @@ INT_PTR modal_dialog_box(
         reinterpret_cast<LPARAM>(data.get()));
 }
 
+INT_PTR modal_dialog_box(
+    LPDLGTEMPLATE dlg_template, HWND wnd, std::function<INT_PTR(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
+{
+    const auto data = std ::make_unique<DialogBoxData>(DialogBoxData{std::move(on_message), {}});
+
+    return DialogBoxIndirectParam(
+        wil::GetModuleInstanceHandle(), dlg_template, wnd, on_dialog_box_message, reinterpret_cast<LPARAM>(data.get()));
+}
+
 HWND modeless_dialog_box(
     UINT resource_id, HWND wnd, std::function<INT_PTR(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
 {
