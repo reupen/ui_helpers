@@ -18,34 +18,24 @@ enum class InfoBoxModalType {
 
 class InfoBox : public std::enable_shared_from_this<InfoBox> {
 public:
-    InfoBox(std::function<std::optional<INT_PTR>(HWND, UINT, WPARAM, LPARAM)> on_before_message,
-        alignment text_alignment = ALIGN_LEFT)
-        : m_text_alignment{text_alignment}
+    InfoBox(std::function<std::optional<INT_PTR>(HWND, UINT, WPARAM, LPARAM)> on_before_message, bool no_wrap)
+        : m_no_wrap(no_wrap)
         , m_on_before_message(std::move(on_before_message))
     {
     }
 
     static void s_open_modeless(HWND wnd_parent, const char* title, const char* text, InfoBoxType type,
         std::function<std::optional<INT_PTR>(HWND, UINT, WPARAM, LPARAM)> on_before_message = nullptr,
-        alignment text_alignment = ALIGN_LEFT);
+        bool no_wrap = false);
 
     static INT_PTR s_open_modal(HWND wnd_parent, const char* title, const char* text, InfoBoxType type,
         InfoBoxModalType modal_type,
         std::function<std::optional<INT_PTR>(HWND, UINT, WPARAM, LPARAM)> on_before_message = nullptr,
-        alignment text_alignment = ALIGN_LEFT);
-
-    int calc_height() const;
-
-    int get_text_height() const { return Edit_GetLineCount(m_wnd_edit) * get_font_height(m_font.get()); }
-
-    int get_icon_height() const
-    {
-        RECT rc_icon;
-        GetWindowRect(m_wnd_static, &rc_icon);
-        return RECT_CY(rc_icon);
-    }
+        bool no_wrap = false);
 
 private:
+    static constexpr int default_width_dip = 470;
+
     static int get_large_padding() { return scale_dpi_value(11); }
     static int get_small_padding() { return scale_dpi_value(7); }
     static int get_button_width() { return scale_dpi_value(75); }
@@ -55,16 +45,16 @@ private:
 
     INT_PTR on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 
-    DWORD get_edit_alignment_style() const
+    int calc_height() const;
+    int calc_width() const;
+
+    int get_text_height() const { return Edit_GetLineCount(m_wnd_edit) * get_font_height(m_font.get()); }
+
+    int get_icon_height() const
     {
-        switch (m_text_alignment) {
-        default:
-            return ES_LEFT;
-        case ALIGN_CENTRE:
-            return ES_CENTER;
-        case ALIGN_RIGHT:
-            return ES_RIGHT;
-        }
+        RECT rc_icon;
+        GetWindowRect(m_wnd_static, &rc_icon);
+        return RECT_CY(rc_icon);
     }
 
     HWND m_wnd{};
@@ -76,7 +66,7 @@ private:
     InfoBoxType m_type{InfoBoxType::Information};
     std::optional<InfoBoxModalType> m_modal_type;
     int m_button_height{};
-    alignment m_text_alignment{ALIGN_LEFT};
+    bool m_no_wrap{};
     wil::unique_hfont m_font;
     std::string m_message;
     wil::unique_hicon m_icon;
