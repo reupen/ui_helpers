@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 using namespace std::string_literals;
+using namespace uih::literals::spx;
 
 namespace uih {
 
@@ -12,17 +13,17 @@ const std::unordered_map<InfoBoxType, INT_PTR> sound_map{{InfoBoxType::Neutral, 
     {InfoBoxType::Error, SND_ALIAS_SYSTEMHAND}};
 
 void InfoBox::s_open_modeless(HWND wnd_parent, const char* title, const char* text, InfoBoxType type,
-    std::function<std::optional<INT_PTR>(HWND, UINT, WPARAM, LPARAM)> on_before_message, alignment text_alignment)
+    std::function<std::optional<INT_PTR>(HWND, UINT, WPARAM, LPARAM)> on_before_message, bool no_wrap)
 {
-    const auto message_window = std::make_shared<InfoBox>(std::move(on_before_message), text_alignment);
+    const auto message_window = std::make_shared<InfoBox>(std::move(on_before_message), no_wrap);
     message_window->create(wnd_parent, title, text, type);
 }
 
 INT_PTR InfoBox::s_open_modal(HWND wnd_parent, const char* title, const char* text, InfoBoxType type,
     InfoBoxModalType modal_type, std::function<std::optional<INT_PTR>(HWND, UINT, WPARAM, LPARAM)> on_before_message,
-    alignment text_alignment)
+    bool no_wrap)
 {
-    const auto message_window = std::make_shared<InfoBox>(std::move(on_before_message), text_alignment);
+    const auto message_window = std::make_shared<InfoBox>(std::move(on_before_message), no_wrap);
     return message_window->create(wnd_parent, title, text, type, modal_type);
 }
 
@@ -40,6 +41,37 @@ int InfoBox::calc_height() const
     return get_large_padding() * 6 + scale_dpi_value(1) + wil::rect_height(button_rect)
         + (wil::rect_height(window_rect) - wil::rect_height(client_rect))
         + std::max(get_text_height(), get_icon_height());
+}
+
+int InfoBox::calc_width() const
+{
+    if (!m_no_wrap)
+        return scale_dpi_value(default_width_dip);
+
+    RECT client_rect{};
+    GetClientRect(m_wnd, &client_rect);
+
+    RECT window_rect{};
+    GetWindowRect(m_wnd, &window_rect);
+
+    RECT icon_rect{};
+
+    if (m_wnd_static)
+        GetWindowRect(m_wnd_static, &icon_rect);
+
+    SCROLLINFO edit_si{};
+    edit_si.cbSize = sizeof(edit_si);
+    edit_si.fMask = SIF_RANGE;
+    GetScrollInfo(m_wnd_edit, SB_HORZ, &edit_si);
+
+    const auto edit_margins = SendMessage(m_wnd_edit, EM_GETMARGINS, 0, 0);
+
+    const auto edit_width = edit_si.nMax - edit_si.nMin + 1 + LOWORD(edit_margins) + HIWORD(edit_margins);
+    const auto padding_and_icon_width = get_large_padding() * (m_wnd_static ? 4 : 2)
+        + (m_wnd_static ? get_small_padding() + wil::rect_width(icon_rect) : 0);
+    const int border_width = wil::rect_width(window_rect) - wil::rect_width(client_rect);
+
+    return edit_width + padding_and_icon_width + border_width;
 }
 
 INT_PTR InfoBox::create(
@@ -93,17 +125,25 @@ INT_PTR InfoBox::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 
         m_font.reset(create_icon_font());
 
-        RECT client_rect{};
-        GetClientRect(wnd, &client_rect);
+        const auto icon_width = GetSystemMetrics(SM_CXICON);
 
-        const DWORD edit_styles = WS_CHILD | WS_VISIBLE | WS_GROUP | ES_READONLY | ES_MULTILINE | ES_AUTOVSCROLL
-            | get_edit_alignment_style();
+        if (m_icon)
+            m_wnd_static = CreateWindowEx(0, WC_STATIC, L"", WS_CHILD | WS_VISIBLE | WS_GROUP | SS_ICON, 0, 0,
+                icon_width, GetSystemMetrics(SM_CYICON), wnd, reinterpret_cast<HMENU>(1002),
+                wil::GetModuleInstanceHandle(), nullptr);
 
-        m_wnd_edit = CreateWindowEx(0, WC_EDIT, L"", edit_styles, get_large_padding(), get_large_padding(),
-            wil::rect_width(client_rect) - get_large_padding() * 2,
-            wil::rect_height(client_rect) - get_large_padding() * 2, wnd, reinterpret_cast<HMENU>(1001),
+        constexpr DWORD edit_styles = WS_CHILD | WS_VISIBLE | WS_GROUP | ES_READONLY | ES_MULTILINE | ES_AUTOVSCROLL;
+        const auto initial_edit_styles = edit_styles | (m_no_wrap ? WS_HSCROLL : 0);
+
+        m_wnd_edit = CreateWindowEx(0, WC_EDIT, mmh::to_utf16(m_message).c_str(), initial_edit_styles,
+            get_large_padding(), get_large_padding(), 100_spx, 100_spx, wnd, reinterpret_cast<HMENU>(1001),
             wil::GetModuleInstanceHandle(), nullptr);
         SetWindowFont(m_wnd_edit, m_font.get(), FALSE);
+
+        const auto cx = calc_width();
+
+        if (edit_styles != initial_edit_styles)
+            SetWindowLongPtr(m_wnd_edit, GWL_STYLE, edit_styles);
 
         m_button_height = get_font_height(m_font.get()) + scale_dpi_value(10);
 
@@ -131,24 +171,15 @@ INT_PTR InfoBox::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             wnd, reinterpret_cast<HMENU>(IDCANCEL), wil::GetModuleInstanceHandle(), nullptr);
         SetWindowFont(m_wnd_cancel_button, m_font.get(), FALSE);
 
-        if (m_icon)
-            m_wnd_static = CreateWindowEx(0, WC_STATIC, L"", WS_CHILD | WS_VISIBLE | WS_GROUP | SS_ICON, 0, 0,
-                GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), wnd, reinterpret_cast<HMENU>(1002),
-                wil::GetModuleInstanceHandle(), nullptr);
-
-        RECT parent_rect{};
-        GetWindowRect(m_wnd_parent, &parent_rect);
-        const int cx = scale_dpi_value(470);
-
-        SetWindowPos(wnd, nullptr, 0, 0, cx, scale_dpi_value(175), SWP_NOZORDER | SWP_NOMOVE);
-
-        SetWindowText(m_wnd_edit, mmh::to_utf16(m_message).c_str());
+        SetWindowPos(wnd, nullptr, 0, 0, cx, 175_spx, SWP_NOZORDER | SWP_NOMOVE);
 
         if (m_wnd_static)
             SendMessage(m_wnd_static, STM_SETIMAGE, IMAGE_ICON, reinterpret_cast<LPARAM>(m_icon.get()));
 
-        const int cy
-            = std::min(calc_height(), std::max(static_cast<int>(wil::rect_height(parent_rect)), scale_dpi_value(150)));
+        RECT parent_rect{};
+        GetWindowRect(m_wnd_parent, &parent_rect);
+
+        const int cy = std::min(calc_height(), std::max(static_cast<int>(wil::rect_height(parent_rect)), 150_spx));
         const int x = parent_rect.left + (wil::rect_width(parent_rect) - cx) / 2;
         const int y = std::max<int>(parent_rect.top + (wil::rect_height(parent_rect) - cy) / 2, parent_rect.top);
         SetWindowPos(wnd, nullptr, x, y, cx, cy, SWP_NOZORDER);
