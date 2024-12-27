@@ -32,27 +32,27 @@ LRESULT CALLBACK g_on_hooked_message(uih::MessageHookType p_type, int code, WPAR
     return b_call_next ? CallNextHookEx(nullptr, code, wp, lp) : p_type != MessageHookType::type_get_message ? TRUE : 0;
 }
 
-LRESULT CALLBACK g_keyboard_proc(int code, WPARAM wp, LPARAM lp)
+LRESULT CALLBACK g_keyboard_proc(int code, WPARAM wp, LPARAM lp) noexcept
 {
     return g_on_hooked_message(MessageHookType::type_keyboard, code, wp, lp);
 }
 
-LRESULT CALLBACK g_getmsg_proc(int code, WPARAM wp, LPARAM lp)
+LRESULT CALLBACK g_getmsg_proc(int code, WPARAM wp, LPARAM lp) noexcept
 {
     return g_on_hooked_message(MessageHookType::type_get_message, code, wp, lp);
 }
 
-LRESULT CALLBACK g_message_proc(int code, WPARAM wp, LPARAM lp)
+LRESULT CALLBACK g_message_proc(int code, WPARAM wp, LPARAM lp) noexcept
 {
     return g_on_hooked_message(MessageHookType::type_message_filter, code, wp, lp);
 }
 
-LRESULT CALLBACK g_mouse_proc(int code, WPARAM wp, LPARAM lp)
+LRESULT CALLBACK g_mouse_proc(int code, WPARAM wp, LPARAM lp) noexcept
 {
     return g_on_hooked_message(MessageHookType::type_mouse, code, wp, lp);
 }
 
-LRESULT CALLBACK g_mouse_low_level_proc(int code, WPARAM wp, LPARAM lp)
+LRESULT CALLBACK g_mouse_low_level_proc(int code, WPARAM wp, LPARAM lp) noexcept
 {
     return g_on_hooked_message(MessageHookType::type_mouse_low_level, code, wp, lp);
 }

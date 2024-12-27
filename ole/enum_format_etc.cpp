@@ -42,7 +42,7 @@ CEnumFormatEtc::~CEnumFormatEtc()
     delete[] m_pStrFE;
 }
 
-STDMETHODIMP CEnumFormatEtc::QueryInterface(REFIID riid, LPVOID* ppvOut)
+HRESULT STDMETHODCALLTYPE CEnumFormatEtc::QueryInterface(REFIID riid, LPVOID* ppvOut) noexcept
 {
     *ppvOut = nullptr;
 
@@ -64,12 +64,12 @@ STDMETHODIMP CEnumFormatEtc::QueryInterface(REFIID riid, LPVOID* ppvOut)
     return E_NOINTERFACE;
 }
 
-STDMETHODIMP_(ULONG) CEnumFormatEtc::AddRef()
+ULONG STDMETHODCALLTYPE CEnumFormatEtc::AddRef() noexcept
 {
     return ++m_cRefCount;
 }
 
-STDMETHODIMP_(ULONG) CEnumFormatEtc::Release()
+ULONG STDMETHODCALLTYPE CEnumFormatEtc::Release() noexcept
 {
     if (--m_cRefCount == 0) {
         delete this;
@@ -79,7 +79,7 @@ STDMETHODIMP_(ULONG) CEnumFormatEtc::Release()
     return m_cRefCount;
 }
 
-STDMETHODIMP CEnumFormatEtc::Next(ULONG celt, LPFORMATETC pFE, ULONG* puFetched)
+HRESULT STDMETHODCALLTYPE CEnumFormatEtc::Next(ULONG celt, LPFORMATETC pFE, ULONG* puFetched) noexcept
 {
     ULONG cReturn = 0L;
 
@@ -104,7 +104,7 @@ STDMETHODIMP CEnumFormatEtc::Next(ULONG celt, LPFORMATETC pFE, ULONG* puFetched)
     return S_OK;
 }
 
-STDMETHODIMP CEnumFormatEtc::Skip(ULONG celt)
+HRESULT STDMETHODCALLTYPE CEnumFormatEtc::Skip(ULONG celt) noexcept
 {
     if ((m_iCur + celt) >= m_cItems)
         return S_FALSE;
@@ -114,14 +114,14 @@ STDMETHODIMP CEnumFormatEtc::Skip(ULONG celt)
     return S_OK;
 }
 
-STDMETHODIMP CEnumFormatEtc::Reset()
+HRESULT STDMETHODCALLTYPE CEnumFormatEtc::Reset() noexcept
 {
     m_iCur = 0;
 
     return S_OK;
 }
 
-STDMETHODIMP CEnumFormatEtc::Clone(IEnumFORMATETC** ppCloneEnumFormatEtc)
+HRESULT STDMETHODCALLTYPE CEnumFormatEtc::Clone(IEnumFORMATETC** ppCloneEnumFormatEtc) noexcept
 {
     CEnumFormatEtc* newEnum;
 

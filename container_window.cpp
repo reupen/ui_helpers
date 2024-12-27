@@ -43,7 +43,7 @@ void ContainerWindow::destroy()
     }
 }
 
-LRESULT ContainerWindow::s_on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
+LRESULT ContainerWindow::s_on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcept
 {
     ContainerWindow* p_this = nullptr;
 

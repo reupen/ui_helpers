@@ -804,7 +804,7 @@ private:
     void remove_items_in_internal_state(const pfc::bit_array& mask);
     void calculate_item_positions(size_t index_start = 0);
 
-    static LRESULT WINAPI s_on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
+    static LRESULT WINAPI s_on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcept;
     LRESULT on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 
     void create_inline_edit(const pfc::list_base_const_t<size_t>& indices, size_t column);
@@ -815,7 +815,7 @@ private:
 
     void on_search_string_change(WCHAR c);
 
-    static LRESULT WINAPI s_on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
+    static LRESULT WINAPI s_on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcept;
     LRESULT on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
     void update_search_box_hot_status(const POINT& pt);
 

@@ -108,7 +108,7 @@ int ListView::get_search_box_height() const
     return ret;
 }
 
-LRESULT WINAPI ListView::s_on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
+LRESULT WINAPI ListView::s_on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcept
 {
     ListView* p_this;
     LRESULT rv;

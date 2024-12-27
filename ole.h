@@ -15,11 +15,11 @@ HRESULT do_drag_drop(HWND wnd, WPARAM initialKeyState, IDataObject* pDataObject,
 
 class IDropSourceGeneric : public IDropSource {
 public:
-    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, void** ppvObject) override;
-    ULONG STDMETHODCALLTYPE AddRef() override;
-    ULONG STDMETHODCALLTYPE Release() override;
-    HRESULT STDMETHODCALLTYPE QueryContinueDrag(BOOL fEscapePressed, DWORD grfKeyState) override;
-    HRESULT STDMETHODCALLTYPE GiveFeedback(DWORD dwEffect) override;
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, void** ppvObject) noexcept override;
+    ULONG STDMETHODCALLTYPE AddRef() noexcept override;
+    ULONG STDMETHODCALLTYPE Release() noexcept override;
+    HRESULT STDMETHODCALLTYPE QueryContinueDrag(BOOL fEscapePressed, DWORD grfKeyState) noexcept override;
+    HRESULT STDMETHODCALLTYPE GiveFeedback(DWORD dwEffect) noexcept override;
     IDropSourceGeneric(HWND wnd, IDataObject* pDataObj, DWORD initial_key_state, bool b_allowdropdescriptiontext = true,
         SHDRAGIMAGE* lpsdi = nullptr); // careful, some fb2k versions have broken IDataObject
 private:
