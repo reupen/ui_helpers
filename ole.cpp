@@ -177,7 +177,7 @@ HRESULT do_drag_drop(HWND wnd, WPARAM initialKeyState, IDataObject* pDataObject,
     return SHDoDragDrop(wnd, pDataObject, pDropSource, dwEffect, pdwEffect);
 }
 
-HRESULT STDMETHODCALLTYPE IDropSourceGeneric::QueryInterface(REFIID iid, void** ppvObject)
+HRESULT STDMETHODCALLTYPE IDropSourceGeneric::QueryInterface(REFIID iid, void** ppvObject) noexcept
 {
     if (ppvObject == nullptr)
         return E_INVALIDARG;
@@ -197,11 +197,11 @@ HRESULT STDMETHODCALLTYPE IDropSourceGeneric::QueryInterface(REFIID iid, void** 
     }
     return E_NOINTERFACE;
 }
-ULONG STDMETHODCALLTYPE IDropSourceGeneric::AddRef()
+ULONG STDMETHODCALLTYPE IDropSourceGeneric::AddRef() noexcept
 {
     return InterlockedIncrement(&m_refcount);
 }
-ULONG STDMETHODCALLTYPE IDropSourceGeneric::Release()
+ULONG STDMETHODCALLTYPE IDropSourceGeneric::Release() noexcept
 {
     LONG rv = InterlockedDecrement(&m_refcount);
     if (!rv) {
@@ -210,7 +210,7 @@ ULONG STDMETHODCALLTYPE IDropSourceGeneric::Release()
     return rv;
 }
 
-HRESULT STDMETHODCALLTYPE IDropSourceGeneric::QueryContinueDrag(BOOL fEscapePressed, DWORD grfKeyState)
+HRESULT STDMETHODCALLTYPE IDropSourceGeneric::QueryContinueDrag(BOOL fEscapePressed, DWORD grfKeyState) noexcept
 {
     if (fEscapePressed || ((m_initial_key_state & MK_LBUTTON) && (grfKeyState & MK_RBUTTON))) {
         return DRAGDROP_S_CANCEL;
@@ -223,7 +223,7 @@ HRESULT STDMETHODCALLTYPE IDropSourceGeneric::QueryContinueDrag(BOOL fEscapePres
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE IDropSourceGeneric::GiveFeedback(DWORD dwEffect)
+HRESULT STDMETHODCALLTYPE IDropSourceGeneric::GiveFeedback(DWORD dwEffect) noexcept
 {
     HWND wnd_drag = nullptr;
     BOOL isShowingLayered = FALSE;

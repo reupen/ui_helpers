@@ -28,20 +28,20 @@ public:
     ~CDataObject();
 
     // IUnknown members that delegate to m_pUnkOuter.
-    STDMETHOD(QueryInterface)(REFIID, LPVOID*);
-    STDMETHOD_(ULONG, AddRef)();
-    STDMETHOD_(ULONG, Release)();
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID, LPVOID*) noexcept override;
+    ULONG STDMETHODCALLTYPE AddRef() noexcept override;
+    ULONG STDMETHODCALLTYPE Release() noexcept override;
 
     /* IDataObject methods */
-    STDMETHOD(GetData)(LPFORMATETC, LPSTGMEDIUM);
-    STDMETHOD(GetDataHere)(LPFORMATETC, LPSTGMEDIUM);
-    STDMETHOD(QueryGetData)(LPFORMATETC);
-    STDMETHOD(GetCanonicalFormatEtc)(LPFORMATETC, LPFORMATETC);
-    STDMETHOD(SetData)(LPFORMATETC, LPSTGMEDIUM, BOOL);
-    STDMETHOD(EnumFormatEtc)(DWORD, LPENUMFORMATETC*);
-    STDMETHOD(DAdvise)(FORMATETC*, DWORD, LPADVISESINK, LPDWORD);
-    STDMETHOD(DUnadvise)(DWORD);
-    STDMETHOD(EnumDAdvise)(LPENUMSTATDATA*);
+    HRESULT STDMETHODCALLTYPE GetData(LPFORMATETC, LPSTGMEDIUM) noexcept override;
+    HRESULT STDMETHODCALLTYPE GetDataHere(LPFORMATETC, LPSTGMEDIUM) noexcept override;
+    HRESULT STDMETHODCALLTYPE QueryGetData(LPFORMATETC) noexcept override;
+    HRESULT STDMETHODCALLTYPE GetCanonicalFormatEtc(LPFORMATETC, LPFORMATETC) noexcept override;
+    HRESULT STDMETHODCALLTYPE SetData(LPFORMATETC, LPSTGMEDIUM, BOOL) noexcept override;
+    HRESULT STDMETHODCALLTYPE EnumFormatEtc(DWORD, LPENUMFORMATETC*) noexcept override;
+    HRESULT STDMETHODCALLTYPE DAdvise(FORMATETC*, DWORD, LPADVISESINK, LPDWORD) noexcept override;
+    HRESULT STDMETHODCALLTYPE DUnadvise(DWORD) noexcept override;
+    HRESULT STDMETHODCALLTYPE EnumDAdvise(LPENUMSTATDATA*) noexcept override;
 
 private:
     HRESULT _FindFormatEtc(LPFORMATETC lpfe, size_t& index, bool b_checkTymed);

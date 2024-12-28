@@ -28,15 +28,15 @@ public:
     // BOOL FInit(HWND);
 
     // IUnknown members
-    STDMETHOD(QueryInterface)(REFIID, LPVOID*);
-    STDMETHOD_(ULONG, AddRef)();
-    STDMETHOD_(ULONG, Release)();
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID, LPVOID*) noexcept override;
+    ULONG STDMETHODCALLTYPE AddRef() noexcept override;
+    ULONG STDMETHODCALLTYPE Release() noexcept override;
 
     // IEnumFORMATETC members
-    STDMETHOD(Next)(ULONG, LPFORMATETC, ULONG*);
-    STDMETHOD(Skip)(ULONG);
-    STDMETHOD(Reset)();
-    STDMETHOD(Clone)(IEnumFORMATETC**);
+    HRESULT STDMETHODCALLTYPE Next(ULONG, LPFORMATETC, ULONG*) noexcept override;
+    HRESULT STDMETHODCALLTYPE Skip(ULONG) noexcept override;
+    HRESULT STDMETHODCALLTYPE Reset() noexcept override;
+    HRESULT STDMETHODCALLTYPE Clone(IEnumFORMATETC**) noexcept override;
 
 private:
     DWORD m_cRefCount;

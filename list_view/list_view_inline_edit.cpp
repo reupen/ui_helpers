@@ -89,7 +89,7 @@ void ListView::activate_inline_editing(size_t index, size_t column)
     activate_inline_editing(pfc::list_single_ref_t<size_t>(index), column);
 }
 
-LRESULT WINAPI ListView::s_on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
+LRESULT WINAPI ListView::s_on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcept
 {
     ListView* p_this;
     LRESULT rv;

@@ -8,7 +8,7 @@ struct DialogBoxData {
     std::shared_ptr<DialogBoxData> self;
 };
 
-INT_PTR WINAPI on_dialog_box_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
+INT_PTR WINAPI on_dialog_box_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcept
 {
     DialogBoxData* data{};
     if (msg == WM_INITDIALOG) {

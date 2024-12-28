@@ -49,7 +49,7 @@ CDataObject::~CDataObject()
         ReleaseStgMedium(&m_data_entries[i].sm);
 }
 
-STDMETHODIMP CDataObject::QueryInterface(REFIID riid, LPVOID* ppvOut)
+HRESULT STDMETHODCALLTYPE CDataObject::QueryInterface(REFIID riid, LPVOID* ppvOut) noexcept
 {
     *ppvOut = nullptr;
 
@@ -71,12 +71,12 @@ STDMETHODIMP CDataObject::QueryInterface(REFIID riid, LPVOID* ppvOut)
     return E_NOINTERFACE;
 }
 
-STDMETHODIMP_(ULONG) CDataObject::AddRef()
+ULONG STDMETHODCALLTYPE CDataObject::AddRef() noexcept
 {
     return ++m_cRefCount;
 }
 
-STDMETHODIMP_(ULONG) CDataObject::Release()
+ULONG STDMETHODCALLTYPE CDataObject::Release() noexcept
 {
     if (--m_cRefCount == 0) {
         delete this;
@@ -112,7 +112,7 @@ HRESULT CDataObject::_GetStgMediumAddRef(size_t index, STGMEDIUM* pstgmOut)
     return hres;
 }
 
-STDMETHODIMP CDataObject::GetData(LPFORMATETC pFE, LPSTGMEDIUM pSM)
+HRESULT STDMETHODCALLTYPE CDataObject::GetData(LPFORMATETC pFE, LPSTGMEDIUM pSM) noexcept
 {
     if (pFE == nullptr || pSM == nullptr)
         return E_INVALIDARG;
@@ -134,7 +134,7 @@ STDMETHODIMP CDataObject::GetData(LPFORMATETC pFE, LPSTGMEDIUM pSM)
     return hr;
 }
 
-STDMETHODIMP CDataObject::GetDataHere(LPFORMATETC pFE, LPSTGMEDIUM pSM)
+HRESULT STDMETHODCALLTYPE CDataObject::GetDataHere(LPFORMATETC pFE, LPSTGMEDIUM pSM) noexcept
 {
     return E_NOTIMPL;
 }
@@ -160,18 +160,18 @@ HRESULT CDataObject::_FindFormatEtc(LPFORMATETC pFE, size_t& index, bool b_check
     return DV_E_FORMATETC;
 }
 
-STDMETHODIMP CDataObject::QueryGetData(LPFORMATETC pFE)
+HRESULT STDMETHODCALLTYPE CDataObject::QueryGetData(LPFORMATETC pFE) noexcept
 {
     size_t index;
     return _FindFormatEtc(pFE, index, true);
 }
 
-STDMETHODIMP CDataObject::GetCanonicalFormatEtc(LPFORMATETC pFE1, LPFORMATETC pFE2)
+HRESULT STDMETHODCALLTYPE CDataObject::GetCanonicalFormatEtc(LPFORMATETC pFE1, LPFORMATETC pFE2) noexcept
 {
     return DATA_S_SAMEFORMATETC;
 }
 
-STDMETHODIMP CDataObject::SetData(LPFORMATETC pFE, LPSTGMEDIUM pSM, BOOL fRelease)
+HRESULT STDMETHODCALLTYPE CDataObject::SetData(LPFORMATETC pFE, LPSTGMEDIUM pSM, BOOL fRelease) noexcept
 {
     if (pFE->ptd != nullptr)
         return DV_E_DVTARGETDEVICE;
@@ -208,7 +208,7 @@ STDMETHODIMP CDataObject::SetData(LPFORMATETC pFE, LPSTGMEDIUM pSM, BOOL fReleas
     return S_OK;
 }
 
-STDMETHODIMP CDataObject::EnumFormatEtc(DWORD dwDir, LPENUMFORMATETC* ppEnum)
+HRESULT STDMETHODCALLTYPE CDataObject::EnumFormatEtc(DWORD dwDir, LPENUMFORMATETC* ppEnum) noexcept
 {
     // console::formatter() << "EnumFormatEtc";
 
@@ -238,17 +238,18 @@ STDMETHODIMP CDataObject::EnumFormatEtc(DWORD dwDir, LPENUMFORMATETC* ppEnum)
     return E_OUTOFMEMORY;
 }
 
-STDMETHODIMP CDataObject::DAdvise(LPFORMATETC pFE, DWORD advf, LPADVISESINK pAdvSink, LPDWORD pdwConnection)
+HRESULT STDMETHODCALLTYPE CDataObject::DAdvise(
+    LPFORMATETC pFE, DWORD advf, LPADVISESINK pAdvSink, LPDWORD pdwConnection) noexcept
 {
     return E_NOTIMPL;
 }
 
-STDMETHODIMP CDataObject::DUnadvise(DWORD dwConnection)
+HRESULT STDMETHODCALLTYPE CDataObject::DUnadvise(DWORD dwConnection) noexcept
 {
     return E_NOTIMPL;
 }
 
-STDMETHODIMP CDataObject::EnumDAdvise(LPENUMSTATDATA* ppenumAdvise)
+HRESULT STDMETHODCALLTYPE CDataObject::EnumDAdvise(LPENUMSTATDATA* ppenumAdvise) noexcept
 {
     return OLE_E_ADVISENOTSUPPORTED;
 }
