@@ -8,7 +8,7 @@ BOOL TrackbarBase::create_tooltip(const TCHAR* text, POINT pt)
 
     m_wnd_tooltip = CreateWindowEx(WS_EX_TOPMOST | WS_EX_TRANSPARENT, TOOLTIPS_CLASS, nullptr,
         WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, get_wnd(),
-        nullptr, mmh::get_current_instance(), nullptr);
+        nullptr, wil::GetModuleInstanceHandle(), nullptr);
 
     set_tooltip_theme();
 
@@ -19,7 +19,7 @@ BOOL TrackbarBase::create_tooltip(const TCHAR* text, POINT pt)
     ti.cbSize = TTTOOLINFO_V1_SIZE;
     ti.uFlags = TTF_SUBCLASS | TTF_TRANSPARENT | TTF_TRACK | TTF_ABSOLUTE;
     ti.hwnd = get_wnd();
-    ti.hinst = mmh::get_current_instance();
+    ti.hinst = wil::GetModuleInstanceHandle();
     ti.lpszText = const_cast<TCHAR*>(text);
 
     tooltip_add_tool(m_wnd_tooltip, &ti);
@@ -60,7 +60,7 @@ BOOL TrackbarBase::update_tooltip(POINT pt, const TCHAR* text)
     ti.cbSize = TTTOOLINFO_V1_SIZE;
     ti.uFlags = TTF_SUBCLASS | TTF_TRANSPARENT | TTF_TRACK | TTF_ABSOLUTE;
     ti.hwnd = get_wnd();
-    ti.hinst = mmh::get_current_instance();
+    ti.hinst = wil::GetModuleInstanceHandle();
     ti.lpszText = const_cast<TCHAR*>(text);
 
     uih::tooltip_update_tip_text(m_wnd_tooltip, &ti);

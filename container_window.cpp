@@ -26,7 +26,7 @@ HWND ContainerWindow::create(
     LPVOID createparams[2] = {this, create_param};
     m_wnd = CreateWindowEx(m_config.window_ex_styles, m_config.class_name, m_config.window_title,
         m_config.window_styles, window_position.x, window_position.y, window_position.cx, window_position.cy,
-        wnd_parent, nullptr, mmh::get_current_instance(), &createparams);
+        wnd_parent, nullptr, wil::GetModuleInstanceHandle(), &createparams);
 
     if (!m_wnd)
         throw exception_win32(GetLastError());
@@ -117,7 +117,7 @@ void ContainerWindow::register_class()
     memset(&wc, 0, sizeof(WNDCLASS));
 
     wc.lpfnWndProc = static_cast<WNDPROC>(&s_on_message);
-    wc.hInstance = mmh::get_current_instance();
+    wc.hInstance = wil::GetModuleInstanceHandle();
     wc.hCursor = LoadCursor(nullptr, m_config.class_cursor);
     wc.hbrBackground = m_config.class_background;
     wc.lpszClassName = m_config.class_name;
@@ -130,7 +130,7 @@ void ContainerWindow::register_class()
 
 void ContainerWindow::deregister_class()
 {
-    [[maybe_unused]] const auto unregistered = UnregisterClass(m_config.class_name, mmh::get_current_instance());
+    [[maybe_unused]] const auto unregistered = UnregisterClass(m_config.class_name, wil::GetModuleInstanceHandle());
     assert(unregistered);
 }
 

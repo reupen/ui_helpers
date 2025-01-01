@@ -65,7 +65,7 @@ void register_message_hook(MessageHookType p_type, MessageHook* p_hook)
     const auto type_index = static_cast<size_t>(p_type);
     if (g_hooks[type_index].m_hooks.add_item(p_hook) == 0) {
         g_hooks[type_index].m_hook = SetWindowsHookEx(g_hook_ids[type_index], g_hook_procs[type_index],
-            p_type != MessageHookType::type_mouse_low_level ? nullptr : mmh::get_current_instance(),
+            p_type != MessageHookType::type_mouse_low_level ? nullptr : wil::GetModuleInstanceHandle(),
             p_type != MessageHookType::type_mouse_low_level ? GetCurrentThreadId() : NULL);
     }
 }

@@ -68,7 +68,6 @@
 #include "literals.h"
 #include "event_token.h"
 
-#include "handle.h"
 #include "win32_helpers.h"
 #include "ole.h"
 

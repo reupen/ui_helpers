@@ -26,8 +26,8 @@ private:
     long m_refcount;
     DWORD m_initial_key_state;
     bool m_prev_is_showing_layered;
-    mmh::ComPtr<IDragSourceHelper> m_drag_source_helper;
-    mmh::ComPtr<IDataObject> m_data_object;
+    wil::com_ptr<IDragSourceHelper> m_drag_source_helper;
+    wil::com_ptr<IDataObject> m_data_object;
 };
 
 } // namespace uih::ole

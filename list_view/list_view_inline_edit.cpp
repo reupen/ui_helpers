@@ -297,14 +297,14 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<size_t>& indices,
         m_inline_edit_prevent_kill = true;
         DestroyWindow(m_wnd_inline_edit);
         m_wnd_inline_edit = nullptr;
-        m_inline_edit_autocomplete.release();
+        m_inline_edit_autocomplete.reset();
         m_inline_edit_prevent_kill = false;
     }
 
     pfc::string8 text;
     size_t flags = 0;
-    mmh::ComPtr<IUnknown> pAutoCompleteEntries;
-    if (!notify_create_inline_edit(indices, column, text, flags, pAutoCompleteEntries)) {
+    wil::com_ptr<IUnknown> autocomplete_entries;
+    if (!notify_create_inline_edit(indices, column, text, flags, autocomplete_entries)) {
         m_inline_edit_save = false;
         exit_inline_edit();
         return;
@@ -315,18 +315,20 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<size_t>& indices,
         m_wnd_inline_edit = CreateWindowEx(0, WC_EDIT, pfc::stringcvt::string_os_from_utf8(text).get_ptr(),
             WS_CHILD | WS_CLIPSIBLINGS | ES_LEFT | ES_AUTOHSCROLL | ES_MULTILINE | ES_AUTOVSCROLL | WS_BORDER
                 | WS_CLIPCHILDREN | ((flags & inline_edit_uppercase) ? ES_UPPERCASE : 0),
-            x, y, cx, cy, get_wnd(), HMENU(IDC_INLINEEDIT), mmh::get_current_instance(), nullptr);
+            x, y, cx, cy, get_wnd(), HMENU(IDC_INLINEEDIT), wil::GetModuleInstanceHandle(), nullptr);
 
         m_proc_original_inline_edit = reinterpret_cast<WNDPROC>(GetWindowLongPtr(m_wnd_inline_edit, GWLP_WNDPROC));
 
-        if (pAutoCompleteEntries.is_valid()) {
-            if (SUCCEEDED(m_inline_edit_autocomplete.instantiate(CLSID_AutoComplete))) {
-                if (pAutoCompleteEntries.is_valid())
-                    m_inline_edit_autocomplete->Init(m_wnd_inline_edit, pAutoCompleteEntries, nullptr, nullptr);
+        if (autocomplete_entries) {
+            m_inline_edit_autocomplete = wil::CoCreateInstanceNoThrow<IAutoComplete>(CLSID_AutoComplete);
 
-                mmh::ComPtr<IAutoComplete2> pA2 = m_inline_edit_autocomplete;
-                mmh::ComPtr<IAutoCompleteDropDown> pAutoCompleteDropDown = m_inline_edit_autocomplete;
-                if (pA2.is_valid()) {
+            if (m_inline_edit_autocomplete) {
+                if (autocomplete_entries)
+                    m_inline_edit_autocomplete->Init(m_wnd_inline_edit, autocomplete_entries.get(), nullptr, nullptr);
+
+                const auto pA2 = m_inline_edit_autocomplete.try_query<IAutoComplete2>();
+                const auto pAutoCompleteDropDown = m_inline_edit_autocomplete.try_query<IAutoCompleteDropDown>();
+                if (pA2) {
                     pA2->SetOptions(ACO_AUTOSUGGEST | ACO_UPDOWNKEYDROPSLIST);
                 }
             }
@@ -411,7 +413,7 @@ void ListView::save_inline_edit()
 void ListView::exit_inline_edit()
 {
     m_inline_edit_mouse_hook.reset();
-    m_inline_edit_autocomplete.release();
+    m_inline_edit_autocomplete.reset();
     if (m_wnd_inline_edit) {
         DestroyWindow(m_wnd_inline_edit);
         m_wnd_inline_edit = nullptr;
