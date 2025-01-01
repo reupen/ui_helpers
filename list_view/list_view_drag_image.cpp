@@ -30,7 +30,7 @@ bool ListView::format_drag_text(size_t selection_count, pfc::string8& p_out)
     auto show_text = should_show_drag_text(selection_count);
     if (show_text) {
         p_out.reset();
-        p_out << mmh::IntegerFormatter(selection_count) << " "
+        p_out << mmh::format_integer(selection_count).c_str() << " "
               << (selection_count != 1 ? get_drag_unit_plural() : get_drag_unit_singular());
     }
     return show_text;
