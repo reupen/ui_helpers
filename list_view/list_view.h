@@ -700,7 +700,7 @@ protected:
 
 private:
     struct ItemsFontConfig {
-        wil::com_ptr_t<IDWriteTextFormat> text_format;
+        wil::com_ptr<IDWriteTextFormat> text_format;
         LOGFONT log_font{};
     };
 
