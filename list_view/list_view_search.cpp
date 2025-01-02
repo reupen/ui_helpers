@@ -20,7 +20,7 @@ void ListView::show_search_box(const char* label, bool b_focus)
         m_search_editbox
             = CreateWindowEx(WS_EX_CLIENTEDGE, WC_EDIT, L"" /*pfc::stringcvt::string_os_from_utf8("").get_ptr()*/,
                 WS_CHILD | WS_CLIPSIBLINGS | ES_LEFT | WS_VISIBLE | WS_CLIPCHILDREN | ES_AUTOHSCROLL | WS_TABSTOP, 0, 0,
-                0, 0, get_wnd(), HMENU(668), mmh::get_current_instance(), nullptr);
+                0, 0, get_wnd(), HMENU(668), wil::GetModuleInstanceHandle(), nullptr);
 
         m_search_label = label;
 

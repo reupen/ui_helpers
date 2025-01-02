@@ -21,7 +21,6 @@
     <ClInclude Include="win32_helpers.h" />
     <ClInclude Include="ole.h" />
     <ClInclude Include="drag_image.h" />
-    <ClInclude Include="handle.h" />
     <ClInclude Include="container_window.h" />
     <ClInclude Include="info_box.h" />
     <ClInclude Include="list_view\list_view.h">

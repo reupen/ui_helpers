@@ -9,29 +9,29 @@ public:
     using Ptr = std::shared_ptr<RenderingParams>;
 
     RenderingParams(
-        wil::com_ptr_t<IDWriteFactory> factory, DWRITE_RENDERING_MODE rendering_mode, bool force_greyscale_antialiasing)
+        wil::com_ptr<IDWriteFactory> factory, DWRITE_RENDERING_MODE rendering_mode, bool force_greyscale_antialiasing)
         : m_factory(std::move(factory))
         , m_rendering_mode(rendering_mode)
         , m_force_greyscale_antialiasing(force_greyscale_antialiasing)
     {
     }
 
-    wil::com_ptr_t<IDWriteRenderingParams> get(HWND wnd) const;
+    wil::com_ptr<IDWriteRenderingParams> get(HWND wnd) const;
     DWRITE_RENDERING_MODE rendering_mode() const { return m_rendering_mode; }
 
 private:
-    mutable wil::com_ptr_t<IDWriteRenderingParams> m_rendering_params;
+    mutable wil::com_ptr<IDWriteRenderingParams> m_rendering_params;
     mutable HMONITOR m_monitor{};
 
-    wil::com_ptr_t<IDWriteFactory> m_factory;
+    wil::com_ptr<IDWriteFactory> m_factory;
     DWRITE_RENDERING_MODE m_rendering_mode{};
     bool m_force_greyscale_antialiasing{};
 };
 
 class TextLayout {
 public:
-    TextLayout(wil::com_ptr_t<IDWriteFactory> factory, wil::com_ptr_t<IDWriteGdiInterop> gdi_interop,
-        wil::com_ptr_t<IDWriteTextLayout> text_layout, RenderingParams::Ptr rendering_params)
+    TextLayout(wil::com_ptr<IDWriteFactory> factory, wil::com_ptr<IDWriteGdiInterop> gdi_interop,
+        wil::com_ptr<IDWriteTextLayout> text_layout, RenderingParams::Ptr rendering_params)
         : m_factory(std::move(factory))
         , m_gdi_interop(std::move(gdi_interop))
         , m_text_layout(std::move(text_layout))
@@ -58,10 +58,10 @@ public:
         DWRITE_FONT_STYLE style, DWRITE_TEXT_RANGE text_range) const;
 
 private:
-    wil::com_ptr_t<IDWriteFactory> m_factory;
-    wil::com_ptr_t<IDWriteGdiInterop> m_gdi_interop;
-    wil::com_ptr_t<IDWriteTextLayout> m_text_layout;
-    wil::com_ptr_t<IDWriteTextLayout4> m_text_layout_4;
+    wil::com_ptr<IDWriteFactory> m_factory;
+    wil::com_ptr<IDWriteGdiInterop> m_gdi_interop;
+    wil::com_ptr<IDWriteTextLayout> m_text_layout;
+    wil::com_ptr<IDWriteTextLayout4> m_text_layout_4;
     RenderingParams::Ptr m_rendering_params;
 };
 
@@ -75,8 +75,8 @@ struct TextPosition {
 
 class TextFormat {
 public:
-    TextFormat(std::shared_ptr<class Context> context, wil::com_ptr_t<IDWriteFactory> factory,
-        wil::com_ptr_t<IDWriteGdiInterop> gdi_interop, wil::com_ptr_t<IDWriteTextFormat> text_format,
+    TextFormat(std::shared_ptr<class Context> context, wil::com_ptr<IDWriteFactory> factory,
+        wil::com_ptr<IDWriteGdiInterop> gdi_interop, wil::com_ptr<IDWriteTextFormat> text_format,
         RenderingParams::Ptr rendering_params)
         : m_context(std::move(context))
         , m_factory(std::move(factory))
@@ -102,14 +102,14 @@ public:
 
 private:
     std::shared_ptr<Context> m_context;
-    wil::com_ptr_t<IDWriteFactory> m_factory;
-    wil::com_ptr_t<IDWriteGdiInterop> m_gdi_interop;
-    wil::com_ptr_t<IDWriteTextFormat> m_text_format;
+    wil::com_ptr<IDWriteFactory> m_factory;
+    wil::com_ptr<IDWriteGdiInterop> m_gdi_interop;
+    wil::com_ptr<IDWriteTextFormat> m_text_format;
     RenderingParams::Ptr m_rendering_params;
 };
 
 struct Font {
-    wil::com_ptr_t<IDWriteFont> font;
+    wil::com_ptr<IDWriteFont> font;
     std::wstring localised_name;
     DWRITE_FONT_WEIGHT weight{};
     DWRITE_FONT_STRETCH stretch{};
@@ -125,7 +125,7 @@ struct AxisRange {
 };
 
 struct FontFamily {
-    wil::com_ptr_t<IDWriteFontFamily> family;
+    wil::com_ptr<IDWriteFontFamily> family;
     std::wstring wss_name;
     std::wstring typographic_name;
     bool is_symbol_font{};
@@ -165,14 +165,14 @@ public:
 
     Context();
 
-    const wil::com_ptr_t<IDWriteFactory1>& factory() { return m_factory; }
+    const wil::com_ptr<IDWriteFactory1>& factory() { return m_factory; }
 
-    LOGFONT create_log_font(const wil::com_ptr_t<IDWriteFont>& font) const;
-    LOGFONT create_log_font(const wil::com_ptr_t<IDWriteFontFace>& font_face) const;
-    wil::com_ptr_t<IDWriteFont> create_font(const LOGFONT& log_font) const;
-    TextFormat create_text_format(const wil::com_ptr_t<IDWriteFont>& font, float font_size);
+    LOGFONT create_log_font(const wil::com_ptr<IDWriteFont>& font) const;
+    LOGFONT create_log_font(const wil::com_ptr<IDWriteFontFace>& font_face) const;
+    wil::com_ptr<IDWriteFont> create_font(const LOGFONT& log_font) const;
+    TextFormat create_text_format(const wil::com_ptr<IDWriteFont>& font, float font_size);
 
-    TextFormat create_text_format(const wil::com_ptr_t<IDWriteFontFamily>& font_family, DWRITE_FONT_WEIGHT weight,
+    TextFormat create_text_format(const wil::com_ptr<IDWriteFontFamily>& font_family, DWRITE_FONT_WEIGHT weight,
         DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style, float font_size, const AxisValues& axis_values = {});
 
     TextFormat create_text_format(const wchar_t* family_name, DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch,
@@ -183,11 +183,11 @@ public:
     std::optional<TextFormat> create_text_format_with_fallback(
         const LOGFONT& log_font, std::optional<float> font_size = {}) noexcept;
 
-    TextFormat wrap_text_format(wil::com_ptr_t<IDWriteTextFormat> text_format,
+    TextFormat wrap_text_format(wil::com_ptr<IDWriteTextFormat> text_format,
         DWRITE_RENDERING_MODE rendering_mode = DWRITE_RENDERING_MODE_DEFAULT, bool force_greyscale_antialiasing = false,
         bool set_defaults = true);
 
-    wil::com_ptr_t<IDWriteTypography> get_default_typography();
+    wil::com_ptr<IDWriteTypography> get_default_typography();
 
     std::optional<ResolvedFontNames> resolve_font_names(const wchar_t* wss_family_name,
         const wchar_t* typographic_family_name, DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch,
@@ -201,12 +201,12 @@ public:
 private:
     inline static std::weak_ptr<Context> s_ptr;
 
-    wil::com_ptr_t<IDWriteFactory1> m_factory;
-    wil::com_ptr_t<IDWriteGdiInterop> m_gdi_interop;
-    wil::com_ptr_t<IDWriteTypography> m_default_typography;
+    wil::com_ptr<IDWriteFactory1> m_factory;
+    wil::com_ptr<IDWriteGdiInterop> m_gdi_interop;
+    wil::com_ptr<IDWriteTypography> m_default_typography;
 };
 
-std::wstring get_localised_string(const wil::com_ptr_t<IDWriteLocalizedStrings>& localised_strings);
+std::wstring get_localised_string(const wil::com_ptr<IDWriteLocalizedStrings>& localised_strings);
 float get_default_scaling_factor();
 
 float dip_to_px(float dip, float scaling_factor = get_default_scaling_factor());

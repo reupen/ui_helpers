@@ -48,31 +48,31 @@ DWRITE_FONT_STRETCH width_to_stretch(float width)
     return DWRITE_FONT_STRETCH_ULTRA_CONDENSED;
 }
 
-wil::com_ptr_t<IDWriteFontCollection3> get_typographic_font_collection(const wil::com_ptr_t<IDWriteFactory1>& factory)
+wil::com_ptr<IDWriteFontCollection3> get_typographic_font_collection(const wil::com_ptr<IDWriteFactory1>& factory)
 {
     const auto factory_8 = factory.try_query<IDWriteFactory8>();
 
     if (!factory_8)
         return {};
 
-    wil::com_ptr_t<IDWriteFontCollection3> font_collection;
+    wil::com_ptr<IDWriteFontCollection3> font_collection;
     THROW_IF_FAILED(factory_8->GetSystemFontCollection(FALSE, DWRITE_FONT_FAMILY_MODEL_TYPOGRAPHIC, &font_collection));
 
     return font_collection;
 }
 
-wil::com_ptr_t<IDWriteFontCollection> get_wss_font_collection(const wil::com_ptr_t<IDWriteFactory1>& factory)
+wil::com_ptr<IDWriteFontCollection> get_wss_font_collection(const wil::com_ptr<IDWriteFactory1>& factory)
 {
-    wil::com_ptr_t<IDWriteFontCollection> font_collection;
+    wil::com_ptr<IDWriteFontCollection> font_collection;
     THROW_IF_FAILED(factory->GetSystemFontCollection(&font_collection));
     return font_collection;
 }
 
-wil::com_ptr_t<IDWriteFontSet4> get_font_set_4(const wil::com_ptr_t<IDWriteFactory1>& factory)
+wil::com_ptr<IDWriteFontSet4> get_font_set_4(const wil::com_ptr<IDWriteFactory1>& factory)
 {
     const auto factory_8 = factory.query<IDWriteFactory8>();
 
-    wil::com_ptr_t<IDWriteFontSet2> font_set;
+    wil::com_ptr<IDWriteFontSet2> font_set;
     THROW_IF_FAILED(factory_8->GetSystemFontSet(FALSE, &font_set));
 
     return font_set.query<IDWriteFontSet4>();
@@ -183,14 +183,14 @@ public:
         DWRITE_MEASURING_MODE measuringMode, const DWRITE_GLYPH_RUN* glyphRun,
         const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription, IUnknown* clientDrawingEffect) noexcept override
     {
-        wil::com_ptr_t<ColourEffect> colour_effect;
+        wil::com_ptr<ColourEffect> colour_effect;
         if (clientDrawingEffect) {
             colour_effect = wil::try_com_query<ColourEffect>(clientDrawingEffect);
         }
 
         const COLORREF colour = colour_effect ? colour_effect->GetColour() : m_default_colour;
 
-        wil::com_ptr_t<IDWriteColorGlyphRunEnumerator> colour_glyph_run_enumerator;
+        wil::com_ptr<IDWriteColorGlyphRunEnumerator> colour_glyph_run_enumerator;
 
         try {
             colour_glyph_run_enumerator = GetColorGlyphEnumerator(
@@ -233,7 +233,7 @@ public:
         const auto y_start = baselineOriginY + underline->offset;
         const auto y_end = y_start + underline->thickness;
 
-        wil::com_ptr_t<ColourEffect> colour_effect;
+        wil::com_ptr<ColourEffect> colour_effect;
         if (clientDrawingEffect) {
             colour_effect = wil::try_com_query<ColourEffect>(clientDrawingEffect);
         }
@@ -269,7 +269,7 @@ public:
     }
 
 private:
-    wil::com_ptr_t<IDWriteColorGlyphRunEnumerator> GetColorGlyphEnumerator(void* clientDrawingContext,
+    wil::com_ptr<IDWriteColorGlyphRunEnumerator> GetColorGlyphEnumerator(void* clientDrawingContext,
         FLOAT baselineOriginX, FLOAT baselineOriginY, DWRITE_MEASURING_MODE measuringMode,
         const DWRITE_GLYPH_RUN* glyphRun, const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription)
     {
@@ -281,7 +281,7 @@ private:
         DWRITE_MATRIX transform{};
         THROW_IF_FAILED(GetCurrentTransform(clientDrawingContext, &transform));
 
-        wil::com_ptr_t<IDWriteColorGlyphRunEnumerator> enumerator;
+        wil::com_ptr<IDWriteColorGlyphRunEnumerator> enumerator;
 
         const auto hr = factory->TranslateColorGlyphRun(
             baselineOriginX, baselineOriginY, glyphRun, glyphRunDescription, measuringMode, &transform, 0, &enumerator);
@@ -295,7 +295,7 @@ private:
     }
 
     std::atomic<ULONG> m_ref_count{};
-    wil::com_ptr_t<IDWriteFactory> m_factory;
+    wil::com_ptr<IDWriteFactory> m_factory;
     wil::com_ptr<IDWriteBitmapRenderTarget> m_render_target;
     wil::com_ptr<IDWriteRenderingParams> m_rendering_params;
     COLORREF m_default_colour{};
@@ -312,7 +312,7 @@ GdiTextRenderer::GdiTextRenderer(wil::com_ptr<IDWriteFactory> factory, IDWriteBi
 
 } // namespace
 
-wil::com_ptr_t<IDWriteRenderingParams> RenderingParams::get(HWND wnd) const
+wil::com_ptr<IDWriteRenderingParams> RenderingParams::get(HWND wnd) const
 {
     const auto root_window = GetAncestor(wnd, GA_ROOT);
     const auto monitor = MonitorFromWindow(root_window, MONITOR_DEFAULTTONEAREST);
@@ -320,10 +320,10 @@ wil::com_ptr_t<IDWriteRenderingParams> RenderingParams::get(HWND wnd) const
     if (m_rendering_params && m_monitor == monitor)
         return m_rendering_params;
 
-    wil::com_ptr_t<IDWriteRenderingParams> default_rendering_params;
+    wil::com_ptr<IDWriteRenderingParams> default_rendering_params;
     THROW_IF_FAILED(m_factory->CreateMonitorRenderingParams(monitor, &default_rendering_params));
 
-    wil::com_ptr_t<IDWriteRenderingParams> custom_rendering_params;
+    wil::com_ptr<IDWriteRenderingParams> custom_rendering_params;
     THROW_IF_FAILED(m_factory->CreateCustomRenderingParams(default_rendering_params->GetGamma(),
         default_rendering_params->GetEnhancedContrast(), default_rendering_params->GetClearTypeLevel(),
         m_force_greyscale_antialiasing ? DWRITE_PIXEL_GEOMETRY_FLAT : default_rendering_params->GetPixelGeometry(),
@@ -455,14 +455,14 @@ void TextLayout::render_with_transparent_background(
     const auto draw_left_dip = is_shrunk_width ? gsl::narrow_cast<float>(draw_left_px) / scaling_factor : 0.0f;
     const auto draw_top_dip = is_shrunk_height ? gsl::narrow_cast<float>(draw_top_px) / scaling_factor : 0.0f;
 
-    wil::com_ptr_t<IDWriteBitmapRenderTarget> bitmap_render_target;
+    wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target;
     THROW_IF_FAILED(m_gdi_interop->CreateBitmapRenderTarget(dc, bitmap_width, bitmap_height, &bitmap_render_target));
     THROW_IF_FAILED(bitmap_render_target->SetPixelsPerDip(scaling_factor));
 
     const auto rendering_params = m_rendering_params->get(wnd);
     const auto memory_dc = bitmap_render_target->GetMemoryDC();
 
-    wil::com_ptr_t<IDWriteTextRenderer> renderer
+    wil::com_ptr<IDWriteTextRenderer> renderer
         = new GdiTextRenderer(m_factory, bitmap_render_target.get(), rendering_params.get(), default_colour);
 
     BitBlt(memory_dc, 0, 0, bitmap_width, bitmap_height, dc, source_x, source_y, SRCCOPY);
@@ -479,7 +479,7 @@ void TextLayout::render_with_solid_background(HWND wnd, HDC dc, float x_origin, 
     const auto bitmap_height = wil::rect_height(clip_rect);
     const auto scaling_factor = get_default_scaling_factor();
 
-    wil::com_ptr_t<IDWriteBitmapRenderTarget> bitmap_render_target;
+    wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target;
     THROW_IF_FAILED(m_gdi_interop->CreateBitmapRenderTarget(dc, bitmap_width, bitmap_height, &bitmap_render_target));
     THROW_IF_FAILED(bitmap_render_target->SetPixelsPerDip(scaling_factor));
 
@@ -496,7 +496,7 @@ void TextLayout::render_with_solid_background(HWND wnd, HDC dc, float x_origin, 
 
     THROW_IF_FAILED(bitmap_render_target->SetCurrentTransform(&transform));
 
-    const wil::com_ptr_t<IDWriteTextRenderer> renderer
+    const wil::com_ptr<IDWriteTextRenderer> renderer
         = new GdiTextRenderer(m_factory, bitmap_render_target.get(), rendering_params.get(), default_text_colour);
 
     THROW_IF_FAILED(m_text_layout->Draw(NULL, renderer.get(), x_origin, y_origin));
@@ -572,7 +572,7 @@ TextLayout TextFormat::create_text_layout(
 
     const auto rendering_mode = m_rendering_params->rendering_mode();
 
-    wil::com_ptr_t<IDWriteTextLayout> text_layout;
+    wil::com_ptr<IDWriteTextLayout> text_layout;
     if (rendering_mode == DWRITE_RENDERING_MODE_GDI_CLASSIC || rendering_mode == DWRITE_RENDERING_MODE_GDI_NATURAL)
         THROW_IF_FAILED(m_factory->CreateGdiCompatibleTextLayout(text.data(), text_length, m_text_format.get(),
             max_width, max_height, get_default_scaling_factor(), nullptr,
@@ -585,7 +585,7 @@ TextLayout TextFormat::create_text_layout(
     THROW_IF_FAILED(text_layout->SetTypography(typography.get(), {0, text_length}));
 
     if (enable_ellipsis) {
-        wil::com_ptr_t<IDWriteInlineObject> trimming_sign;
+        wil::com_ptr<IDWriteInlineObject> trimming_sign;
         THROW_IF_FAILED(m_factory->CreateEllipsisTrimmingSign(m_text_format.get(), &trimming_sign));
 
         DWRITE_TRIMMING trimming{DWRITE_TRIMMING_GRANULARITY_CHARACTER, 0, 0};
@@ -634,7 +634,7 @@ Context::Context()
     THROW_IF_FAILED(m_factory->GetGdiInterop(&m_gdi_interop));
 }
 
-LOGFONT Context::create_log_font(const wil::com_ptr_t<IDWriteFont>& font) const
+LOGFONT Context::create_log_font(const wil::com_ptr<IDWriteFont>& font) const
 {
     LOGFONT log_font{};
     BOOL is_system_font{};
@@ -642,32 +642,32 @@ LOGFONT Context::create_log_font(const wil::com_ptr_t<IDWriteFont>& font) const
     return log_font;
 }
 
-LOGFONT Context::create_log_font(const wil::com_ptr_t<IDWriteFontFace>& font_face) const
+LOGFONT Context::create_log_font(const wil::com_ptr<IDWriteFontFace>& font_face) const
 {
     LOGFONT log_font{};
     THROW_IF_FAILED(m_gdi_interop->ConvertFontFaceToLOGFONT(font_face.get(), &log_font));
     return log_font;
 }
 
-wil::com_ptr_t<IDWriteFont> Context::create_font(const LOGFONT& log_font) const
+wil::com_ptr<IDWriteFont> Context::create_font(const LOGFONT& log_font) const
 {
-    wil::com_ptr_t<IDWriteFont> font;
+    wil::com_ptr<IDWriteFont> font;
     THROW_IF_FAILED(m_gdi_interop->CreateFontFromLOGFONT(&log_font, &font));
     return font;
 }
 
-TextFormat Context::create_text_format(const wil::com_ptr_t<IDWriteFont>& font, float font_size)
+TextFormat Context::create_text_format(const wil::com_ptr<IDWriteFont>& font, float font_size)
 {
-    wil::com_ptr_t<IDWriteFontFamily> font_family;
+    wil::com_ptr<IDWriteFontFamily> font_family;
     THROW_IF_FAILED(font->GetFontFamily(&font_family));
 
     return create_text_format(font_family, font->GetWeight(), font->GetStretch(), font->GetStyle(), font_size);
 }
 
-TextFormat Context::create_text_format(const wil::com_ptr_t<IDWriteFontFamily>& font_family, DWRITE_FONT_WEIGHT weight,
+TextFormat Context::create_text_format(const wil::com_ptr<IDWriteFontFamily>& font_family, DWRITE_FONT_WEIGHT weight,
     DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style, float font_size, const AxisValues& axis_values)
 {
-    wil::com_ptr_t<IDWriteLocalizedStrings> family_names;
+    wil::com_ptr<IDWriteLocalizedStrings> family_names;
     THROW_IF_FAILED(font_family->GetFamilyNames(&family_names));
 
     uint32_t length{};
@@ -686,14 +686,14 @@ TextFormat Context::create_text_format(const wchar_t* family_name, DWRITE_FONT_W
     if (const auto factory_7 = m_factory.try_query<IDWriteFactory7>(); factory_7 && !axis_values.empty()) {
         const auto axis_values_vector = axis_values_to_vector(axis_values);
 
-        wil::com_ptr_t<IDWriteTextFormat3> text_format_3;
+        wil::com_ptr<IDWriteTextFormat3> text_format_3;
         THROW_IF_FAILED(factory_7->CreateTextFormat(family_name, nullptr, axis_values_vector.data(),
             gsl::narrow<uint32_t>(axis_values_vector.size()), font_size, L"", &text_format_3));
 
         return wrap_text_format(text_format_3);
     }
 
-    wil::com_ptr_t<IDWriteTextFormat> text_format;
+    wil::com_ptr<IDWriteTextFormat> text_format;
     THROW_IF_FAILED(
         m_factory->CreateTextFormat(family_name, NULL, weight, style, stretch, font_size, L"", &text_format));
 
@@ -726,8 +726,8 @@ std::optional<TextFormat> Context::create_text_format_with_fallback(
     return {};
 }
 
-TextFormat Context::wrap_text_format(wil::com_ptr_t<IDWriteTextFormat> text_format,
-    DWRITE_RENDERING_MODE rendering_mode, bool force_greyscale_antialiasing, bool set_defaults)
+TextFormat Context::wrap_text_format(wil::com_ptr<IDWriteTextFormat> text_format, DWRITE_RENDERING_MODE rendering_mode,
+    bool force_greyscale_antialiasing, bool set_defaults)
 {
     if (set_defaults) {
         THROW_IF_FAILED(text_format->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
@@ -745,7 +745,7 @@ TextFormat Context::wrap_text_format(wil::com_ptr_t<IDWriteTextFormat> text_form
     return {shared_from_this(), m_factory, m_gdi_interop, std::move(text_format), rendering_params};
 }
 
-wil::com_ptr_t<IDWriteTypography> Context::get_default_typography()
+wil::com_ptr<IDWriteTypography> Context::get_default_typography()
 {
     if (!m_default_typography) {
         THROW_IF_FAILED(m_factory->CreateTypography(&m_default_typography));
@@ -765,8 +765,8 @@ std::optional<ResolvedFontNames> Context::resolve_font_names(const wchar_t* wss_
     try {
         const auto typographic_font_collection = get_typographic_font_collection(m_factory);
         const auto wss_font_collection = get_wss_font_collection(m_factory);
-        wil::com_ptr_t<IDWriteFont> font;
-        wil::com_ptr_t<IDWriteFontFamily> font_family;
+        wil::com_ptr<IDWriteFont> font;
+        wil::com_ptr<IDWriteFontFamily> font_family;
 
         if (typographic_font_collection) {
             auto axis_values_vector = axis_values_to_vector(axis_values);
@@ -781,7 +781,7 @@ std::optional<ResolvedFontNames> Context::resolve_font_names(const wchar_t* wss_
                 axis_values_vector.resize(written_axis_count);
             }
 
-            wil::com_ptr_t<IDWriteFontList2> font_list;
+            wil::com_ptr<IDWriteFontList2> font_list;
 
             THROW_IF_FAILED(typographic_font_collection->GetMatchingFonts(
                 family_name, axis_values_vector.data(), gsl::narrow<uint32_t>(axis_values_vector.size()), &font_list));
@@ -805,10 +805,10 @@ std::optional<ResolvedFontNames> Context::resolve_font_names(const wchar_t* wss_
             THROW_IF_FAILED(font_family->GetFirstMatchingFont(weight, stretch, style, &font));
         }
 
-        wil::com_ptr_t<IDWriteLocalizedStrings> face_names;
+        wil::com_ptr<IDWriteLocalizedStrings> face_names;
         THROW_IF_FAILED(font->GetFaceNames(&face_names));
 
-        wil::com_ptr_t<IDWriteLocalizedStrings> family_names;
+        wil::com_ptr<IDWriteLocalizedStrings> family_names;
         THROW_IF_FAILED(font_family->GetFamilyNames(&family_names));
 
         return ResolvedFontNames{get_localised_string(family_names), get_localised_string(face_names)};
@@ -830,8 +830,8 @@ std::optional<std::tuple<WeightStretchStyle, LOGFONT>> Context::get_wss_and_logf
         const auto axis_values_vector = axis_values_to_vector(axis_values);
 
         const auto find_matching_font_face
-            = [&system_font_set, &axis_values_vector](const auto* font_family) -> wil::com_ptr_t<IDWriteFontFace6> {
-            wil::com_ptr_t<IDWriteFontSet4> matching_fonts;
+            = [&system_font_set, &axis_values_vector](const auto* font_family) -> wil::com_ptr<IDWriteFontFace6> {
+            wil::com_ptr<IDWriteFontSet4> matching_fonts;
             THROW_IF_FAILED(system_font_set->GetMatchingFonts(font_family, axis_values_vector.data(),
                 gsl::narrow<uint32_t>(axis_values_vector.size()),
                 DWRITE_FONT_SIMULATIONS_BOLD | DWRITE_FONT_SIMULATIONS_OBLIQUE, &matching_fonts));
@@ -839,7 +839,7 @@ std::optional<std::tuple<WeightStretchStyle, LOGFONT>> Context::get_wss_and_logf
             if (matching_fonts->GetFontCount() == 0)
                 return {};
 
-            wil::com_ptr_t<IDWriteFontFace5> font_face_5;
+            wil::com_ptr<IDWriteFontFace5> font_face_5;
             THROW_IF_FAILED(matching_fonts->CreateFontFace(0, &font_face_5));
 
             return font_face_5.query<IDWriteFontFace6>();
@@ -850,7 +850,7 @@ std::optional<std::tuple<WeightStretchStyle, LOGFONT>> Context::get_wss_and_logf
         if (!font_face_6)
             return {};
 
-        wil::com_ptr_t<IDWriteLocalizedStrings> family_names;
+        wil::com_ptr<IDWriteLocalizedStrings> family_names;
         THROW_IF_FAILED(font_face_6->GetFamilyNames(DWRITE_FONT_FAMILY_MODEL_WEIGHT_STRETCH_STYLE, &family_names));
 
         auto family_name = get_localised_string(family_names);
@@ -888,16 +888,16 @@ std::vector<Font> FontFamily::fonts() const
     const auto count = family->GetFontCount();
 
     for (auto index : std::ranges::views::iota(0u, count)) {
-        wil::com_ptr_t<IDWriteFont> font;
+        wil::com_ptr<IDWriteFont> font;
         THROW_IF_FAILED(family->GetFont(index, &font));
 
-        wil::com_ptr_t<IDWriteLocalizedStrings> localised_names;
+        wil::com_ptr<IDWriteLocalizedStrings> localised_names;
         THROW_IF_FAILED(font->GetFaceNames(&localised_names));
 
         std::vector<DWRITE_FONT_AXIS_VALUE> axis_values;
 
         if (const auto font_3 = font.try_query<IDWriteFont3>()) {
-            wil::com_ptr_t<IDWriteFontFaceReference> font_face_reference;
+            wil::com_ptr<IDWriteFontFaceReference> font_face_reference;
             THROW_IF_FAILED(font_3->GetFontFaceReference(&font_face_reference));
 
             if (const auto font_face_reference_1 = font_face_reference.try_query<IDWriteFontFaceReference1>()) {
@@ -929,20 +929,20 @@ std::vector<FontFamily> Context::get_font_families() const
 {
     const auto typographic_font_collection = get_typographic_font_collection(m_factory);
 
-    const wil::com_ptr_t<IDWriteFontCollection> font_collection
+    const wil::com_ptr<IDWriteFontCollection> font_collection
         = typographic_font_collection ? typographic_font_collection : get_wss_font_collection(m_factory);
 
     std::vector<FontFamily> families;
     const auto family_count = font_collection->GetFontFamilyCount();
 
     for (const auto index : std::ranges::views::iota(0u, family_count)) {
-        wil::com_ptr_t<IDWriteFontFamily> family;
+        wil::com_ptr<IDWriteFontFamily> family;
         THROW_IF_FAILED(font_collection->GetFontFamily(index, &family));
 
-        wil::com_ptr_t<IDWriteLocalizedStrings> family_names;
+        wil::com_ptr<IDWriteLocalizedStrings> family_names;
         THROW_IF_FAILED(family->GetFamilyNames(&family_names));
 
-        wil::com_ptr_t<IDWriteFont> first_font;
+        wil::com_ptr<IDWriteFont> first_font;
         THROW_IF_FAILED(family->GetFont(0, &first_font));
 
         const auto is_symbol_font = first_font->IsSymbolFont() != 0;
@@ -957,17 +957,17 @@ std::vector<FontFamily> Context::get_font_families() const
 
             const auto family_2 = family.query<IDWriteFontFamily2>();
 
-            wil::com_ptr_t<IDWriteFontSet1> font_set;
+            wil::com_ptr<IDWriteFontSet1> font_set;
             THROW_IF_FAILED(family_2->GetFontSet(&font_set));
 
-            wil::com_ptr_t<IDWriteFontSet1> first_font_resources_set;
+            wil::com_ptr<IDWriteFontSet1> first_font_resources_set;
             THROW_IF_FAILED(font_set->GetFirstFontResources(&first_font_resources_set));
 
             const auto resources_count = first_font_resources_set->GetFontCount();
 
             const bool has_variations = ranges::any_of(
                 ranges::views::iota(0u, resources_count), [&first_font_resources_set](auto font_index) {
-                    wil::com_ptr_t<IDWriteFontResource> font_resource;
+                    wil::com_ptr<IDWriteFontResource> font_resource;
                     THROW_IF_FAILED(first_font_resources_set->CreateFontResource(font_index, &font_resource));
                     return font_resource->HasVariations();
                 });
@@ -1003,7 +1003,7 @@ std::vector<FontFamily> Context::get_font_families() const
                 }
             }
 
-            wil::com_ptr_t<IDWriteFontFace5> font_face;
+            wil::com_ptr<IDWriteFontFace5> font_face;
             THROW_IF_FAILED(font_set->CreateFontFace(0, &font_face));
 
             const auto font_face_6 = font_face.query<IDWriteFontFace6>();
@@ -1049,7 +1049,7 @@ std::vector<FontFamily> Context::get_font_families() const
     return families;
 }
 
-std::wstring get_localised_string(const wil::com_ptr_t<IDWriteLocalizedStrings>& localised_strings)
+std::wstring get_localised_string(const wil::com_ptr<IDWriteLocalizedStrings>& localised_strings)
 {
     std::array<wchar_t, LOCALE_NAME_MAX_LENGTH> locale_name;
     uint32_t locale_index{};

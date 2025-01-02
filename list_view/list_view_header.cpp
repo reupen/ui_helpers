@@ -26,7 +26,7 @@ void ListView::create_header()
                 WS_CHILD | (0) | /*(m_autosize ? 0x0800  : NULL) |*/ HDS_HOTTRACK
                     | (m_allow_header_rearrange ? HDS_DRAGDROP : NULL) | HDS_HORZ | HDS_FULLDRAG
                     | (m_sorting_enabled ? HDS_BUTTONS : 0) | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
-                0, 0, 0, 0, get_wnd(), HMENU(IDC_HEADER), mmh::get_current_instance(), nullptr);
+                0, 0, 0, 0, get_wnd(), HMENU(IDC_HEADER), wil::GetModuleInstanceHandle(), nullptr);
 
             set_header_window_theme();
             SetWindowFont(m_wnd_header, m_header_font.get(), FALSE);

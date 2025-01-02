@@ -700,7 +700,7 @@ protected:
 
 private:
     struct ItemsFontConfig {
-        wil::com_ptr_t<IDWriteTextFormat> text_format;
+        wil::com_ptr<IDWriteTextFormat> text_format;
         LOGFONT log_font{};
     };
 
@@ -757,7 +757,7 @@ private:
     virtual Group* storage_create_group() { return new Group; }
 
     virtual bool render_drag_image(LPSHDRAGIMAGE lpsdi);
-    virtual icon_ptr get_drag_image_icon() { return nullptr; }
+    virtual wil::unique_hicon get_drag_image_icon() { return nullptr; }
     virtual size_t get_drag_item_count() /*const*/ { return get_selection_count(); }
     virtual bool should_show_drag_text(size_t selection_count) { return selection_count > 1; }
     virtual bool format_drag_text(size_t selection_count, pfc::string8& p_out);
@@ -774,7 +774,7 @@ private:
     }
 
     virtual bool notify_create_inline_edit(const pfc::list_base_const_t<size_t>& indices, size_t column,
-        pfc::string_base& p_test, size_t& p_flags, mmh::ComPtr<IUnknown>& pAutocompleteEntries)
+        pfc::string_base& p_test, size_t& p_flags, wil::com_ptr<IUnknown>& autocomplete_entries)
     {
         return true;
     }
@@ -866,7 +866,7 @@ private:
     bool m_inline_edit_prevent_kill{false};
     size_t m_inline_edit_column{std::numeric_limits<size_t>::max()};
     pfc::list_t<size_t> m_inline_edit_indices;
-    mmh::ComPtr<IAutoComplete> m_inline_edit_autocomplete;
+    wil::com_ptr<IAutoComplete> m_inline_edit_autocomplete;
     wil::unique_hbrush m_edit_background_brush;
     COLORREF m_dark_edit_background_colour{};
     COLORREF m_dark_edit_text_colour{RGB(255, 255, 255)};

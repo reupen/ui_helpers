@@ -156,7 +156,6 @@
     <ClInclude Include="dpi.h" />
     <ClInclude Include="drag_image.h" />
     <ClInclude Include="event_token.h" />
-    <ClInclude Include="handle.h" />
     <ClInclude Include="list_view\list_view.h" />
     <ClInclude Include="list_view\list_view_renderer.h" />
     <ClInclude Include="literals.h" />

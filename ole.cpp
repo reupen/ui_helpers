@@ -171,10 +171,9 @@ HRESULT do_drag_drop(HWND wnd, WPARAM initialKeyState, IDataObject* pDataObject,
     if (preferredEffect)
         SetPreferredDropEffect(pDataObject, preferredEffect);
 
-    mmh::ComPtr<IDropSource> pDropSource;
-    // if (!IsVistaOrNewer())
-    pDropSource = new uih::ole::IDropSourceGeneric(wnd, pDataObject, LODWORD(initialKeyState), true, lpsdi);
-    return SHDoDragDrop(wnd, pDataObject, pDropSource, dwEffect, pdwEffect);
+    const wil::com_ptr<IDropSource> pDropSource
+        = new IDropSourceGeneric(wnd, pDataObject, LODWORD(initialKeyState), true, lpsdi);
+    return SHDoDragDrop(wnd, pDataObject, pDropSource.get(), dwEffect, pdwEffect);
 }
 
 HRESULT STDMETHODCALLTYPE IDropSourceGeneric::QueryInterface(REFIID iid, void** ppvObject) noexcept
@@ -228,9 +227,9 @@ HRESULT STDMETHODCALLTYPE IDropSourceGeneric::GiveFeedback(DWORD dwEffect) noexc
     HWND wnd_drag = nullptr;
     BOOL isShowingLayered = FALSE;
     if (IsThemeActive())
-        GetIsShowingLayered(m_data_object, isShowingLayered);
+        GetIsShowingLayered(m_data_object.get(), isShowingLayered);
 
-    if (SUCCEEDED(GetDragWindow(m_data_object, wnd_drag)) && wnd_drag)
+    if (SUCCEEDED(GetDragWindow(m_data_object.get(), wnd_drag)) && wnd_drag)
         PostMessage(wnd_drag, DDWM_UPDATEWINDOW, NULL, NULL);
 
     if (isShowingLayered) {
@@ -266,9 +265,10 @@ IDropSourceGeneric::IDropSourceGeneric(
     HRESULT hr;
 
     if (b_allowdropdescriptiontext) {
-        if (SUCCEEDED(m_drag_source_helper.instantiate(CLSID_DragDropHelper, nullptr, CLSCTX_INPROC_SERVER))) {
-            mmh::ComPtr<IDragSourceHelper2> pDragSourceHelper2 = m_drag_source_helper;
-            if (pDragSourceHelper2.is_valid()) {
+        m_drag_source_helper = wil::CoCreateInstanceNoThrow<IDragSourceHelper>(CLSID_DragDropHelper);
+        if (m_drag_source_helper) {
+            const auto pDragSourceHelper2 = m_drag_source_helper.try_query<IDragSourceHelper2>();
+            if (pDragSourceHelper2) {
                 hr = pDragSourceHelper2->SetFlags(DSH_ALLOWDROPDESCRIPTIONTEXT);
             }
             if (lpsdi) {
