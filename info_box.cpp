@@ -187,7 +187,7 @@ INT_PTR InfoBox::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         ShowWindow(wnd, SW_SHOWNORMAL);
 
         if (const auto sound = sound_map.at(m_type))
-            PlaySound(reinterpret_cast<LPCWSTR>(sound), nullptr, SND_ALIAS_ID | SND_ASYNC | SND_NOSTOP);
+            PlaySound(reinterpret_cast<LPCWSTR>(sound), nullptr, SND_ALIAS_ID | SND_ASYNC);
 
         return TRUE;
     }
