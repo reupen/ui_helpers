@@ -886,6 +886,7 @@ std::vector<Font> FontFamily::fonts() const
     std::vector<Font> fonts;
 
     const auto count = family->GetFontCount();
+    const auto family_1 = family.try_query<IDWriteFontFamily1>();
 
     for (auto index : std::ranges::views::iota(0u, count)) {
         wil::com_ptr<IDWriteFont> font;
@@ -896,9 +897,9 @@ std::vector<Font> FontFamily::fonts() const
 
         std::vector<DWRITE_FONT_AXIS_VALUE> axis_values;
 
-        if (const auto font_3 = font.try_query<IDWriteFont3>()) {
+        if (family_1) {
             wil::com_ptr<IDWriteFontFaceReference> font_face_reference;
-            THROW_IF_FAILED(font_3->GetFontFaceReference(&font_face_reference));
+            THROW_IF_FAILED(family_1->GetFontFaceReference(index, &font_face_reference));
 
             if (const auto font_face_reference_1 = font_face_reference.try_query<IDWriteFontFaceReference1>()) {
                 const auto axis_count = font_face_reference_1->GetFontAxisValueCount();
