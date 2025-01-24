@@ -10,6 +10,10 @@ namespace {
 
 float stretch_to_width(DWRITE_FONT_STRETCH stretch)
 {
+    if (WI_EnumValue(stretch) < DWRITE_FONT_STRETCH_ULTRA_CONDENSED
+        || WI_EnumValue(stretch) > DWRITE_FONT_STRETCH_ULTRA_EXPANDED)
+        return 100.0f;
+
     if (stretch == DWRITE_FONT_STRETCH_ULTRA_EXPANDED)
         return 200.0f;
 
@@ -50,13 +54,19 @@ DWRITE_FONT_STRETCH width_to_stretch(float width)
 
 wil::com_ptr<IDWriteFontCollection3> get_typographic_font_collection(const wil::com_ptr<IDWriteFactory1>& factory)
 {
-    const auto factory_8 = factory.try_query<IDWriteFactory8>();
+    const auto factory_7 = factory.try_query<IDWriteFactory7>();
 
-    if (!factory_8)
+    if (!factory_7)
         return {};
 
     wil::com_ptr<IDWriteFontCollection3> font_collection;
-    THROW_IF_FAILED(factory_8->GetSystemFontCollection(FALSE, DWRITE_FONT_FAMILY_MODEL_TYPOGRAPHIC, &font_collection));
+    THROW_IF_FAILED(factory_7->GetSystemFontCollection(FALSE, DWRITE_FONT_FAMILY_MODEL_TYPOGRAPHIC, &font_collection));
+
+    wil::com_ptr<IDWriteFontSet1> font_set;
+    THROW_IF_FAILED(font_collection->GetFontSet(&font_set));
+
+    if (!font_set.try_query<IDWriteFontSet4>())
+        return {};
 
     return font_collection;
 }
@@ -70,10 +80,10 @@ wil::com_ptr<IDWriteFontCollection> get_wss_font_collection(const wil::com_ptr<I
 
 wil::com_ptr<IDWriteFontSet4> get_font_set_4(const wil::com_ptr<IDWriteFactory1>& factory)
 {
-    const auto factory_8 = factory.query<IDWriteFactory8>();
+    const auto factory_7 = factory.query<IDWriteFactory7>();
 
     wil::com_ptr<IDWriteFontSet2> font_set;
-    THROW_IF_FAILED(factory_8->GetSystemFontSet(FALSE, &font_set));
+    THROW_IF_FAILED(factory_7->GetSystemFontSet(FALSE, &font_set));
 
     return font_set.query<IDWriteFontSet4>();
 }
@@ -913,6 +923,16 @@ std::vector<Font> FontFamily::fonts() const
 
         for (auto [tag, value] : axis_values) {
             axis_values_map.insert_or_assign(WI_EnumValue(tag), value);
+        }
+
+        if (!axis_values.empty()) {
+            const auto simulations = font->GetSimulations();
+
+            if (simulations & DWRITE_FONT_SIMULATIONS_BOLD)
+                axis_values_map[DWRITE_FONT_AXIS_TAG_WEIGHT] = 700.0f;
+
+            if (simulations & DWRITE_FONT_SIMULATIONS_OBLIQUE)
+                axis_values_map[DWRITE_FONT_AXIS_TAG_SLANT] = -20.0f;
         }
 
         const auto weight = font->GetWeight();
