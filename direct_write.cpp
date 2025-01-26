@@ -583,7 +583,8 @@ TextLayout TextFormat::create_text_layout(
     const auto rendering_mode = m_rendering_params->rendering_mode();
 
     wil::com_ptr<IDWriteTextLayout> text_layout;
-    if (rendering_mode == DWRITE_RENDERING_MODE_GDI_CLASSIC || rendering_mode == DWRITE_RENDERING_MODE_GDI_NATURAL)
+    if (rendering_mode == DWRITE_RENDERING_MODE_ALIASED || rendering_mode == DWRITE_RENDERING_MODE_GDI_CLASSIC
+        || rendering_mode == DWRITE_RENDERING_MODE_GDI_NATURAL)
         THROW_IF_FAILED(m_factory->CreateGdiCompatibleTextLayout(text.data(), text_length, m_text_format.get(),
             max_width, max_height, get_default_scaling_factor(), nullptr,
             rendering_mode == DWRITE_RENDERING_MODE_GDI_NATURAL, &text_layout));
