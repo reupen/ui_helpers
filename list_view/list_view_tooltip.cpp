@@ -95,11 +95,17 @@ void ListView::calculate_tooltip_position(size_t item_index, size_t column_index
     }
     CATCH_LOG()
 
-    const auto utf16_text = mmh::to_utf16(text);
+    auto utf16_text = mmh::to_utf16(text);
     const auto text_width = m_items_text_format->measure_text_width(utf16_text);
 
     const auto max_width = std::max(0.0f,
         static_cast<float>(column.m_display_size - 1_spx - 3_spx * 2) / direct_write::get_default_scaling_factor());
+
+    // Work around DirectWrite not rendering trailing whitespace
+    // for centre- and right-aligned text
+    if (column.m_alignment != ALIGN_LEFT)
+        utf16_text.push_back(L'\u200b');
+
     const auto metrics = m_items_text_format->measure_text_position(utf16_text, m_item_height, max_width, true);
 
     m_tooltip_text_left_offset = metrics.left_remainder_dip;
