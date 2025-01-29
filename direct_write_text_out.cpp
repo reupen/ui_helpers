@@ -19,6 +19,11 @@ int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::strin
         ? process_colour_codes(mmh::to_utf16(text), selected)
         : std::tuple(mmh::to_utf16(text), std::vector<ColouredTextSegment>{});
 
+    // Work around DirectWrite not rendering trailing whitespace
+    // for centre- and right-aligned text
+    if (align != ALIGN_LEFT)
+        render_text.push_back(L'\u200b');
+
     text_format.set_text_alignment(get_text_alignment(align));
 
     try {
