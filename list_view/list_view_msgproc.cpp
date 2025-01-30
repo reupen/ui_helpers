@@ -27,7 +27,11 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             = std::make_unique<ContainerWindow>(ContainerWindowConfig{L"list_view_dummy_theme_window_FJg96cJ"});
         m_dummy_theme_window->create(wnd, {-1, -1, 0, 0});
 
-        m_direct_write_context = direct_write::Context::s_create();
+        try {
+            m_direct_write_context = direct_write::Context::s_create();
+        }
+        CATCH_LOG();
+
         notify_on_initialisation();
 
         set_window_theme();
