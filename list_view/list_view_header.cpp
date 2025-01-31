@@ -136,9 +136,18 @@ std::optional<LRESULT> ListView::on_wm_notify_header(LPNMHDR lpnm)
             if (m_header_text_format && column_index) {
                 const auto& column = m_columns[*column_index];
 
-                direct_write::text_out_columns_and_colours(*m_header_text_format, get_wnd(), lpcd->hdc,
-                    mmh::to_string_view(column.m_title), 0, 4_spx, lpcd->rc, cr,
-                    {.align = column.m_alignment, .enable_colour_codes = false, .enable_tab_columns = false});
+                try {
+                    direct_write::text_out_columns_and_colours(*m_header_text_format, get_wnd(), lpcd->hdc,
+                        mmh::to_string_view(column.m_title), 0, 4_spx, lpcd->rc, cr,
+                        {.align = column.m_alignment, .enable_colour_codes = false, .enable_tab_columns = false});
+                } catch (...) {
+                    LOG_CAUGHT_EXCEPTION();
+
+                    if (uih::direct_write::should_recreate_text_format(wil::ResultFromCaughtException())) {
+                        m_header_text_format.reset();
+                        PostMessage(get_wnd(), MSG_REQUEST_NEW_HEADER_TEXT_FORMAT, 0, 0);
+                    }
+                }
             }
 
             return CDRF_DODEFAULT;

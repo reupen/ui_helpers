@@ -1071,6 +1071,11 @@ std::vector<FontFamily> Context::get_font_families() const
     return families;
 }
 
+bool should_recreate_text_format(HRESULT hr)
+{
+    return hr == DWRITE_E_FILENOTFOUND || hr == 0xFFFFFC18L;
+}
+
 std::wstring get_localised_string(const wil::com_ptr<IDWriteLocalizedStrings>& localised_strings)
 {
     std::array<wchar_t, LOCALE_NAME_MAX_LENGTH> locale_name;

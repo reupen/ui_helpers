@@ -750,6 +750,15 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         exit_inline_edit();
         m_inline_edit_prevent_kill = false;
         return 0;
+    case MSG_REQUEST_NEW_ITEMS_TEXT_FORMAT:
+        recreate_items_text_format();
+        return 0;
+    case MSG_REQUEST_NEW_HEADER_TEXT_FORMAT:
+        recreate_header_text_format();
+        return 0;
+    case MSG_REQUEST_NEW_GROUP_TEXT_FORMAT:
+        recreate_group_text_format();
+        return 0;
     case WM_CONTEXTMENU: {
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
         const auto from_keyboard = pt.x == -1 && pt.y == -1;

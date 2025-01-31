@@ -26,26 +26,21 @@ int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::strin
 
     text_format.set_text_alignment(get_text_alignment(align));
 
-    try {
-        const auto scaling_factor = get_default_scaling_factor();
+    const auto scaling_factor = get_default_scaling_factor();
 
-        const auto layout = text_format.create_text_layout(render_text,
-            gsl::narrow_cast<float>(wil::rect_width(rect)) / scaling_factor,
+    const auto layout
+        = text_format.create_text_layout(render_text, gsl::narrow_cast<float>(wil::rect_width(rect)) / scaling_factor,
             gsl::narrow_cast<float>(wil::rect_height(rect)) / scaling_factor, enable_ellipsis);
 
-        for (auto& [colour, start_character, character_count] : segments) {
-            layout.set_colour(colour, {gsl::narrow<uint32_t>(start_character), gsl::narrow<uint32_t>(character_count)});
-        }
-
-        const auto metrics = layout.get_metrics();
-
-        layout.render_with_transparent_background(wnd, dc, rect, default_color);
-
-        return gsl::narrow_cast<int>(metrics.width * scaling_factor + 1);
+    for (auto& [colour, start_character, character_count] : segments) {
+        layout.set_colour(colour, {gsl::narrow<uint32_t>(start_character), gsl::narrow<uint32_t>(character_count)});
     }
-    CATCH_LOG()
 
-    return 0;
+    const auto metrics = layout.get_metrics();
+
+    layout.render_with_transparent_background(wnd, dc, rect, default_color);
+
+    return gsl::narrow_cast<int>(metrics.width * scaling_factor + 1);
 }
 
 } // namespace

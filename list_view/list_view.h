@@ -21,8 +21,6 @@ public:
     static constexpr short IDC_INLINEEDIT = 667;
     static constexpr short IDC_SEARCHBOX = 668;
 
-    static constexpr unsigned MSG_KILL_INLINE_EDIT = WM_USER + 3;
-
     enum {
         TIMER_SCROLL_UP = 1001,
         TIMER_SCROLL_DOWN = 1002,
@@ -699,6 +697,11 @@ protected:
     void focus_search_box();
 
 private:
+    static constexpr unsigned MSG_KILL_INLINE_EDIT = WM_USER + 3;
+    static constexpr unsigned MSG_REQUEST_NEW_ITEMS_TEXT_FORMAT = WM_USER + 4;
+    static constexpr unsigned MSG_REQUEST_NEW_HEADER_TEXT_FORMAT = WM_USER + 5;
+    static constexpr unsigned MSG_REQUEST_NEW_GROUP_TEXT_FORMAT = WM_USER + 6;
+
     struct ItemsFontConfig {
         wil::com_ptr<IDWriteTextFormat> text_format;
         LOGFONT log_font{};
@@ -755,6 +758,10 @@ private:
 
     virtual Item* storage_create_item() { return new Item; }
     virtual Group* storage_create_group() { return new Group; }
+
+    virtual void recreate_items_text_format();
+    virtual void recreate_header_text_format();
+    virtual void recreate_group_text_format();
 
     virtual bool render_drag_image(LPSHDRAGIMAGE lpsdi);
     virtual wil::unique_hicon get_drag_image_icon() { return nullptr; }

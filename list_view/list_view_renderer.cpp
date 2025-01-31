@@ -40,8 +40,11 @@ int ListView::get_default_indentation_step(HDC dc) const
 
 void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
 {
+    bool reset_group_font{};
+    bool reset_items_font{};
+
     ColourData colours = render_get_colour_data();
-    const lv::RendererContext context = {colours, m_use_dark_mode, m_is_high_contrast_active, get_wnd(), dc,
+    lv::RendererContext context = {colours, m_use_dark_mode, m_is_high_contrast_active, get_wnd(), dc,
         m_list_view_theme.get(), m_items_view_theme.get(), m_items_text_format, m_group_text_format};
 
     // OffsetWindowOrgEx(dc, m_horizontal_scroll_position, 0, NULL);
@@ -92,7 +95,18 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
                     // OffsetWindowOrgEx(dc, -m_horizontal_scroll_position, 0, NULL);
                     break; // CRUDE
                 }
-                m_renderer->render_group(context, i, j, p_group->m_text.get_ptr(), indentation_step, j, rc);
+
+                try {
+                    m_renderer->render_group(context, i, j, p_group->m_text.get_ptr(), indentation_step, j, rc);
+                } catch (...) {
+                    LOG_CAUGHT_EXCEPTION();
+
+                    if (direct_write::should_recreate_text_format(wil::ResultFromCaughtException())) {
+                        context.m_group_text_format.reset();
+                        m_group_text_format.reset();
+                        reset_group_font = true;
+                    }
+                }
             }
         }
 
@@ -131,8 +145,18 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
                 sub_items.emplace_back(lv::RendererSubItem{text, column.m_display_size, column.m_alignment});
             }
 
-            m_renderer->render_item(context, i, sub_items, 0 /*item_indentation*/, b_selected, b_window_focused,
-                (m_highlight_item_index == i) || (highlight_index == i), should_hide_focus, show_item_focus, rc);
+            try {
+                m_renderer->render_item(context, i, sub_items, 0 /*item_indentation*/, b_selected, b_window_focused,
+                    (m_highlight_item_index == i) || (highlight_index == i), should_hide_focus, show_item_focus, rc);
+            } catch (...) {
+                LOG_CAUGHT_EXCEPTION();
+
+                if (direct_write::should_recreate_text_format(wil::ResultFromCaughtException())) {
+                    context.m_item_text_format.reset();
+                    m_items_text_format.reset();
+                    reset_items_font = true;
+                }
+            }
         }
     }
     /*if (m_search_editbox)
@@ -170,7 +194,12 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
             FillRect(dc, &rc_line, brush.get());
         }
     }
-    // OffsetWindowOrgEx(dc, -m_horizontal_scroll_position, 0, NULL);
+
+    if (reset_items_font)
+        PostMessage(get_wnd(), MSG_REQUEST_NEW_ITEMS_TEXT_FORMAT, 0, 0);
+
+    if (reset_group_font)
+        PostMessage(get_wnd(), MSG_REQUEST_NEW_GROUP_TEXT_FORMAT, 0, 0);
 }
 
 void ListView::render_get_colour_data(ColourData& p_out)

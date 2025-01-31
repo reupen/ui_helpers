@@ -206,6 +206,8 @@ private:
     wil::com_ptr<IDWriteTypography> m_default_typography;
 };
 
+bool should_recreate_text_format(HRESULT hr);
+
 std::wstring get_localised_string(const wil::com_ptr<IDWriteLocalizedStrings>& localised_strings);
 float get_default_scaling_factor();
 

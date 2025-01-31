@@ -705,4 +705,27 @@ void ListView::set_edge_style(uint32_t b_val)
         SetWindowPos(get_wnd(), nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
     }
 }
+
+void ListView::recreate_items_text_format()
+{
+    if (m_direct_write_context && m_items_log_font) {
+        set_font(
+            m_direct_write_context->create_text_format_with_fallback(*m_items_log_font), LOGFONT{*m_items_log_font});
+    }
+}
+
+void ListView::recreate_header_text_format()
+{
+    if (m_direct_write_context && m_header_log_font) {
+        set_header_font(
+            m_direct_write_context->create_text_format_with_fallback(*m_header_log_font), LOGFONT{*m_header_log_font});
+    }
+}
+
+void ListView::recreate_group_text_format()
+{
+    if (m_direct_write_context && m_items_log_font) {
+        set_group_font(m_direct_write_context->create_text_format_with_fallback(*m_items_log_font));
+    }
+}
 } // namespace uih
