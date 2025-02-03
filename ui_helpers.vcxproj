@@ -152,6 +152,7 @@
   <ItemGroup>
     <ClInclude Include="container_window.h" />
     <ClInclude Include="dialog.h" />
+    <ClInclude Include="direct_2d.h" />
     <ClInclude Include="direct_write.h" />
     <ClInclude Include="dpi.h" />
     <ClInclude Include="drag_image.h" />
@@ -181,6 +182,7 @@
   <ItemGroup>
     <ClCompile Include="container_window.cpp" />
     <ClCompile Include="dialog.cpp" />
+    <ClCompile Include="direct_2d.cpp" />
     <ClCompile Include="direct_write.cpp" />
     <ClCompile Include="dpi.cpp" />
     <ClCompile Include="drag_image.cpp" />

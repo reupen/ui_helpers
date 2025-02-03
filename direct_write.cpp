@@ -375,6 +375,11 @@ void TextLayout::set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const
     THROW_IF_FAILED(m_text_layout->SetDrawingEffect(colour_effect.get(), text_range));
 }
 
+void TextLayout::set_effect(IUnknown* effect, DWRITE_TEXT_RANGE text_range) const
+{
+    THROW_IF_FAILED(m_text_layout->SetDrawingEffect(effect, text_range));
+}
+
 void TextLayout::set_max_height(float value) const
 {
     THROW_IF_FAILED(m_text_layout->SetMaxHeight(value));
