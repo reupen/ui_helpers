@@ -49,6 +49,7 @@
 #include <Usp10.h>
 #include <CommonControls.h>
 #include <intsafe.h>
+#include <d2d1.h>
 #include <dwrite_3.h>
 
 #include <wil/com.h>

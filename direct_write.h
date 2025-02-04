@@ -18,6 +18,18 @@ public:
 
     wil::com_ptr<IDWriteRenderingParams> get(HWND wnd) const;
     DWRITE_RENDERING_MODE rendering_mode() const { return m_rendering_mode; }
+    D2D1_TEXT_ANTIALIAS_MODE d2d_text_antialiasing_mode() const
+    {
+        if (m_rendering_mode == DWRITE_RENDERING_MODE_ALIASED)
+            return D2D1_TEXT_ANTIALIAS_MODE_ALIASED;
+
+        if (m_force_greyscale_antialiasing)
+            return D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE;
+
+        return D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+    }
+
+    bool force_greyscale_antialiasing() const { return m_force_greyscale_antialiasing; }
 
 private:
     mutable wil::com_ptr<IDWriteRenderingParams> m_rendering_params;
@@ -49,6 +61,7 @@ public:
     void render_with_solid_background(HWND wnd, HDC dc, float x_origin, float y_origin, RECT clip_rect,
         COLORREF background_colour, COLORREF default_text_colour) const;
     void set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const;
+    void set_effect(IUnknown* effect, DWRITE_TEXT_RANGE text_range) const;
     void set_max_height(float value) const;
     void set_max_width(float value) const;
     void set_underline(bool is_underlined, DWRITE_TEXT_RANGE text_range) const;
@@ -56,6 +69,10 @@ public:
     void set_size(float size, DWRITE_TEXT_RANGE text_range) const;
     void set_wss(DWRITE_FONT_WEIGHT weight, std::variant<DWRITE_FONT_STRETCH, float> width_or_stretch,
         DWRITE_FONT_STYLE style, DWRITE_TEXT_RANGE text_range) const;
+
+    const RenderingParams::Ptr& rendering_params() { return m_rendering_params; }
+
+    const wil::com_ptr<IDWriteTextLayout>& text_layout() const { return m_text_layout; }
 
 private:
     wil::com_ptr<IDWriteFactory> m_factory;
