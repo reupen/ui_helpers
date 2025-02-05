@@ -40,6 +40,11 @@ private:
     bool m_force_greyscale_antialiasing{};
 };
 
+struct EmojiProcessingConfig {
+    std::wstring colour_emoji_family_name{};
+    std::wstring monochrome_emoji_family_name{};
+};
+
 class TextLayout {
 public:
     TextLayout(wil::com_ptr<IDWriteFactory> factory, wil::com_ptr<IDWriteGdiInterop> gdi_interop,
@@ -92,7 +97,7 @@ struct TextPosition {
 
 class TextFormat {
 public:
-    TextFormat(std::shared_ptr<class Context> context, wil::com_ptr<IDWriteFactory> factory,
+    TextFormat(std::shared_ptr<class Context> context, wil::com_ptr<IDWriteFactory1> factory,
         wil::com_ptr<IDWriteGdiInterop> gdi_interop, wil::com_ptr<IDWriteTextFormat> text_format,
         RenderingParams::Ptr rendering_params)
         : m_context(std::move(context))
@@ -106,6 +111,7 @@ public:
     void set_text_alignment(DWRITE_TEXT_ALIGNMENT value = DWRITE_TEXT_ALIGNMENT_LEADING) const;
     void set_paragraph_alignment(DWRITE_PARAGRAPH_ALIGNMENT value) const;
     void set_word_wrapping(DWRITE_WORD_WRAPPING value) const;
+    void set_emoji_processing_config(std::optional<EmojiProcessingConfig> emoji_processing_config);
 
     [[nodiscard]] int get_minimum_height(std::wstring_view text = std::wstring_view(L"", 0)) const;
     [[nodiscard]] TextPosition measure_text_position(
@@ -119,10 +125,11 @@ public:
 
 private:
     std::shared_ptr<Context> m_context;
-    wil::com_ptr<IDWriteFactory> m_factory;
+    wil::com_ptr<IDWriteFactory1> m_factory;
     wil::com_ptr<IDWriteGdiInterop> m_gdi_interop;
     wil::com_ptr<IDWriteTextFormat> m_text_format;
     RenderingParams::Ptr m_rendering_params;
+    wil::com_ptr<IDWriteFontFallback> m_font_fallback;
 };
 
 struct Font {
