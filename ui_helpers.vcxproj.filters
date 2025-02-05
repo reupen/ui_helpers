@@ -52,6 +52,8 @@
     <ClInclude Include="direct_write_text_out.h" />
     <ClInclude Include="text_out_helpers.h" />
     <ClInclude Include="direct_2d.h" />
+    <ClInclude Include="emoji.h" />
+    <ClInclude Include="direct_write_emoji.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="message_hook.cpp" />
@@ -126,6 +128,8 @@
     <ClCompile Include="text_out_helpers.cpp" />
     <ClCompile Include="info_box.cpp" />
     <ClCompile Include="direct_2d.cpp" />
+    <ClCompile Include="emoji.cpp" />
+    <ClCompile Include="direct_write_emoji.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
