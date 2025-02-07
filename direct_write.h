@@ -223,6 +223,7 @@ public:
         const wchar_t* typographic_family_name, const AxisValues& axis_values) const;
 
     std::vector<FontFamily> get_font_families() const;
+    std::vector<std::wstring> get_emoji_font_families() const;
 
     icu::ICUHandle::Ptr get_icu()
     {
