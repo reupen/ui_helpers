@@ -1135,6 +1135,35 @@ std::vector<FontFamily> Context::get_font_families() const
     return families;
 }
 
+std::vector<std::wstring> Context::get_emoji_font_families() const
+{
+    const auto font_collection = get_auto_font_collection(m_factory);
+
+    std::vector<std::wstring> emoji_family_names;
+    const auto family_count = font_collection->GetFontFamilyCount();
+
+    for (const auto index : std::ranges::views::iota(0u, family_count)) {
+        wil::com_ptr<IDWriteFontFamily> family;
+        THROW_IF_FAILED(font_collection->GetFontFamily(index, &family));
+
+        wil::com_ptr<IDWriteFont> font;
+        THROW_IF_FAILED(family->GetFont(0, &font));
+
+        BOOL exists{};
+        THROW_IF_FAILED(font->HasCharacter(U'\U0001f600', &exists));
+
+        if (!exists)
+            continue;
+
+        wil::com_ptr<IDWriteLocalizedStrings> family_names;
+        THROW_IF_FAILED(family->GetFamilyNames(&family_names));
+
+        emoji_family_names.emplace_back(get_localised_string(family_names));
+    }
+
+    return emoji_family_names;
+}
+
 std::wstring get_localised_string(const wil::com_ptr<IDWriteLocalizedStrings>& localised_strings)
 {
     std::array<wchar_t, LOCALE_NAME_MAX_LENGTH> locale_name;
