@@ -274,6 +274,23 @@ public:
         IDWriteInlineObject* inlineObject, BOOL isSideways, BOOL isRightToLeft,
         IUnknown* clientDrawingEffect) noexcept override
     {
+        wil::com_ptr<ColourEffect> colour_effect;
+        std::optional<COLORREF> previous_default_colour;
+
+        if (clientDrawingEffect) {
+            colour_effect = wil::try_com_query<ColourEffect>(clientDrawingEffect);
+        }
+
+        if (colour_effect) {
+            previous_default_colour = m_default_colour;
+            m_default_colour = colour_effect->GetColour();
+        }
+
+        auto _ = gsl::finally([&] {
+            if (previous_default_colour)
+                m_default_colour = *previous_default_colour;
+        });
+
         return inlineObject->Draw(
             clientDrawingContext, this, originX, originY, isSideways, isRightToLeft, clientDrawingEffect);
     }
