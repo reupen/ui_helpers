@@ -52,9 +52,12 @@ private:
 
     int get_icon_height() const
     {
-        RECT rc_icon;
+        if (!m_wnd_static)
+            return 0;
+
+        RECT rc_icon{};
         GetWindowRect(m_wnd_static, &rc_icon);
-        return RECT_CY(rc_icon);
+        return wil::rect_height(rc_icon);
     }
 
     HWND m_wnd{};
