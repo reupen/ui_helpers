@@ -8,11 +8,12 @@ class RenderingParams {
 public:
     using Ptr = std::shared_ptr<RenderingParams>;
 
-    RenderingParams(
-        wil::com_ptr<IDWriteFactory> factory, DWRITE_RENDERING_MODE rendering_mode, bool force_greyscale_antialiasing)
+    RenderingParams(wil::com_ptr<IDWriteFactory> factory, DWRITE_RENDERING_MODE rendering_mode,
+        bool force_greyscale_antialiasing, bool use_colour_glyphs)
         : m_factory(std::move(factory))
         , m_rendering_mode(rendering_mode)
         , m_force_greyscale_antialiasing(force_greyscale_antialiasing)
+        , m_use_colour_glyphs(use_colour_glyphs)
     {
     }
 
@@ -30,6 +31,7 @@ public:
     }
 
     bool force_greyscale_antialiasing() const { return m_force_greyscale_antialiasing; }
+    bool use_colour_glyphs() const { return m_use_colour_glyphs; }
 
 private:
     mutable wil::com_ptr<IDWriteRenderingParams> m_rendering_params;
@@ -38,6 +40,7 @@ private:
     wil::com_ptr<IDWriteFactory> m_factory;
     DWRITE_RENDERING_MODE m_rendering_mode{};
     bool m_force_greyscale_antialiasing{};
+    bool m_use_colour_glyphs{true};
 };
 
 class TextLayout {
@@ -202,7 +205,7 @@ public:
 
     TextFormat wrap_text_format(wil::com_ptr<IDWriteTextFormat> text_format,
         DWRITE_RENDERING_MODE rendering_mode = DWRITE_RENDERING_MODE_DEFAULT, bool force_greyscale_antialiasing = false,
-        bool set_defaults = true);
+        bool use_colour_glyphs = true, bool set_defaults = true);
 
     wil::com_ptr<IDWriteTypography> get_default_typography();
 

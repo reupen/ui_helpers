@@ -138,7 +138,7 @@ private:
 class GdiTextRenderer : public IDWriteTextRenderer {
 public:
     GdiTextRenderer(wil::com_ptr<IDWriteFactory> factory, IDWriteBitmapRenderTarget* bitmapRenderTarget,
-        IDWriteRenderingParams* renderingParams, COLORREF default_colour);
+        IDWriteRenderingParams* renderingParams, COLORREF default_colour, bool use_colour_glyphs);
 
     HRESULT STDMETHODCALLTYPE QueryInterface(const IID& riid, void** ppvObject) noexcept override
     {
@@ -202,11 +202,13 @@ public:
 
         wil::com_ptr<IDWriteColorGlyphRunEnumerator> colour_glyph_run_enumerator;
 
-        try {
-            colour_glyph_run_enumerator = GetColorGlyphEnumerator(
-                clientDrawingContext, baselineOriginX, baselineOriginY, measuringMode, glyphRun, glyphRunDescription);
+        if (m_use_colour_glyphs) {
+            try {
+                colour_glyph_run_enumerator = GetColorGlyphEnumerator(clientDrawingContext, baselineOriginX,
+                    baselineOriginY, measuringMode, glyphRun, glyphRunDescription);
+            }
+            CATCH_RETURN()
         }
-        CATCH_RETURN()
 
         if (!colour_glyph_run_enumerator) {
             return m_render_target->DrawGlyphRun(
@@ -326,14 +328,16 @@ private:
     wil::com_ptr<IDWriteBitmapRenderTarget> m_render_target;
     wil::com_ptr<IDWriteRenderingParams> m_rendering_params;
     COLORREF m_default_colour{};
+    bool m_use_colour_glyphs{true};
 };
 
 GdiTextRenderer::GdiTextRenderer(wil::com_ptr<IDWriteFactory> factory, IDWriteBitmapRenderTarget* bitmapRenderTarget,
-    IDWriteRenderingParams* renderingParams, COLORREF default_colour)
+    IDWriteRenderingParams* renderingParams, COLORREF default_colour, bool use_colour_glyphs)
     : m_factory(std::move(factory))
     , m_render_target(bitmapRenderTarget)
     , m_rendering_params(renderingParams)
     , m_default_colour(default_colour)
+    , m_use_colour_glyphs(use_colour_glyphs)
 {
 }
 
@@ -492,10 +496,11 @@ void TextLayout::render_with_transparent_background(
     THROW_IF_FAILED(bitmap_render_target->SetPixelsPerDip(scaling_factor));
 
     const auto rendering_params = m_rendering_params->get(wnd);
+    const auto use_colour_glyphs = m_rendering_params->use_colour_glyphs();
     const auto memory_dc = bitmap_render_target->GetMemoryDC();
 
-    wil::com_ptr<IDWriteTextRenderer> renderer
-        = new GdiTextRenderer(m_factory, bitmap_render_target.get(), rendering_params.get(), default_colour);
+    wil::com_ptr<IDWriteTextRenderer> renderer = new GdiTextRenderer(
+        m_factory, bitmap_render_target.get(), rendering_params.get(), default_colour, use_colour_glyphs);
 
     BitBlt(memory_dc, 0, 0, bitmap_width, bitmap_height, dc, source_x, source_y, SRCCOPY);
 
@@ -522,14 +527,15 @@ void TextLayout::render_with_solid_background(HWND wnd, HDC dc, float x_origin, 
     FillRect(memory_dc, &clip_rect, fill_brush.get());
 
     const auto rendering_params = m_rendering_params->get(wnd);
+    const auto use_colour_glyphs = m_rendering_params->use_colour_glyphs();
 
     DWRITE_MATRIX transform{1.0f, 0.0f, 0.0f, 1.0f, -px_to_dip(gsl::narrow_cast<float>(clip_rect.left)),
         -px_to_dip(gsl::narrow_cast<float>(clip_rect.top))};
 
     THROW_IF_FAILED(bitmap_render_target->SetCurrentTransform(&transform));
 
-    const wil::com_ptr<IDWriteTextRenderer> renderer
-        = new GdiTextRenderer(m_factory, bitmap_render_target.get(), rendering_params.get(), default_text_colour);
+    const wil::com_ptr<IDWriteTextRenderer> renderer = new GdiTextRenderer(
+        m_factory, bitmap_render_target.get(), rendering_params.get(), default_text_colour, use_colour_glyphs);
 
     THROW_IF_FAILED(m_text_layout->Draw(NULL, renderer.get(), x_origin, y_origin));
 
@@ -760,7 +766,7 @@ std::optional<TextFormat> Context::create_text_format_with_fallback(
 }
 
 TextFormat Context::wrap_text_format(wil::com_ptr<IDWriteTextFormat> text_format, DWRITE_RENDERING_MODE rendering_mode,
-    bool force_greyscale_antialiasing, bool set_defaults)
+    bool force_greyscale_antialiasing, bool use_colour_glyphs, bool set_defaults)
 {
     if (set_defaults) {
         THROW_IF_FAILED(text_format->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
@@ -773,7 +779,7 @@ TextFormat Context::wrap_text_format(wil::com_ptr<IDWriteTextFormat> text_format
     }
 
     const auto rendering_params
-        = std::make_shared<RenderingParams>(m_factory, rendering_mode, force_greyscale_antialiasing);
+        = std::make_shared<RenderingParams>(m_factory, rendering_mode, force_greyscale_antialiasing, use_colour_glyphs);
 
     return {shared_from_this(), m_factory, m_gdi_interop, std::move(text_format), rendering_params};
 }
