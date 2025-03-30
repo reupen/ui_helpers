@@ -2,6 +2,9 @@
 
 #include "direct_write.h"
 
+#include "direct_write_emoji.h"
+#include "emoji.h"
+
 using namespace std::string_view_literals;
 
 namespace uih::direct_write {
@@ -73,6 +76,20 @@ wil::com_ptr<IDWriteFontCollection3> get_typographic_font_collection(const wil::
 
 wil::com_ptr<IDWriteFontCollection> get_wss_font_collection(const wil::com_ptr<IDWriteFactory1>& factory)
 {
+    wil::com_ptr<IDWriteFontCollection> font_collection;
+    THROW_IF_FAILED(factory->GetSystemFontCollection(&font_collection));
+    return font_collection;
+}
+
+wil::com_ptr<IDWriteFontCollection> get_auto_font_collection(const wil::com_ptr<IDWriteFactory1>& factory)
+{
+    if (const auto factory_7 = factory.try_query<IDWriteFactory7>()) {
+        wil::com_ptr<IDWriteFontCollection2> font_collection_2;
+        THROW_IF_FAILED(
+            factory_7->GetSystemFontCollection(FALSE, DWRITE_FONT_FAMILY_MODEL_TYPOGRAPHIC, &font_collection_2));
+        return font_collection_2;
+    }
+
     wil::com_ptr<IDWriteFontCollection> font_collection;
     THROW_IF_FAILED(factory->GetSystemFontCollection(&font_collection));
     return font_collection;
@@ -558,6 +575,27 @@ void TextFormat::set_word_wrapping(DWRITE_WORD_WRAPPING value) const
     THROW_IF_FAILED(m_text_format->SetWordWrapping(value));
 }
 
+void TextFormat::set_emoji_font_selection_config(std::optional<EmojiFontSelectionConfig> emoji_font_selection_config)
+{
+    if (!emoji_font_selection_config) {
+        m_font_fallback.reset();
+        return;
+    }
+
+    try {
+        const auto factory_2 = m_factory.query<IDWriteFactory2>();
+        wil::com_ptr<IDWriteFontFallback> system_font_fallback;
+        THROW_IF_FAILED(factory_2->GetSystemFontFallback(&system_font_fallback));
+
+        const auto font_collection = get_auto_font_collection(m_factory);
+
+        m_font_fallback = create_emoji_font_fallback(font_collection, std::move(system_font_fallback),
+            emoji_font_selection_config->colour_emoji_family_name.c_str(),
+            emoji_font_selection_config->monochrome_emoji_family_name.c_str());
+    }
+    CATCH_LOG()
+}
+
 int TextFormat::get_minimum_height(std::wstring_view text) const
 {
     try {
@@ -629,6 +667,10 @@ TextLayout TextFormat::create_text_layout(
 
         DWRITE_TRIMMING trimming{DWRITE_TRIMMING_GRANULARITY_CHARACTER, 0, 0};
         THROW_IF_FAILED(text_layout->SetTrimming(&trimming, trimming_sign.get()));
+    }
+
+    if (const auto text_layout_2 = text_layout.try_query<IDWriteTextLayout2>(); m_font_fallback && text_layout_2) {
+        THROW_IF_FAILED(text_layout_2->SetFontFallback(m_font_fallback.get()));
     }
 
     return {m_factory, m_gdi_interop, text_layout, m_rendering_params};
@@ -1097,6 +1139,35 @@ std::vector<FontFamily> Context::get_font_families() const
         false);
 
     return families;
+}
+
+std::vector<std::wstring> Context::get_emoji_font_families() const
+{
+    const auto font_collection = get_auto_font_collection(m_factory);
+
+    std::vector<std::wstring> emoji_family_names;
+    const auto family_count = font_collection->GetFontFamilyCount();
+
+    for (const auto index : std::ranges::views::iota(0u, family_count)) {
+        wil::com_ptr<IDWriteFontFamily> family;
+        THROW_IF_FAILED(font_collection->GetFontFamily(index, &family));
+
+        wil::com_ptr<IDWriteFont> font;
+        THROW_IF_FAILED(family->GetFont(0, &font));
+
+        BOOL exists{};
+        THROW_IF_FAILED(font->HasCharacter(U'\U0001f600', &exists));
+
+        if (!exists)
+            continue;
+
+        wil::com_ptr<IDWriteLocalizedStrings> family_names;
+        THROW_IF_FAILED(family->GetFamilyNames(&family_names));
+
+        emoji_family_names.emplace_back(get_localised_string(family_names));
+    }
+
+    return emoji_family_names;
 }
 
 std::wstring get_localised_string(const wil::com_ptr<IDWriteLocalizedStrings>& localised_strings)

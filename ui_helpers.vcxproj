@@ -154,8 +154,10 @@
     <ClInclude Include="dialog.h" />
     <ClInclude Include="direct_2d.h" />
     <ClInclude Include="direct_write.h" />
+    <ClInclude Include="direct_write_emoji.h" />
     <ClInclude Include="dpi.h" />
     <ClInclude Include="drag_image.h" />
+    <ClInclude Include="emoji.h" />
     <ClInclude Include="event_token.h" />
     <ClInclude Include="list_view\list_view.h" />
     <ClInclude Include="list_view\list_view_renderer.h" />
@@ -184,8 +186,10 @@
     <ClCompile Include="dialog.cpp" />
     <ClCompile Include="direct_2d.cpp" />
     <ClCompile Include="direct_write.cpp" />
+    <ClCompile Include="direct_write_emoji.cpp" />
     <ClCompile Include="dpi.cpp" />
     <ClCompile Include="drag_image.cpp" />
+    <ClCompile Include="emoji.cpp" />
     <ClCompile Include="gdi.cpp" />
     <ClCompile Include="info_box.cpp" />
     <ClCompile Include="list_view\list_view_columns.cpp" />
