@@ -1167,6 +1167,10 @@ std::vector<std::wstring> Context::get_emoji_font_families() const
         emoji_family_names.emplace_back(get_localised_string(family_names));
     }
 
+    mmh::in_place_sort(
+        emoji_family_names, [](auto&& left, auto&& right) { return StrCmpLogicalW(left.c_str(), right.c_str()); },
+        false);
+
     return emoji_family_names;
 }
 
