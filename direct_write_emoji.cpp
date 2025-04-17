@@ -3,7 +3,7 @@
 #include "direct_write.h"
 #include "emoji.h"
 
-namespace uih::direct_write {
+namespace uih::direct_write::emoji_font_fallback {
 
 namespace {
 
@@ -311,4 +311,4 @@ wil::com_ptr<IDWriteFontFallback> create_emoji_font_fallback(const wil::com_ptr<
     return new EmojiFontFallback(font_collection, std::move(base_fallback), emoji_family_name, monochrome_family_name);
 }
 
-} // namespace uih::direct_write
+} // namespace uih::direct_write::emoji_font_fallback

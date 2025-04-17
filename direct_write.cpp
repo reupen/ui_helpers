@@ -575,27 +575,6 @@ void TextFormat::set_word_wrapping(DWRITE_WORD_WRAPPING value) const
     THROW_IF_FAILED(m_text_format->SetWordWrapping(value));
 }
 
-void TextFormat::set_emoji_font_selection_config(std::optional<EmojiFontSelectionConfig> emoji_font_selection_config)
-{
-    if (!emoji_font_selection_config) {
-        m_font_fallback.reset();
-        return;
-    }
-
-    try {
-        const auto factory_2 = m_factory.query<IDWriteFactory2>();
-        wil::com_ptr<IDWriteFontFallback> system_font_fallback;
-        THROW_IF_FAILED(factory_2->GetSystemFontFallback(&system_font_fallback));
-
-        const auto font_collection = get_auto_font_collection(m_factory);
-
-        m_font_fallback = create_emoji_font_fallback(font_collection, std::move(system_font_fallback),
-            emoji_font_selection_config->colour_emoji_family_name.c_str(),
-            emoji_font_selection_config->monochrome_emoji_family_name.c_str());
-    }
-    CATCH_LOG()
-}
-
 int TextFormat::get_minimum_height(std::wstring_view text) const
 {
     try {
@@ -667,10 +646,6 @@ TextLayout TextFormat::create_text_layout(
 
         DWRITE_TRIMMING trimming{DWRITE_TRIMMING_GRANULARITY_CHARACTER, 0, 0};
         THROW_IF_FAILED(text_layout->SetTrimming(&trimming, trimming_sign.get()));
-    }
-
-    if (const auto text_layout_2 = text_layout.try_query<IDWriteTextLayout2>(); m_font_fallback && text_layout_2) {
-        THROW_IF_FAILED(text_layout_2->SetFontFallback(m_font_fallback.get()));
     }
 
     return {m_factory, m_gdi_interop, text_layout, m_rendering_params};
@@ -824,6 +799,20 @@ TextFormat Context::wrap_text_format(wil::com_ptr<IDWriteTextFormat> text_format
         = std::make_shared<RenderingParams>(m_factory, rendering_mode, force_greyscale_antialiasing, use_colour_glyphs);
 
     return {shared_from_this(), m_factory, m_gdi_interop, std::move(text_format), rendering_params};
+}
+
+wil::com_ptr<IDWriteFontFallback> Context::create_emoji_font_fallback(
+    const EmojiFontSelectionConfig& emoji_font_selection_config) const
+{
+    const auto factory_2 = m_factory.query<IDWriteFactory2>();
+
+    wil::com_ptr<IDWriteFontFallback> system_font_fallback;
+    THROW_IF_FAILED(factory_2->GetSystemFontFallback(&system_font_fallback));
+
+    const auto font_collection = get_auto_font_collection(m_factory);
+    return emoji_font_fallback::create_emoji_font_fallback(font_collection, std::move(system_font_fallback),
+        emoji_font_selection_config.colour_emoji_family_name.c_str(),
+        emoji_font_selection_config.monochrome_emoji_family_name.c_str());
 }
 
 wil::com_ptr<IDWriteTypography> Context::get_default_typography()
