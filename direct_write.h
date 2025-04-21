@@ -114,7 +114,6 @@ public:
     void set_text_alignment(DWRITE_TEXT_ALIGNMENT value = DWRITE_TEXT_ALIGNMENT_LEADING) const;
     void set_paragraph_alignment(DWRITE_PARAGRAPH_ALIGNMENT value) const;
     void set_word_wrapping(DWRITE_WORD_WRAPPING value) const;
-    void set_emoji_font_selection_config(std::optional<EmojiFontSelectionConfig> emoji_font_selection_config);
 
     [[nodiscard]] int get_minimum_height(std::wstring_view text = std::wstring_view(L"", 0)) const;
     [[nodiscard]] TextPosition measure_text_position(
@@ -132,7 +131,6 @@ private:
     wil::com_ptr<IDWriteGdiInterop> m_gdi_interop;
     wil::com_ptr<IDWriteTextFormat> m_text_format;
     RenderingParams::Ptr m_rendering_params;
-    wil::com_ptr<IDWriteFontFallback> m_font_fallback;
 };
 
 struct Font {
@@ -213,6 +211,9 @@ public:
     TextFormat wrap_text_format(wil::com_ptr<IDWriteTextFormat> text_format,
         DWRITE_RENDERING_MODE rendering_mode = DWRITE_RENDERING_MODE_DEFAULT, bool force_greyscale_antialiasing = false,
         bool use_colour_glyphs = true, bool set_defaults = true);
+
+    wil::com_ptr<IDWriteFontFallback> create_emoji_font_fallback(
+        const EmojiFontSelectionConfig& emoji_font_selection_config) const;
 
     wil::com_ptr<IDWriteTypography> get_default_typography();
 
