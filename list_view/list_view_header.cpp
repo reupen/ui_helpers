@@ -110,7 +110,16 @@ void ListView::build_header()
                 hdi.fmt |= (m_sort_direction ? HDF_SORTDOWN : HDF_SORTUP);
             }
 
-            Header_InsertItem(m_wnd_header, insertion_index++, &hdi);
+            if (mmh::is_wine()) {
+                const auto text = mmh::to_utf16(column.m_title.c_str());
+                hdi.mask |= HDI_TEXT;
+                hdi.fmt |= HDF_STRING;
+                hdi.pszText = const_cast<LPWSTR>(text.c_str());
+
+                Header_InsertItem(m_wnd_header, insertion_index++, &hdi);
+            } else {
+                Header_InsertItem(m_wnd_header, insertion_index++, &hdi);
+            }
         }
     }
 }
@@ -126,6 +135,9 @@ std::optional<LRESULT> ListView::on_wm_notify_header(LPNMHDR lpnm)
         case CDDS_ITEMPREPAINT:
             return CDRF_NOTIFYPOSTPAINT;
         case CDDS_ITEMPOSTPAINT: {
+            if (mmh::is_wine())
+                return CDRF_DODEFAULT;
+
             auto cr{GetTextColor(lpcd->hdc)};
 
             if (m_header_theme)
