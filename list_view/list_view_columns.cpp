@@ -44,7 +44,6 @@ void ListView::set_columns(std::vector<Column> columns)
     if (m_initialised) {
         build_header();
         update_horizontal_scroll_info();
-        on_size(false);
     }
 }
 

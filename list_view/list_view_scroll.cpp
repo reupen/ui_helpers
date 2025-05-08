@@ -177,34 +177,31 @@ void ListView::update_horizontal_scroll_info(bool redraw)
     const auto old_scroll_position = m_horizontal_scroll_position;
     const auto cx = get_columns_display_width() + get_total_indentation();
 
-    SCROLLINFO scroll;
-    memset(&scroll, 0, sizeof(SCROLLINFO));
-    scroll.cbSize = sizeof(SCROLLINFO);
-    scroll.fMask = SIF_RANGE | SIF_PAGE;
-    scroll.nMin = 0;
-    scroll.nMax = m_autosize ? 0 : (cx ? cx - 1 : 0);
-    scroll.nPage = m_autosize ? 0 : RECT_CX(rc);
+    SCROLLINFO horizontal_si{};
+    horizontal_si.cbSize = sizeof(SCROLLINFO);
+    horizontal_si.fMask = SIF_RANGE | SIF_PAGE;
+    horizontal_si.nMin = 0;
+    horizontal_si.nMax = m_autosize ? 0 : (cx ? cx - 1 : 0);
+    horizontal_si.nPage = m_autosize ? 0 : RECT_CX(rc);
     bool b_old_show = (GetWindowLongPtr(get_wnd(), GWL_STYLE) & WS_HSCROLL) != 0;
     ;
-    m_horizontal_scroll_position = SetScrollInfo(get_wnd(), SB_HORZ, &scroll, redraw);
-    GetScrollInfo(get_wnd(), SB_HORZ, &scroll);
-    bool b_show = (GetWindowLongPtr(get_wnd(), GWL_STYLE) & WS_HSCROLL) != 0; // scroll.nPage < (UINT)scroll.nMax;
-    // if (b_old_show != b_show)
-    {
-        // RECT rc1, rc2;
-        // GetClientRect(get_wnd(), &rc1);
-        // BOOL ret = ShowScrollBar(get_wnd(), SB_HORZ, b_show);
-        // GetClientRect(get_wnd(), &rc2);
-    }
-    if (m_horizontal_scroll_position != old_scroll_position /* || b_old_show != b_show*/)
+    m_horizontal_scroll_position = SetScrollInfo(get_wnd(), SB_HORZ, &horizontal_si, redraw);
+
+    bool b_show = (GetWindowLongPtr(get_wnd(), GWL_STYLE) & WS_HSCROLL) != 0;
+
+    if (m_horizontal_scroll_position != old_scroll_position) {
         invalidate_all();
+        reposition_header();
+    }
+
     if (b_old_show != b_show) {
         rc = get_items_rect();
-        memset(&scroll, 0, sizeof(SCROLLINFO));
-        scroll.cbSize = sizeof(SCROLLINFO);
-        scroll.fMask = SIF_PAGE;
-        scroll.nPage = RECT_CY(rc);
-        m_scroll_position = SetScrollInfo(get_wnd(), SB_VERT, &scroll, redraw);
+        SCROLLINFO vertical_si{};
+        vertical_si.cbSize = sizeof(SCROLLINFO);
+        vertical_si.fMask = SIF_PAGE;
+        vertical_si.nPage = RECT_CY(rc);
+
+        m_scroll_position = SetScrollInfo(get_wnd(), SB_VERT, &vertical_si, redraw);
     }
 }
 
