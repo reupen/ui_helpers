@@ -154,7 +154,7 @@ private:
 
 class GdiTextRenderer : public IDWriteTextRenderer {
 public:
-    GdiTextRenderer(wil::com_ptr<IDWriteFactory> factory, IDWriteBitmapRenderTarget* bitmapRenderTarget,
+    GdiTextRenderer(wil::com_ptr<IDWriteFactory1> factory, IDWriteBitmapRenderTarget* bitmapRenderTarget,
         IDWriteRenderingParams* renderingParams, COLORREF default_colour, bool use_colour_glyphs);
 
     HRESULT STDMETHODCALLTYPE QueryInterface(const IID& riid, void** ppvObject) noexcept override
@@ -341,14 +341,14 @@ private:
     }
 
     std::atomic<ULONG> m_ref_count{};
-    wil::com_ptr<IDWriteFactory> m_factory;
+    wil::com_ptr<IDWriteFactory1> m_factory;
     wil::com_ptr<IDWriteBitmapRenderTarget> m_render_target;
     wil::com_ptr<IDWriteRenderingParams> m_rendering_params;
     COLORREF m_default_colour{};
     bool m_use_colour_glyphs{true};
 };
 
-GdiTextRenderer::GdiTextRenderer(wil::com_ptr<IDWriteFactory> factory, IDWriteBitmapRenderTarget* bitmapRenderTarget,
+GdiTextRenderer::GdiTextRenderer(wil::com_ptr<IDWriteFactory1> factory, IDWriteBitmapRenderTarget* bitmapRenderTarget,
     IDWriteRenderingParams* renderingParams, COLORREF default_colour, bool use_colour_glyphs)
     : m_factory(std::move(factory))
     , m_render_target(bitmapRenderTarget)
@@ -371,11 +371,40 @@ wil::com_ptr<IDWriteRenderingParams> RenderingParams::get(HWND wnd) const
     wil::com_ptr<IDWriteRenderingParams> default_rendering_params;
     THROW_IF_FAILED(m_factory->CreateMonitorRenderingParams(monitor, &default_rendering_params));
 
+    const auto default_rendering_params_1 = default_rendering_params.try_query<IDWriteRenderingParams1>();
+
+    const auto factory_2 = m_factory.try_query<IDWriteFactory2>();
+    const auto default_rendering_params_2 = default_rendering_params.try_query<IDWriteRenderingParams2>();
+
     wil::com_ptr<IDWriteRenderingParams> custom_rendering_params;
-    THROW_IF_FAILED(m_factory->CreateCustomRenderingParams(default_rendering_params->GetGamma(),
-        default_rendering_params->GetEnhancedContrast(), default_rendering_params->GetClearTypeLevel(),
-        m_force_greyscale_antialiasing ? DWRITE_PIXEL_GEOMETRY_FLAT : default_rendering_params->GetPixelGeometry(),
-        m_rendering_mode, &custom_rendering_params));
+
+    const auto gamma = default_rendering_params->GetGamma();
+    const auto enhanced_contrast = default_rendering_params->GetEnhancedContrast();
+    const auto cleartype_level = default_rendering_params->GetClearTypeLevel();
+    const auto pixel_geometry
+        = m_force_greyscale_antialiasing ? DWRITE_PIXEL_GEOMETRY_FLAT : default_rendering_params->GetPixelGeometry();
+    const auto greyscale_enhanced_contrast = default_rendering_params_1
+        ? std::make_optional(default_rendering_params_1->GetGrayscaleEnhancedContrast())
+        : std::nullopt;
+    const auto grid_fit_mode
+        = default_rendering_params_2 ? std::make_optional(default_rendering_params_2->GetGridFitMode()) : std::nullopt;
+
+    if (factory_2 && grid_fit_mode) {
+        wil::com_ptr<IDWriteRenderingParams2> custom_rendering_params_2;
+        THROW_IF_FAILED(factory_2->CreateCustomRenderingParams(gamma, enhanced_contrast, *greyscale_enhanced_contrast,
+            cleartype_level, pixel_geometry, m_rendering_mode, *grid_fit_mode, &custom_rendering_params_2));
+
+        custom_rendering_params = std::move(custom_rendering_params_2);
+    } else if (greyscale_enhanced_contrast) {
+        wil::com_ptr<IDWriteRenderingParams1> custom_rendering_params_1;
+        THROW_IF_FAILED(m_factory->CreateCustomRenderingParams(gamma, enhanced_contrast, *greyscale_enhanced_contrast,
+            cleartype_level, pixel_geometry, m_rendering_mode, &custom_rendering_params_1));
+
+        custom_rendering_params = std::move(custom_rendering_params_1);
+    } else {
+        THROW_IF_FAILED(m_factory->CreateCustomRenderingParams(
+            gamma, enhanced_contrast, cleartype_level, pixel_geometry, m_rendering_mode, &custom_rendering_params));
+    }
 
     m_monitor = monitor;
     m_rendering_params = custom_rendering_params;
