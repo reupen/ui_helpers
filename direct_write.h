@@ -8,7 +8,7 @@ class RenderingParams {
 public:
     using Ptr = std::shared_ptr<RenderingParams>;
 
-    RenderingParams(wil::com_ptr<IDWriteFactory> factory, DWRITE_RENDERING_MODE rendering_mode,
+    RenderingParams(wil::com_ptr<IDWriteFactory1> factory, DWRITE_RENDERING_MODE rendering_mode,
         bool force_greyscale_antialiasing, bool use_colour_glyphs)
         : m_factory(std::move(factory))
         , m_rendering_mode(rendering_mode)
@@ -27,7 +27,7 @@ public:
         if (m_force_greyscale_antialiasing)
             return D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE;
 
-        return D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+        return D2D1_TEXT_ANTIALIAS_MODE_DEFAULT;
     }
 
     bool force_greyscale_antialiasing() const { return m_force_greyscale_antialiasing; }
@@ -37,7 +37,7 @@ private:
     mutable wil::com_ptr<IDWriteRenderingParams> m_rendering_params;
     mutable HMONITOR m_monitor{};
 
-    wil::com_ptr<IDWriteFactory> m_factory;
+    wil::com_ptr<IDWriteFactory1> m_factory;
     DWRITE_RENDERING_MODE m_rendering_mode{};
     bool m_force_greyscale_antialiasing{};
     bool m_use_colour_glyphs{true};
@@ -50,7 +50,7 @@ struct EmojiFontSelectionConfig {
 
 class TextLayout {
 public:
-    TextLayout(wil::com_ptr<IDWriteFactory> factory, wil::com_ptr<IDWriteGdiInterop> gdi_interop,
+    TextLayout(wil::com_ptr<IDWriteFactory1> factory, wil::com_ptr<IDWriteGdiInterop> gdi_interop,
         wil::com_ptr<IDWriteTextLayout> text_layout, RenderingParams::Ptr rendering_params)
         : m_factory(std::move(factory))
         , m_gdi_interop(std::move(gdi_interop))
@@ -83,7 +83,7 @@ public:
     const wil::com_ptr<IDWriteTextLayout>& text_layout() const { return m_text_layout; }
 
 private:
-    wil::com_ptr<IDWriteFactory> m_factory;
+    wil::com_ptr<IDWriteFactory1> m_factory;
     wil::com_ptr<IDWriteGdiInterop> m_gdi_interop;
     wil::com_ptr<IDWriteTextLayout> m_text_layout;
     wil::com_ptr<IDWriteTextLayout4> m_text_layout_4;
