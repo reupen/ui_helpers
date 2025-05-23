@@ -126,6 +126,7 @@ public:
     [[nodiscard]] DWRITE_FONT_STYLE get_style() const;
 
 private:
+    mutable wil::com_ptr<IDWriteInlineObject> m_trimming_sign;
     std::shared_ptr<Context> m_context;
     wil::com_ptr<IDWriteFactory1> m_factory;
     wil::com_ptr<IDWriteGdiInterop> m_gdi_interop;
