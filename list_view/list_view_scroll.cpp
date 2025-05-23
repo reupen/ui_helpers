@@ -38,7 +38,7 @@ void ListView::restore_scroll_position(const lv::SavedScrollPosition& position)
 
 void ListView::ensure_visible(size_t index, EnsureVisibleMode mode)
 {
-    if (index > m_items.size())
+    if (m_ensure_visible_suspended || index > m_items.size())
         return;
 
     const auto item_visibility = get_item_visibility(index);

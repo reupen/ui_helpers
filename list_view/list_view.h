@@ -478,6 +478,12 @@ public:
     bool disable_redrawing();
     void enable_redrawing();
 
+    auto suspend_ensure_visible()
+    {
+        m_ensure_visible_suspended = true;
+        return gsl::finally([this]() { m_ensure_visible_suspended = false; });
+    }
+
     const char* get_item_text(size_t index, size_t column);
 
     size_t get_item_count() { return m_items.size(); }
@@ -888,6 +894,7 @@ private:
     int m_scroll_position{0};
     int m_horizontal_scroll_position{0};
     bool m_scroll_bar_update_in_progress{};
+    bool m_ensure_visible_suspended{};
     size_t m_group_count{0};
     int m_item_height{1};
     int m_group_height{1};
