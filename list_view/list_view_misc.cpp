@@ -244,29 +244,32 @@ void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
         break;
     }
 
-    ensure_visible(target_item, EnsureVisibleMode::PreferMinimalScrolling);
+    {
+        auto _ = suspend_ensure_visible();
+        bool is_focus_selected = get_item_selected(focus);
 
-    bool focus_sel = get_item_selected(focus);
-
-    if ((GetKeyState(VK_SHIFT) & KF_UP) && (GetKeyState(VK_CONTROL) & KF_UP)) {
-        // if (!repeat) playlist_api->activeplaylist_undo_backup();
-        move_selection(target_item - focus);
-    } else if ((GetKeyState(VK_CONTROL) & KF_UP)) {
-        set_focus_item(target_item);
-    } else if (m_selection_mode == SelectionMode::Multiple && (GetKeyState(VK_SHIFT) & KF_UP)) {
-        const size_t start = m_alternate_selection ? focus : m_shift_start;
-        const pfc::bit_array_range array_select(
-            std::min(start, size_t(target_item)), abs(int(start - (target_item))) + 1);
-        if (m_alternate_selection && !focus_sel)
-            set_selection_state(array_select, pfc::bit_array_not(array_select), true);
-        else if (m_alternate_selection)
-            set_selection_state(array_select, array_select, true);
-        else
-            set_selection_state(pfc::bit_array_true(), array_select, true);
-        set_focus_item(target_item, true);
-    } else {
-        set_item_selected_single(target_item);
+        if ((GetKeyState(VK_SHIFT) & KF_UP) && (GetKeyState(VK_CONTROL) & KF_UP)) {
+            // if (!repeat) playlist_api->activeplaylist_undo_backup();
+            move_selection(target_item - focus);
+        } else if ((GetKeyState(VK_CONTROL) & KF_UP)) {
+            set_focus_item(target_item);
+        } else if (m_selection_mode == SelectionMode::Multiple && (GetKeyState(VK_SHIFT) & KF_UP)) {
+            const size_t start = m_alternate_selection ? focus : m_shift_start;
+            const pfc::bit_array_range array_select(
+                std::min(start, size_t(target_item)), abs(int(start - (target_item))) + 1);
+            if (m_alternate_selection && !is_focus_selected)
+                set_selection_state(array_select, pfc::bit_array_not(array_select), true);
+            else if (m_alternate_selection)
+                set_selection_state(array_select, array_select, true);
+            else
+                set_selection_state(pfc::bit_array_true(), array_select, true);
+            set_focus_item(target_item, true);
+        } else {
+            set_item_selected_single(target_item);
+        }
     }
+
+    ensure_visible(target_item, EnsureVisibleMode::PreferMinimalScrolling);
 }
 
 int ListView::get_default_item_height()

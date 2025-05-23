@@ -24,15 +24,9 @@ bool ListView::on_wm_keydown(WPARAM wp, LPARAM lp)
     case VK_END:
     case VK_PRIOR:
     case VK_NEXT:
-    case VK_UP: {
-        const bool b_redraw = disable_redrawing();
-
+    case VK_UP:
         process_navigation_keydown(wp, ((HIWORD(lp) & KF_ALTDOWN) != 0), (HIWORD(lp) & KF_REPEAT) != 0);
-
-        if (b_redraw)
-            enable_redrawing();
         return true;
-    }
     case VK_SPACE: {
         if (is_ctrl_down) {
             const size_t focus = get_focus_item();
