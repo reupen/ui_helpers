@@ -670,11 +670,11 @@ TextLayout TextFormat::create_text_layout(
     THROW_IF_FAILED(text_layout->SetTypography(typography.get(), {0, text_length}));
 
     if (enable_ellipsis) {
-        wil::com_ptr<IDWriteInlineObject> trimming_sign;
-        THROW_IF_FAILED(m_factory->CreateEllipsisTrimmingSign(m_text_format.get(), &trimming_sign));
+        if (!m_trimming_sign)
+            THROW_IF_FAILED(m_factory->CreateEllipsisTrimmingSign(m_text_format.get(), &m_trimming_sign));
 
         DWRITE_TRIMMING trimming{DWRITE_TRIMMING_GRANULARITY_CHARACTER, 0, 0};
-        THROW_IF_FAILED(text_layout->SetTrimming(&trimming, trimming_sign.get()));
+        THROW_IF_FAILED(text_layout->SetTrimming(&trimming, m_trimming_sign.get()));
     }
 
     return {m_factory, m_gdi_interop, text_layout, m_rendering_params};
