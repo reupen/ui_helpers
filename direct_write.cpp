@@ -528,6 +528,9 @@ void TextLayout::render_with_transparent_background(
     const auto bitmap_width = std::min(rect_width, draw_right_px - draw_left_px);
     const auto bitmap_height = std::min(rect_height, draw_bottom_px - draw_top_px);
 
+    if (bitmap_width <= 0 || bitmap_height <= 0)
+        return;
+
     const auto is_shrunk_width = bitmap_width < rect_width;
     const auto is_shrunk_height = bitmap_height < rect_height;
 
