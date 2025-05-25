@@ -33,6 +33,7 @@ struct RendererContext {
     HTHEME items_view_theme{};
     std::optional<direct_write::TextFormat> m_item_text_format;
     std::optional<direct_write::TextFormat> m_group_text_format;
+    wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target;
 };
 
 class RendererBase {

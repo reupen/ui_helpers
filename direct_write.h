@@ -64,8 +64,8 @@ public:
     float get_max_width() const noexcept;
     DWRITE_TEXT_METRICS get_metrics() const;
     DWRITE_OVERHANG_METRICS get_overhang_metrics() const;
-    void render_with_transparent_background(
-        HWND wnd, HDC dc, RECT output_rect, COLORREF default_colour, float x_origin_offset = 0.0f) const;
+    void render_with_transparent_background(HWND wnd, HDC dc, RECT output_rect, COLORREF default_colour,
+        float x_origin_offset = 0.0f, wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target = {}) const;
     void render_with_solid_background(HWND wnd, HDC dc, float x_origin, float y_origin, RECT clip_rect,
         COLORREF background_colour, COLORREF default_text_colour) const;
     void set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const;
@@ -192,6 +192,8 @@ public:
     Context();
 
     const wil::com_ptr<IDWriteFactory1>& factory() { return m_factory; }
+
+    wil::com_ptr<IDWriteBitmapRenderTarget> create_bitmap_render_target(HDC dc, uint32_t width, uint32_t height) const;
 
     LOGFONT create_log_font(const wil::com_ptr<IDWriteFont>& font) const;
     LOGFONT create_log_font(const wil::com_ptr<IDWriteFontFace>& font_face) const;

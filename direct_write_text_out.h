@@ -5,6 +5,7 @@ namespace uih::direct_write {
 DWRITE_TEXT_ALIGNMENT get_text_alignment(alignment alignment_);
 
 struct TextOutOptions {
+    wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target;
     bool is_selected{};
     alignment align{ALIGN_LEFT};
     bool enable_ellipses{true};

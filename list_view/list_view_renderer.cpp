@@ -40,11 +40,17 @@ int ListView::get_default_indentation_step(HDC dc) const
 
 void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
 {
-    ColourData colours = render_get_colour_data();
-    const lv::RendererContext context = {colours, m_use_dark_mode, m_is_high_contrast_active, get_wnd(), dc,
-        m_list_view_theme.get(), m_items_view_theme.get(), m_items_text_format, m_group_text_format};
+    wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target;
+    try {
+        bitmap_render_target = m_direct_write_context->create_bitmap_render_target(dc, 0, 0);
+    }
+    CATCH_LOG()
 
-    // OffsetWindowOrgEx(dc, m_horizontal_scroll_position, 0, NULL);
+    ColourData colours = render_get_colour_data();
+    const lv::RendererContext context
+        = {colours, m_use_dark_mode, m_is_high_contrast_active, get_wnd(), dc, m_list_view_theme.get(),
+            m_items_view_theme.get(), m_items_text_format, m_group_text_format, bitmap_render_target};
+
     size_t highlight_index = get_highlight_item();
     size_t index_focus = get_focus_item();
     HWND wnd_focus = GetFocus();
@@ -228,7 +234,7 @@ bool ListView::get_group_text_colour_default(COLORREF& cr)
 void lv::DefaultRenderer::render_group(RendererContext context, size_t item_index, size_t group_index,
     std::string_view text, int indentation, size_t level, RECT rc)
 {
-    if (!context.m_group_text_format)
+    if (!(context.m_group_text_format && context.bitmap_render_target))
         return;
 
     COLORREF cr = context.colours.m_group_text;
@@ -238,7 +244,8 @@ void lv::DefaultRenderer::render_group(RendererContext context, size_t item_inde
     const auto x_offset = 1_spx + indentation * gsl::narrow<int>(level);
     const auto border = 3_spx;
     const auto text_width = direct_write::text_out_columns_and_colours(*context.m_group_text_format, context.wnd,
-        context.dc, text, x_offset, border, rc, cr, {.enable_tab_columns = false});
+        context.dc, text, x_offset, border, rc, cr,
+        {.bitmap_render_target = context.bitmap_render_target, .enable_tab_columns = false});
 
     const auto line_height = 1_spx;
     const auto line_top = rc.top + wil::rect_height(rc) / 2 - line_height / 2;
@@ -305,10 +312,11 @@ void lv::DefaultRenderer::render_item(RendererContext context, size_t index, std
         auto& sub_item = sub_items[column_index];
         rc_subitem.right = rc_subitem.left + sub_item.width;
 
-        if (context.m_item_text_format)
+        if (context.m_item_text_format && context.bitmap_render_target)
             direct_write::text_out_columns_and_colours(*context.m_item_text_format, context.wnd, context.dc,
                 sub_item.text, 1_spx + (column_index == 0 ? indentation : 0), 3_spx, rc_subitem, cr_text,
-                {.is_selected = b_selected,
+                {.bitmap_render_target = context.bitmap_render_target,
+                    .is_selected = b_selected,
                     .align = sub_item.alignment,
                     .enable_tab_columns = m_enable_item_tab_columns});
 
