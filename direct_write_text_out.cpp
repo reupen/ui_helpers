@@ -10,7 +10,8 @@ namespace uih::direct_write {
 namespace {
 
 int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::string_view text, const RECT& rect,
-    bool selected, DWORD default_color, alignment align, bool enable_colour_codes, bool enable_ellipsis)
+    bool selected, DWORD default_color, alignment align, bool enable_colour_codes, bool enable_ellipsis,
+    wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target)
 {
     if (is_rect_null_or_reversed(&rect) || rect.right <= rect.left)
         return 0;
@@ -39,7 +40,7 @@ int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::strin
 
         const auto metrics = layout.get_metrics();
 
-        layout.render_with_transparent_background(wnd, dc, rect, default_color);
+        layout.render_with_transparent_background(wnd, dc, rect, default_color, 0.0f, bitmap_render_target);
 
         return gsl::narrow_cast<int>(metrics.width * scaling_factor + 1);
     }
@@ -85,7 +86,7 @@ int text_out_columns_and_colours(TextFormat& text_format, HWND wnd, HDC dc, std:
         adjusted_rect.right -= border;
 
         return text_out_colours(text_format, wnd, dc, text, adjusted_rect, options.is_selected, default_colour,
-            options.align, options.enable_colour_codes, options.enable_ellipses);
+            options.align, options.enable_colour_codes, options.enable_ellipses, options.bitmap_render_target);
     }
 
     adjusted_rect.left += x_offset;
@@ -109,9 +110,9 @@ int text_out_columns_and_colours(TextFormat& text_format, HWND wnd, HDC dc, std:
                 cell_rect.left = std::min(
                     adjusted_rect.right - MulDiv(cell_index, total_width, tab_count) + border, cell_rect.right);
 
-            const int cell_render_width
-                = text_out_colours(text_format, wnd, dc, cell_text, cell_rect, options.is_selected, default_colour,
-                    cell_index == 0 ? ALIGN_RIGHT : ALIGN_LEFT, options.enable_colour_codes, false);
+            const int cell_render_width = text_out_colours(text_format, wnd, dc, cell_text, cell_rect,
+                options.is_selected, default_colour, cell_index == 0 ? ALIGN_RIGHT : ALIGN_LEFT,
+                options.enable_colour_codes, false, options.bitmap_render_target);
 
             if (cell_index == 0)
                 cell_rect.left = cell_rect.right - cell_render_width;

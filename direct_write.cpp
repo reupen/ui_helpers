@@ -501,8 +501,8 @@ void TextLayout::set_wss(DWRITE_FONT_WEIGHT weight, std::variant<DWRITE_FONT_STR
     THROW_IF_FAILED(m_text_layout->SetFontStyle(style, text_range));
 }
 
-void TextLayout::render_with_transparent_background(
-    HWND wnd, HDC dc, RECT output_rect, COLORREF default_colour, float x_origin_offset) const
+void TextLayout::render_with_transparent_background(HWND wnd, HDC dc, RECT output_rect, COLORREF default_colour,
+    float x_origin_offset, wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target) const
 {
     const auto metrics = get_metrics();
 
@@ -540,9 +540,17 @@ void TextLayout::render_with_transparent_background(
     const auto draw_left_dip = is_shrunk_width ? gsl::narrow_cast<float>(draw_left_px) / scaling_factor : 0.0f;
     const auto draw_top_dip = is_shrunk_height ? gsl::narrow_cast<float>(draw_top_px) / scaling_factor : 0.0f;
 
-    wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target;
-    THROW_IF_FAILED(m_gdi_interop->CreateBitmapRenderTarget(dc, bitmap_width, bitmap_height, &bitmap_render_target));
-    THROW_IF_FAILED(bitmap_render_target->SetPixelsPerDip(scaling_factor));
+    if (!bitmap_render_target) {
+        THROW_IF_FAILED(
+            m_gdi_interop->CreateBitmapRenderTarget(dc, bitmap_width, bitmap_height, &bitmap_render_target));
+        THROW_IF_FAILED(bitmap_render_target->SetPixelsPerDip(scaling_factor));
+    } else {
+        SIZE sz{};
+        THROW_IF_FAILED(bitmap_render_target->GetSize(&sz));
+
+        if (bitmap_width > sz.cx || bitmap_height > sz.cy)
+            THROW_IF_FAILED(bitmap_render_target->Resize(bitmap_width, bitmap_height));
+    }
 
     const auto rendering_params = m_rendering_params->get(wnd);
     const auto use_colour_glyphs = m_rendering_params->use_colour_glyphs();
@@ -720,6 +728,15 @@ Context::Context()
     THROW_IF_FAILED(
         DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory1), m_factory.put_unknown()));
     THROW_IF_FAILED(m_factory->GetGdiInterop(&m_gdi_interop));
+}
+
+wil::com_ptr<IDWriteBitmapRenderTarget> Context::create_bitmap_render_target(
+    HDC dc, uint32_t width, uint32_t height) const
+{
+    wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target;
+    THROW_IF_FAILED(m_gdi_interop->CreateBitmapRenderTarget(dc, width, height, &bitmap_render_target));
+    THROW_IF_FAILED(bitmap_render_target->SetPixelsPerDip(get_default_scaling_factor()));
+    return bitmap_render_target;
 }
 
 LOGFONT Context::create_log_font(const wil::com_ptr<IDWriteFont>& font) const
