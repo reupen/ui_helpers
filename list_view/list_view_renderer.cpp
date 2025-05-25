@@ -234,7 +234,7 @@ bool ListView::get_group_text_colour_default(COLORREF& cr)
 void lv::DefaultRenderer::render_group(RendererContext context, size_t item_index, size_t group_index,
     std::string_view text, int indentation, size_t level, RECT rc)
 {
-    if (!(context.m_group_text_format && context.bitmap_render_target))
+    if (!(context.group_text_format && context.bitmap_render_target))
         return;
 
     COLORREF cr = context.colours.m_group_text;
@@ -243,7 +243,7 @@ void lv::DefaultRenderer::render_group(RendererContext context, size_t item_inde
 
     const auto x_offset = 1_spx + indentation * gsl::narrow<int>(level);
     const auto border = 3_spx;
-    const auto text_width = direct_write::text_out_columns_and_colours(*context.m_group_text_format, context.wnd,
+    const auto text_width = direct_write::text_out_columns_and_colours(*context.group_text_format, context.wnd,
         context.dc, text, x_offset, border, rc, cr,
         {.bitmap_render_target = context.bitmap_render_target, .enable_tab_columns = false});
 
@@ -290,7 +290,7 @@ void lv::DefaultRenderer::render_item(RendererContext context, size_t index, std
             DrawThemeParentBackground(context.wnd, context.dc, &rc);
 
         RECT rc_background{rc};
-        if (context.m_use_dark_mode)
+        if (context.use_dark_mode)
             // This is inexplicable, but it needs to be done to get the same appearance as Windows Explorer
             InflateRect(&rc_background, 1, 1);
         DrawThemeBackground(context.list_view_theme, context.dc, LVP_LISTITEM, theme_state, &rc_background, &rc);
@@ -312,8 +312,8 @@ void lv::DefaultRenderer::render_item(RendererContext context, size_t index, std
         auto& sub_item = sub_items[column_index];
         rc_subitem.right = rc_subitem.left + sub_item.width;
 
-        if (context.m_item_text_format && context.bitmap_render_target)
-            direct_write::text_out_columns_and_colours(*context.m_item_text_format, context.wnd, context.dc,
+        if (context.item_text_format && context.bitmap_render_target)
+            direct_write::text_out_columns_and_colours(*context.item_text_format, context.wnd, context.dc,
                 sub_item.text, 1_spx + (column_index == 0 ? indentation : 0), 3_spx, rc_subitem, cr_text,
                 {.bitmap_render_target = context.bitmap_render_target,
                     .is_selected = b_selected,
@@ -369,7 +369,7 @@ void lv::DefaultRenderer::render_focus_rect(RendererContext context, bool should
         }
     }
 
-    if (context.colours.m_use_custom_active_item_frame || (context.m_use_dark_mode && context.colours.m_themed)) {
+    if (context.colours.m_use_custom_active_item_frame || (context.use_dark_mode && context.colours.m_themed)) {
         const auto colour
             = context.colours.m_use_custom_active_item_frame ? context.colours.m_active_item_frame : RGB(119, 119, 119);
         draw_rect_outline(context.dc, rc, colour, scale_dpi_value(1));

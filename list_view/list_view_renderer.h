@@ -25,14 +25,14 @@ struct RendererSubItem {
 
 struct RendererContext {
     ColourData colours{};
-    bool m_use_dark_mode{};
-    bool m_is_high_contrast_active{};
+    bool use_dark_mode{};
+    bool high_contrast_active{};
     HWND wnd{};
     HDC dc{};
     HTHEME list_view_theme{};
     HTHEME items_view_theme{};
-    std::optional<direct_write::TextFormat> m_item_text_format;
-    std::optional<direct_write::TextFormat> m_group_text_format;
+    std::optional<direct_write::TextFormat> item_text_format;
+    std::optional<direct_write::TextFormat> group_text_format;
     wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target;
 };
 
