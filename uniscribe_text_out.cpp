@@ -1,9 +1,12 @@
 #include "stdafx.h"
 
-#define ELLIPSIS "\xe2\x80\xa6" //"\x85"
-#define ELLIPSIS_LEN 3
+using namespace std::string_view_literals;
 
 namespace uih {
+
+namespace {
+constexpr auto ellipsis = "…"sv;
+}
 
 bool check_colour_marks(const char* src, unsigned int len = -1)
 {
@@ -210,7 +213,7 @@ BOOL text_out_colours_ellipsis(HDC dc, const char* src_c, size_t src_c_len, int 
     int position = clip.left;
 
     if (show_ellipsis && cumulative_width > available_width) {
-        const auto ellipsis_width = get_text_width(dc, ELLIPSIS, ELLIPSIS_LEN) + 2;
+        const auto ellipsis_width = get_text_width(dc, ellipsis.data(), gsl::narrow_cast<int>(ellipsis.size())) + 2;
 
         if (ellipsis_width <= clip.right - clip.left - x_offset) {
             for (auto segment_iter = segments.rbegin(); segment_iter != segments.rend(); ++segment_iter) {
