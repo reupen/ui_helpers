@@ -401,7 +401,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                             temp.replace_char(9, 0x20);
                             if (temp.length() > 128) {
                                 temp.truncate(128);
-                                temp << "\xe2\x80\xa6";
+                                temp << "…";
                             }
                             create_tooltip(temp);
 
