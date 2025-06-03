@@ -46,32 +46,4 @@ int get_text_width(HDC dc, const char* src, int len)
     return sz.cx;
 }
 
-int get_text_width_colour(HDC dc, const char* src, int len, bool b_ignore_tabs)
-{
-    if (!dc)
-        return 0;
-    int ptr = 0;
-    int start = 0;
-    int rv = 0;
-
-    while (ptr < len) {
-        if (src[ptr] == 3) {
-            rv += get_text_width(dc, src + start, ptr - start);
-            ptr++;
-            while (ptr < len && src[ptr] != 3)
-                ptr++;
-            if (ptr < len)
-                ptr++;
-            start = ptr;
-        } else if (b_ignore_tabs && src[ptr] == '\t') {
-            rv += get_text_width(dc, src + start, ptr - start);
-            while (ptr < len && src[ptr] == '\t')
-                ptr++;
-        } else
-            ptr++;
-    }
-    rv += get_text_width(dc, src + start, ptr - start);
-    return rv;
-}
-
 } // namespace uih
