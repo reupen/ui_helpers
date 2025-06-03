@@ -167,43 +167,35 @@ std::optional<LRESULT> ListView::on_wm_notify_header(LPNMHDR lpnm)
         }
     } break;
     case HDN_DIVIDERDBLCLICK: {
+        if (m_autosize || !m_items_text_format)
+            break;
+
         const auto lpnmh = reinterpret_cast<LPNMHEADERW>(lpnm);
-        if (!m_autosize) {
-            if (lpnmh->iItem != -1 && (!m_have_indent_column || lpnmh->iItem)) {
-                size_t realIndex = lpnmh->iItem;
-                if (m_have_indent_column)
-                    realIndex--;
-                if (realIndex < m_columns.size()) {
-                    HDC dc;
-                    dc = GetDC(get_wnd());
-                    int size;
 
-                    HFONT fnt_old = SelectFont(dc, m_items_font.get());
+        if (lpnmh->iItem < (m_have_indent_column ? 1 : 0))
+            break;
 
-                    int w = 0;
-                    auto t = get_item_count();
+        const size_t internal_column_index = gsl::narrow<size_t>(lpnmh->iItem - (m_have_indent_column ? 1 : 0));
 
-                    for (size_t n = 0; n < t; n++) {
-                        const char* str = get_item_text(n, realIndex);
-                        size = get_text_width_colour(dc, str, gsl::narrow<int>(strlen(str)));
-                        if (size > w)
-                            w = size;
-                    }
-                    w += uih::scale_dpi_value(3) * 2 + scale_dpi_value(1);
+        if (internal_column_index >= m_columns.size())
+            break;
 
-                    SelectFont(dc, fnt_old);
-                    ReleaseDC(get_wnd(), dc);
+        int max_width = 0;
 
-                    m_columns[realIndex].m_size = w;
-                    m_columns[realIndex].m_display_size = w;
-                    update_header();
-                    invalidate_all();
-                    notify_on_column_size_change(realIndex, m_columns[realIndex].m_size);
-                    update_scroll_info();
-                }
-            }
+        for (const auto item_index : std::ranges::views::iota(size_t{}, get_item_count())) {
+            const char* str = get_item_text(item_index, internal_column_index);
+            max_width = std::max(max_width, m_items_text_format->measure_text_width(mmh::to_utf16(str)));
         }
-    } break;
+        max_width += 3_spx + 2 * 1_spx;
+
+        m_columns[internal_column_index].m_size = max_width;
+        m_columns[internal_column_index].m_display_size = max_width;
+        update_header();
+        invalidate_all();
+        notify_on_column_size_change(internal_column_index, m_columns[internal_column_index].m_size);
+        update_scroll_info();
+        break;
+    }
     case HDN_ITEMCHANGING: {
         if (!m_ignore_column_size_change_notification) {
             auto lpnmh = (LPNMHEADER)lpnm;

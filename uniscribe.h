@@ -35,22 +35,6 @@ public:
             &m_sc, &m_ss, nullptr, enable_tabs ? &tab_def : nullptr, nullptr, &m_ssa);
     }
 
-    void text_out(int x, int y, UINT flags, const RECT* p_rc)
-    {
-        if (m_ssa)
-            ScriptStringOut(m_ssa, x, y, flags, p_rc, 0, 0, FALSE);
-    }
-
-    int get_output_character_count()
-    {
-        const int* len = m_ssa ? ScriptString_pcOutChars(m_ssa) : nullptr; // b_clip = true only
-
-        if (len && (*len < 0 || gsl::narrow_cast<size_t>(*len) > m_string_length))
-            throw std::length_error("Character count out of range.");
-
-        return len ? *len : gsl::narrow<int>(m_string_length);
-    }
-
     void get_output_size(SIZE& p_sz)
     {
         const SIZE* sz = m_ssa ? ScriptString_pSize(m_ssa) : nullptr;
@@ -66,32 +50,6 @@ public:
         SIZE sz;
         get_output_size(sz);
         return sz.cx;
-    }
-
-    long get_font_height(HDC dc)
-    {
-        long height = 0;
-        ScriptCacheGetHeight(dc, &m_scache, &height);
-        return height;
-    }
-
-    void get_character_logical_widths(int* p_array_out)
-    {
-        if (m_ssa)
-            ScriptStringGetLogicalWidths(m_ssa, p_array_out);
-    }
-
-    void get_character_logical_extents(int* p_array_out, int offset = 0) // NB RTL !
-    {
-        get_character_logical_widths(p_array_out);
-        int i;
-        int count = get_output_character_count();
-        for (i = 1; i < count; i++) {
-            p_array_out[i] += p_array_out[i - 1];
-        }
-        if (offset)
-            for (i = 0; i < count; i++)
-                p_array_out[i] += offset;
     }
 
 private:
