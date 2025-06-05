@@ -334,24 +334,20 @@ void ListView::update_all_items()
     update_items(0, m_items.size());
 }
 
-void ListView::invalidate_items(size_t index, size_t count)
+void ListView::invalidate_items(size_t index, size_t count) const
 {
-#if 0
-        RedrawWindow(get_wnd(), NULL, NULL, RDW_INVALIDATE | (b_update_display ? RDW_UPDATENOW : 0));
-#else
-    if (count) {
-        // size_t header_height = get_header_height();
-        const auto rc_client = get_items_rect();
-        const auto groups = gsl::narrow<int>(get_item_display_group_count(index));
-        RECT rc_invalidate = {0, get_item_position(index) - m_scroll_position + rc_client.top - groups * m_group_height,
-            RECT_CX(rc_client),
-            get_item_position(index + count - 1) - m_scroll_position + get_item_height(index + count - 1)
-                + rc_client.top};
-        if (IntersectRect(&rc_invalidate, &rc_client, &rc_invalidate)) {
-            RedrawWindow(get_wnd(), &rc_invalidate, nullptr, RDW_INVALIDATE);
-        }
-    }
-#endif
+    if (count == 0)
+        return;
+
+    const auto items_rect = get_items_rect();
+    const auto groups = gsl::narrow<int>(get_item_display_group_count(index));
+    RECT invalidate_rect
+        = {items_rect.left, get_item_position(index) - m_scroll_position + items_rect.top - groups * m_group_height,
+            items_rect.right, get_item_position_bottom(index + count - 1) - m_scroll_position + items_rect.top};
+
+    RECT visible_invalidate_rect{};
+    if (IntersectRect(&visible_invalidate_rect, &items_rect, &invalidate_rect))
+        RedrawWindow(get_wnd(), &visible_invalidate_rect, nullptr, RDW_INVALIDATE);
 }
 
 void ListView::invalidate_items(const pfc::bit_array& mask)
