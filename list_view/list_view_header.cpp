@@ -106,7 +106,7 @@ void ListView::build_header()
 
             hdi.cxy = column.m_display_size;
 
-            if (m_sort_column_index == column_index && m_show_sort_indicators) {
+            if (m_sort_column_index && *m_sort_column_index == column_index && m_show_sort_indicators) {
                 hdi.fmt |= (m_sort_direction ? HDF_SORTDOWN : HDF_SORTUP);
             }
 
@@ -238,17 +238,21 @@ std::optional<LRESULT> ListView::on_wm_notify_header(LPNMHDR lpnm)
         }
     } break;
     case HDN_ITEMCLICK: {
-        auto lpnmh = (LPNMHEADER)lpnm;
+        const auto lpnmh = reinterpret_cast<LPNMHEADERW>(lpnm);
         if (lpnmh->iItem != -1 && (!m_have_indent_column || lpnmh->iItem)) {
-            size_t realIndex = lpnmh->iItem;
+            size_t internal_index = lpnmh->iItem;
+
             if (m_have_indent_column)
-                realIndex--;
-            if (realIndex < m_columns.size()) {
-                bool des = (realIndex == m_sort_column_index ? !m_sort_direction : false);
-                sort_by_column(realIndex, des);
+                internal_index--;
+
+            if (internal_index < m_columns.size()) {
+                const bool is_descending
+                    = (m_sort_column_index && *m_sort_column_index == internal_index ? !m_sort_direction : false);
+                sort_by_column(internal_index, is_descending);
             }
         }
-    } break;
+        break;
+    }
     case HDN_ENDDRAG: {
         auto lpnmh = (LPNMHEADER)lpnm;
         if (lpnmh->iButton == 0) {
