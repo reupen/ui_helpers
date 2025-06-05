@@ -293,7 +293,7 @@ public:
     [[nodiscard]] int get_search_box_height() const;
 
     void invalidate_all(bool b_children = false, bool non_client = false);
-    void invalidate_items(size_t index, size_t count);
+    void invalidate_items(size_t index, size_t count) const;
 
     void invalidate_items(const pfc::bit_array& mask);
     void invalidate_item_group_info_area(size_t index);

@@ -60,10 +60,20 @@ void ListView::insert_items(size_t index_start, size_t count, const InsertItem* 
 
 void ListView::replace_items(size_t index_start, size_t count, const InsertItem* items)
 {
+    assert(count > 0);
+
+    if (count == 0)
+        return;
+
     replace_items_in_internal_state(index_start, count, items);
     calculate_item_positions(index_start);
-    update_scroll_info();
-    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
+
+    if (m_group_count > 0 || m_variable_height_items) {
+        update_scroll_info();
+        invalidate_all();
+    } else {
+        invalidate_items(index_start, count);
+    }
 }
 
 void ListView::remove_items(const pfc::bit_array& mask)
