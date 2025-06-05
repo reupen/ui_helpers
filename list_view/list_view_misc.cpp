@@ -48,33 +48,32 @@ bool ListView::copy_selected_items_as_text(size_t default_single_item_column)
     return selected_count > 0;
 }
 
-void ListView::set_sort_column(size_t index, bool b_direction)
+void ListView::set_sort_column(std::optional<size_t> index, bool b_direction)
 {
     m_sort_column_index = index;
     m_sort_direction = b_direction;
 
-    if (m_initialised && m_wnd_header) {
-        size_t headerIndex = index;
-        if (m_have_indent_column && index != pfc_infinite)
-            headerIndex++;
-        HDITEM hdi;
-        memset(&hdi, 0, sizeof(HDITEM));
+    if (!m_initialised || !m_wnd_header)
+        return;
 
-        hdi.mask = HDI_FORMAT;
+    auto header_item_index = index;
+    if (m_have_indent_column && header_item_index)
+        ++*header_item_index;
 
-        {
-            const int t = gsl::narrow<int>(m_columns.size());
-            for (int n = 0; n < t; n++) {
-                Header_GetItem(m_wnd_header, n, &hdi);
-                hdi.fmt &= ~(HDF_SORTUP | HDF_SORTDOWN);
-                if (m_show_sort_indicators && n == headerIndex)
-                    hdi.fmt |= (b_direction ? HDF_SORTDOWN : HDF_SORTUP);
-                Header_SetItem(m_wnd_header, n, &hdi);
-            }
-        }
+    HDITEM hdi{};
+    hdi.mask = HDI_FORMAT;
+
+    for (const auto iter_index : std::views::iota(0, gsl::narrow<int>(m_columns.size()))) {
+        Header_GetItem(m_wnd_header, iter_index, &hdi);
+        const auto old_fmt = hdi.fmt;
+        hdi.fmt &= ~(HDF_SORTUP | HDF_SORTDOWN);
+
+        if (m_show_sort_indicators && header_item_index && iter_index == *header_item_index)
+            hdi.fmt |= (b_direction ? HDF_SORTDOWN : HDF_SORTUP);
+
+        if (hdi.fmt != old_fmt)
+            Header_SetItem(m_wnd_header, iter_index, &hdi);
     }
-
-    RedrawWindow(m_wnd_header, nullptr, nullptr, RDW_INVALIDATE);
 }
 
 void ListView::set_autosize(bool b_val)

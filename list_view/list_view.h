@@ -457,7 +457,7 @@ public:
             set_sort_column(index, b_descending);
     }
 
-    [[nodiscard]] size_t get_sort_column() const { return m_sort_column_index; }
+    [[nodiscard]] std::optional<size_t> get_sort_column() const { return m_sort_column_index; }
     [[nodiscard]] bool get_sort_direction() const { return m_sort_direction; }
 
     void update_item_data(size_t index)
@@ -695,9 +695,9 @@ protected:
     COLORREF get_group_text_colour_default();
     bool get_group_text_colour_default(COLORREF& cr);
 
-    void set_sort_column(size_t index, bool b_direction);
+    void set_sort_column(std::optional<size_t> index, bool b_direction);
 
-    void clear_sort_column() { set_sort_column(pfc_infinite, false); }
+    void clear_sort_column() { set_sort_column({}, false); }
 
     void show_search_box(const char* label, bool b_focus = true);
     void close_search_box(bool b_notify = true);
@@ -933,7 +933,7 @@ private:
 
     bool m_sorting_enabled{false};
     bool m_show_sort_indicators{true};
-    size_t m_sort_column_index{std::numeric_limits<size_t>::max()};
+    std::optional<size_t> m_sort_column_index;
     bool m_sort_direction{false};
     EdgeStyle m_edge_style{edge_grey};
     bool m_sizing{false};
