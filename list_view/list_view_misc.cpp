@@ -620,6 +620,7 @@ void ListView::set_font(std::optional<direct_write::TextFormat> text_format, con
 {
     m_items_log_font = log_font;
     m_items_text_format = std::move(text_format);
+    m_space_width.reset();
 
     if (m_initialised) {
         exit_inline_edit();

@@ -8,9 +8,9 @@ using namespace uih::literals::spx;
 
 namespace uih {
 
-const int _level_spacing_size = 3;
+constexpr int _level_spacing_size = 3;
 
-int ListView::get_item_indentation()
+int ListView::get_item_indentation() const
 {
     const auto rc = get_items_rect();
     int ret = rc.left;
@@ -19,7 +19,7 @@ int ListView::get_item_indentation()
     return ret;
 }
 
-int ListView::get_indentation_step(HDC dc) const
+int ListView::get_indentation_step() const
 {
     if (!m_group_level_indentation_enabled)
         return 0;
@@ -27,15 +27,18 @@ int ListView::get_indentation_step(HDC dc) const
     if (m_group_level_indentation_amount)
         return *m_group_level_indentation_amount;
 
-    return get_default_indentation_step(dc);
+    return get_default_indentation_step();
 }
 
-int ListView::get_default_indentation_step(HDC dc) const
+int ListView::get_default_indentation_step() const
 {
     if (!m_items_text_format)
         return 0;
 
-    return m_items_text_format->measure_text_width(L" "sv) * _level_spacing_size;
+    if (!m_space_width)
+        m_space_width = m_items_text_format->measure_text_width(L" "sv);
+
+    return *m_space_width * _level_spacing_size;
 }
 
 void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
@@ -66,7 +69,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
 
     size_t i;
     size_t count = m_items.size();
-    const auto indentation_step = get_indentation_step(dc);
+    const auto indentation_step = m_group_count > 0 ? get_indentation_step() : 0;
     const int item_preindentation = indentation_step * gsl::narrow<int>(m_group_count) + rc_items.left;
     const int item_indentation = item_preindentation + get_group_info_area_total_width();
     cx = get_columns_display_width() + item_indentation;

@@ -621,9 +621,9 @@ protected:
         }
     }
 
-    int get_item_indentation();
-    int get_indentation_step(HDC dc = nullptr) const;
-    int get_default_indentation_step(HDC dc = nullptr) const;
+    int get_item_indentation() const;
+    int get_indentation_step() const;
+    int get_default_indentation_step() const;
 
     void set_group_info_area_size(int width, int height)
     {
@@ -881,6 +881,7 @@ private:
     std::optional<LOGFONT> m_header_log_font{};
     direct_write::Context::Ptr m_direct_write_context;
     std::optional<direct_write::TextFormat> m_items_text_format;
+    mutable std::optional<int> m_space_width;
     std::optional<direct_write::TextFormat> m_header_text_format;
     std::optional<direct_write::TextFormat> m_group_text_format;
 
