@@ -371,6 +371,12 @@ wil::com_ptr<IDWriteRenderingParams> RenderingParams::get(HWND wnd) const
     wil::com_ptr<IDWriteRenderingParams> default_rendering_params;
     THROW_IF_FAILED(m_factory->CreateMonitorRenderingParams(monitor, &default_rendering_params));
 
+    if (m_rendering_mode == DWRITE_RENDERING_MODE_DEFAULT) {
+        m_monitor = monitor;
+        m_rendering_params = std::move(default_rendering_params);
+        return m_rendering_params;
+    }
+
     const auto default_rendering_params_1 = default_rendering_params.try_query<IDWriteRenderingParams1>();
 
     const auto factory_2 = m_factory.try_query<IDWriteFactory2>();
@@ -381,8 +387,7 @@ wil::com_ptr<IDWriteRenderingParams> RenderingParams::get(HWND wnd) const
     const auto gamma = default_rendering_params->GetGamma();
     const auto enhanced_contrast = default_rendering_params->GetEnhancedContrast();
     const auto cleartype_level = default_rendering_params->GetClearTypeLevel();
-    const auto pixel_geometry
-        = m_force_greyscale_antialiasing ? DWRITE_PIXEL_GEOMETRY_FLAT : default_rendering_params->GetPixelGeometry();
+    const auto pixel_geometry = default_rendering_params->GetPixelGeometry();
     const auto greyscale_enhanced_contrast = default_rendering_params_1
         ? std::make_optional(default_rendering_params_1->GetGrayscaleEnhancedContrast())
         : std::nullopt;
@@ -552,6 +557,11 @@ void TextLayout::render_with_transparent_background(HWND wnd, HDC dc, RECT outpu
             THROW_IF_FAILED(bitmap_render_target->Resize(bitmap_width, bitmap_height));
     }
 
+    const auto is_greyscale_antialiasing = m_rendering_params->use_greyscale_antialiasing();
+    const auto bitmap_render_target_1 = bitmap_render_target.query<IDWriteBitmapRenderTarget1>();
+    THROW_IF_FAILED(bitmap_render_target_1->SetTextAntialiasMode(
+        is_greyscale_antialiasing ? DWRITE_TEXT_ANTIALIAS_MODE_GRAYSCALE : DWRITE_TEXT_ANTIALIAS_MODE_CLEARTYPE));
+
     const auto rendering_params = m_rendering_params->get(wnd);
     const auto use_colour_glyphs = m_rendering_params->use_colour_glyphs();
     const auto memory_dc = bitmap_render_target->GetMemoryDC();
@@ -560,44 +570,9 @@ void TextLayout::render_with_transparent_background(HWND wnd, HDC dc, RECT outpu
         m_factory, bitmap_render_target.get(), rendering_params.get(), default_colour, use_colour_glyphs);
 
     BitBlt(memory_dc, 0, 0, bitmap_width, bitmap_height, dc, source_x, source_y, SRCCOPY);
-
     THROW_IF_FAILED(m_text_layout->Draw(NULL, renderer.get(), -draw_left_dip + x_origin_offset, -draw_top_dip));
 
     BitBlt(dc, source_x, source_y, bitmap_width, bitmap_height, memory_dc, 0, 0, SRCCOPY);
-}
-
-void TextLayout::render_with_solid_background(HWND wnd, HDC dc, float x_origin, float y_origin, RECT clip_rect,
-    COLORREF background_colour, COLORREF default_text_colour) const
-{
-    const auto bitmap_width = wil::rect_width(clip_rect);
-    const auto bitmap_height = wil::rect_height(clip_rect);
-    const auto scaling_factor = get_default_scaling_factor();
-
-    wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target;
-    THROW_IF_FAILED(m_gdi_interop->CreateBitmapRenderTarget(dc, bitmap_width, bitmap_height, &bitmap_render_target));
-    THROW_IF_FAILED(bitmap_render_target->SetPixelsPerDip(scaling_factor));
-
-    const auto memory_dc = bitmap_render_target->GetMemoryDC();
-    OffsetWindowOrgEx(memory_dc, clip_rect.left, clip_rect.top, nullptr);
-
-    const wil::unique_hbrush fill_brush(CreateSolidBrush(background_colour));
-    FillRect(memory_dc, &clip_rect, fill_brush.get());
-
-    const auto rendering_params = m_rendering_params->get(wnd);
-    const auto use_colour_glyphs = m_rendering_params->use_colour_glyphs();
-
-    DWRITE_MATRIX transform{1.0f, 0.0f, 0.0f, 1.0f, -px_to_dip(gsl::narrow_cast<float>(clip_rect.left)),
-        -px_to_dip(gsl::narrow_cast<float>(clip_rect.top))};
-
-    THROW_IF_FAILED(bitmap_render_target->SetCurrentTransform(&transform));
-
-    const wil::com_ptr<IDWriteTextRenderer> renderer = new GdiTextRenderer(
-        m_factory, bitmap_render_target.get(), rendering_params.get(), default_text_colour, use_colour_glyphs);
-
-    THROW_IF_FAILED(m_text_layout->Draw(NULL, renderer.get(), x_origin, y_origin));
-
-    BitBlt(dc, clip_rect.left, clip_rect.top, bitmap_width, bitmap_height, memory_dc, clip_rect.left, clip_rect.top,
-        SRCCOPY);
 }
 
 void TextFormat::set_text_alignment(DWRITE_TEXT_ALIGNMENT value) const
@@ -832,7 +807,7 @@ std::optional<TextFormat> Context::create_text_format_with_fallback(
 }
 
 TextFormat Context::wrap_text_format(wil::com_ptr<IDWriteTextFormat> text_format, DWRITE_RENDERING_MODE rendering_mode,
-    bool force_greyscale_antialiasing, bool use_colour_glyphs, bool set_defaults)
+    bool use_greyscale_antialiasing, bool use_colour_glyphs, bool set_defaults)
 {
     if (set_defaults) {
         THROW_IF_FAILED(text_format->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
@@ -845,7 +820,7 @@ TextFormat Context::wrap_text_format(wil::com_ptr<IDWriteTextFormat> text_format
     }
 
     const auto rendering_params
-        = std::make_shared<RenderingParams>(m_factory, rendering_mode, force_greyscale_antialiasing, use_colour_glyphs);
+        = std::make_shared<RenderingParams>(m_factory, rendering_mode, use_greyscale_antialiasing, use_colour_glyphs);
 
     return {shared_from_this(), m_factory, m_gdi_interop, std::move(text_format), rendering_params};
 }

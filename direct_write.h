@@ -9,10 +9,10 @@ public:
     using Ptr = std::shared_ptr<RenderingParams>;
 
     RenderingParams(wil::com_ptr<IDWriteFactory1> factory, DWRITE_RENDERING_MODE rendering_mode,
-        bool force_greyscale_antialiasing, bool use_colour_glyphs)
+        bool use_greyscale_antialiasing, bool use_colour_glyphs)
         : m_factory(std::move(factory))
         , m_rendering_mode(rendering_mode)
-        , m_force_greyscale_antialiasing(force_greyscale_antialiasing)
+        , m_use_greyscale_antialiasing(use_greyscale_antialiasing)
         , m_use_colour_glyphs(use_colour_glyphs)
     {
     }
@@ -24,13 +24,13 @@ public:
         if (m_rendering_mode == DWRITE_RENDERING_MODE_ALIASED)
             return D2D1_TEXT_ANTIALIAS_MODE_ALIASED;
 
-        if (m_force_greyscale_antialiasing)
+        if (m_use_greyscale_antialiasing)
             return D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE;
 
         return D2D1_TEXT_ANTIALIAS_MODE_DEFAULT;
     }
 
-    bool force_greyscale_antialiasing() const { return m_force_greyscale_antialiasing; }
+    bool use_greyscale_antialiasing() const { return m_use_greyscale_antialiasing; }
     bool use_colour_glyphs() const { return m_use_colour_glyphs; }
 
 private:
@@ -39,7 +39,7 @@ private:
 
     wil::com_ptr<IDWriteFactory1> m_factory;
     DWRITE_RENDERING_MODE m_rendering_mode{};
-    bool m_force_greyscale_antialiasing{};
+    bool m_use_greyscale_antialiasing{};
     bool m_use_colour_glyphs{true};
 };
 
@@ -66,8 +66,6 @@ public:
     DWRITE_OVERHANG_METRICS get_overhang_metrics() const;
     void render_with_transparent_background(HWND wnd, HDC dc, RECT output_rect, COLORREF default_colour,
         float x_origin_offset = 0.0f, wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target = {}) const;
-    void render_with_solid_background(HWND wnd, HDC dc, float x_origin, float y_origin, RECT clip_rect,
-        COLORREF background_colour, COLORREF default_text_colour) const;
     void set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const;
     void set_effect(IUnknown* effect, DWRITE_TEXT_RANGE text_range) const;
     void set_max_height(float value) const;
@@ -212,7 +210,7 @@ public:
         const LOGFONT& log_font, std::optional<float> font_size = {}) noexcept;
 
     TextFormat wrap_text_format(wil::com_ptr<IDWriteTextFormat> text_format,
-        DWRITE_RENDERING_MODE rendering_mode = DWRITE_RENDERING_MODE_DEFAULT, bool force_greyscale_antialiasing = false,
+        DWRITE_RENDERING_MODE rendering_mode = DWRITE_RENDERING_MODE_DEFAULT, bool use_greyscale_antialiasing = false,
         bool use_colour_glyphs = true, bool set_defaults = true);
 
     wil::com_ptr<IDWriteFontFallback> create_emoji_font_fallback(
