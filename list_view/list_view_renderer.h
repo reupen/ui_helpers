@@ -38,6 +38,8 @@ struct RendererContext {
 
 class RendererBase {
 public:
+    virtual void render_begin(RendererContext context) {}
+
     virtual void render_background(RendererContext context, const RECT* rc) = 0;
 
     virtual void render_group_info(RendererContext context, size_t index, RECT rc) {}

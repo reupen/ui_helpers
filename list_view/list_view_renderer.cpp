@@ -61,6 +61,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
         = (SendMessage(get_wnd(), WM_QUERYUISTATE, NULL, NULL) & UISF_HIDEFOCUS) != 0 && !m_always_show_focus;
     bool b_window_focused = (wnd_focus == get_wnd()) || IsChild(get_wnd(), wnd_focus);
 
+    m_renderer->render_begin(context);
     m_renderer->render_background(context, &rc_update);
     const auto rc_items = get_items_rect();
 
