@@ -54,6 +54,7 @@
 
 #include <wil/com.h>
 #include <wil/resource.h>
+#include <wil/stl.h>
 #include <wil/win32_helpers.h>
 
 #include "../mmh/stdafx.h"

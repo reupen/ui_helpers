@@ -1,92 +1,106 @@
 #pragma once
 
 namespace uih {
+
+struct MenuItemOptions {
+    bool is_default{};
+    bool is_disabled{};
+    bool is_checked{};
+    bool is_radio_checked{};
+};
+
 class Menu {
 public:
-    enum Flags {
-        flag_checked = (1 << 0),
-        flag_radiochecked = (1 << 1),
-        flag_default = (1 << 2)
-    };
+    Menu() { m_menu.reset(CreatePopupMenu()); }
 
-    Menu() { m_handle = CreatePopupMenu(); }
-    ~Menu()
-    {
-        if (m_handle) {
-            DestroyMenu(m_handle);
-            m_handle = nullptr;
-        }
-    }
+    HMENU get() const { return m_menu.get(); }
 
-    uint32_t size()
+    HMENU detach() { return m_menu.release(); }
+
+    uint32_t size() const
     {
-        const int size = GetMenuItemCount(m_handle);
-        THROW_LAST_ERROR_IF(size < 0);
+        const int size = GetMenuItemCount(m_menu.get());
+        LOG_LAST_ERROR_IF(size == -1);
+
+        if (size < 0)
+            return 0;
+
         return gsl::narrow<uint32_t>(size);
     }
 
-    HMENU detach()
+    void insert_command(uint32_t index, uint32_t id, wil::zwstring_view text, MenuItemOptions opts = {}) const
     {
-        HMENU ret = m_handle;
-        m_handle = nullptr;
-        return ret;
-    }
-    void insert_command(uint32_t index, const wchar_t* text, uint32_t id, uint32_t flags = NULL)
-    {
-        MENUITEMINFO mii;
-        memset(&mii, 0, sizeof(MENUITEMINFO));
+        MENUITEMINFO mii{};
         mii.cbSize = sizeof(MENUITEMINFO);
         mii.fMask = MIIM_ID | MIIM_STRING | MIIM_STATE | MIIM_FTYPE;
-        mii.dwTypeData = const_cast<wchar_t*>(text);
-        mii.cch = gsl::narrow<UINT>(wcslen(text));
+        mii.dwTypeData = const_cast<wchar_t*>(text.c_str());
+        mii.cch = gsl::narrow<uint32_t>(text.size());
         mii.fType = MFT_STRING;
         mii.fState = MFS_ENABLED;
-        if (flags & flag_radiochecked)
+
+        if (opts.is_radio_checked)
             mii.fType |= MFT_RADIOCHECK;
-        if (flags & (flag_checked | flag_radiochecked))
+
+        if (opts.is_checked || opts.is_radio_checked)
             mii.fState |= MFS_CHECKED;
-        if (flags & (flag_default))
+
+        if (opts.is_default)
             mii.fState |= MFS_DEFAULT;
+
+        if (opts.is_disabled)
+            mii.fState |= MFS_DISABLED;
+
         mii.wID = id;
-        InsertMenuItem(m_handle, index, TRUE, &mii);
+
+        LOG_IF_WIN32_BOOL_FALSE(InsertMenuItem(m_menu.get(), index, TRUE, &mii));
     }
-    void insert_submenu(uint32_t index, const wchar_t* text, HMENU submenu, uint32_t flags = NULL)
+
+    void insert_submenu(uint32_t index, HMENU submenu, wil::zwstring_view text) const
     {
-        MENUITEMINFO mii;
-        memset(&mii, 0, sizeof(MENUITEMINFO));
+        MENUITEMINFO mii{};
         mii.cbSize = sizeof(MENUITEMINFO);
         mii.fMask = MIIM_SUBMENU | MIIM_STRING | MIIM_FTYPE;
-        mii.dwTypeData = const_cast<wchar_t*>(text);
-        mii.cch = gsl::narrow<UINT>(wcslen(text));
+        mii.dwTypeData = const_cast<wchar_t*>(text.c_str());
+        mii.cch = gsl::narrow<uint32_t>(text.size());
         mii.fType = MFT_STRING;
         mii.fState = MFS_ENABLED;
         mii.hSubMenu = submenu;
-        InsertMenuItem(m_handle, index, TRUE, &mii);
+        LOG_IF_WIN32_BOOL_FALSE(InsertMenuItem(m_menu.get(), index, TRUE, &mii));
     }
-    void insert_separator(uint32_t index, uint32_t flags = NULL)
+
+    void insert_submenu(uint32_t index, Menu&& submenu, wil::zwstring_view text) const
     {
-        MENUITEMINFO mii;
-        memset(&mii, 0, sizeof(MENUITEMINFO));
+        insert_submenu(index, submenu.detach(), text);
+    }
+
+    void insert_separator(uint32_t index) const
+    {
+        MENUITEMINFO mii{};
         mii.cbSize = sizeof(MENUITEMINFO);
         mii.fMask = MIIM_FTYPE;
         mii.fType = MFT_SEPARATOR;
-        InsertMenuItem(m_handle, index, TRUE, &mii);
+        LOG_IF_WIN32_BOOL_FALSE(InsertMenuItem(m_menu.get(), index, TRUE, &mii));
     }
-    void append_command(const wchar_t* text, uint32_t id, uint32_t flags = NULL)
+
+    void append_command(uint32_t id, wil::zwstring_view text, MenuItemOptions opts = {}) const
     {
-        insert_command(size(), text, id, flags);
+        insert_command(UINT32_MAX, id, text, opts);
     }
-    void append_submenu(const wchar_t* text, HMENU submenu, uint32_t flags = NULL)
+
+    void append_submenu(HMENU submenu, wil::zwstring_view text) const { insert_submenu(UINT32_MAX, submenu, text); }
+
+    void append_submenu(Menu&& submenu, wil::zwstring_view text) const { append_submenu(submenu.detach(), text); }
+
+    void append_separator() const { insert_separator(UINT32_MAX); }
+
+    auto run(HWND wnd, POINT pt) const
     {
-        insert_submenu(size(), text, submenu, flags);
-    }
-    void append_separator(uint32_t flags = NULL) { insert_separator(size(), flags); }
-    auto run(HWND wnd, const POINT& pt) const
-    {
-        return TrackPopupMenu(m_handle, TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD, pt.x, pt.y, 0, wnd, nullptr);
+        return TrackPopupMenu(
+            m_menu.get(), TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD, pt.x, pt.y, 0, wnd, nullptr);
     }
 
 private:
-    HMENU m_handle;
+    wil::unique_hmenu m_menu;
 };
+
 } // namespace uih
