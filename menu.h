@@ -95,12 +95,32 @@ public:
 
     auto run(HWND wnd, POINT pt) const
     {
-        return TrackPopupMenu(
-            m_menu.get(), TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD, pt.x, pt.y, 0, wnd, nullptr);
+        return gsl::narrow_cast<uint32_t>(
+            TrackPopupMenu(m_menu.get(), TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD, pt.x, pt.y, 0, wnd, nullptr));
     }
 
 private:
     wil::unique_hmenu m_menu;
+};
+
+class MenuCommandCollector {
+public:
+    uint32_t add(std::function<void()> command)
+    {
+        m_commands.emplace_back(std::move(command));
+        return gsl::narrow<uint32_t>(m_commands.size());
+    }
+
+    void execute(uint32_t index) const
+    {
+        assert(index <= m_commands.size());
+
+        if (1 <= index && index <= m_commands.size())
+            m_commands[index - 1]();
+    }
+
+private:
+    std::vector<std::function<void()>> m_commands;
 };
 
 } // namespace uih
