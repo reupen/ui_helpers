@@ -9,21 +9,29 @@ namespace uih::direct_write {
 
 namespace {
 
-int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::string_view text, const RECT& rect,
+int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::wstring_view text, const RECT& rect,
     bool selected, DWORD default_color, alignment align, bool enable_colour_codes, bool enable_ellipsis,
     wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target)
 {
     if (is_rect_null_or_reversed(&rect) || rect.right <= rect.left)
         return 0;
 
-    auto [render_text, segments] = enable_colour_codes
-        ? process_colour_codes(mmh::to_utf16(text), selected)
-        : std::tuple(mmh::to_utf16(text), std::vector<ColouredTextSegment>{});
+    std::optional<std::wstring> processed_text;
+    std::vector<ColouredTextSegment> segments;
 
-    // Work around DirectWrite not rendering trailing whitespace
-    // for centre- and right-aligned text
-    if (align != ALIGN_LEFT)
-        render_text.push_back(L'\u200b');
+    if (enable_colour_codes)
+        std::tie(processed_text, segments) = process_colour_codes(text, selected);
+
+    if (align != ALIGN_LEFT) {
+        if (!processed_text)
+            processed_text = text;
+
+        // Work around DirectWrite not rendering trailing whitespace
+        // for centre- and right-aligned text
+        processed_text->push_back(L'\u200b');
+    }
+
+    const auto render_text = processed_text ? *processed_text : text;
 
     text_format.set_text_alignment(get_text_alignment(align));
 
@@ -63,7 +71,7 @@ DWRITE_TEXT_ALIGNMENT get_text_alignment(alignment alignment_)
     }
 }
 
-int text_out_columns_and_colours(TextFormat& text_format, HWND wnd, HDC dc, std::string_view text, int x_offset,
+int text_out_columns_and_colours(TextFormat& text_format, HWND wnd, HDC dc, std::wstring_view text, int x_offset,
     int border, const RECT& rect, COLORREF default_colour, TextOutOptions options)
 {
     RECT adjusted_rect = rect;
@@ -73,13 +81,8 @@ int text_out_columns_and_colours(TextFormat& text_format, HWND wnd, HDC dc, std:
 
     int tab_count = 0;
 
-    if (options.enable_tab_columns) {
-        for (size_t n = 0; n < text.length(); n++) {
-            if (text[n] == '\t') {
-                tab_count++;
-            }
-        }
-    }
+    if (options.enable_tab_columns)
+        tab_count = gsl::narrow<int>(std::ranges::count(text, L'\t'));
 
     if (tab_count == 0) {
         adjusted_rect.left += border + x_offset;
@@ -98,7 +101,7 @@ int text_out_columns_and_colours(TextFormat& text_format, HWND wnd, HDC dc, std:
 
     do {
         const auto end = position;
-        while (position > 0 && text[position - 1] != '\t')
+        while (position > 0 && text[position - 1] != L'\t')
             position--;
 
         const auto cell_text = text.substr(position, end - position);
@@ -127,6 +130,13 @@ int text_out_columns_and_colours(TextFormat& text_format, HWND wnd, HDC dc, std:
     } while (position > 0);
 
     return total_width;
+}
+
+int text_out_columns_and_colours(TextFormat& text_format, HWND wnd, HDC dc, std::string_view text, int x_offset,
+    int border, const RECT& rect, COLORREF default_colour, TextOutOptions options)
+{
+    return text_out_columns_and_colours(
+        text_format, wnd, dc, mmh::to_utf16(text), x_offset, border, rect, default_colour, std::move(options));
 }
 
 } // namespace uih::direct_write
