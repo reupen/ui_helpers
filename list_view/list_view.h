@@ -32,6 +32,7 @@ public:
     };
 
     using ColourData = lv::ColourData;
+    using string_array = std::vector<pfc::string_simple>;
 
     class Column {
     public:
@@ -53,7 +54,44 @@ public:
         Column() = default;
     };
 
-    using string_array = std::vector<pfc::string_simple>;
+    class Item;
+    class Group;
+
+    using t_group_ptr = pfc::refcounted_object_ptr_t<Group>;
+    using t_item_ptr = pfc::refcounted_object_ptr_t<Item>;
+
+    class Group : public pfc::refcounted_object_root {
+    public:
+        pfc::string8 m_text;
+    };
+
+    class Item : public pfc::refcounted_object_root {
+    public:
+        t_uint8 m_line_count{1};
+        string_array m_subitems;
+        std::vector<t_group_ptr> m_groups;
+
+        size_t m_display_index{0};
+        int m_display_position{0};
+        bool m_selected{false};
+
+        void update_line_count()
+        {
+            m_line_count = 1;
+            for (auto&& subitem : m_subitems) {
+                t_uint8 lc = 1;
+                const char* ptr = subitem.c_str();
+                while (*ptr) {
+                    if (*ptr == '\n') {
+                        if (++lc == 255)
+                            break;
+                    }
+                    ptr++;
+                }
+                m_line_count = std::max(m_line_count, lc);
+            }
+        }
+    };
 
     class InsertItem {
     public:
@@ -508,45 +546,6 @@ protected:
         edge_sunken,
         edge_grey,
         edge_solid,
-    };
-
-    class Item;
-    class Group;
-
-    using t_group_ptr = pfc::refcounted_object_ptr_t<Group>;
-    using t_item_ptr = pfc::refcounted_object_ptr_t<Item>;
-
-    class Group : public pfc::refcounted_object_root {
-    public:
-        pfc::string8 m_text;
-    };
-
-    class Item : public pfc::refcounted_object_root {
-    public:
-        t_uint8 m_line_count{1};
-        string_array m_subitems;
-        std::vector<t_group_ptr> m_groups;
-
-        size_t m_display_index{0};
-        int m_display_position{0};
-        bool m_selected{false};
-
-        void update_line_count()
-        {
-            m_line_count = 1;
-            for (auto&& subitem : m_subitems) {
-                t_uint8 lc = 1;
-                const char* ptr = subitem.c_str();
-                while (*ptr) {
-                    if (*ptr == '\n') {
-                        if (++lc == 255)
-                            break;
-                    }
-                    ptr++;
-                }
-                m_line_count = std::max(m_line_count, lc);
-            }
-        }
     };
 
     class ListViewSearchContextBase {
