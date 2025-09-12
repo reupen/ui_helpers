@@ -1421,7 +1421,6 @@ const std::unordered_map<char32_t, EmojiProperties> emojis = {
     {U'\U0001FADA' /* 🫚 */, EmojiProperties{.emoji_presentation = true}},
     {U'\U0001FADB' /* 🫛 */, EmojiProperties{.emoji_presentation = true}},
     {U'\U0001FADC' /* 🫜 */, EmojiProperties{.emoji_presentation = true}},
-    {U'\U0001FADD' /* 🫝 */, EmojiProperties{.emoji_presentation = true}},
     {U'\U0001FADF' /* 🫟 */, EmojiProperties{.emoji_presentation = true}},
     {U'\U0001FAE0' /* 🫠 */, EmojiProperties{.emoji_presentation = true}},
     {U'\U0001FAE1' /* 🫡 */, EmojiProperties{.emoji_presentation = true}},
