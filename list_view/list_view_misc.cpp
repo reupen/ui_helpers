@@ -224,16 +224,24 @@ void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
         target_item = total - 1;
         break;
     case VK_PRIOR:
-        if (focused_item_is_visible && focus > first_visible_item)
+        if (focused_item_is_visible && focus > first_visible_item) {
             target_item = first_visible_item;
-        else
+        } else {
             target_item = get_item_at_or_after(focus_top - gsl::narrow<int>(si.nPage));
+
+            if (target_item == focus && target_item > 0)
+                --target_item;
+        }
         break;
     case VK_NEXT:
-        if (focused_item_is_visible && focus < last_visible_item)
+        if (focused_item_is_visible && focus < last_visible_item) {
             target_item = last_visible_item;
-        else
+        } else {
             target_item = get_item_at_or_before(focus_top + gsl::narrow<int>(si.nPage));
+
+            if (target_item == focus && target_item + 1 < total)
+                ++target_item;
+        }
         break;
     case VK_UP:
         target_item = (std::max)(0, focus - 1);
