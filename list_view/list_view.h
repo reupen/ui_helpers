@@ -920,7 +920,7 @@ private:
 
     bool m_prevent_wm_char_processing{false};
     bool m_timer_search{false};
-    pfc::string8 m_search_string;
+    std::wstring m_search_string;
 
     bool m_show_tooltips{true};
     bool m_limit_tooltips_to_clipped_items{true};

@@ -496,23 +496,11 @@ void ListView::destroy_timer_search()
     }
 }
 
-void ListView::on_search_string_change(WCHAR c)
+void ListView::on_search_string_change(WCHAR new_char)
 {
-    bool b_all_same = true;
-    pfc::string8 temp;
-    temp.add_char(c);
-    m_search_string.add_char(c);
-    const char* ptr = m_search_string.get_ptr();
-    if (*ptr) {
-        ptr++;
-        while (*ptr) {
-            if (*ptr != *(ptr - 1)) {
-                b_all_same = false;
-                break;
-            }
-            ptr++;
-        }
-    }
+    const auto b_all_same = std::ranges::all_of(m_search_string, [new_char](auto chr) { return chr == new_char; });
+
+    m_search_string.push_back(new_char);
 
     create_timer_search();
     if (m_columns.empty()) {
@@ -521,7 +509,6 @@ void ListView::on_search_string_change(WCHAR c)
     }
 
     size_t focus = get_focus_item();
-    size_t i = 0;
     size_t count = m_items.size();
     if (focus == pfc_infinite || focus > m_items.size())
         focus = 0;
@@ -533,24 +520,27 @@ void ListView::on_search_string_change(WCHAR c)
     }
     const auto context = create_search_context();
 
-    for (i = 0; i < count; i++) {
-        size_t j = (i + focus) % count;
-        t_item_ptr item = m_items[j];
+    std::wstring item_text_utf16;
 
-        const char* p_compare = context->get_item_text(j);
-        pfc::string8 compare_noccodes;
+    for (auto offset : std::views::iota(size_t{}, count)) {
+        size_t item_index = (offset + focus) % count;
+        t_item_ptr item = m_items[item_index];
 
-        if (strchr(p_compare, 3)) {
-            uih::remove_color_marks(p_compare, compare_noccodes);
-            p_compare = compare_noccodes;
+        const char* item_text = context->get_item_text(item_index);
+
+        if (strchr(item_text, 3)) {
+            const auto cleaned_item_text = uih::remove_colour_codes(item_text);
+            mmh::to_utf16(cleaned_item_text, item_text_utf16);
+        } else {
+            mmh::to_utf16(item_text, item_text_utf16);
         }
 
-        if ((b_all_same && !mmh::compare_string_partial_case_insensitive(p_compare, temp))
-            || !mmh::compare_string_partial_case_insensitive(p_compare, m_search_string)) {
-            if (!is_partially_visible(j)) {
-                scroll(get_item_position(j));
+        if ((b_all_same && mmh::search_starts_with({&new_char, 1}, item_text_utf16))
+            || mmh::search_starts_with(m_search_string, item_text_utf16)) {
+            if (!is_partially_visible(item_index)) {
+                scroll(get_item_position(item_index));
             }
-            set_item_selected_single(j);
+            set_item_selected_single(item_index);
             break;
         }
     }

@@ -718,7 +718,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         switch (wp) {
         case TIMER_END_SEARCH: {
             destroy_timer_search();
-            m_search_string.reset();
+            m_search_string.clear();
         }
             return 0;
         case TIMER_SCROLL_UP:
