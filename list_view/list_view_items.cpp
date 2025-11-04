@@ -17,6 +17,40 @@ const char* ListView::get_item_text(size_t index, size_t column)
     return m_items[index]->m_subitems[column];
 }
 
+bool ListView::get_is_new_group(size_t index) const
+{
+    if (m_group_count == 0)
+        return false;
+
+    if (index == 0)
+        return true;
+
+    return m_items[index - 1]->m_groups.back() != m_items[index]->m_groups.back();
+}
+
+size_t ListView::get_item_display_group_count(size_t index, bool include_hidden) const
+{
+    if (index == 0) {
+        if (include_hidden)
+            return m_items[index]->m_groups.size();
+
+        return ranges::count_if(m_items[index]->m_groups, [](auto& group) { return !group->is_hidden(); });
+    }
+
+    size_t counter{};
+
+    for (const auto& [previous_item_group, this_item_group] :
+        ranges::views::zip(m_items[index - 1]->m_groups, m_items[index]->m_groups) | ranges::views::reverse) {
+        if (previous_item_group == this_item_group)
+            break;
+
+        if (include_hidden || !this_item_group->is_hidden())
+            ++counter;
+    }
+
+    return counter;
+}
+
 ListView::ItemTransaction::~ItemTransaction() noexcept
 {
     if (!m_start_index)
@@ -95,173 +129,145 @@ void ListView::remove_all_items()
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
-void ListView::replace_items_in_internal_state(size_t index_start, size_t countl, const InsertItem* items)
+void ListView::replace_items_in_internal_state(size_t index_start, size_t replace_count, const InsertItem* items)
 {
-    std::vector<t_item_ptr> items_prev(m_items);
-    size_t l;
-    size_t countitems = m_items.size();
-    size_t newgroupcount = 0;
-    size_t oldgroupcount = 0;
+    std::vector items_prev(m_items);
 
-    // Calculate old group count
-    {
-        size_t countl2 = index_start + countl < countitems ? countl + 1 : countl;
-        for (l = 0; l < countl2; l++) {
-            size_t i;
-            size_t count = m_group_count;
-            size_t index = l + index_start;
-            for (i = 0; i < count; i++) {
-                if ((!index || m_items[index - 1]->m_groups[i] != m_items[index]->m_groups[i]))
-                    oldgroupcount++;
-            }
-            // oldgroupcount += get_item_display_group_count(index);
-        }
+    const size_t total_items = m_items.size();
+    size_t old_group_display_count{};
+
+    for (const auto item_index :
+        std::views::iota(index_start, std::min(index_start + replace_count + 1, total_items))) {
+        old_group_display_count += get_item_display_group_count(item_index);
     }
 
-    {
-        for (l = 0; l < countl; l++) {
-            size_t i;
-            size_t count = m_group_count;
-            size_t index = l + index_start;
-            t_item_ptr item;
-            t_item_ptr item_old;
-            item_old = m_items[index];
-            {
-                item = storage_create_item();
-                item->m_selected = m_items[index]->m_selected;
-                item->m_subitems = items[l].m_subitems;
-                m_items[index] = item;
-                item->m_display_index = index ? m_items[index - 1]->m_display_index + 1 : 0;
-                item->m_groups.resize(count);
-            }
-            bool b_new = false;
+    for (const auto relative_index : std::views::iota(size_t{}, replace_count)) {
+        const auto absolute_index = relative_index + index_start;
+        t_item_ptr item;
+        t_item_ptr item_old;
+        item_old = m_items[absolute_index];
+        {
+            item = storage_create_item();
+            item->m_selected = m_items[absolute_index]->m_selected;
+            item->m_subitems = items[relative_index].m_subitems;
+            m_items[absolute_index] = item;
+            item->m_display_index = absolute_index ? m_items[absolute_index - 1]->m_display_index + 1 : 0;
+            item->m_groups.resize(m_group_count);
+        }
+        bool b_new = false;
 
-            bool b_left_same_above = true;
-            bool b_right_same_above = true;
-            bool b_self_same_above = true;
-            for (i = 0; i < count; i++) {
-                bool b_left_same = false;
-                bool b_right_same = false;
-                bool b_self_same = false;
-                if (!b_new && index) {
-                    b_left_same = b_left_same_above
-                        && !GROUP_STRING_COMPARE(items[l].m_groups[i], m_items[index - 1]->m_groups[i]->m_text);
-                }
-                if (!b_new && index + 1 < countitems && l + 1 >= countl) {
-                    b_right_same = b_right_same_above
-                        && !GROUP_STRING_COMPARE(items[l].m_groups[i], m_items[index + 1]->m_groups[i]->m_text);
-                }
-                if (!b_new && item_old.is_valid()) {
-                    b_self_same = b_self_same_above
-                        && !GROUP_STRING_COMPARE(items[l].m_groups[i], item_old->m_groups[i]->m_text);
-                }
-                if (b_new || (!b_left_same && !b_right_same && !b_self_same)) {
-                    item->m_groups[i] = storage_create_group();
-                    item->m_groups[i]->m_text = items[l].m_groups[i];
-                    b_new = true;
-                    item->m_display_index++;
-                }
-                if (b_left_same && b_right_same) {
-                    item->m_groups[i] = m_items[index - 1]->m_groups[i];
-                    t_group_ptr test;
-                    {
-                        test = m_items[index + 1]->m_groups[i];
-                        size_t j = index + 1;
-                        while (j < countitems && test == m_items[j]->m_groups[i]) {
-                            m_items[j]->m_groups[i] = item->m_groups[i];
-                            j++;
-                        }
-                    }
-                } else if (b_left_same)
-                    item->m_groups[i] = m_items[index - 1]->m_groups[i];
-                else if (b_right_same) {
-                    item->m_display_index++;
-                    item->m_groups[i] = m_items[index + 1]->m_groups[i];
-                } else if (b_self_same) {
-                    item->m_groups[i] = item_old->m_groups[i];
-                    item->m_display_index++;
-                }
-                b_right_same_above = b_right_same;
-                b_left_same_above = b_left_same;
-                b_self_same_above = b_self_same;
+        bool b_left_same_above = true;
+        bool b_right_same_above = true;
+        bool b_self_same_above = true;
+        for (size_t i = 0; i < m_group_count; i++) {
+            bool b_left_same = false;
+            bool b_right_same = false;
+            bool b_self_same = false;
+            if (!b_new && absolute_index) {
+                b_left_same = b_left_same_above
+                    && !GROUP_STRING_COMPARE(
+                        items[relative_index].m_groups[i], m_items[absolute_index - 1]->m_groups[i]->m_text);
             }
-            if (l + 1 == countl && index + 1 < countitems) {
-                for (i = 0; i < count; i++) {
-                    {
-                        if (items_prev[index]->m_groups[i] == items_prev[index + 1]->m_groups[i]) {
-                            if (m_items[index + 1]->m_groups[i] != m_items[index]->m_groups[i]) {
-                                t_group_ptr newgroup = storage_create_group();
-                                newgroup->m_text = (items_prev[index]->m_groups[i]->m_text);
-                                size_t j = index + 1;
-                                while (j < countitems && items_prev[index]->m_groups[i] == items_prev[j]->m_groups[i]) {
-                                    m_items[j]->m_groups[i] = newgroup;
-                                    j++;
-                                };
-                            }
-                        }
+            if (!b_new && absolute_index + 1 < total_items && relative_index + 1 >= replace_count) {
+                b_right_same = b_right_same_above
+                    && !GROUP_STRING_COMPARE(
+                        items[relative_index].m_groups[i], m_items[absolute_index + 1]->m_groups[i]->m_text);
+            }
+            if (!b_new && item_old.is_valid()) {
+                b_self_same = b_self_same_above
+                    && !GROUP_STRING_COMPARE(items[relative_index].m_groups[i], item_old->m_groups[i]->m_text);
+            }
+            if (b_new || (!b_left_same && !b_right_same && !b_self_same)) {
+                item->m_groups[i] = storage_create_group();
+                item->m_groups[i]->m_text = items[relative_index].m_groups[i];
+                b_new = true;
+                item->m_display_index++;
+            }
+            if (b_left_same && b_right_same) {
+                item->m_groups[i] = m_items[absolute_index - 1]->m_groups[i];
+                t_group_ptr test;
+                {
+                    test = m_items[absolute_index + 1]->m_groups[i];
+                    size_t j = absolute_index + 1;
+                    while (j < total_items && test == m_items[j]->m_groups[i]) {
+                        m_items[j]->m_groups[i] = item->m_groups[i];
+                        j++;
+                    }
+                }
+            } else if (b_left_same)
+                item->m_groups[i] = m_items[absolute_index - 1]->m_groups[i];
+            else if (b_right_same) {
+                item->m_groups[i] = m_items[absolute_index + 1]->m_groups[i];
+
+                if (!item->m_groups[i]->is_hidden())
+                    item->m_display_index++;
+            } else if (b_self_same) {
+                item->m_groups[i] = item_old->m_groups[i];
+
+                if (!item->m_groups[i]->is_hidden())
+                    item->m_display_index++;
+            }
+            b_right_same_above = b_right_same;
+            b_left_same_above = b_left_same;
+            b_self_same_above = b_self_same;
+        }
+        if (relative_index + 1 == replace_count && absolute_index + 1 < total_items) {
+            for (const auto group_index : std::views::iota(size_t{}, m_group_count)) {
+                const auto old_item = items_prev[absolute_index];
+                const auto old_next_item = items_prev[absolute_index + 1];
+                const auto next_item = m_items[absolute_index + 1];
+
+                if (old_item->m_groups[group_index] == old_next_item->m_groups[group_index]
+                    && item->m_groups[group_index] != next_item->m_groups[group_index]) {
+                    t_group_ptr new_group = storage_create_group();
+                    new_group->m_text = (items_prev[absolute_index]->m_groups[group_index]->m_text);
+                    size_t item_index = absolute_index + 1;
+
+                    while (item_index < total_items
+                        && items_prev[absolute_index]->m_groups[group_index]
+                            == items_prev[item_index]->m_groups[group_index]) {
+                        m_items[item_index]->m_groups[group_index] = new_group;
+                        item_index++;
                     }
                 }
             }
         }
     }
-    {
-        size_t countl2 = index_start + countl < countitems ? countl + 1 : countl;
-        for (l = 0; l < countl2; l++) {
-            size_t i;
-            size_t count = m_group_count;
-            size_t index = l + index_start;
-            for (i = 0; i < count; i++) {
-                if ((!index || m_items[index - 1]->m_groups[i] != m_items[index]->m_groups[i]))
-                    newgroupcount++;
-            }
-        }
+
+    size_t new_group_display_count{};
+
+    for (const auto item_index :
+        std::views::iota(index_start, std::min(index_start + replace_count + 1, total_items))) {
+        new_group_display_count += get_item_display_group_count(item_index);
     }
-    {
-        size_t j = index_start + countl;
 
-        // console::formatter() << newgroupcount << " " << oldgroupcount;
+    size_t item_index = index_start + replace_count;
 
-        while (j < countitems) {
-            m_items[j]->m_display_index += ((newgroupcount - oldgroupcount));
-            j++;
-        }
+    while (item_index < total_items) {
+        m_items[item_index]->m_display_index += new_group_display_count - old_group_display_count;
+        item_index++;
     }
 }
 
-void ListView::insert_items_in_internal_state(size_t index_start, size_t pcountitems, const InsertItem* items)
+void ListView::insert_items_in_internal_state(size_t index_start, size_t insert_count, const InsertItem* items)
 {
-    size_t countl = pcountitems;
-    m_items.insert(m_items.begin() + index_start, countl, t_item_ptr());
+    const auto total_items = m_items.size();
+    const auto old_group_display_count
+        = index_start < total_items ? get_item_display_group_count(index_start + insert_count) : 0;
+
+    m_items.insert(m_items.begin() + index_start, insert_count, t_item_ptr());
 
     if (m_highlight_selected_item_index != pfc_infinite && m_highlight_selected_item_index >= index_start)
-        m_highlight_selected_item_index += countl;
+        m_highlight_selected_item_index += insert_count;
 
     const std::optional<std::vector<t_item_ptr>> items_prev
         = m_group_count > 0 ? std::make_optional(m_items) : std::nullopt;
 
-    size_t countitems = m_items.size();
-    size_t newgroupcount = 0;
-    size_t oldgroupcount = 0;
-
-    // Calculate old group count
-    {
-        size_t index = index_start + countl;
-        if (index < countitems) {
-            size_t i;
-            size_t count = m_group_count;
-            for (i = 0; i < count; i++) {
-                if ((!index_start || m_items[index_start - 1]->m_groups[i] != m_items[index]->m_groups[i]))
-                    oldgroupcount++;
-            }
-        }
-    }
-
     // Determine grouping
-
     {
         t_item_ptr* p_items = m_items.data();
 
-        concurrency::parallel_for(size_t{0}, countl, [this, p_items, index_start, items](size_t l) {
+        concurrency::parallel_for(size_t{0}, insert_count, [this, p_items, index_start, items](size_t l) {
             size_t count = m_group_count;
             size_t index = l + index_start;
             Item* item;
@@ -271,8 +277,7 @@ void ListView::insert_items_in_internal_state(size_t index_start, size_t pcounti
             item->m_groups.resize(count);
         });
 
-        for (size_t l = 0; l < countl; l++) {
-            size_t i;
+        for (size_t l = 0; l < insert_count; l++) {
             size_t count = m_group_count;
             size_t index = l + index_start;
             Item* item = p_items[index].get_ptr();
@@ -287,30 +292,35 @@ void ListView::insert_items_in_internal_state(size_t index_start, size_t pcounti
             bool b_new = false;
             bool b_left_same_above = true;
             bool b_right_same_above = true;
-            for (i = 0; i < count; i++) {
+            for (size_t i = 0; i < count; i++) {
                 bool b_left_same = false;
                 bool b_right_same = false;
                 if (!b_new && index) {
                     b_left_same = b_left_same_above
                         && !GROUP_STRING_COMPARE(items[l].m_groups[i], m_items[index - 1]->m_groups[i]->m_text);
                 }
-                if (!b_new && index + 1 < countitems && l + 1 >= countl) {
+                if (!b_new && index + 1 < total_items && l + 1 >= insert_count) {
                     b_right_same = b_right_same_above
                         && !GROUP_STRING_COMPARE(items[l].m_groups[i], m_items[index + 1]->m_groups[i]->m_text);
                 }
                 if (b_new || (!b_left_same && !b_right_same)) {
-                    item->m_groups[i] = storage_create_group();
-                    item->m_groups[i]->m_text = (items[l].m_groups[i]);
+                    t_group_ptr group = storage_create_group();
+                    group->m_text = items[l].m_groups[i];
+
+                    if (!group->is_hidden())
+                        item->m_display_index++;
+
+                    item->m_groups[i] = std::move(group);
                     b_new = true;
-                    item->m_display_index++;
                 }
+
                 if (b_left_same && b_right_same) {
                     item->m_groups[i] = m_items[index - 1]->m_groups[i];
                     t_group_ptr test;
                     {
                         test = m_items[index + 1]->m_groups[i];
                         size_t j = index + 1;
-                        while (j < countitems && test == m_items[j]->m_groups[i]) {
+                        while (j < total_items && test == m_items[j]->m_groups[i]) {
                             m_items[j]->m_groups[i] = item->m_groups[i];
                             j++;
                         }
@@ -318,8 +328,10 @@ void ListView::insert_items_in_internal_state(size_t index_start, size_t pcounti
                 } else if (b_left_same)
                     item->m_groups[i] = m_items[index - 1]->m_groups[i];
                 else if (b_right_same) {
-                    item->m_display_index++;
                     item->m_groups[i] = m_items[index + 1]->m_groups[i];
+
+                    if (!item->m_groups[i]->is_hidden())
+                        item->m_display_index++;
                 }
                 b_right_same_above = b_right_same;
                 b_left_same_above = b_left_same;
@@ -327,8 +339,8 @@ void ListView::insert_items_in_internal_state(size_t index_start, size_t pcounti
         }
     }
     {
-        size_t index = index_start + countl;
-        if (m_group_count > 0 && index_start && index < countitems) {
+        size_t index = index_start + insert_count;
+        if (m_group_count > 0 && index_start && index < total_items) {
             const auto& items_prev_value = *items_prev;
 
             const size_t index_prev = index_start - 1;
@@ -339,7 +351,7 @@ void ListView::insert_items_in_internal_state(size_t index_start, size_t pcounti
                         t_group_ptr newgroup = storage_create_group();
                         newgroup->m_text = (items_prev_value[index_prev]->m_groups[i]->m_text);
                         size_t j = index;
-                        while (j < countitems
+                        while (j < total_items
                             && items_prev_value[index_prev]->m_groups[i] == items_prev_value[j]->m_groups[i]) {
                             m_items[j]->m_groups[i] = newgroup;
                             j++;
@@ -351,28 +363,19 @@ void ListView::insert_items_in_internal_state(size_t index_start, size_t pcounti
     }
 
     // Determine new group count
-    {
-        size_t countl2 = index_start + countl < countitems ? countl + 1 : countl;
-        for (size_t l = 0; l < countl2; l++) {
-            size_t i;
-            size_t count = m_group_count;
-            size_t index = l + index_start;
-            for (i = 0; i < count; i++) {
-                if ((!index || m_items[index - 1]->m_groups[i] != m_items[index]->m_groups[i]))
-                    newgroupcount++;
-            }
-        }
+    size_t new_group_display_count{};
+
+    for (const auto item_index : std::views::iota(index_start, std::min(index_start + insert_count + 1, total_items))) {
+        new_group_display_count += get_item_display_group_count(item_index);
     }
 
     // Correct subsequent display indices
     {
-        const size_t j_start = index_start + countl;
+        const size_t j_start = index_start + insert_count;
         size_t j = j_start;
 
-        // console::formatter() << newgroupcount << " " << oldgroupcount;
-
-        while (j < countitems) {
-            m_items[j]->m_display_index += ((countl + newgroupcount - oldgroupcount));
+        while (j < total_items) {
+            m_items[j]->m_display_index += insert_count + new_group_display_count - old_group_display_count;
             j++;
         }
     }
@@ -385,7 +388,7 @@ void ListView::calculate_item_positions(size_t index_start)
 
     int y_pointer = 0;
     if (m_group_count)
-        while (index_start && get_item_display_group_count(index_start) == 0)
+        while (index_start && !get_is_new_group(index_start))
             index_start--;
     if (!index_start)
         y_pointer += 0; // m_item_height * m_group_count;
@@ -395,13 +398,13 @@ void ListView::calculate_item_positions(size_t index_start)
         else
             y_pointer = get_item_position(index_start - 1) + get_item_height(index_start - 1);
     }
-    size_t i;
     size_t count = m_items.size();
     int group_height_counter = 0;
     const auto group_minimum_inner_height = get_group_minimum_inner_height();
-    for (i = index_start; i < count; i++) {
+    for (size_t i = index_start; i < count; i++) {
+        const auto is_new_group = get_is_new_group(i);
         const auto groups = gsl::narrow<int>(get_item_display_group_count(i));
-        if (groups) {
+        if (is_new_group) {
             if (group_height_counter && group_height_counter < group_minimum_inner_height)
                 y_pointer += group_minimum_inner_height - group_height_counter;
             group_height_counter = 0;
@@ -434,61 +437,50 @@ void ListView::remove_items_in_internal_state(const pfc::bit_array& mask)
     }
 }
 
-void ListView::remove_item_in_internal_state(size_t index)
+void ListView::remove_item_in_internal_state(size_t remove_index)
 {
-    size_t gc = 0;
-    size_t k;
-    size_t count2 = m_items[index]->m_groups.size();
+    const size_t total_items = m_items.size();
+    size_t old_group_display_count{};
 
-    // if (index)
-    {
-        for (k = 0; k < count2; k++) {
-            if ((!index || m_items[index]->m_groups[k] != m_items[index - 1]->m_groups[k])
-                && (index + 1 >= m_items.size() || m_items[index]->m_groups[k] != m_items[index + 1]->m_groups[k])) {
-                gc++;
-            }
-            // else break;
-        }
+    for (const auto item_index : std::views::iota(remove_index, std::min(remove_index + 1, total_items))) {
+        old_group_display_count += get_item_display_group_count(item_index);
     }
-    // else gc = count2;
 
-    // t_item_ptr item = m_items[index];
-    m_items.erase(m_items.begin() + index);
+    m_items.erase(m_items.begin() + remove_index);
 
-    if (index < m_items.size()) {
-        size_t j;
-        if (index) {
-            size_t i;
-            size_t count = m_items[index]->m_groups.size();
-            for (i = 0; i < count; i++) {
-                if (!GROUP_STRING_COMPARE(
-                        m_items[index - 1]->m_groups[i]->m_text, m_items[index]->m_groups[i]->m_text)) {
-                    t_group_ptr newgroup = m_items[index - 1]->m_groups[i];
-                    j = index;
-                    while (j < m_items.size()
-                        && (!i || m_items[index - 1]->m_groups[i - 1] == m_items[j]->m_groups[i - 1])
-                        && !GROUP_STRING_COMPARE(
-                            m_items[index - 1]->m_groups[i]->m_text, m_items[j]->m_groups[i]->m_text)) {
-                        if (j == index && m_items[j]->m_groups[i] != newgroup)
-                            gc++;
-                        m_items[j]->m_groups[i] = newgroup;
-                        j++;
-                    };
-                } else
+    if (remove_index < m_items.size()) {
+        if (remove_index) {
+            const size_t count = m_items[remove_index]->m_groups.size();
+            for (size_t group_index = 0; group_index < count; group_index++) {
+                if (GROUP_STRING_COMPARE(m_items[remove_index - 1]->m_groups[group_index]->m_text,
+                        m_items[remove_index]->m_groups[group_index]->m_text)
+                    != 0)
                     break;
+
+                t_group_ptr new_group = m_items[remove_index - 1]->m_groups[group_index];
+                size_t item_index = remove_index;
+                while (item_index < m_items.size()
+                    && (!group_index
+                        || m_items[remove_index - 1]->m_groups[group_index - 1]
+                            == m_items[item_index]->m_groups[group_index - 1])
+                    && !GROUP_STRING_COMPARE(m_items[remove_index - 1]->m_groups[group_index]->m_text,
+                        m_items[item_index]->m_groups[group_index]->m_text)) {
+                    m_items[item_index]->m_groups[group_index] = new_group;
+                    item_index++;
+                }
             }
         }
-        j = index;
-        while (j < m_items.size()) {
-            m_items[j]->m_display_index -= (1 + gc);
-            j++;
-        }
+
+        const auto new_group_display_count = get_item_display_group_count(remove_index);
+
+        for (const auto& item : m_items | ranges::views::drop(remove_index))
+            item->m_display_index += new_group_display_count - old_group_display_count - 1;
     }
 
     if (m_highlight_selected_item_index != pfc_infinite) {
-        if (m_highlight_selected_item_index > index)
+        if (m_highlight_selected_item_index > remove_index)
             m_highlight_selected_item_index--;
-        else if (m_highlight_selected_item_index == index)
+        else if (m_highlight_selected_item_index == remove_index)
             m_highlight_selected_item_index = pfc_infinite;
     }
 }

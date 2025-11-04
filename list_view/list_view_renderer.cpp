@@ -83,27 +83,37 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
     size_t i_end = gsl::narrow<size_t>(get_item_at_or_after(
         (rc_update.bottom > rc_items.top + 1 ? rc_update.bottom - rc_items.top - 1 : 0) + m_scroll_position));
     for (; i <= i_end && i < count; i++) {
-        size_t item_group_start = NULL;
-        size_t item_group_count = NULL;
+        size_t item_group_start{};
+        size_t item_group_count{};
         get_item_group(i, m_group_count ? m_group_count - 1 : 0, item_group_start, item_group_count);
 
-        size_t j;
-        size_t countj = m_items[i]->m_groups.size();
-        for (j = 0; j < countj; j++) {
-            if (!i || m_items[i]->m_groups[j] != m_items[i - 1]->m_groups[j]) {
-                t_group_ptr p_group = m_items[i]->m_groups[j];
-                int y = get_item_position(i) - m_scroll_position - m_group_height * gsl::narrow<int>(countj - j)
-                    + gsl::narrow_cast<int>(rc_items.top);
-                int x = -m_horizontal_scroll_position + rc_items.left;
-                // y += counter*m_item_height;
-                RECT rc = {x, y, x + cx, y + m_group_height};
+        const auto display_group_count = get_item_display_group_count(i);
+        const size_t group_count = m_items[i]->m_groups.size();
+        size_t display_group_index{};
 
-                if (rc.top >= rc_update.bottom) {
-                    // OffsetWindowOrgEx(dc, -m_horizontal_scroll_position, 0, NULL);
-                    break; // CRUDE
-                }
-                m_renderer->render_group(context, i, j, p_group->m_text.get_ptr(), indentation_step, j, rc);
-            }
+        for (size_t group_index = 0; group_index < group_count; group_index++) {
+            if (i > 0 && m_items[i]->m_groups[group_index] == m_items[i - 1]->m_groups[group_index])
+                continue;
+
+            const auto group = m_items[i]->m_groups[group_index];
+
+            if (group->is_hidden())
+                continue;
+
+            const int y = get_item_position(i) - m_scroll_position
+                - m_group_height * gsl::narrow<int>(display_group_count - display_group_index)
+                + gsl::narrow_cast<int>(rc_items.top);
+            const int x = -m_horizontal_scroll_position + rc_items.left;
+
+            const RECT rc = {x, y, x + cx, y + m_group_height};
+
+            if (rc.top >= rc_update.bottom)
+                break;
+
+            m_renderer->render_group(
+                context, i, group_index, group->m_text.get_ptr(), indentation_step, display_group_index, rc);
+
+            ++display_group_index;
         }
 
         if (b_show_group_info_area && (i == i_start || i == item_group_start)) {
@@ -125,11 +135,10 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
         RECT rc = {0 - m_horizontal_scroll_position + item_indentation,
             get_item_position(i) - m_scroll_position + rc_items.top, cx - m_horizontal_scroll_position,
             get_item_position(i) + get_item_height(i) - m_scroll_position + rc_items.top};
-        // rc.left += cx_space*level_spacing_size*countj;
-        if (rc.top >= rc_update.bottom) {
-            // OffsetWindowOrgEx(dc, -m_horizontal_scroll_position, 0, NULL);
-            break; // CRUDE
-        }
+
+        if (rc.top >= rc_update.bottom)
+            break;
+
         if (rc.bottom > rc_update.top) {
             const auto show_item_focus = index_focus == i && (b_window_focused || m_always_show_focus);
             std::vector<lv::RendererSubItem> sub_items;
