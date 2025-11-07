@@ -63,6 +63,8 @@ public:
     class Group : public pfc::refcounted_object_root {
     public:
         pfc::string8 m_text;
+
+        bool is_hidden() const { return m_text.is_empty(); }
     };
 
     class Item : public pfc::refcounted_object_root {
@@ -582,19 +584,9 @@ protected:
 
     size_t get_item_display_index(size_t index) { return m_items[index]->m_display_index; }
 
-    [[nodiscard]] size_t get_item_display_group_count(size_t index) const
-    {
-        if (index == 0)
-            return m_group_count;
+    [[nodiscard]] bool get_is_new_group(size_t index) const;
 
-        size_t counter = 0;
-        size_t i = m_group_count;
-        while (i && m_items[index]->m_groups[i - 1] != m_items[index - 1]->m_groups[i - 1]) {
-            i--;
-            counter++;
-        }
-        return counter;
-    }
+    [[nodiscard]] size_t get_item_display_group_count(size_t index, bool include_hidden = false) const;
 
     void on_focus_change(size_t index_prev, size_t index_new);
 
@@ -805,7 +797,7 @@ private:
     void render_items(HDC dc, const RECT& rc_update, int cx);
     void insert_items_in_internal_state(size_t index_start, size_t count, const InsertItem* items);
     void replace_items_in_internal_state(size_t index_start, size_t count, const InsertItem* items);
-    void remove_item_in_internal_state(size_t index);
+    void remove_item_in_internal_state(size_t remove_index);
     void remove_items_in_internal_state(const pfc::bit_array& mask);
     void calculate_item_positions(size_t index_start = 0);
 
