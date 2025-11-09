@@ -252,8 +252,7 @@ void ListView::replace_items_in_internal_state(size_t index_start, size_t replac
 void ListView::insert_items_in_internal_state(size_t index_start, size_t insert_count, const InsertItem* items)
 {
     const auto total_items = m_items.size();
-    const auto old_group_display_count
-        = index_start < total_items ? get_item_display_group_count(index_start + insert_count) : 0;
+    const auto old_group_display_count = index_start < total_items ? get_item_display_group_count(index_start) : 0;
 
     m_items.insert(m_items.begin() + index_start, insert_count, t_item_ptr());
 
