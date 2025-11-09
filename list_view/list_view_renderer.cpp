@@ -90,12 +90,16 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
         const auto display_group_count = get_item_display_group_count(i);
         const size_t group_count = m_items[i]->m_groups.size();
         size_t display_group_index{};
+        size_t indentation_level{};
 
         for (size_t group_index = 0; group_index < group_count; group_index++) {
-            if (i > 0 && m_items[i]->m_groups[group_index] == m_items[i - 1]->m_groups[group_index])
-                continue;
-
             const auto group = m_items[i]->m_groups[group_index];
+
+            if (i > 0 && group == m_items[i - 1]->m_groups[group_index]) {
+                if (!group->is_hidden())
+                    ++indentation_level;
+                continue;
+            }
 
             if (group->is_hidden())
                 continue;
@@ -111,9 +115,10 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
                 break;
 
             m_renderer->render_group(
-                context, i, group_index, group->m_text.get_ptr(), indentation_step, display_group_index, rc);
+                context, i, group_index, group->m_text.get_ptr(), indentation_step, indentation_level, rc);
 
             ++display_group_index;
+            ++indentation_level;
         }
 
         if (b_show_group_info_area && (i == i_start || i == item_group_start)) {
