@@ -402,14 +402,22 @@ void ListView::calculate_item_positions(size_t index_start)
     const auto group_minimum_inner_height = get_group_minimum_inner_height();
     for (size_t i = index_start; i < count; i++) {
         const auto is_new_group = get_is_new_group(i);
-        const auto groups = gsl::narrow<int>(get_item_display_group_count(i));
+        const auto display_group_count = gsl::narrow<int>(get_item_display_group_count(i));
+
         if (is_new_group) {
+            const auto bottom_margin = i > 0 ? get_group_items_bottom_margin(i - 1) : 0;
+
             if (group_height_counter && group_height_counter < group_minimum_inner_height)
-                y_pointer += group_minimum_inner_height - group_height_counter;
+                y_pointer += std::max(bottom_margin, group_minimum_inner_height - group_height_counter);
+            else
+                y_pointer += bottom_margin;
+
             group_height_counter = 0;
+
+            y_pointer += get_leaf_group_header_bottom_margin(i);
         }
         group_height_counter += get_item_height(i);
-        y_pointer += groups * m_group_height;
+        y_pointer += display_group_count * m_group_height;
         m_items[i]->m_display_position = y_pointer;
         y_pointer += get_item_height(i);
     }

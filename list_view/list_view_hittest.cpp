@@ -70,12 +70,40 @@ void ListView::hit_test_ex(POINT pt_client, ListView::HitTestResult& result)
     if (vertical_hit_test_result.position_category == VerticalPositionCategory::OnGroupHeader) {
         assert(m_group_count > 0);
 
-        const int item_top = get_item_position(vertical_hit_test_result.item_leftmost);
+        const auto item_index = vertical_hit_test_result.item_leftmost;
+        const auto item_top = get_item_position(item_index);
+        const auto group_header_bottom_margin = get_group_items_bottom_margin(item_index);
+        const auto display_group_count = get_item_display_group_count(item_index);
+
+        if (display_group_count == 0 || y_position >= item_top - group_header_bottom_margin) {
+            result.index = item_index > 0 ? item_index - 1 : item_index;
+            result.insertion_index = item_index;
+            result.category = HitTestCategory::NotOnItem;
+            return;
+        }
+
+        const auto group_headers_top = get_item_position(item_index, true);
+        assert(y_position >= group_headers_top);
+
+        const auto display_group_index = gsl::narrow_cast<size_t>(y_position - group_headers_top) / m_group_height;
+        const auto& groups = m_items[item_index]->m_groups;
+        size_t group_level{m_group_count - 1};
+        auto levels_remaining = display_group_count - display_group_index;
+
+        for (auto&& [index, group] : ranges::views::enumerate(groups) | ranges::views::reverse) {
+            if (!group->is_hidden())
+                --levels_remaining;
+
+            if (levels_remaining == 0) {
+                group_level = index;
+                break;
+            }
+        }
 
         result.category = HitTestCategory::OnGroupHeader;
         result.index = vertical_hit_test_result.item_leftmost;
         result.insertion_index = result.index;
-        result.group_level = m_group_count - (item_top - 1 - y_position) / m_group_height - 1;
+        result.group_level = group_level;
 
         assert(result.group_level < m_group_count);
 

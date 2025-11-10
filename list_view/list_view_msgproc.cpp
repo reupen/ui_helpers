@@ -474,38 +474,33 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                             || hit_result.category == HitTestCategory::OnItemObscuredAbove)
                             ensure_visible(hit_result.index);
 
-                        if (hit_result.category == HitTestCategory::OnGroupHeader) {
-                            if (hit_result.index > m_selecting_start)
-                                hit_result.index--;
-                        }
-                        if (hit_result.category == HitTestCategory::NotOnItem && hit_result.index < m_selecting_start
-                            && hit_result.index + 1 < get_item_count()) // Items removed whilst selecting.. messy
-                            hit_result.index++;
+                        size_t target_index{};
 
-                        /*if (m_selecting_move)
-                        {
-                            if (m_selecting_start!=hit_result.index)
-                            {
-                                m_selecting_moved = true;
-                                move_selection(hit_result.index-m_selecting_start);
-                                m_selecting_start=hit_result.index;
-                            }
+                        if (hit_result.category == HitTestCategory::OnGroupHeader
+                            && hit_result.index > m_selecting_start) {
+                            target_index = hit_result.index - 1;
+                        } else if (hit_result.category == HitTestCategory::NotOnItem
+                            && hit_result.index < m_selecting_start && hit_result.index + 1 < get_item_count())
+                            target_index = hit_result.index + 1;
+                        else {
+                            target_index = hit_result.index;
                         }
-                        else*/
-                        {
-                            if (get_focus_item() != hit_result.index) {
-                                if (!is_partially_visible(hit_result.index)) {
-                                    if (gsl::narrow_cast<int>(hit_result.index) > get_last_viewable_item())
-                                        scroll(get_item_position_bottom(hit_result.index) - get_item_area_height());
-                                    else
-                                        scroll(get_item_position(hit_result.index));
-                                }
 
-                                set_selection_state(pfc::bit_array_true(),
-                                    pfc::bit_array_range(std::min(hit_result.index, m_selecting_start),
-                                        (size_t)abs(int(m_selecting_start - hit_result.index)) + 1));
-                                set_focus_item(hit_result.index);
+                        if (get_focus_item() != target_index) {
+                            if (!is_partially_visible(target_index)) {
+                                if (gsl::narrow_cast<int>(target_index) > get_last_viewable_item())
+                                    scroll(get_item_position_bottom(target_index) - get_item_area_height());
+                                else
+                                    scroll(get_item_position(target_index));
                             }
+
+                            const auto num_to_select
+                                = static_cast<size_t>(std::abs(
+                                      gsl::narrow_cast<int>(m_selecting_start) - gsl::narrow_cast<int>(target_index)))
+                                + 1;
+                            set_selection_state(pfc::bit_array_true(),
+                                pfc::bit_array_range(std::min(target_index, m_selecting_start), num_to_select));
+                            set_focus_item(target_index);
                         }
                     }
                 }
