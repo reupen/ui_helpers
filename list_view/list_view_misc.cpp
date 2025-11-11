@@ -2,12 +2,64 @@
 
 #include "list_view.h"
 
+using namespace uih::literals::spx;
+
 namespace uih {
 
 void ListView::on_first_show()
 {
     if (const size_t focus = get_focus_item(); focus != std::numeric_limits<size_t>::max())
         ensure_visible(focus);
+}
+
+int ListView::get_group_items_bottom_margin(size_t index) const
+{
+    if (!get_show_group_info_area() || index + 1 == m_items.size())
+        return 0;
+
+    return m_group_height / 6;
+}
+
+int ListView::get_leaf_group_header_bottom_margin(size_t index) const
+{
+    if (!get_show_group_info_area() || index == 0)
+        return 0;
+
+    if (!get_is_new_group(index))
+        return 0;
+
+    if (m_group_level_indentation_enabled)
+        return m_group_count > 1 ? m_group_height / 4 : m_group_height / 8;
+
+    return m_group_count > 1 ? m_group_height / 5 : m_group_height / 8;
+}
+
+ListView::GroupInfoAreaPadding ListView::get_group_info_area_padding() const
+{
+    if (!get_show_group_info_area())
+        return {};
+
+    const auto min_left_padding = 2_spx + 3_spx;
+    const auto min_right_padding = 4_spx;
+    const auto indentation_step = get_indentation_step();
+
+    return GroupInfoAreaPadding{
+        std::max(min_left_padding, m_group_count > 1 ? indentation_step : 0),
+        0,
+        std::max(min_right_padding, indentation_step),
+        m_group_level_indentation_enabled ? std::max(m_item_height / 2, indentation_step) : m_item_height / 2,
+    };
+}
+
+int ListView::get_total_indentation() const
+{
+    const auto item_indentation = [this] {
+        if (m_group_count == 0)
+            return 0;
+
+        return get_indentation_step() * gsl::narrow<int>(m_group_count - (get_show_group_info_area() ? 1 : 0));
+    }();
+    return item_indentation + get_group_info_area_total_width();
 }
 
 void ListView::refresh_item_positions()

@@ -400,7 +400,8 @@ public:
         if (index >= m_items.size())
             return 0;
 
-        return gsl::narrow<int>(get_item_display_group_count(index)) * m_group_height;
+        return gsl::narrow<int>(get_item_display_group_count(index)) * m_group_height
+            + get_leaf_group_header_bottom_margin(index);
     }
 
     [[nodiscard]] int get_item_position(size_t index, bool b_include_headers = false) const
@@ -425,6 +426,8 @@ public:
     }
 
     int get_group_minimum_inner_height() { return get_show_group_info_area() ? get_group_info_area_total_height() : 0; }
+    int get_group_items_bottom_margin(size_t index) const;
+    int get_leaf_group_header_bottom_margin(size_t index) const;
 
     int get_item_group_bottom(size_t index, bool b_include_headers = false)
     {
@@ -612,7 +615,6 @@ protected:
         }
     }
 
-    int get_item_indentation() const;
     int get_indentation_step() const;
     int get_default_indentation_step() const;
 
@@ -627,24 +629,32 @@ protected:
         }
     }
 
-    int get_group_info_area_width() { return get_show_group_info_area() ? m_group_info_area_width : 0; }
+    struct GroupInfoAreaPadding {
+        int left{};
+        int top{};
+        int right{};
+        int bottom{};
+    };
 
-    int get_group_info_area_height() { return get_show_group_info_area() ? m_group_info_area_height : 0; }
+    GroupInfoAreaPadding get_group_info_area_padding() const;
 
-    int get_group_info_area_total_width()
+    int get_group_info_area_width() const { return get_show_group_info_area() ? m_group_info_area_width : 0; }
+
+    int get_group_info_area_height() const { return get_show_group_info_area() ? m_group_info_area_height : 0; }
+
+    int get_group_info_area_total_width() const
     {
-        return get_show_group_info_area() ? m_group_info_area_width + get_indentation_step() : 0;
+        const auto padding = get_group_info_area_padding();
+        return get_show_group_info_area() ? m_group_info_area_width + padding.left + padding.right : 0;
     }
 
-    int get_group_info_area_total_height()
+    int get_group_info_area_total_height() const
     {
         if (!get_show_group_info_area())
             return 0;
 
-        if (!m_group_level_indentation_enabled)
-            return m_group_info_area_height + get_default_indentation_step();
-
-        return get_show_group_info_area() ? m_group_info_area_height + get_indentation_step() : 0;
+        const auto padding = get_group_info_area_padding();
+        return m_group_info_area_height + padding.top + padding.bottom;
     }
 
     void set_show_group_info_area(bool val)
@@ -672,9 +682,9 @@ protected:
         return header_item_index - 1;
     }
 
-    bool get_show_group_info_area() { return m_group_count ? m_show_group_info_area : false; }
+    bool get_show_group_info_area() const { return m_group_count ? m_show_group_info_area : false; }
 
-    int get_total_indentation() { return get_item_indentation() + get_group_info_area_total_width(); }
+    int get_total_indentation() const;
 
     ColourData render_get_colour_data()
     {

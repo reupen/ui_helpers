@@ -8,16 +8,7 @@ using namespace uih::literals::spx;
 
 namespace uih {
 
-constexpr int _level_spacing_size = 3;
-
-int ListView::get_item_indentation() const
-{
-    const auto rc = get_items_rect();
-    int ret = rc.left;
-    if (m_group_count)
-        ret += get_indentation_step() * gsl::narrow<int>(m_group_count);
-    return ret;
-}
+constexpr int _level_spacing_size = 2;
 
 int ListView::get_indentation_step() const
 {
@@ -71,14 +62,16 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
     size_t i;
     size_t count = m_items.size();
     const auto indentation_step = m_group_count > 0 ? get_indentation_step() : 0;
-    const int item_preindentation = indentation_step * gsl::narrow<int>(m_group_count) + rc_items.left;
-    const int item_indentation = item_preindentation + get_group_info_area_total_width();
+    const auto group_info_area_padding = get_group_info_area_padding();
+    const auto artwork_indentation = indentation_step * (gsl::narrow<int>(m_group_count) - 1);
+    const auto item_indentation = get_total_indentation();
     cx = get_columns_display_width() + item_indentation;
 
     bool b_show_group_info_area = get_show_group_info_area();
 
     i = gsl::narrow<size_t>(
         get_item_at_or_before((rc_update.top > rc_items.top ? rc_update.top - rc_items.top : 0) + m_scroll_position));
+
     size_t i_start = i;
     size_t i_end = gsl::narrow<size_t>(get_item_at_or_after(
         (rc_update.bottom > rc_items.top + 1 ? rc_update.bottom - rc_items.top - 1 : 0) + m_scroll_position));
@@ -106,7 +99,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
 
             const int y = get_item_position(i) - m_scroll_position
                 - m_group_height * gsl::narrow<int>(display_group_count - display_group_index)
-                + gsl::narrow_cast<int>(rc_items.top);
+                - get_leaf_group_header_bottom_margin(i) + gsl::narrow_cast<int>(rc_items.top);
             const int x = -m_horizontal_scroll_position + rc_items.left;
 
             const RECT rc = {x, y, x + cx, y + m_group_height};
@@ -123,8 +116,9 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
 
         if (b_show_group_info_area && (i == i_start || i == item_group_start)) {
             int height = (std::max)(m_item_height * gsl::narrow<int>(item_group_count), get_group_info_area_height());
-            int gx = 0 - m_horizontal_scroll_position + item_preindentation;
-            int gy = get_item_position(item_group_start) - m_scroll_position + rc_items.top;
+            int gx = 0 - m_horizontal_scroll_position + artwork_indentation + group_info_area_padding.left;
+            int gy
+                = get_item_position(item_group_start) - m_scroll_position + rc_items.top + group_info_area_padding.top;
             int gcx = get_group_info_area_width();
             RECT rc_group_info
                 = {gx, gy, gx + gcx, get_item_position(item_group_start) + height - m_scroll_position + rc_items.top};

@@ -162,10 +162,15 @@ std::optional<LRESULT> ListView::on_wm_notify_header(LPNMHDR lpnm)
     case HDN_BEGINTRACKA:
     case HDN_BEGINTRACKW: {
         const auto lpnmh = reinterpret_cast<LPNMHEADERW>(lpnm);
-        if (m_autosize && (!get_show_group_info_area() || lpnmh->iItem)) {
+
+        if (lpnmh->iItem == 0 && m_have_indent_column)
+            return get_show_group_info_area() ? FALSE : TRUE;
+
+        if (m_autosize)
             return TRUE;
-        }
-    } break;
+
+        return FALSE;
+    }
     case HDN_DIVIDERDBLCLICK: {
         if (m_autosize || !m_items_text_format)
             break;
@@ -197,46 +202,61 @@ std::optional<LRESULT> ListView::on_wm_notify_header(LPNMHDR lpnm)
         break;
     }
     case HDN_ITEMCHANGING: {
-        if (!m_ignore_column_size_change_notification) {
-            auto lpnmh = (LPNMHEADER)lpnm;
-            if (lpnmh->pitem->mask & HDI_WIDTH) {
-                if (m_have_indent_column && lpnmh->iItem == 0) {
-                    int min_indent = get_item_indentation();
-                    if (get_show_group_info_area())
-                        min_indent += get_indentation_step();
-                    if (lpnmh->pitem->cxy < min_indent) {
-                        return TRUE;
-                    }
-                }
-            }
-        }
-    } break;
+        if (m_ignore_column_size_change_notification)
+            break;
+
+        const auto lpnmh = reinterpret_cast<LPNMHEADERW>(lpnm);
+
+        if (!(lpnmh->pitem->mask & HDI_WIDTH))
+            break;
+
+        if (!m_have_indent_column || lpnmh->iItem != 0)
+            break;
+
+        const auto min_indent = get_total_indentation() - get_group_info_area_width();
+
+        if (lpnmh->pitem->cxy < min_indent)
+            lpnmh->pitem->cxy = min_indent;
+
+        break;
+    }
     case HDN_ITEMCHANGED: {
-        if (!m_ignore_column_size_change_notification) {
-            auto lpnmh = (LPNMHEADER)lpnm;
-            if (lpnmh->pitem->mask & HDI_WIDTH) {
-                if (lpnmh->iItem != -1) {
-                    if (m_have_indent_column && lpnmh->iItem == 0) {
-                        int new_size = lpnmh->pitem->cxy - get_item_indentation() - get_indentation_step();
-                        if (new_size >= 0 && new_size != get_group_info_area_width()) {
-                            notify_on_group_info_area_size_change(new_size);
-                        }
-                    } else if (!m_autosize) {
-                        size_t realIndex = lpnmh->iItem;
-                        if (m_have_indent_column)
-                            realIndex--;
-                        if (realIndex < m_columns.size() && m_columns[realIndex].m_display_size != lpnmh->pitem->cxy) {
-                            m_columns[realIndex].m_size = lpnmh->pitem->cxy;
-                            m_columns[realIndex].m_display_size = lpnmh->pitem->cxy;
-                            invalidate_all();
-                            notify_on_column_size_change(realIndex, m_columns[realIndex].m_size);
-                            on_size();
-                        }
-                    }
-                }
+        if (m_ignore_column_size_change_notification)
+            break;
+
+        const auto lpnmh = reinterpret_cast<LPNMHEADERW>(lpnm);
+
+        if (!(lpnmh->pitem->mask & HDI_WIDTH) || lpnmh->iItem == -1)
+            break;
+
+        if (m_have_indent_column && lpnmh->iItem == 0) {
+            if (!get_show_group_info_area())
+                break;
+
+            const auto padding = get_total_indentation() - get_group_info_area_width();
+            const auto new_size = std::max(0, lpnmh->pitem->cxy - padding);
+
+            if (new_size != get_group_info_area_width())
+                notify_on_group_info_area_size_change(new_size);
+            break;
+        }
+
+        if (!m_autosize) {
+            size_t real_index = lpnmh->iItem;
+
+            if (m_have_indent_column)
+                --real_index;
+
+            if (real_index < m_columns.size() && m_columns[real_index].m_display_size != lpnmh->pitem->cxy) {
+                m_columns[real_index].m_size = lpnmh->pitem->cxy;
+                m_columns[real_index].m_display_size = lpnmh->pitem->cxy;
+                invalidate_all();
+                notify_on_column_size_change(real_index, m_columns[real_index].m_size);
+                on_size();
             }
         }
-    } break;
+        break;
+    }
     case HDN_ITEMCLICK: {
         const auto lpnmh = reinterpret_cast<LPNMHEADERW>(lpnm);
         if (lpnmh->iItem != -1 && (!m_have_indent_column || lpnmh->iItem)) {
