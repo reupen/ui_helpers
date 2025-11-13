@@ -11,37 +11,33 @@ float scale_channel(uint8_t value)
     return gsl::narrow_cast<float>(value) / 255.0f;
 }
 
+std::weak_ptr<wil::com_ptr<ID2D1Factory1>> weak_main_thread_factory;
+
 } // namespace
 
-Context::Ptr Context::s_create()
+wil::com_ptr<ID2D1Factory1> create_factory(D2D1_FACTORY_TYPE factory_type)
 {
-    auto ptr = s_ptr.lock();
+    wil::com_ptr<ID2D1Factory1> factory;
+    D2D1_FACTORY_OPTIONS options{};
 
-    if (!ptr) {
-        ptr = std::make_shared<Context>();
-        s_ptr = ptr;
-    }
+#if UIH_ENABLE_D3D_D2D_DEBUG_LAYER == 1
+    options.debugLevel = IsDebuggerPresent() ? D2D1_DEBUG_LEVEL_INFORMATION : D2D1_DEBUG_LEVEL_NONE;
+#endif
 
-    return ptr;
+    THROW_IF_FAILED(D2D1CreateFactory(factory_type, options, &factory));
+
+    return factory;
 }
 
-Context::Context()
+MainThreadD2D1Factory create_main_thread_factory()
 {
-    THROW_IF_FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory), m_factory.put_void()));
-}
+    if (const auto factory = weak_main_thread_factory.lock())
+        return factory;
 
-wil::com_ptr<ID2D1HwndRenderTarget> Context::create_hwnd_render_target(HWND wnd)
-{
-    RECT rect{};
-    GetClientRect(wnd, &rect);
-
-    wil::com_ptr<ID2D1HwndRenderTarget> render_target;
-    const auto base_properties = D2D1::RenderTargetProperties();
-    const auto hwnd_properties = D2D1::HwndRenderTargetProperties(
-        wnd, {gsl::narrow<unsigned>(wil::rect_width(rect)), gsl::narrow<unsigned>(wil::rect_height(rect))});
-    THROW_IF_FAILED(m_factory->CreateHwndRenderTarget(&base_properties, &hwnd_properties, &render_target));
-
-    return render_target;
+    const auto factory
+        = std::make_shared<wil::com_ptr<ID2D1Factory1>>(create_factory(D2D1_FACTORY_TYPE_SINGLE_THREADED));
+    weak_main_thread_factory = factory;
+    return factory;
 }
 
 D2D1_COLOR_F colorref_to_d2d_color(COLORREF colour)

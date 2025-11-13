@@ -16,6 +16,10 @@
 #define _SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING
 #define OEMRESOURCE
 
+#ifndef UIH_ENABLE_D3D_D2D_DEBUG_LAYER
+#define UIH_ENABLE_D3D_D2D_DEBUG_LAYER 0
+#endif
+
 #include <algorithm>
 #include <functional>
 #include <memory>
@@ -49,7 +53,8 @@
 #include <Usp10.h>
 #include <CommonControls.h>
 #include <intsafe.h>
-#include <d2d1.h>
+#include <d3d11.h>
+#include <d2d1_1.h>
 #include <dwrite_3.h>
 
 #include <wil/com.h>

@@ -202,7 +202,8 @@ public:
         DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style, float font_size, const AxisValues& axis_values = {});
 
     TextFormat create_text_format(const wchar_t* family_name, DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STRETCH stretch,
-        DWRITE_FONT_STYLE style, float font_size, const AxisValues& axis_values = {});
+        DWRITE_FONT_STYLE style, float font_size, const AxisValues& axis_values = {},
+        DWRITE_RENDERING_MODE rendering_mode = DWRITE_RENDERING_MODE_DEFAULT, bool use_greyscale_antialiasing = false);
 
     TextFormat create_text_format(const LOGFONT& log_font, float font_size);
 

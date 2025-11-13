@@ -171,8 +171,8 @@ HRESULT do_drag_drop(HWND wnd, WPARAM initialKeyState, IDataObject* pDataObject,
     if (preferredEffect)
         SetPreferredDropEffect(pDataObject, preferredEffect);
 
-    const wil::com_ptr<IDropSource> pDropSource
-        = new IDropSourceGeneric(wnd, pDataObject, LODWORD(initialKeyState), true, lpsdi);
+    const wil::com_ptr<IDropSource> pDropSource = new IDropSourceGeneric(
+        wnd, pDataObject, LODWORD(initialKeyState), !mmh::is_windows_10_or_newer(), true, lpsdi);
     return SHDoDragDrop(wnd, pDataObject, pDropSource.get(), dwEffect, pdwEffect);
 }
 
@@ -255,8 +255,8 @@ HRESULT STDMETHODCALLTYPE IDropSourceGeneric::GiveFeedback(DWORD dwEffect) noexc
     return isShowingLayered ? S_OK : DRAGDROP_S_USEDEFAULTCURSORS;
 }
 
-IDropSourceGeneric::IDropSourceGeneric(
-    HWND wnd, IDataObject* pDataObj, DWORD initial_key_state, bool b_allowdropdescriptiontext, SHDRAGIMAGE* lpsdi)
+IDropSourceGeneric::IDropSourceGeneric(HWND wnd, IDataObject* pDataObj, DWORD initial_key_state,
+    bool use_default_background, bool b_allowdropdescriptiontext, SHDRAGIMAGE* lpsdi)
     : m_refcount(0)
     , m_initial_key_state(initial_key_state)
     , m_prev_is_showing_layered(false)
@@ -279,7 +279,8 @@ IDropSourceGeneric::IDropSourceGeneric(
                 }
             } else
                 hr = m_drag_source_helper->InitializeFromWindow(wnd, nullptr, pDataObj);
-            if (IsThemeActive() && IsAppThemed()) {
+
+            if (use_default_background && IsThemeActive() && IsAppThemed()) {
                 set_using_default_drag_image(pDataObj);
             }
         }

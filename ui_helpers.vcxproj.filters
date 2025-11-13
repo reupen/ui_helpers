@@ -54,6 +54,8 @@
     <ClInclude Include="direct_2d.h" />
     <ClInclude Include="emoji.h" />
     <ClInclude Include="direct_write_emoji.h" />
+    <ClInclude Include="drag_image_d2d.h" />
+    <ClInclude Include="direct_3d.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="message_hook.cpp" />
@@ -130,6 +132,8 @@
     <ClCompile Include="direct_2d.cpp" />
     <ClCompile Include="emoji.cpp" />
     <ClCompile Include="direct_write_emoji.cpp" />
+    <ClCompile Include="drag_image_d2d.cpp" />
+    <ClCompile Include="direct_3d.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />

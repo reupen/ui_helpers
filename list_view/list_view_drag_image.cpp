@@ -6,11 +6,22 @@ namespace uih {
 
 bool ListView::render_drag_image(LPSHDRAGIMAGE lpsdi)
 {
-    ColourData p_data;
-    render_get_colour_data(p_data);
-
     pfc::string8 drag_text;
     auto show_text = format_drag_text(get_drag_item_count(), drag_text);
+
+    if (mmh::is_windows_10_or_newer()) {
+        if (!m_direct_write_context)
+            return false;
+
+        if (!m_drag_image_creator)
+            m_drag_image_creator.emplace(static_cast<float>(get_system_dpi_cached().cx));
+
+        return m_drag_image_creator->create_drag_image(
+            get_wnd(), m_use_dark_mode, *m_direct_write_context, mmh::to_utf16(drag_text.c_str()), lpsdi);
+    }
+
+    ColourData p_data;
+    render_get_colour_data(p_data);
 
     auto icon = get_drag_image_icon();
 

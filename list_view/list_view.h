@@ -1,6 +1,7 @@
 #pragma once
 
 #include "list_view_renderer.h"
+#include "../drag_image_d2d.h"
 
 namespace uih {
 
@@ -889,6 +890,8 @@ private:
     mutable std::optional<int> m_space_width;
     std::optional<direct_write::TextFormat> m_header_text_format;
     std::optional<direct_write::TextFormat> m_group_text_format;
+
+    std::optional<D2DDragImageCreator> m_drag_image_creator;
 
     bool m_selecting{false};
     bool m_selecting_move{false};

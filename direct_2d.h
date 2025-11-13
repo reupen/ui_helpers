@@ -2,22 +2,16 @@
 
 namespace uih::d2d {
 
-class Context : public std::enable_shared_from_this<Context> {
-public:
-    using Ptr = std::shared_ptr<Context>;
+wil::com_ptr<ID2D1Factory1> create_factory(D2D1_FACTORY_TYPE factory_type);
 
-    static Ptr s_create();
-
-    Context();
-    wil::com_ptr<ID2D1HwndRenderTarget> create_hwnd_render_target(HWND wnd);
-    const wil::com_ptr<ID2D1Factory>& factory();
-
-private:
-    inline static std::weak_ptr<Context> s_ptr;
-
-    wil::com_ptr<ID2D1Factory> m_factory;
-};
+using MainThreadD2D1Factory = std::shared_ptr<wil::com_ptr<ID2D1Factory1>>;
+MainThreadD2D1Factory create_main_thread_factory();
 
 D2D1_COLOR_F colorref_to_d2d_color(COLORREF colour);
+
+constexpr bool is_device_reset_error(const HRESULT hr)
+{
+    return hr == D2DERR_RECREATE_TARGET || hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
+}
 
 } // namespace uih::d2d
