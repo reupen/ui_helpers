@@ -429,7 +429,7 @@ public:
     int get_group_items_bottom_margin(size_t index) const;
     int get_leaf_group_header_bottom_margin(size_t index) const;
 
-    int get_item_group_bottom(size_t index, bool b_include_headers = false)
+    int get_item_group_bottom(size_t index, bool include_bottom_margin = false)
     {
         size_t gstart = index;
         size_t gcount = 0;
@@ -437,13 +437,17 @@ public:
         int ret = 0;
         if (gcount)
             index = gstart + gcount - 1;
-        ret += get_item_position(index, b_include_headers);
+        ret += get_item_position(index);
         ret += m_item_height - 1;
         if (get_show_group_info_area() && m_group_count) {
             int gheight = gsl::narrow<int>(gcount) * m_item_height;
             int group_cy = get_group_info_area_total_height();
+            const auto bottom_margin = get_group_items_bottom_margin(index);
+
             if (gheight < group_cy)
-                ret += group_cy - gheight;
+                ret += std::max(bottom_margin, group_cy - gheight);
+            else
+                ret += bottom_margin;
         }
         return ret;
     }

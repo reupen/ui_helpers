@@ -393,7 +393,7 @@ void ListView::calculate_item_positions(size_t index_start)
         y_pointer += 0; // m_item_height * m_group_count;
     else {
         if (m_group_count)
-            y_pointer = get_item_group_bottom(index_start - 1) + 1;
+            y_pointer = get_item_group_bottom(index_start - 1, true) + 1;
         else
             y_pointer = get_item_position(index_start - 1) + get_item_height(index_start - 1);
     }
@@ -405,12 +405,14 @@ void ListView::calculate_item_positions(size_t index_start)
         const auto display_group_count = gsl::narrow<int>(get_item_display_group_count(i));
 
         if (is_new_group) {
-            const auto bottom_margin = i > 0 ? get_group_items_bottom_margin(i - 1) : 0;
+            const auto bottom_margin = i > index_start ? get_group_items_bottom_margin(i - 1) : 0;
 
-            if (group_height_counter && group_height_counter < group_minimum_inner_height)
-                y_pointer += std::max(bottom_margin, group_minimum_inner_height - group_height_counter);
-            else
-                y_pointer += bottom_margin;
+            if (group_height_counter > 0) {
+                if (group_height_counter < group_minimum_inner_height)
+                    y_pointer += std::max(bottom_margin, group_minimum_inner_height - group_height_counter);
+                else
+                    y_pointer += bottom_margin;
+            }
 
             group_height_counter = 0;
 
