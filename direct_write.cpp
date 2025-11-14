@@ -761,7 +761,8 @@ TextFormat Context::create_text_format(const wil::com_ptr<IDWriteFontFamily>& fo
 }
 
 TextFormat Context::create_text_format(const wchar_t* family_name, DWRITE_FONT_WEIGHT weight,
-    DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style, float font_size, const AxisValues& axis_values)
+    DWRITE_FONT_STRETCH stretch, DWRITE_FONT_STYLE style, float font_size, const AxisValues& axis_values,
+    DWRITE_RENDERING_MODE rendering_mode, bool use_greyscale_antialiasing)
 {
     if (const auto factory_7 = m_factory.try_query<IDWriteFactory7>(); factory_7 && !axis_values.empty()) {
         const auto axis_values_vector = axis_values_to_vector(axis_values);
@@ -770,14 +771,14 @@ TextFormat Context::create_text_format(const wchar_t* family_name, DWRITE_FONT_W
         THROW_IF_FAILED(factory_7->CreateTextFormat(family_name, nullptr, axis_values_vector.data(),
             gsl::narrow<uint32_t>(axis_values_vector.size()), font_size, L"", &text_format_3));
 
-        return wrap_text_format(text_format_3);
+        return wrap_text_format(text_format_3, rendering_mode, use_greyscale_antialiasing);
     }
 
     wil::com_ptr<IDWriteTextFormat> text_format;
     THROW_IF_FAILED(
         m_factory->CreateTextFormat(family_name, NULL, weight, style, stretch, font_size, L"", &text_format));
 
-    return wrap_text_format(text_format);
+    return wrap_text_format(text_format, rendering_mode, use_greyscale_antialiasing);
 }
 
 TextFormat Context::create_text_format(const LOGFONT& log_font, float font_size)

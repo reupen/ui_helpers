@@ -20,7 +20,8 @@ public:
     ULONG STDMETHODCALLTYPE Release() noexcept override;
     HRESULT STDMETHODCALLTYPE QueryContinueDrag(BOOL fEscapePressed, DWORD grfKeyState) noexcept override;
     HRESULT STDMETHODCALLTYPE GiveFeedback(DWORD dwEffect) noexcept override;
-    IDropSourceGeneric(HWND wnd, IDataObject* pDataObj, DWORD initial_key_state, bool b_allowdropdescriptiontext = true,
+    IDropSourceGeneric(HWND wnd, IDataObject* pDataObj, DWORD initial_key_state, bool use_default_background,
+        bool b_allowdropdescriptiontext = true,
         SHDRAGIMAGE* lpsdi = nullptr); // careful, some fb2k versions have broken IDataObject
 private:
     long m_refcount;

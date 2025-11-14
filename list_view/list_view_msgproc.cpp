@@ -88,6 +88,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         m_header_text_format.reset();
         m_group_text_format.reset();
         m_direct_write_context.reset();
+        m_drag_image_creator.reset();
         notify_on_destroy();
         return 0;
     /*case WM_WINDOWPOSCHANGED:
