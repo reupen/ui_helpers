@@ -587,8 +587,8 @@ void ListView::on_search_string_change(WCHAR new_char)
             mmh::to_utf16(item_text, item_text_utf16);
         }
 
-        if ((b_all_same && mmh::search_starts_with({&new_char, 1}, item_text_utf16))
-            || mmh::search_starts_with(m_search_string, item_text_utf16)) {
+        if ((b_all_same && mmh::search_starts_with({&new_char, 1}, item_text_utf16, false))
+            || mmh::search_starts_with(m_search_string, item_text_utf16, false)) {
             if (!is_partially_visible(item_index)) {
                 scroll(get_item_position(item_index));
             }
