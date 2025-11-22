@@ -96,7 +96,7 @@ void ListView::scroll(int position, bool b_horizontal, bool suppress_scroll_wind
     destroy_tooltip();
     scroll_position = SetScrollInfo(get_wnd(), scroll_bar_type, &scroll_info, true);
 
-    const auto playlist = get_items_rect();
+    const auto items_rect = get_items_rect();
     int dx = 0;
     int dy = 0;
     (b_horizontal ? dx : dy) = original_scroll_position - scroll_position;
@@ -104,15 +104,54 @@ void ListView::scroll(int position, bool b_horizontal, bool suppress_scroll_wind
     if (b_horizontal)
         reposition_header();
 
+    std::vector<RECT> invalidate_after_scroll_window{};
+
     if (suppress_scroll_window) {
         invalidate_all();
     } else {
-        RECT rc_invalidated{};
-        const int rgn_type
-            = ScrollWindowEx(get_wnd(), dx, dy, &playlist, &playlist, nullptr, &rc_invalidated, SW_INVALIDATE);
+        if (m_group_count > 0 && get_show_group_info_area() && m_is_group_info_area_sticky && !b_horizontal) {
+            const auto first_items
+                = std::unordered_set{gsl::narrow_cast<size_t>(get_item_at_or_before(original_scroll_position)),
+                    gsl::narrow_cast<size_t>(get_item_at_or_before(m_scroll_position))};
 
-        if (dx != 0 || rgn_type == COMPLEXREGION
-            || (rgn_type == SIMPLEREGION && !EqualRect(&rc_invalidated, &playlist)))
+            const auto first_group_items = first_items | ranges::views::transform([this](auto index) -> size_t {
+                return std::get<0>(get_item_group_range(index, m_group_count - 1));
+            }) | ranges::to<std::unordered_set>;
+
+            for (const auto index : first_group_items) {
+                if (index >= m_items.size())
+                    continue;
+
+                const auto old_rect = get_item_group_info_area_render_rect(index, items_rect, original_scroll_position);
+                const RECT adjusted_old_rect{old_rect.left, old_rect.top + dy, old_rect.right, old_rect.bottom + dy};
+
+                const auto new_rect = get_item_group_info_area_render_rect(index, items_rect);
+
+                if (adjusted_old_rect == new_rect)
+                    continue;
+
+                RECT invalidate_rect{};
+
+                if (IntersectRect(&invalidate_rect, &items_rect, &old_rect))
+                    RedrawWindow(get_wnd(), &invalidate_rect, nullptr, RDW_INVALIDATE);
+
+                if (IntersectRect(&invalidate_rect, &items_rect, &new_rect))
+                    invalidate_after_scroll_window.push_back(invalidate_rect);
+            }
+        }
+
+        RECT rc_invalidated{};
+
+        const int rgn_type
+            = ScrollWindowEx(get_wnd(), dx, dy, &items_rect, &items_rect, nullptr, &rc_invalidated, SW_INVALIDATE);
+
+        const auto skip_update_now = dx == 0 && rgn_type == SIMPLEREGION && rc_invalidated == items_rect;
+
+        for (const auto& rect : invalidate_after_scroll_window) {
+            RedrawWindow(get_wnd(), &rect, nullptr, RDW_INVALIDATE);
+        }
+
+        if (!skip_update_now)
             RedrawWindow(get_wnd(), nullptr, nullptr, RDW_UPDATENOW | RDW_ALLCHILDREN);
     }
 }

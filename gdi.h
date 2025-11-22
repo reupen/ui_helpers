@@ -28,6 +28,40 @@ private:
     wil::unique_select_object m_select_bitmap;
 };
 
+class BufferedPaintInitialiser {
+public:
+    BufferedPaintInitialiser() { m_initialised = SUCCEEDED(LOG_IF_FAILED(BufferedPaintInit())); }
+
+    ~BufferedPaintInitialiser()
+    {
+        if (m_initialised)
+            (void)BufferedPaintUnInit();
+    }
+
+private:
+    bool m_initialised{};
+};
+
+class BufferedPaint {
+public:
+    BufferedPaint(HDC dc, const RECT& rect)
+    {
+        m_buffer = BeginBufferedPaint(dc, &rect, BPBF_COMPATIBLEBITMAP, nullptr, &m_dc);
+    }
+
+    ~BufferedPaint()
+    {
+        if (m_buffer)
+            LOG_IF_FAILED(EndBufferedPaint(m_buffer, TRUE));
+    }
+
+    HDC get() const { return m_dc; }
+
+private:
+    HDC m_dc{};
+    HPAINTBUFFER m_buffer{};
+};
+
 class DisableRedrawScope {
 public:
     DisableRedrawScope(HWND wnd)
