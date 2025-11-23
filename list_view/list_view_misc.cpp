@@ -400,8 +400,14 @@ void ListView::invalidate_items(size_t index, size_t count) const
 
     const auto items_rect = get_items_rect();
     const auto groups = gsl::narrow<int>(get_item_display_group_count(index));
+
+    const auto items_left = get_total_indentation() - m_horizontal_scroll_position;
+
+    if (items_left >= items_rect.right)
+        return;
+
     RECT invalidate_rect
-        = {items_rect.left, get_item_position(index) - m_scroll_position + items_rect.top - groups * m_group_height,
+        = {items_left, get_item_position(index) - m_scroll_position + items_rect.top - groups * m_group_height,
             items_rect.right, get_item_position_bottom(index + count - 1) - m_scroll_position + items_rect.top};
 
     RECT visible_invalidate_rect{};
@@ -425,47 +431,94 @@ void ListView::invalidate_items(const pfc::bit_array& mask)
     }
 }
 
-void ListView::invalidate_item_group_info_area(size_t index)
+void ListView::set_is_group_info_area_sticky(bool group_info_area_sticky)
 {
-    size_t count = 0;
-    get_item_group(index, m_group_count ? m_group_count - 1 : 0, index, count);
-    {
-        const auto rc_client = get_items_rect();
-        const auto group_item_count = gsl::narrow<int>(get_item_display_group_count(index));
-        const auto item_y = get_item_position(index);
-        int items_cy = gsl::narrow<int>(count) * m_item_height;
-        int group_area_cy = get_group_info_area_height();
-        if (get_show_group_info_area() && items_cy < group_area_cy)
-            items_cy = group_area_cy;
+    if (group_info_area_sticky == m_is_group_info_area_sticky)
+        return;
 
-        RECT rc_invalidate = {0, item_y - m_scroll_position + rc_client.top - group_item_count * m_item_height,
-            RECT_CX(rc_client), item_y + group_area_cy - m_scroll_position + rc_client.top};
+    size_t first_item_index{};
+    bool is_invalidation_needed{};
 
-        if (IntersectRect(&rc_invalidate, &rc_client, &rc_invalidate)) {
-            RedrawWindow(get_wnd(), &rc_invalidate, nullptr, RDW_INVALIDATE);
+    if (m_initialised && get_show_group_info_area()) {
+        first_item_index = gsl::narrow_cast<size_t>(get_item_at_or_before(m_scroll_position));
+
+        if (first_item_index < m_items.size()) {
+            is_invalidation_needed = true;
+            invalidate_item_group_info_area(first_item_index);
         }
+    }
+
+    m_is_group_info_area_sticky = group_info_area_sticky;
+
+    if (is_invalidation_needed) {
+        invalidate_item_group_info_area(first_item_index);
     }
 }
 
-void ListView::get_item_group(size_t index, size_t level, size_t& index_start, size_t& count)
+RECT ListView::get_item_group_info_area_render_rect(
+    size_t index, const std::optional<RECT>& items_rect, std::optional<int> scroll_position)
 {
-    if (m_group_count == 0) {
-        index_start = 0;
-        count = m_items.size();
-    } else {
-        size_t end = index;
-        size_t start = index;
-        while (m_items[start]->m_groups[level] == m_items[index]->m_groups[level]) {
-            index_start = start;
-            if (start == 0)
-                break;
-            start--;
-        }
-        while (end < m_items.size() && m_items[end]->m_groups[level] == m_items[index]->m_groups[level]) {
-            count = end - index_start + 1;
-            end++;
-        }
+    if (!get_show_group_info_area()) {
+        assert(false);
+        return {};
     }
+
+    const auto resolved_items_rect = items_rect ? *items_rect : get_items_rect();
+    const auto resolved_scroll_position = scroll_position.value_or(m_scroll_position);
+
+    const auto artwork_indentation = get_indentation_step() * (gsl::narrow<int>(m_group_count) - 1);
+    const auto group_info_area_padding = get_group_info_area_padding();
+
+    const auto [group_first_item, group_item_count] = get_item_group_range(index, m_group_count - 1);
+
+    const auto group_first_item_top = get_item_position(group_first_item);
+    const auto group_last_item_bottom = group_first_item_top + gsl::narrow<int>(group_item_count) * m_item_height;
+
+    const auto left = 0 - m_horizontal_scroll_position + artwork_indentation + group_info_area_padding.left;
+    const auto right = left + get_group_info_area_width();
+
+    int top = group_first_item_top - resolved_scroll_position + resolved_items_rect.top + group_info_area_padding.top;
+
+    if (top < resolved_items_rect.top && m_is_group_info_area_sticky) {
+        const auto items_bottom_minus_info_height = group_last_item_bottom - get_group_info_area_height()
+            - resolved_scroll_position + static_cast<int>(resolved_items_rect.top);
+        const auto sticky_pos = std::min(static_cast<int>(resolved_items_rect.top), items_bottom_minus_info_height);
+
+        top = std::max(top, sticky_pos);
+    }
+
+    const auto bottom = top + get_group_info_area_height();
+
+    return {left, top, right, bottom};
+}
+
+void ListView::invalidate_item_group_info_area(size_t index)
+{
+    const auto items_rect = get_items_rect();
+    RECT rc_invalidate = get_item_group_info_area_render_rect(index, items_rect);
+
+    if (IntersectRect(&rc_invalidate, &items_rect, &rc_invalidate)) {
+        RedrawWindow(get_wnd(), &rc_invalidate, nullptr, RDW_INVALIDATE);
+    }
+}
+
+std::tuple<size_t, size_t> ListView::get_item_group_range(size_t index, size_t level) const
+{
+    if (m_group_count == 0)
+        return {size_t{}, m_items.size()};
+
+    const auto& group = m_items[index]->m_groups[level];
+    size_t start{index};
+
+    while (start > 0 && m_items[start - 1]->m_groups[level] == group)
+        --start;
+
+    size_t end{index};
+
+    while (end + 1 < m_items.size() && m_items[end + 1]->m_groups[level] == group)
+        ++end;
+
+    return {start, end - start + 1};
 }
 
 void ListView::set_highlight_item(size_t index)

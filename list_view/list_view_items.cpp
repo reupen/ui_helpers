@@ -393,7 +393,7 @@ void ListView::calculate_item_positions(size_t index_start)
         y_pointer += 0; // m_item_height * m_group_count;
     else {
         if (m_group_count)
-            y_pointer = get_item_group_bottom(index_start - 1, true) + 1;
+            y_pointer = get_item_group_bottom(index_start - 1) + 1;
         else
             y_pointer = get_item_position(index_start - 1) + get_item_height(index_start - 1);
     }

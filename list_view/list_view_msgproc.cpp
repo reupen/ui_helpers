@@ -20,6 +20,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 
     switch (msg) {
     case WM_CREATE:
+        m_buffered_paint_initialiser.emplace();
+
         // For dark mode, the window needs to have the DarkMode_Explorer theme to get dark scroll bars,
         // but we also need access to DarkMode_ItemsView themes. To do this, a dummy window with a
         // different window theme is created.
@@ -91,34 +93,12 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         m_drag_image_creator.reset();
         notify_on_destroy();
         return 0;
-    /*case WM_WINDOWPOSCHANGED:
-        {
-            LPWINDOWPOS lpwp = (LPWINDOWPOS)lp;
-            if (lpwp->flags & SWP_SHOWWINDOW) {
-               on_size();
-            }
-            if (lpwp->flags & SWP_HIDEWINDOW) {
-               //window_was_hidden();
-            }
-            if (!(lpwp->flags & SWP_NOMOVE)) {
-               //window_moved_to(pwp->x, pwp->y);
-            }
-            if (!(lpwp->flags & SWP_NOSIZE)) {
-               on_size(lpwp->cx, lpwp->cy);
-            }
-
-        }
-        return 0;*/
+    case WM_NCDESTROY:
+        m_buffered_paint_initialiser.reset();
+        break;
     case WM_SIZE:
         on_size(LOWORD(lp), HIWORD(lp));
         break;
-    /*case WM_STYLECHANGING:
-        {
-            LPSTYLESTRUCT plss = (LPSTYLESTRUCT)lp;
-            if (wp == GWL_EXSTYLE)
-                console::formatter() << "GWL_EXSTYLE changed";
-        }
-        break;*/
     case WM_THEMECHANGED:
         reopen_themes();
         RedrawWindow(wnd, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE);
@@ -129,62 +109,16 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_MENUSELECT:
         notify_on_menu_select(wp, lp);
         break;
-    case WM_PRINT:
-        break;
-    case WM_PRINTCLIENT:
-        /*//if (lp == PRF_ERASEBKGND)
-        {
-            HDC dc = (HDC)wp;
-            RECT rc;
-            GetClientRect(wnd, &rc);
-            render_background(dc, &rc);
-            return 0;
-        }*/
-        break;
-    case WM_ERASEBKGND: {
-        /*HDC dc = (HDC)wp;
-        //if (m_wnd_header)
-        {
-            RECT rc;
-            GetClientRect(wnd, &rc);
-            render_background(dc, &rc);
-            return TRUE;
-        }*/
-    }
-        return FALSE;
     case WM_PAINT: {
-        // console::formatter() << "WM_PAINT";
-        const auto rc_client = get_items_rect();
-        // GetClientRect(wnd, &rc_client);
-        // GetUpdateRect(wnd, &rc2, FALSE);
+        PAINTSTRUCT ps{};
+        const auto dc = wil::BeginPaint(wnd, &ps);
 
-        PAINTSTRUCT ps;
-        HDC dc = BeginPaint(wnd, &ps);
+        BufferedPaint buffered_dc(dc.get(), ps.rcPaint);
 
-        RECT rc = /*rc_client;//*/ ps.rcPaint;
-        // RECT rc2 = {0, 0, RECT_CX(rc), RECT_CY(rc)};
-
-        // console::formatter() << rc_client.left << " " << rc_client.top << " " << rc_client.right << " " <<
-        // rc_client.bottom;
-
-        HDC dc_mem = CreateCompatibleDC(dc);
-        HBITMAP bm_mem = CreateCompatibleBitmap(dc, RECT_CX(rc), RECT_CY(rc));
-        // if (!bm_mem) console::formatter() << "ONIJoj";
-        HBITMAP bm_old = SelectBitmap(dc_mem, bm_mem);
-        HFONT font_old = SelectFont(dc_mem, m_items_font.get());
-        OffsetWindowOrgEx(dc_mem, rc.left, rc.top, nullptr);
-        // int item_height = get_default_item_height();
-        render_items(dc_mem, rc, RECT_CX(rc_client));
-        OffsetWindowOrgEx(dc_mem, -rc.left, -rc.top, nullptr);
-        BitBlt(dc, rc.left, rc.top, RECT_CX(rc), RECT_CY(rc), dc_mem, 0, 0, SRCCOPY);
-
-        SelectFont(dc_mem, font_old);
-        SelectObject(dc_mem, bm_old);
-        DeleteObject(bm_mem);
-        DeleteDC(dc_mem);
-        EndPaint(wnd, &ps);
-    }
+        auto _ = wil::SelectObject(buffered_dc.get(), m_items_font.get());
+        render_items(buffered_dc.get(), ps.rcPaint);
         return 0;
+    }
     case WM_UPDATEUISTATE:
         RedrawWindow(wnd, nullptr, nullptr, RDW_INVALIDATE);
         break;
@@ -263,12 +197,11 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             SetCapture(wnd);
         } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
             if (m_selection_mode == SelectionMode::Multiple) {
-                size_t index = 0;
-                size_t count = 0;
                 if (!m_lbutton_down_ctrl) {
-                    get_item_group(hit_result.index, hit_result.group_level, index, count);
+                    const auto [index, count] = get_item_group_range(hit_result.index, hit_result.group_level);
                     set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
-                    if (count)
+
+                    if (count > 0)
                         set_focus_item(index);
                 }
             }
@@ -318,10 +251,9 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                     }
                 } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
                     if (hit_result.index < m_items.size() && hit_result.group_level < m_group_count) {
-                        size_t index = 0;
-                        size_t count = 0;
-                        get_item_group(hit_result.index, hit_result.group_level, index, count);
-                        if (count) {
+                        const auto [index, count] = get_item_group_range(hit_result.index, hit_result.group_level);
+
+                        if (count > 0) {
                             set_selection_state(pfc::bit_array_range(index, count),
                                 pfc::bit_array_range(index, count, !is_range_selected(index, count)), true);
                             set_focus_item(index);
@@ -370,9 +302,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             } else if (get_focus_item() != hit_result.index)
                 set_focus_item(hit_result.index);
         } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
-            size_t index = 0;
-            size_t count = 0;
-            get_item_group(hit_result.index, hit_result.group_level, index, count);
+            const auto [index, count] = get_item_group_range(hit_result.index, hit_result.group_level);
             set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
             if (count)
                 set_focus_item(index);

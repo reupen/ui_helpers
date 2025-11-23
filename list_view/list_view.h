@@ -311,7 +311,7 @@ public:
     void scroll(int position, bool b_horizontal = false, bool suppress_scroll_window = false);
     void scroll_from_scroll_bar(short scroll_bar_command, bool b_horizontal = false);
 
-    void get_item_group(size_t index, size_t level, size_t& index_start, size_t& count);
+    std::tuple<size_t, size_t> get_item_group_range(size_t index, size_t level) const;
     void set_insert_mark(size_t index);
     void remove_insert_mark();
 
@@ -337,6 +337,9 @@ public:
     void invalidate_items(size_t index, size_t count) const;
 
     void invalidate_items(const pfc::bit_array& mask);
+
+    RECT get_item_group_info_area_render_rect(
+        size_t index, const std::optional<RECT>& items_rect = {}, std::optional<int> scroll_position = {});
     void invalidate_item_group_info_area(size_t index);
 
     void update_items(size_t index, size_t count);
@@ -430,18 +433,24 @@ public:
     int get_group_items_bottom_margin(size_t index) const;
     int get_leaf_group_header_bottom_margin(size_t index) const;
 
-    int get_item_group_bottom(size_t index, bool include_bottom_margin = false)
+    int get_item_group_bottom(size_t index) const
     {
-        size_t gstart = index;
-        size_t gcount = 0;
-        get_item_group(index, m_group_count ? m_group_count - 1 : 0, gstart, gcount);
-        int ret = 0;
-        if (gcount)
-            index = gstart + gcount - 1;
-        ret += get_item_position(index);
-        ret += m_item_height - 1;
-        if (get_show_group_info_area() && m_group_count) {
-            int gheight = gsl::narrow<int>(gcount) * m_item_height;
+        if (index >= m_items.size()) {
+            assert(false);
+            return 0;
+        }
+
+        const auto [group_start, group_size] = get_item_group_range(index, m_group_count ? m_group_count - 1 : 0);
+
+        assert(group_size > 0);
+
+        if (group_size > 0)
+            index = group_start + group_size - 1;
+
+        int ret = get_item_position(index) + m_item_height - 1;
+
+        if (get_show_group_info_area() && m_group_count > 0) {
+            int gheight = gsl::narrow<int>(group_size) * m_item_height;
             int group_cy = get_group_info_area_total_height();
             const auto bottom_margin = get_group_items_bottom_margin(index);
 
@@ -450,6 +459,7 @@ public:
             else
                 ret += bottom_margin;
         }
+
         return ret;
     }
 
@@ -622,6 +632,8 @@ protected:
 
     int get_indentation_step() const;
     int get_default_indentation_step() const;
+
+    void set_is_group_info_area_sticky(bool group_info_area_sticky);
 
     void set_group_info_area_size(int width, int height)
     {
@@ -809,7 +821,7 @@ private:
 
     LRESULT on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 
-    void render_items(HDC dc, const RECT& rc_update, int cx);
+    void render_items(HDC dc, const RECT& rc_update);
     void insert_items_in_internal_state(size_t index_start, size_t count, const InsertItem* items);
     void replace_items_in_internal_state(size_t index_start, size_t count, const InsertItem* items);
     void remove_item_in_internal_state(size_t remove_index);
@@ -951,10 +963,11 @@ private:
     bool m_alternate_selection{false};
     bool m_allow_header_rearrange{false};
 
-    int m_group_info_area_width{0};
-    int m_group_info_area_height{0};
-    bool m_show_group_info_area{false};
-    bool m_have_indent_column{false};
+    int m_group_info_area_width{};
+    int m_group_info_area_height{};
+    bool m_show_group_info_area{};
+    bool m_is_group_info_area_sticky{};
+    bool m_have_indent_column{};
 
     HWND m_search_editbox{nullptr};
     WNDPROC m_proc_search_edit{nullptr};
@@ -976,6 +989,7 @@ private:
     std::unique_ptr<ContainerWindow> m_container_window;
     std::unique_ptr<ContainerWindow> m_dummy_theme_window;
     std::unique_ptr<lv::RendererBase> m_renderer;
+    std::optional<BufferedPaintInitialiser> m_buffered_paint_initialiser;
 };
 
 } // namespace uih

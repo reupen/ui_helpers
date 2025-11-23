@@ -32,7 +32,7 @@ int ListView::get_default_indentation_step() const
     return *m_space_width * _level_spacing_size;
 }
 
-void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
+void ListView::render_items(HDC dc, const RECT& rc_update)
 {
     wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target;
     try {
@@ -54,6 +54,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
 
     m_renderer->render_begin(context);
     m_renderer->render_background(context, &rc_update);
+
     const auto rc_items = get_items_rect();
 
     if (rc_update.bottom <= rc_update.top || rc_update.bottom < rc_items.top)
@@ -62,10 +63,8 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
     size_t i;
     size_t count = m_items.size();
     const auto indentation_step = m_group_count > 0 ? get_indentation_step() : 0;
-    const auto group_info_area_padding = get_group_info_area_padding();
-    const auto artwork_indentation = indentation_step * (gsl::narrow<int>(m_group_count) - 1);
     const auto item_indentation = get_total_indentation();
-    cx = get_columns_display_width() + item_indentation;
+    const auto cx = get_columns_display_width() + item_indentation;
 
     bool b_show_group_info_area = get_show_group_info_area();
 
@@ -76,10 +75,6 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
     size_t i_end = gsl::narrow<size_t>(get_item_at_or_after(
         (rc_update.bottom > rc_items.top + 1 ? rc_update.bottom - rc_items.top - 1 : 0) + m_scroll_position));
     for (; i <= i_end && i < count; i++) {
-        size_t item_group_start{};
-        size_t item_group_count{};
-        get_item_group(i, m_group_count ? m_group_count - 1 : 0, item_group_start, item_group_count);
-
         const auto display_group_count = get_item_display_group_count(i);
         const size_t group_count = m_items[i]->m_groups.size();
         size_t display_group_index{};
@@ -107,24 +102,26 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
             if (rc.top >= rc_update.bottom)
                 break;
 
-            m_renderer->render_group(
-                context, i, group_index, group->m_text.get_ptr(), indentation_step, indentation_level, rc);
+            if (RectVisible(dc, &rc))
+                m_renderer->render_group(
+                    context, i, group_index, group->m_text.get_ptr(), indentation_step, indentation_level, rc);
 
             ++display_group_index;
             ++indentation_level;
         }
 
-        if (b_show_group_info_area && (i == i_start || i == item_group_start)) {
-            int height = (std::max)(m_item_height * gsl::narrow<int>(item_group_count), get_group_info_area_height());
-            int gx = 0 - m_horizontal_scroll_position + artwork_indentation + group_info_area_padding.left;
-            int gy
-                = get_item_position(item_group_start) - m_scroll_position + rc_items.top + group_info_area_padding.top;
-            int gcx = get_group_info_area_width();
-            RECT rc_group_info
-                = {gx, gy, gx + gcx, get_item_position(item_group_start) + height - m_scroll_position + rc_items.top};
-            if (rc_group_info.top >= rc_update.bottom)
-                break;
-            m_renderer->render_group_info(context, item_group_start, rc_group_info);
+        if (b_show_group_info_area) {
+            const auto [item_group_start, _] = get_item_group_range(i, m_group_count ? m_group_count - 1 : 0);
+
+            if (i == i_start || i == item_group_start) {
+                RECT rc_group_info = get_item_group_info_area_render_rect(item_group_start, rc_items);
+
+                if (rc_group_info.top >= rc_update.bottom)
+                    break;
+
+                if (RectVisible(dc, &rc_group_info))
+                    m_renderer->render_group_info(context, item_group_start, rc_group_info);
+            }
         }
 
         bool b_selected = get_item_selected(i) || i == m_highlight_selected_item_index;
@@ -138,7 +135,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
         if (rc.top >= rc_update.bottom)
             break;
 
-        if (rc.bottom > rc_update.top) {
+        if (RectVisible(dc, &rc)) {
             const auto show_item_focus = index_focus == i && (b_window_focused || m_always_show_focus);
             std::vector<lv::RendererSubItem> sub_items;
 
@@ -153,6 +150,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
                 (m_highlight_item_index == i) || (highlight_index == i), should_hide_focus, show_item_focus, rc);
         }
     }
+
     /*if (m_search_editbox)
     {
         RECT rc_search;
@@ -167,11 +165,11 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
     false, GetSysColor(COLOR_WINDOWTEXT), false, false, false, uih::ALIGN_LEFT, NULL);
         }
     }*/
+
     if (m_insert_mark_index != pfc_infinite && (m_insert_mark_index <= count)) {
-        RECT rc_line;
-        RECT rc_dummy;
-        rc_line.left = item_indentation;
-        rc_line.right = cx;
+        RECT rc_line{};
+        rc_line.left = item_indentation - m_horizontal_scroll_position;
+        rc_line.right = cx - m_horizontal_scroll_position;
         int y_pos = 0;
         if (count) {
             if (m_insert_mark_index == count)
@@ -183,12 +181,12 @@ void ListView::render_items(HDC dc, const RECT& rc_update, int cx)
         const auto line_height = MulDiv(3, get_system_dpi_cached().cx, USER_DEFAULT_SCREEN_DPI * 2);
         rc_line.top = y_pos;
         rc_line.bottom = y_pos + line_height;
-        if (IntersectRect(&rc_dummy, &rc_line, &rc_update)) {
+
+        if (RectVisible(dc, &rc_line)) {
             wil::unique_hbrush brush(CreateSolidBrush(colours.m_text));
             FillRect(dc, &rc_line, brush.get());
         }
     }
-    // OffsetWindowOrgEx(dc, -m_horizontal_scroll_position, 0, NULL);
 }
 
 void ListView::render_get_colour_data(ColourData& p_out)
