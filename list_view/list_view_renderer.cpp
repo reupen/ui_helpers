@@ -41,7 +41,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
     CATCH_LOG()
 
     ColourData colours = render_get_colour_data();
-    const lv::RendererContext context
+    lv::RendererContext context
         = {colours, m_use_dark_mode, m_is_high_contrast_active, get_wnd(), dc, m_list_view_theme.get(),
             m_items_view_theme.get(), m_items_text_format, m_group_text_format, bitmap_render_target};
 
@@ -204,7 +204,7 @@ void ListView::render_get_colour_data(ColourData& p_out)
     p_out.m_group_background = p_out.m_background;
 }
 
-void lv::DefaultRenderer::render_group_line(RendererContext context, const RECT* rc)
+void lv::DefaultRenderer::render_group_line(const RendererContext& context, const RECT* rc)
 {
     if (context.list_view_theme && IsThemePartDefined(context.list_view_theme, LVP_GROUPHEADERLINE, NULL)
         && SUCCEEDED(
@@ -219,7 +219,7 @@ void lv::DefaultRenderer::render_group_line(RendererContext context, const RECT*
     }
 }
 
-void lv::DefaultRenderer::render_group_background(RendererContext context, const RECT* rc)
+void lv::DefaultRenderer::render_group_background(const RendererContext& context, const RECT* rc)
 {
     FillRect(context.dc, rc, wil::unique_hbrush(CreateSolidBrush(context.colours.m_group_background)).get());
 }
@@ -241,7 +241,7 @@ bool ListView::get_group_text_colour_default(COLORREF& cr)
         && SUCCEEDED(GetThemeColor(m_list_view_theme.get(), LVP_GROUPHEADER, LVGH_OPEN, TMT_HEADING1TEXTCOLOR, &cr));
 }
 
-void lv::DefaultRenderer::render_group(RendererContext context, size_t item_index, size_t group_index,
+void lv::DefaultRenderer::render_group(const RendererContext& context, size_t item_index, size_t group_index,
     std::string_view text, int indentation, size_t level, RECT rc)
 {
     if (!(context.group_text_format && context.bitmap_render_target))
@@ -271,9 +271,9 @@ void lv::DefaultRenderer::render_group(RendererContext context, size_t item_inde
     }
 }
 
-void lv::DefaultRenderer::render_item(RendererContext context, size_t index, std::vector<RendererSubItem> sub_items,
-    int indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool should_hide_focus, bool b_focused,
-    RECT rc)
+void lv::DefaultRenderer::render_item(const RendererContext& context, size_t index,
+    std::vector<RendererSubItem> sub_items, int indentation, bool b_selected, bool b_window_focused, bool b_highlight,
+    bool should_hide_focus, bool b_focused, RECT rc)
 {
     int theme_state = NULL;
     if (b_selected) {
@@ -338,7 +338,7 @@ void lv::DefaultRenderer::render_item(RendererContext context, size_t index, std
     }
 }
 
-void lv::DefaultRenderer::render_focus_rect(RendererContext context, bool should_hide_focus, RECT rc) const
+void lv::DefaultRenderer::render_focus_rect(const RendererContext& context, bool should_hide_focus, RECT rc) const
 {
     const auto use_themed_rect = context.colours.m_themed && !context.colours.m_use_custom_active_item_frame
         && context.items_view_theme
@@ -390,7 +390,7 @@ void lv::DefaultRenderer::render_focus_rect(RendererContext context, bool should
     }
 }
 
-void lv::DefaultRenderer::render_background(RendererContext context, const RECT* rc)
+void lv::DefaultRenderer::render_background(const RendererContext& context, const RECT* rc)
 {
     FillRect(context.dc, rc, wil::unique_hbrush(CreateSolidBrush(context.colours.m_background)).get());
 }

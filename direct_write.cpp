@@ -3,7 +3,6 @@
 #include "direct_write.h"
 
 #include "direct_write_emoji.h"
-#include "emoji.h"
 
 using namespace std::string_view_literals;
 
@@ -603,13 +602,13 @@ int TextFormat::get_minimum_height(std::wstring_view text) const
     return 1;
 }
 
-TextPosition TextFormat::measure_text_position(
-    std::wstring_view text, int height, float max_width, bool enable_ellipsis) const
+TextPosition TextFormat::measure_text_position(std::wstring_view text, int height, float max_width,
+    bool enable_ellipsis, std::optional<DWRITE_TEXT_ALIGNMENT> alignment) const
 {
     try {
         const auto scaling_factor = get_default_scaling_factor();
-        const auto text_layout
-            = create_text_layout(text, max_width, static_cast<float>(height) / scaling_factor, enable_ellipsis);
+        const auto text_layout = create_text_layout(
+            text, max_width, static_cast<float>(height) / scaling_factor, enable_ellipsis, alignment);
         const auto metrics = text_layout.get_metrics();
         const auto left = gsl::narrow_cast<int>(metrics.left * scaling_factor);
         const auto left_remainder_dip = metrics.left - gsl::narrow_cast<float>(left) / scaling_factor;
@@ -626,7 +625,7 @@ TextPosition TextFormat::measure_text_position(
 int TextFormat::measure_text_width(std::wstring_view text) const
 {
     try {
-        const auto text_layout = create_text_layout(text, 65536.0f, 65536.0f);
+        const auto text_layout = create_text_layout(text, 65536.0f, 65536.0f, false);
         const auto metrics = text_layout.get_metrics();
         return gsl::narrow_cast<int>(metrics.widthIncludingTrailingWhitespace * get_default_scaling_factor() + 1);
     }
@@ -635,35 +634,29 @@ int TextFormat::measure_text_width(std::wstring_view text) const
     return 0;
 }
 
-TextLayout TextFormat::create_text_layout(
-    std::wstring_view text, float max_width, float max_height, bool enable_ellipsis) const
+TextLayout TextFormat::create_text_layout(std::wstring_view text, float max_width, float max_height,
+    bool enable_ellipsis, std::optional<DWRITE_TEXT_ALIGNMENT> alignment) const
 {
-    const auto text_length = gsl::narrow<uint32_t>(text.length());
-
-    const auto rendering_mode = m_rendering_params->rendering_mode();
-
-    wil::com_ptr<IDWriteTextLayout> text_layout;
-    if (rendering_mode == DWRITE_RENDERING_MODE_ALIASED || rendering_mode == DWRITE_RENDERING_MODE_GDI_CLASSIC
-        || rendering_mode == DWRITE_RENDERING_MODE_GDI_NATURAL)
-        THROW_IF_FAILED(m_factory->CreateGdiCompatibleTextLayout(text.data(), text_length, m_text_format.get(),
-            max_width, max_height, get_default_scaling_factor(), nullptr,
-            rendering_mode == DWRITE_RENDERING_MODE_GDI_NATURAL, &text_layout));
-    else
-        THROW_IF_FAILED(m_factory->CreateTextLayout(
-            text.data(), text_length, m_text_format.get(), max_width, max_height, &text_layout));
-
-    const auto typography = m_context->get_default_typography();
-    THROW_IF_FAILED(text_layout->SetTypography(typography.get(), {0, text_length}));
-
-    if (enable_ellipsis) {
-        if (!m_trimming_sign)
-            THROW_IF_FAILED(m_factory->CreateEllipsisTrimmingSign(m_text_format.get(), &m_trimming_sign));
-
-        DWRITE_TRIMMING trimming{DWRITE_TRIMMING_GRANULARITY_CHARACTER, 0, 0};
-        THROW_IF_FAILED(text_layout->SetTrimming(&trimming, m_trimming_sign.get()));
-    }
-
+    auto text_layout = create_unwrapped_text_layout(text, max_width, max_height, enable_ellipsis, alignment);
     return {m_factory, m_gdi_interop, text_layout, m_rendering_params};
+}
+
+std::shared_ptr<TextLayout> TextFormat::get_cached_text_layout(std::wstring_view text_key, float max_width,
+    float max_height, bool enable_ellipsis, DWRITE_TEXT_ALIGNMENT alignment) const
+{
+    return m_text_layout_cache.get({text_key, max_width, max_height, enable_ellipsis, alignment});
+}
+
+std::shared_ptr<TextLayout> TextFormat::create_cached_text_layout(std::wstring_view text, std::wstring_view text_key,
+    float max_width, float max_height, bool enable_ellipsis, DWRITE_TEXT_ALIGNMENT alignment) const
+{
+    assert(!m_text_layout_cache.contains(text_key, max_width, max_height, enable_ellipsis, alignment));
+
+    auto unwrapped_text_layout = create_unwrapped_text_layout(text, max_width, max_height, enable_ellipsis, alignment);
+    const auto text_layout
+        = std::make_shared<TextLayout>(m_factory, m_gdi_interop, unwrapped_text_layout, m_rendering_params);
+    m_text_layout_cache.put_new({text_key, max_width, max_height, enable_ellipsis, alignment}, text_layout);
+    return text_layout;
 }
 
 DWRITE_FONT_WEIGHT TextFormat::get_weight() const
@@ -696,6 +689,40 @@ std::variant<DWRITE_FONT_STRETCH, float> TextFormat::get_stretch() const
 DWRITE_FONT_STYLE TextFormat::get_style() const
 {
     return m_text_format->GetFontStyle();
+}
+
+wil::com_ptr<IDWriteTextLayout> TextFormat::create_unwrapped_text_layout(std::wstring_view text, float max_width,
+    float max_height, bool enable_ellipsis, std::optional<DWRITE_TEXT_ALIGNMENT> alignment) const
+{
+    const auto text_length = gsl::narrow<uint32_t>(text.length());
+
+    const auto rendering_mode = m_rendering_params->rendering_mode();
+
+    wil::com_ptr<IDWriteTextLayout> text_layout;
+    if (rendering_mode == DWRITE_RENDERING_MODE_ALIASED || rendering_mode == DWRITE_RENDERING_MODE_GDI_CLASSIC
+        || rendering_mode == DWRITE_RENDERING_MODE_GDI_NATURAL)
+        THROW_IF_FAILED(m_factory->CreateGdiCompatibleTextLayout(text.data(), text_length, m_text_format.get(),
+            max_width, max_height, get_default_scaling_factor(), nullptr,
+            rendering_mode == DWRITE_RENDERING_MODE_GDI_NATURAL, &text_layout));
+    else
+        THROW_IF_FAILED(m_factory->CreateTextLayout(
+            text.data(), text_length, m_text_format.get(), max_width, max_height, &text_layout));
+
+    const auto typography = m_context->get_default_typography();
+    THROW_IF_FAILED(text_layout->SetTypography(typography.get(), {0, text_length}));
+
+    if (alignment)
+        THROW_IF_FAILED(text_layout->SetTextAlignment(*alignment));
+
+    if (enable_ellipsis) {
+        if (!m_trimming_sign)
+            THROW_IF_FAILED(m_factory->CreateEllipsisTrimmingSign(m_text_format.get(), &m_trimming_sign));
+
+        DWRITE_TRIMMING trimming{DWRITE_TRIMMING_GRANULARITY_CHARACTER, 0, 0};
+        THROW_IF_FAILED(text_layout->SetTrimming(&trimming, m_trimming_sign.get()));
+    }
+
+    return text_layout;
 }
 
 Context::Context()
@@ -808,7 +835,7 @@ std::optional<TextFormat> Context::create_text_format_with_fallback(
 }
 
 TextFormat Context::wrap_text_format(wil::com_ptr<IDWriteTextFormat> text_format, DWRITE_RENDERING_MODE rendering_mode,
-    bool use_greyscale_antialiasing, bool use_colour_glyphs, bool set_defaults)
+    bool use_greyscale_antialiasing, bool use_colour_glyphs, bool set_defaults, size_t layout_cache_size)
 {
     if (set_defaults) {
         THROW_IF_FAILED(text_format->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
@@ -823,7 +850,7 @@ TextFormat Context::wrap_text_format(wil::com_ptr<IDWriteTextFormat> text_format
     const auto rendering_params
         = std::make_shared<RenderingParams>(m_factory, rendering_mode, use_greyscale_antialiasing, use_colour_glyphs);
 
-    return {shared_from_this(), m_factory, m_gdi_interop, std::move(text_format), rendering_params};
+    return {shared_from_this(), m_factory, m_gdi_interop, std::move(text_format), rendering_params, layout_cache_size};
 }
 
 wil::com_ptr<IDWriteFontFallback> Context::create_emoji_font_fallback(

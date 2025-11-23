@@ -19,36 +19,43 @@ int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::wstri
     std::optional<std::wstring> processed_text;
     std::vector<ColouredTextSegment> segments;
 
-    if (enable_colour_codes)
-        std::tie(processed_text, segments) = process_colour_codes(text, selected);
+    const auto scaling_factor = get_default_scaling_factor();
+    const auto max_width = gsl::narrow_cast<float>(wil::rect_width(rect)) / scaling_factor;
+    const auto max_height = gsl::narrow_cast<float>(wil::rect_height(rect)) / scaling_factor;
+    const auto dwrite_alignment = get_text_alignment(align);
 
-    if (align != ALIGN_LEFT) {
-        if (!processed_text)
-            processed_text = text;
+    auto layout = text_format.get_cached_text_layout(text, max_width, max_height, enable_ellipsis, dwrite_alignment);
 
-        // Work around DirectWrite not rendering trailing whitespace
-        // for centre- and right-aligned text
-        processed_text->push_back(L'\u200b');
+    if (!layout) {
+        if (enable_colour_codes)
+            std::tie(processed_text, segments) = process_colour_codes(text, selected);
+
+        if (align != ALIGN_LEFT) {
+            if (!processed_text)
+                processed_text = text;
+
+            // Work around DirectWrite not rendering trailing whitespace
+            // for centre- and right-aligned text
+            processed_text->push_back(L'\u200b');
+        }
     }
 
-    const auto render_text = processed_text ? *processed_text : text;
-
-    text_format.set_text_alignment(get_text_alignment(align));
-
     try {
-        const auto scaling_factor = get_default_scaling_factor();
+        if (!layout) {
+            const auto render_text = processed_text ? *processed_text : text;
 
-        const auto layout = text_format.create_text_layout(render_text,
-            gsl::narrow_cast<float>(wil::rect_width(rect)) / scaling_factor,
-            gsl::narrow_cast<float>(wil::rect_height(rect)) / scaling_factor, enable_ellipsis);
+            layout = text_format.create_cached_text_layout(
+                render_text, text, max_width, max_height, enable_ellipsis, dwrite_alignment);
 
-        for (auto& [colour, start_character, character_count] : segments) {
-            layout.set_colour(colour, {gsl::narrow<uint32_t>(start_character), gsl::narrow<uint32_t>(character_count)});
+            for (auto& [colour, start_character, character_count] : segments) {
+                layout->set_colour(
+                    colour, {gsl::narrow<uint32_t>(start_character), gsl::narrow<uint32_t>(character_count)});
+            }
         }
 
-        const auto metrics = layout.get_metrics();
+        const auto metrics = layout->get_metrics();
 
-        layout.render_with_transparent_background(wnd, dc, rect, default_color, 0.0f, bitmap_render_target);
+        layout->render_with_transparent_background(wnd, dc, rect, default_color, 0.0f, bitmap_render_target);
 
         return gsl::narrow_cast<int>(metrics.width * scaling_factor + 1);
     }

@@ -1,4 +1,5 @@
 #pragma once
+#include "direct_write_cache.h"
 
 namespace uih::direct_write {
 
@@ -100,12 +101,13 @@ class TextFormat {
 public:
     TextFormat(std::shared_ptr<class Context> context, wil::com_ptr<IDWriteFactory1> factory,
         wil::com_ptr<IDWriteGdiInterop> gdi_interop, wil::com_ptr<IDWriteTextFormat> text_format,
-        RenderingParams::Ptr rendering_params)
+        RenderingParams::Ptr rendering_params, size_t layout_cache_size = 32)
         : m_context(std::move(context))
         , m_factory(std::move(factory))
         , m_gdi_interop(std::move(gdi_interop))
         , m_text_format(std::move(text_format))
         , m_rendering_params(std::move(rendering_params))
+        , m_text_layout_cache(layout_cache_size)
     {
     }
 
@@ -114,22 +116,37 @@ public:
     void set_word_wrapping(DWRITE_WORD_WRAPPING value) const;
 
     [[nodiscard]] int get_minimum_height(std::wstring_view text = std::wstring_view(L"", 0)) const;
-    [[nodiscard]] TextPosition measure_text_position(
-        std::wstring_view text, int height, float max_width = 65536.0f, bool enable_ellipsis = false) const;
+    [[nodiscard]] TextPosition measure_text_position(std::wstring_view text, int height, float max_width = 65536.0f,
+        bool enable_ellipsis = false, std::optional<DWRITE_TEXT_ALIGNMENT> alignment = {}) const;
     [[nodiscard]] int measure_text_width(std::wstring_view text) const;
-    [[nodiscard]] TextLayout create_text_layout(
-        std::wstring_view text, float max_width, float max_height, bool enable_ellipsis = false) const;
+    [[nodiscard]] TextLayout create_text_layout(std::wstring_view text, float max_width, float max_height,
+        bool enable_ellipsis = false, std::optional<DWRITE_TEXT_ALIGNMENT> alignment = {}) const;
+
+    [[nodiscard]] std::shared_ptr<TextLayout> get_cached_text_layout(std::wstring_view text_key, float max_width,
+        float max_height, bool enable_ellipsis, DWRITE_TEXT_ALIGNMENT alignment) const;
+
+    /**
+     * Only valid to call this if get_cached_text_layout() returned an empty std::shared_ptr.
+     */
+    [[nodiscard]] std::shared_ptr<TextLayout> create_cached_text_layout(std::wstring_view text,
+        std::wstring_view text_key, float max_width, float max_height, bool enable_ellipsis,
+        DWRITE_TEXT_ALIGNMENT alignment) const;
+
     [[nodiscard]] DWRITE_FONT_WEIGHT get_weight() const;
     [[nodiscard]] std::variant<DWRITE_FONT_STRETCH, float> get_stretch() const;
     [[nodiscard]] DWRITE_FONT_STYLE get_style() const;
 
 private:
+    [[nodiscard]] wil::com_ptr<IDWriteTextLayout> create_unwrapped_text_layout(std::wstring_view text, float max_width,
+        float max_height, bool enable_ellipsis, std::optional<DWRITE_TEXT_ALIGNMENT> alignment) const;
+
     mutable wil::com_ptr<IDWriteInlineObject> m_trimming_sign;
     std::shared_ptr<Context> m_context;
     wil::com_ptr<IDWriteFactory1> m_factory;
     wil::com_ptr<IDWriteGdiInterop> m_gdi_interop;
     wil::com_ptr<IDWriteTextFormat> m_text_format;
     RenderingParams::Ptr m_rendering_params;
+    mutable TextLayoutCache<std::shared_ptr<TextLayout>> m_text_layout_cache;
 };
 
 struct Font {
@@ -212,7 +229,7 @@ public:
 
     TextFormat wrap_text_format(wil::com_ptr<IDWriteTextFormat> text_format,
         DWRITE_RENDERING_MODE rendering_mode = DWRITE_RENDERING_MODE_DEFAULT, bool use_greyscale_antialiasing = false,
-        bool use_colour_glyphs = true, bool set_defaults = true);
+        bool use_colour_glyphs = true, bool set_defaults = true, size_t layout_cache_size = 32);
 
     wil::com_ptr<IDWriteFontFallback> create_emoji_font_fallback(
         const EmojiFontSelectionConfig& emoji_font_selection_config) const;
