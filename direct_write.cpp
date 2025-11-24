@@ -650,7 +650,7 @@ std::shared_ptr<TextLayout> TextFormat::get_cached_text_layout(std::wstring_view
 std::shared_ptr<TextLayout> TextFormat::create_cached_text_layout(std::wstring_view text, std::wstring_view text_key,
     float max_width, float max_height, bool enable_ellipsis, DWRITE_TEXT_ALIGNMENT alignment) const
 {
-    assert(!m_text_layout_cache.contains(text_key, max_width, max_height, enable_ellipsis, alignment));
+    assert(!m_text_layout_cache.contains({text_key, max_width, max_height, enable_ellipsis, alignment}));
 
     auto unwrapped_text_layout = create_unwrapped_text_layout(text, max_width, max_height, enable_ellipsis, alignment);
     const auto text_layout
