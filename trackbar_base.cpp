@@ -285,6 +285,8 @@ LRESULT TrackbarBase::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_NCCREATE:
         break;
     case WM_CREATE: {
+        m_buffered_paint_initialiser.emplace();
+
         if (IsThemeActive() && IsAppThemed()) {
             m_theme = OpenThemeData(wnd, L"Trackbar");
         }
@@ -311,6 +313,7 @@ LRESULT TrackbarBase::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         }
     } break;
     case WM_NCDESTROY:
+        m_buffered_paint_initialiser.reset();
         break;
     case WM_SIZE:
         RedrawWindow(wnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE);
@@ -507,44 +510,24 @@ LRESULT TrackbarBase::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_ERASEBKGND:
         return FALSE;
     case WM_PAINT: {
-        RECT rc_client;
+        RECT rc_client{};
         GetClientRect(wnd, &rc_client);
 
-        PAINTSTRUCT ps;
+        PAINTSTRUCT ps{};
+        const auto dc = wil::BeginPaint(wnd, &ps);
+        const auto buffered_paint = BufferedPaint(dc.get(), ps.rcPaint);
 
-        HDC dc = BeginPaint(wnd, &ps);
-
-        RECT rc_thumb;
-
+        RECT rc_thumb{};
         get_thumb_rect(&rc_thumb);
 
-        RECT rc_track; // channel
+        RECT rc_track{};
         get_channel_rect(&rc_track);
 
-        // Offscreen rendering to eliminate flicker
-        HDC dc_mem = CreateCompatibleDC(dc);
-
-        // Create a rect same size of update rect
-        HBITMAP bm_mem = CreateCompatibleBitmap(dc, rc_client.right, rc_client.bottom);
-
-        auto bm_old = (HBITMAP)SelectObject(dc_mem, bm_mem);
-
-        // we should always be erasing first, so shouldn't be needed
-        BitBlt(dc_mem, 0, 0, rc_client.right, rc_client.bottom, dc, 0, 0, SRCCOPY);
-        if (ps.fErase) {
-            draw_background(dc_mem, &rc_client);
-        }
-
-        draw_channel(dc_mem, &rc_track);
-        draw_thumb(dc_mem, &rc_thumb);
-
-        BitBlt(dc, 0, 0, rc_client.right, rc_client.bottom, dc_mem, 0, 0, SRCCOPY);
-        SelectObject(dc_mem, bm_old);
-        DeleteObject(bm_mem);
-        DeleteDC(dc_mem);
-        EndPaint(wnd, &ps);
-    }
+        draw_background(buffered_paint.get(), &rc_client);
+        draw_channel(buffered_paint.get(), &rc_track);
+        draw_thumb(buffered_paint.get(), &rc_thumb);
         return 0;
+    }
     }
     return DefWindowProc(wnd, msg, wp, lp);
 }

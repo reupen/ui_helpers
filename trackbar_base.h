@@ -481,6 +481,8 @@ private:
      * \brief The underlying container window.
      */
     std::unique_ptr<uih::ContainerWindow> m_container_window;
+
+    std::optional<BufferedPaintInitialiser> m_buffered_paint_initialiser;
 };
 
 } // namespace uih
