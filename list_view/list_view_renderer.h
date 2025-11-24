@@ -31,24 +31,24 @@ struct RendererContext {
     HDC dc{};
     HTHEME list_view_theme{};
     HTHEME items_view_theme{};
-    std::optional<direct_write::TextFormat> item_text_format;
-    std::optional<direct_write::TextFormat> group_text_format;
+    std::optional<direct_write::TextFormat>& item_text_format;
+    std::optional<direct_write::TextFormat>& group_text_format;
     wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target;
 };
 
 class RendererBase {
 public:
-    virtual void render_begin(RendererContext context) {}
+    virtual void render_begin(const RendererContext& context) {}
 
-    virtual void render_background(RendererContext context, const RECT* rc) = 0;
+    virtual void render_background(const RendererContext& context, const RECT* rc) = 0;
 
-    virtual void render_group_info(RendererContext context, size_t index, RECT rc) {}
+    virtual void render_group_info(const RendererContext& context, size_t index, RECT rc) {}
 
-    virtual void render_group(RendererContext context, size_t item_index, size_t group_index, std::string_view text,
-        int indentation, size_t level, RECT rc)
+    virtual void render_group(const RendererContext& context, size_t item_index, size_t group_index,
+        std::string_view text, int indentation, size_t level, RECT rc)
         = 0;
 
-    virtual void render_item(RendererContext context, size_t index, std::vector<RendererSubItem> sub_items,
+    virtual void render_item(const RendererContext& context, size_t index, std::vector<RendererSubItem> sub_items,
         int indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool should_hide_focus,
         bool b_focused, RECT rc)
         = 0;
@@ -60,21 +60,21 @@ class DefaultRenderer : public RendererBase {
 public:
     DefaultRenderer(bool enable_item_tab_columns = false) : m_enable_item_tab_columns{enable_item_tab_columns} {}
 
-    void render_background(RendererContext context, const RECT* rc) override;
+    void render_background(const RendererContext& context, const RECT* rc) override;
 
-    void render_group(RendererContext context, size_t item_index, size_t group_index, std::string_view text,
+    void render_group(const RendererContext& context, size_t item_index, size_t group_index, std::string_view text,
         int indentation, size_t level, RECT rc) override;
 
-    void render_item(RendererContext context, size_t index, std::vector<RendererSubItem> sub_items, int indentation,
-        bool b_selected, bool b_window_focused, bool b_highlight, bool should_hide_focus, bool b_focused,
-        RECT rc) override;
+    void render_item(const RendererContext& context, size_t index, std::vector<RendererSubItem> sub_items,
+        int indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool should_hide_focus,
+        bool b_focused, RECT rc) override;
 
 protected:
-    void render_group_line(RendererContext context, const RECT* rc);
+    void render_group_line(const RendererContext& context, const RECT* rc);
 
-    void render_group_background(RendererContext context, const RECT* rc);
+    void render_group_background(const RendererContext& context, const RECT* rc);
 
-    void render_focus_rect(RendererContext context, bool should_hide_focus, RECT rc) const;
+    void render_focus_rect(const RendererContext& context, bool should_hide_focus, RECT rc) const;
 
 private:
     bool m_enable_item_tab_columns{};

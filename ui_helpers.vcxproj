@@ -159,6 +159,7 @@
     <ClInclude Include="direct_2d.h" />
     <ClInclude Include="direct_3d.h" />
     <ClInclude Include="direct_write.h" />
+    <ClInclude Include="direct_write_cache.h" />
     <ClInclude Include="direct_write_emoji.h" />
     <ClInclude Include="dpi.h" />
     <ClInclude Include="drag_image.h" />

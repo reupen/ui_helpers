@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <list>
 #include <memory>
 #include <optional>
 #include <ranges>

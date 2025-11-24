@@ -90,11 +90,6 @@ void ListView::calculate_tooltip_position(size_t item_index, size_t column_index
 
     const auto& column = m_columns[column_index];
 
-    try {
-        m_items_text_format->set_text_alignment(direct_write::get_text_alignment(column.m_alignment));
-    }
-    CATCH_LOG()
-
     auto utf16_text = mmh::to_utf16(text);
     const auto text_width = m_items_text_format->measure_text_width(utf16_text);
 
@@ -106,7 +101,9 @@ void ListView::calculate_tooltip_position(size_t item_index, size_t column_index
     if (column.m_alignment != ALIGN_LEFT)
         utf16_text.push_back(L'\u200b');
 
-    const auto metrics = m_items_text_format->measure_text_position(utf16_text, m_item_height, max_width, true);
+    const auto alignment = direct_write::get_text_alignment(column.m_alignment);
+    const auto metrics
+        = m_items_text_format->measure_text_position(utf16_text, m_item_height, max_width, true, alignment);
 
     m_tooltip_text_left_offset = metrics.left_remainder_dip;
 
@@ -180,12 +177,11 @@ void ListView::render_tooltip_text(HWND wnd, HDC dc, COLORREF colour) const
 
     if (m_items_text_format) {
         try {
-            m_items_text_format->set_text_alignment();
-            const auto scaling_factor = direct_write::get_default_scaling_factor();
+            const auto max_width = direct_write::px_to_dip(gsl::narrow_cast<float>(wil::rect_width(rc_text)));
+            const auto max_height = direct_write::px_to_dip(gsl::narrow_cast<float>(wil::rect_height(rc_text)));
 
-            const auto text_layout = m_items_text_format->create_text_layout(text,
-                gsl::narrow_cast<float>(wil::rect_width(rc_text)) / scaling_factor,
-                gsl::narrow_cast<float>(wil::rect_height(rc_text)) / scaling_factor);
+            const auto text_layout = m_items_text_format->create_text_layout(
+                text, max_width, max_height, false, DWRITE_TEXT_ALIGNMENT_LEADING);
 
             text_layout.render_with_transparent_background(wnd, dc, rc_text, colour, m_tooltip_text_left_offset);
         }
