@@ -79,6 +79,7 @@
 
 #include "win32_helpers.h"
 #include "ole.h"
+#include "gdi.h"
 
 #include "dialog.h"
 #include "dpi.h"
@@ -88,7 +89,6 @@
 #include "solid_fill.h"
 #include "theming.h"
 
-#include "gdi.h"
 #include "uniscribe.h"
 #include "uniscribe_text_out.h"
 #include "text_out_helpers.h"
