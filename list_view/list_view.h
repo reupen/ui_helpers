@@ -612,7 +612,7 @@ protected:
     {
         m_group_level_indentation_enabled = group_level_indentation_enabled;
 
-        if (m_initialised) {
+        if (m_initialised && m_group_count > 0) {
             update_column_sizes();
             build_header();
             refresh_item_positions();
@@ -623,10 +623,24 @@ protected:
     {
         m_group_level_indentation_amount = group_level_indentation_amount;
 
-        if (m_initialised) {
+        if (m_initialised && m_group_count > 0) {
             update_column_sizes();
             build_header();
             refresh_item_positions();
+        }
+    }
+
+    void set_root_group_indentation_amount(int additional_group_indentation_amount)
+    {
+        if (m_root_group_indentation_amount == additional_group_indentation_amount)
+            return;
+
+        m_root_group_indentation_amount = additional_group_indentation_amount;
+
+        if (m_initialised && m_group_count > 0) {
+            update_column_sizes();
+            build_header();
+            invalidate_all();
         }
     }
 
@@ -968,6 +982,7 @@ private:
     bool m_show_group_info_area{};
     bool m_is_group_info_area_sticky{};
     bool m_have_indent_column{};
+    int m_root_group_indentation_amount{};
 
     HWND m_search_editbox{nullptr};
     WNDPROC m_proc_search_edit{nullptr};
