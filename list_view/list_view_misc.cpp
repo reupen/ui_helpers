@@ -53,13 +53,12 @@ ListView::GroupInfoAreaPadding ListView::get_group_info_area_padding() const
 
 int ListView::get_total_indentation() const
 {
-    const auto item_indentation = [this] {
-        if (m_group_count == 0)
-            return 0;
+    if (m_group_count == 0)
+        return 0;
 
-        return get_indentation_step() * gsl::narrow<int>(m_group_count - (get_show_group_info_area() ? 1 : 0));
-    }();
-    return item_indentation + get_group_info_area_total_width();
+    return m_root_group_indentation_amount
+        + get_indentation_step() * gsl::narrow<int>(m_group_count - (get_show_group_info_area() ? 1 : 0))
+        + get_group_info_area_total_width();
 }
 
 void ListView::refresh_item_positions()
@@ -466,7 +465,8 @@ RECT ListView::get_item_group_info_area_render_rect(
     const auto resolved_items_rect = items_rect ? *items_rect : get_items_rect();
     const auto resolved_scroll_position = scroll_position.value_or(m_scroll_position);
 
-    const auto artwork_indentation = get_indentation_step() * (gsl::narrow<int>(m_group_count) - 1);
+    const auto artwork_indentation
+        = m_root_group_indentation_amount + get_indentation_step() * (gsl::narrow<int>(m_group_count) - 1);
     const auto group_info_area_padding = get_group_info_area_padding();
 
     const auto [group_first_item, group_item_count] = get_item_group_range(index, m_group_count - 1);

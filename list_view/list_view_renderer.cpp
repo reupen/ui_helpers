@@ -95,7 +95,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
             const int y = get_item_position(i) - m_scroll_position
                 - m_group_height * gsl::narrow<int>(display_group_count - display_group_index)
                 - get_leaf_group_header_bottom_margin(i) + gsl::narrow_cast<int>(rc_items.top);
-            const int x = -m_horizontal_scroll_position + rc_items.left;
+            const int x = -m_horizontal_scroll_position + rc_items.left + m_root_group_indentation_amount;
 
             const RECT rc = {x, y, x + cx, y + m_group_height};
 
