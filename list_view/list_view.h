@@ -641,6 +641,9 @@ protected:
             update_column_sizes();
             build_header();
             invalidate_all();
+
+            if (!m_autosize)
+                update_horizontal_scroll_info();
         }
     }
 
