@@ -451,7 +451,7 @@ void ListView::remove_item_in_internal_state(size_t remove_index)
     const size_t total_items = m_items.size();
     size_t old_group_display_count{};
 
-    for (const auto item_index : std::views::iota(remove_index, std::min(remove_index + 1, total_items))) {
+    for (const auto item_index : std::views::iota(remove_index, std::min(remove_index + 2, total_items))) {
         old_group_display_count += get_item_display_group_count(item_index);
     }
 
