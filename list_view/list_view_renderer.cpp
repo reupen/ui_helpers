@@ -97,16 +97,18 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
             const int y = get_item_position(i) - m_scroll_position
                 - m_group_height * gsl::narrow<int>(display_group_count - display_group_index)
                 - get_leaf_group_header_bottom_margin(i) + gsl::narrow_cast<int>(rc_items.top);
-            const int x = -m_horizontal_scroll_position + rc_items.left + m_root_group_indentation_amount;
+            const int x = -m_horizontal_scroll_position + rc_items.left;
 
             const RECT rc = {x, y, x + cx, y + m_group_height};
 
             if (rc.top >= rc_update.bottom)
                 break;
 
+            const auto indentation
+                = m_root_group_indentation_amount + indentation_step * gsl::narrow<int>(indentation_level);
+
             if (RectVisible(dc, &rc))
-                m_renderer->render_group(
-                    context, i, group_index, group->m_text.get_ptr(), indentation_step, indentation_level, rc);
+                m_renderer->render_group(context, i, group_index, group->m_text.get_ptr(), indentation, rc);
 
             ++display_group_index;
             ++indentation_level;
@@ -245,7 +247,7 @@ bool ListView::get_group_text_colour_default(COLORREF& cr)
 }
 
 void lv::DefaultRenderer::render_group(const RendererContext& context, size_t item_index, size_t group_index,
-    std::string_view text, int indentation, size_t level, RECT rc)
+    std::string_view text, int indentation, RECT rc)
 {
     if (!(context.group_text_format && context.bitmap_render_target))
         return;
@@ -254,7 +256,7 @@ void lv::DefaultRenderer::render_group(const RendererContext& context, size_t it
 
     render_group_background(context, &rc);
 
-    const auto x_offset = 1_spx + indentation * gsl::narrow<int>(level);
+    const auto x_offset = 1_spx + indentation;
     const auto border = 3_spx;
     const auto text_width = direct_write::text_out_columns_and_colours(*context.group_text_format, context.wnd,
         context.dc, text, x_offset, border, rc, cr,
