@@ -34,6 +34,8 @@ int ListView::get_default_indentation_step() const
 
 void ListView::render_items(HDC dc, const RECT& rc_update)
 {
+    auto _ = wil::SelectObject(dc, GetStockObject(DC_BRUSH));
+
     wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target;
     try {
         bitmap_render_target = m_direct_write_context->create_bitmap_render_target(dc, 0, 0);
@@ -183,8 +185,8 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
         rc_line.bottom = y_pos + line_height;
 
         if (RectVisible(dc, &rc_line)) {
-            wil::unique_hbrush brush(CreateSolidBrush(colours.m_text));
-            FillRect(dc, &rc_line, brush.get());
+            SetDCBrushColor(dc, colours.m_text);
+            PatBlt(dc, rc_line.left, rc_line.top, wil::rect_width(rc_line), wil::rect_height(rc_line), PATCOPY);
         }
     }
 }
@@ -221,7 +223,8 @@ void lv::DefaultRenderer::render_group_line(const RendererContext& context, cons
 
 void lv::DefaultRenderer::render_group_background(const RendererContext& context, const RECT* rc)
 {
-    FillRect(context.dc, rc, wil::unique_hbrush(CreateSolidBrush(context.colours.m_group_background)).get());
+    SetDCBrushColor(context.dc, context.colours.m_group_background);
+    PatBlt(context.dc, rc->left, rc->top, wil::rect_width(*rc), wil::rect_height(*rc), PATCOPY);
 }
 
 COLORREF ListView::get_group_text_colour_default()
@@ -308,12 +311,14 @@ void lv::DefaultRenderer::render_item(const RendererContext& context, size_t ind
         cr_text = b_selected
             ? (b_window_focused ? context.colours.m_selection_text : context.colours.m_inactive_selection_text)
             : context.colours.m_text;
-        FillRect(context.dc, &rc,
-            wil::unique_hbrush(
-                CreateSolidBrush(b_selected ? (b_window_focused ? context.colours.m_selection_background
-                                                                : context.colours.m_inactive_selection_background)
-                                            : context.colours.m_background))
-                .get());
+
+        if (b_selected) {
+            const auto background_colour = b_window_focused ? context.colours.m_selection_background
+                                                            : context.colours.m_inactive_selection_background;
+
+            SetDCBrushColor(context.dc, background_colour);
+            PatBlt(context.dc, rc.left, rc.top, wil::rect_width(rc), wil::rect_height(rc), PATCOPY);
+        }
     }
 
     RECT rc_subitem = rc;
@@ -392,7 +397,8 @@ void lv::DefaultRenderer::render_focus_rect(const RendererContext& context, bool
 
 void lv::DefaultRenderer::render_background(const RendererContext& context, const RECT* rc)
 {
-    FillRect(context.dc, rc, wil::unique_hbrush(CreateSolidBrush(context.colours.m_background)).get());
+    SetDCBrushColor(context.dc, context.colours.m_background);
+    PatBlt(context.dc, rc->left, rc->top, wil::rect_width(*rc), wil::rect_height(*rc), PATCOPY);
 }
 
 bool ListView::is_item_clipped(size_t index, size_t column)
