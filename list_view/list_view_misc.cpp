@@ -398,19 +398,44 @@ void ListView::invalidate_items(size_t index, size_t count) const
         return;
 
     const auto items_rect = get_items_rect();
-    const auto groups = gsl::narrow<int>(get_item_display_group_count(index));
+    const auto has_group_info_area = get_show_group_info_area();
 
-    const auto items_left = get_total_indentation() - m_horizontal_scroll_position;
+    if (has_group_info_area) {
+        const auto first_visible = std::max(index, gsl::narrow<size_t>(get_item_at_or_after(m_scroll_position)));
+        const auto last_visible = std::min(index + count,
+            gsl::narrow<size_t>(get_item_at_or_before(m_scroll_position + wil::rect_height(items_rect))));
+
+        if (last_visible > first_visible) {
+            for (const auto item_index : ranges::views::iota(first_visible, last_visible + 1)) {
+                const auto group_headers_height = get_item_group_header_total_height(item_index);
+
+                if (group_headers_height <= 0)
+                    continue;
+
+                const auto item_position = get_item_position(item_index);
+
+                const RECT groups_invalidate_rect
+                    = {items_rect.left, item_position - m_scroll_position + items_rect.top - group_headers_height,
+                        items_rect.right, item_position - m_scroll_position + items_rect.top};
+
+                RECT visible_invalidate_rect{};
+                if (IntersectRect(&visible_invalidate_rect, &items_rect, &groups_invalidate_rect))
+                    RedrawWindow(get_wnd(), &visible_invalidate_rect, nullptr, RDW_INVALIDATE);
+            }
+        }
+    }
+
+    const auto items_left
+        = has_group_info_area ? get_total_indentation() - m_horizontal_scroll_position : items_rect.left;
 
     if (items_left >= items_rect.right)
         return;
 
-    RECT invalidate_rect
-        = {items_left, get_item_position(index) - m_scroll_position + items_rect.top - groups * m_group_height,
-            items_rect.right, get_item_position_bottom(index + count - 1) - m_scroll_position + items_rect.top};
+    const RECT items_invalidate_rect = {items_left, get_item_position(index) - m_scroll_position + items_rect.top,
+        items_rect.right, get_item_position_bottom(index + count - 1) - m_scroll_position + items_rect.top};
 
     RECT visible_invalidate_rect{};
-    if (IntersectRect(&visible_invalidate_rect, &items_rect, &invalidate_rect))
+    if (IntersectRect(&visible_invalidate_rect, &items_rect, &items_invalidate_rect))
         RedrawWindow(get_wnd(), &visible_invalidate_rect, nullptr, RDW_INVALIDATE);
 }
 
