@@ -112,10 +112,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_PAINT: {
         PAINTSTRUCT ps{};
         const auto dc = wil::BeginPaint(wnd, &ps);
-
         BufferedPaint buffered_dc(dc.get(), ps.rcPaint);
-
-        auto _ = wil::SelectObject(buffered_dc.get(), m_items_font.get());
         render_items(buffered_dc.get(), ps.rcPaint);
         return 0;
     }

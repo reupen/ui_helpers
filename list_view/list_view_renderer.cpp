@@ -34,6 +34,8 @@ int ListView::get_default_indentation_step() const
 
 void ListView::render_items(HDC dc, const RECT& rc_update)
 {
+    auto _ = wil::SelectObject(dc, GetStockObject(DC_BRUSH));
+
     wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target;
     try {
         bitmap_render_target = m_direct_write_context->create_bitmap_render_target(dc, 0, 0);
@@ -95,16 +97,18 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
             const int y = get_item_position(i) - m_scroll_position
                 - m_group_height * gsl::narrow<int>(display_group_count - display_group_index)
                 - get_leaf_group_header_bottom_margin(i) + gsl::narrow_cast<int>(rc_items.top);
-            const int x = -m_horizontal_scroll_position + rc_items.left + m_root_group_indentation_amount;
+            const int x = -m_horizontal_scroll_position + rc_items.left;
 
             const RECT rc = {x, y, x + cx, y + m_group_height};
 
             if (rc.top >= rc_update.bottom)
                 break;
 
+            const auto indentation
+                = m_root_group_indentation_amount + indentation_step * gsl::narrow<int>(indentation_level);
+
             if (RectVisible(dc, &rc))
-                m_renderer->render_group(
-                    context, i, group_index, group->m_text.get_ptr(), indentation_step, indentation_level, rc);
+                m_renderer->render_group(context, i, group_index, group->m_text.get_ptr(), indentation, rc);
 
             ++display_group_index;
             ++indentation_level;
@@ -183,8 +187,8 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
         rc_line.bottom = y_pos + line_height;
 
         if (RectVisible(dc, &rc_line)) {
-            wil::unique_hbrush brush(CreateSolidBrush(colours.m_text));
-            FillRect(dc, &rc_line, brush.get());
+            SetDCBrushColor(dc, colours.m_text);
+            PatBlt(dc, rc_line.left, rc_line.top, wil::rect_width(rc_line), wil::rect_height(rc_line), PATCOPY);
         }
     }
 }
@@ -221,7 +225,8 @@ void lv::DefaultRenderer::render_group_line(const RendererContext& context, cons
 
 void lv::DefaultRenderer::render_group_background(const RendererContext& context, const RECT* rc)
 {
-    FillRect(context.dc, rc, wil::unique_hbrush(CreateSolidBrush(context.colours.m_group_background)).get());
+    SetDCBrushColor(context.dc, context.colours.m_group_background);
+    PatBlt(context.dc, rc->left, rc->top, wil::rect_width(*rc), wil::rect_height(*rc), PATCOPY);
 }
 
 COLORREF ListView::get_group_text_colour_default()
@@ -242,7 +247,7 @@ bool ListView::get_group_text_colour_default(COLORREF& cr)
 }
 
 void lv::DefaultRenderer::render_group(const RendererContext& context, size_t item_index, size_t group_index,
-    std::string_view text, int indentation, size_t level, RECT rc)
+    std::string_view text, int indentation, RECT rc)
 {
     if (!(context.group_text_format && context.bitmap_render_target))
         return;
@@ -251,7 +256,7 @@ void lv::DefaultRenderer::render_group(const RendererContext& context, size_t it
 
     render_group_background(context, &rc);
 
-    const auto x_offset = 1_spx + indentation * gsl::narrow<int>(level);
+    const auto x_offset = 1_spx + indentation;
     const auto border = 3_spx;
     const auto text_width = direct_write::text_out_columns_and_colours(*context.group_text_format, context.wnd,
         context.dc, text, x_offset, border, rc, cr,
@@ -308,12 +313,14 @@ void lv::DefaultRenderer::render_item(const RendererContext& context, size_t ind
         cr_text = b_selected
             ? (b_window_focused ? context.colours.m_selection_text : context.colours.m_inactive_selection_text)
             : context.colours.m_text;
-        FillRect(context.dc, &rc,
-            wil::unique_hbrush(
-                CreateSolidBrush(b_selected ? (b_window_focused ? context.colours.m_selection_background
-                                                                : context.colours.m_inactive_selection_background)
-                                            : context.colours.m_background))
-                .get());
+
+        if (b_selected) {
+            const auto background_colour = b_window_focused ? context.colours.m_selection_background
+                                                            : context.colours.m_inactive_selection_background;
+
+            SetDCBrushColor(context.dc, background_colour);
+            PatBlt(context.dc, rc.left, rc.top, wil::rect_width(rc), wil::rect_height(rc), PATCOPY);
+        }
     }
 
     RECT rc_subitem = rc;
@@ -392,7 +399,8 @@ void lv::DefaultRenderer::render_focus_rect(const RendererContext& context, bool
 
 void lv::DefaultRenderer::render_background(const RendererContext& context, const RECT* rc)
 {
-    FillRect(context.dc, rc, wil::unique_hbrush(CreateSolidBrush(context.colours.m_background)).get());
+    SetDCBrushColor(context.dc, context.colours.m_background);
+    PatBlt(context.dc, rc->left, rc->top, wil::rect_width(*rc), wil::rect_height(*rc), PATCOPY);
 }
 
 bool ListView::is_item_clipped(size_t index, size_t column)

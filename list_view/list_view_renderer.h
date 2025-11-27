@@ -45,7 +45,7 @@ public:
     virtual void render_group_info(const RendererContext& context, size_t index, RECT rc) {}
 
     virtual void render_group(const RendererContext& context, size_t item_index, size_t group_index,
-        std::string_view text, int indentation, size_t level, RECT rc)
+        std::string_view text, int indentation, RECT rc)
         = 0;
 
     virtual void render_item(const RendererContext& context, size_t index, std::vector<RendererSubItem> sub_items,
@@ -63,7 +63,7 @@ public:
     void render_background(const RendererContext& context, const RECT* rc) override;
 
     void render_group(const RendererContext& context, size_t item_index, size_t group_index, std::string_view text,
-        int indentation, size_t level, RECT rc) override;
+        int indentation, RECT rc) override;
 
     void render_item(const RendererContext& context, size_t index, std::vector<RendererSubItem> sub_items,
         int indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool should_hide_focus,
