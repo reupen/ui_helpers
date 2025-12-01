@@ -66,8 +66,9 @@ public:
     DWRITE_TEXT_METRICS get_metrics() const;
     DWRITE_OVERHANG_METRICS get_overhang_metrics() const;
     void render_with_transparent_background(HWND wnd, HDC dc, RECT output_rect, COLORREF default_colour,
-        float x_origin_offset = 0.0f, wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target = {}) const;
-    void set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const;
+        bool is_selected = false, float x_origin_offset = 0.0f,
+        wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target = {}) const;
+    void set_colour(COLORREF colour, COLORREF selected_colour, DWRITE_TEXT_RANGE text_range) const;
     void set_effect(IUnknown* effect, DWRITE_TEXT_RANGE text_range) const;
     void set_max_height(float value) const;
     void set_max_width(float value) const;
