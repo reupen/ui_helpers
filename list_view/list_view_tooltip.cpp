@@ -183,7 +183,7 @@ void ListView::render_tooltip_text(HWND wnd, HDC dc, COLORREF colour) const
             const auto text_layout = m_items_text_format->create_text_layout(
                 text, max_width, max_height, false, DWRITE_TEXT_ALIGNMENT_LEADING);
 
-            text_layout.render_with_transparent_background(wnd, dc, rc_text, colour, m_tooltip_text_left_offset);
+            text_layout.render_with_transparent_background(wnd, dc, rc_text, colour, false, m_tooltip_text_left_offset);
         }
         CATCH_LOG()
     }

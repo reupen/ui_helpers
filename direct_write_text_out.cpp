@@ -28,7 +28,7 @@ int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::wstri
 
     if (!layout) {
         if (enable_colour_codes)
-            std::tie(processed_text, segments) = process_colour_codes(text, selected);
+            std::tie(processed_text, segments) = process_colour_codes(text);
 
         if (align != ALIGN_LEFT) {
             if (!processed_text)
@@ -47,15 +47,15 @@ int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::wstri
             layout = text_format.create_cached_text_layout(
                 render_text, text, max_width, max_height, enable_ellipsis, dwrite_alignment);
 
-            for (auto& [colour, start_character, character_count] : segments) {
-                layout->set_colour(
-                    colour, {gsl::narrow<uint32_t>(start_character), gsl::narrow<uint32_t>(character_count)});
+            for (auto& [colour, selected_colour, start_character, character_count] : segments) {
+                layout->set_colour(colour, selected_colour,
+                    {gsl::narrow<uint32_t>(start_character), gsl::narrow<uint32_t>(character_count)});
             }
         }
 
         const auto metrics = layout->get_metrics();
 
-        layout->render_with_transparent_background(wnd, dc, rect, default_color, 0.0f, bitmap_render_target);
+        layout->render_with_transparent_background(wnd, dc, rect, default_color, selected, 0.0f, bitmap_render_target);
 
         return gsl::narrow_cast<int>(metrics.width * scaling_factor + 1);
     }

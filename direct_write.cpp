@@ -114,9 +114,13 @@ constexpr COLORREF direct_write_colour_to_colorref(DWRITE_COLOR_F colour)
 
 class __declspec(uuid("E50EB289-73D3-481C-B726-09B88105539A")) ColourEffect : public IUnknown {
 public:
-    explicit ColourEffect(COLORREF colour) : m_colour(colour) {}
+    explicit ColourEffect(COLORREF colour, COLORREF selected_colour)
+        : m_colour(colour)
+        , m_selected_colour(selected_colour)
+    {
+    }
 
-    COLORREF GetColour() const { return m_colour; }
+    COLORREF GetColour(bool is_selected) const { return is_selected ? m_selected_colour : m_colour; }
 
     HRESULT STDMETHODCALLTYPE QueryInterface(const IID& riid, void** ppvObject) noexcept override
     {
@@ -149,12 +153,13 @@ public:
 private:
     std::atomic<ULONG> m_ref_count{};
     COLORREF m_colour{};
+    COLORREF m_selected_colour{};
 };
 
 class GdiTextRenderer : public IDWriteTextRenderer {
 public:
     GdiTextRenderer(wil::com_ptr<IDWriteFactory1> factory, IDWriteBitmapRenderTarget* bitmapRenderTarget,
-        IDWriteRenderingParams* renderingParams, COLORREF default_colour, bool use_colour_glyphs);
+        IDWriteRenderingParams* renderingParams, COLORREF default_colour, bool is_selected, bool use_colour_glyphs);
 
     HRESULT STDMETHODCALLTYPE QueryInterface(const IID& riid, void** ppvObject) noexcept override
     {
@@ -214,7 +219,7 @@ public:
             colour_effect = wil::try_com_query<ColourEffect>(clientDrawingEffect);
         }
 
-        const COLORREF colour = colour_effect ? colour_effect->GetColour() : m_default_colour;
+        const COLORREF colour = colour_effect ? colour_effect->GetColour(m_is_selected) : m_default_colour;
 
         wil::com_ptr<IDWriteColorGlyphRunEnumerator> colour_glyph_run_enumerator;
 
@@ -266,7 +271,7 @@ public:
             colour_effect = wil::try_com_query<ColourEffect>(clientDrawingEffect);
         }
 
-        const COLORREF colour = colour_effect ? colour_effect->GetColour() : m_default_colour;
+        const COLORREF colour = colour_effect ? colour_effect->GetColour(m_is_selected) : m_default_colour;
 
         const auto dc = m_render_target->GetMemoryDC();
         const auto scaling_factor = m_render_target->GetPixelsPerDip();
@@ -301,7 +306,7 @@ public:
 
         if (colour_effect) {
             previous_default_colour = m_default_colour;
-            m_default_colour = colour_effect->GetColour();
+            m_default_colour = colour_effect->GetColour(m_is_selected);
         }
 
         auto _ = gsl::finally([&] {
@@ -344,15 +349,17 @@ private:
     wil::com_ptr<IDWriteBitmapRenderTarget> m_render_target;
     wil::com_ptr<IDWriteRenderingParams> m_rendering_params;
     COLORREF m_default_colour{};
+    bool m_is_selected{};
     bool m_use_colour_glyphs{true};
 };
 
 GdiTextRenderer::GdiTextRenderer(wil::com_ptr<IDWriteFactory1> factory, IDWriteBitmapRenderTarget* bitmapRenderTarget,
-    IDWriteRenderingParams* renderingParams, COLORREF default_colour, bool use_colour_glyphs)
+    IDWriteRenderingParams* renderingParams, COLORREF default_colour, bool is_selected, bool use_colour_glyphs)
     : m_factory(std::move(factory))
     , m_render_target(bitmapRenderTarget)
     , m_rendering_params(renderingParams)
     , m_default_colour(default_colour)
+    , m_is_selected(is_selected)
     , m_use_colour_glyphs(use_colour_glyphs)
 {
 }
@@ -440,9 +447,9 @@ DWRITE_OVERHANG_METRICS TextLayout::get_overhang_metrics() const
     return overhang_metrics;
 }
 
-void TextLayout::set_colour(COLORREF colour, DWRITE_TEXT_RANGE text_range) const
+void TextLayout::set_colour(COLORREF colour, COLORREF selected_colour, DWRITE_TEXT_RANGE text_range) const
 {
-    const auto colour_effect = wil::com_ptr<ColourEffect>(new ColourEffect(colour));
+    const auto colour_effect = wil::com_ptr<ColourEffect>(new ColourEffect(colour, selected_colour));
     THROW_IF_FAILED(m_text_layout->SetDrawingEffect(colour_effect.get(), text_range));
 }
 
@@ -506,7 +513,7 @@ void TextLayout::set_wss(DWRITE_FONT_WEIGHT weight, std::variant<DWRITE_FONT_STR
 }
 
 void TextLayout::render_with_transparent_background(HWND wnd, HDC dc, RECT output_rect, COLORREF default_colour,
-    float x_origin_offset, wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target) const
+    bool is_selected, float x_origin_offset, wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target) const
 {
     const auto metrics = get_metrics();
 
@@ -566,7 +573,7 @@ void TextLayout::render_with_transparent_background(HWND wnd, HDC dc, RECT outpu
     const auto memory_dc = bitmap_render_target->GetMemoryDC();
 
     wil::com_ptr<IDWriteTextRenderer> renderer = new GdiTextRenderer(
-        m_factory, bitmap_render_target.get(), rendering_params.get(), default_colour, use_colour_glyphs);
+        m_factory, bitmap_render_target.get(), rendering_params.get(), default_colour, is_selected, use_colour_glyphs);
 
     BitBlt(memory_dc, 0, 0, bitmap_width, bitmap_height, dc, source_x, source_y, SRCCOPY);
     THROW_IF_FAILED(m_text_layout->Draw(NULL, renderer.get(), -draw_left_dip + x_origin_offset, -draw_top_dip));
