@@ -651,6 +651,7 @@ protected:
     int get_default_indentation_step() const;
 
     void set_is_group_info_area_sticky(bool group_info_area_sticky);
+    void set_is_group_info_area_header_spacing_enabled(bool value);
 
     void set_group_info_area_size(int width, int height)
     {
@@ -984,6 +985,7 @@ private:
     int m_group_info_area_height{};
     bool m_show_group_info_area{};
     bool m_is_group_info_area_sticky{};
+    bool m_is_group_info_area_header_spacing_enabled{true};
     bool m_have_indent_column{};
     int m_root_group_indentation_amount{};
 

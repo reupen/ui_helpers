@@ -72,7 +72,7 @@ void ListView::hit_test_ex(POINT pt_client, ListView::HitTestResult& result)
 
         const auto item_index = vertical_hit_test_result.item_leftmost;
         const auto item_top = get_item_position(item_index);
-        const auto group_header_bottom_margin = get_group_items_bottom_margin(item_index);
+        const auto group_header_bottom_margin = get_leaf_group_header_bottom_margin(item_index);
         const auto display_group_count = get_item_display_group_count(item_index);
 
         if (display_group_count == 0 || y_position >= item_top - group_header_bottom_margin) {

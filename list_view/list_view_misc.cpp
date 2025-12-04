@@ -14,7 +14,7 @@ void ListView::on_first_show()
 
 int ListView::get_group_items_bottom_margin(size_t index) const
 {
-    if (!get_show_group_info_area() || index + 1 == m_items.size())
+    if (!get_show_group_info_area() || !m_is_group_info_area_header_spacing_enabled || index + 1 == m_items.size())
         return 0;
 
     return m_group_height / 6;
@@ -22,7 +22,7 @@ int ListView::get_group_items_bottom_margin(size_t index) const
 
 int ListView::get_leaf_group_header_bottom_margin(size_t index) const
 {
-    if (!get_show_group_info_area() || index == 0)
+    if (!get_show_group_info_area() || !m_is_group_info_area_header_spacing_enabled)
         return 0;
 
     if (!get_is_new_group(index))
@@ -41,13 +41,14 @@ ListView::GroupInfoAreaPadding ListView::get_group_info_area_padding() const
 
     const auto min_left_padding = 2_spx + 3_spx;
     const auto min_right_padding = 4_spx;
+    const auto min_bottom_padding = m_item_height / 2;
     const auto indentation_step = get_indentation_step();
 
     return GroupInfoAreaPadding{
         std::max(min_left_padding, m_group_count > 1 ? indentation_step : 0),
         0,
         std::max(min_right_padding, indentation_step),
-        m_group_level_indentation_enabled ? std::max(m_item_height / 2, indentation_step) : m_item_height / 2,
+        std::max(min_bottom_padding, indentation_step),
     };
 }
 
@@ -477,6 +478,17 @@ void ListView::set_is_group_info_area_sticky(bool group_info_area_sticky)
     if (is_invalidation_needed) {
         invalidate_item_group_info_area(first_item_index);
     }
+}
+
+void ListView::set_is_group_info_area_header_spacing_enabled(bool value)
+{
+    if (value == m_is_group_info_area_header_spacing_enabled)
+        return;
+
+    m_is_group_info_area_header_spacing_enabled = value;
+
+    if (m_initialised)
+        refresh_item_positions();
 }
 
 RECT ListView::get_item_group_info_area_render_rect(
