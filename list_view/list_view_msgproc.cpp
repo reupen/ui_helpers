@@ -300,15 +300,17 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 set_focus_item(hit_result.index);
         } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
             const auto [index, count] = get_item_group_range(hit_result.index, hit_result.group_level);
-            set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
-            if (count)
-                set_focus_item(index);
+            const auto is_selected = is_range_selected(index, count);
+
+            if (!is_selected)
+                set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
+
+            set_focus_item(index);
         } else if (m_selection_mode != SelectionMode::SingleStrict) {
             set_selection_state(pfc::bit_array_true(), pfc::bit_array_false());
         }
+        break;
     }
-
-    break;
     case WM_MOUSEMOVE: {
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
         if (!m_selecting) {
