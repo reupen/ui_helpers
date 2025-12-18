@@ -28,27 +28,28 @@ bool ListView::get_is_new_group(size_t index) const
     return m_items[index - 1]->m_groups.back() != m_items[index]->m_groups.back();
 }
 
-size_t ListView::get_item_display_group_count(size_t index, bool include_hidden) const
+size_t ListView::get_item_display_group_count(size_t index) const
 {
     if (index == 0) {
-        if (include_hidden)
-            return m_items[index]->m_groups.size();
-
         return ranges::count_if(m_items[index]->m_groups, [](auto& group) { return !group->is_hidden(); });
     }
 
-    size_t counter{};
+    auto zipped_groups = ranges::views::zip(m_items[index - 1]->m_groups, m_items[index]->m_groups);
+    return ranges::count_if(zipped_groups, [](const auto& pair) {
+        const auto& [previous_item_group, this_item_group] = pair;
 
-    for (const auto& [previous_item_group, this_item_group] :
-        ranges::views::zip(m_items[index - 1]->m_groups, m_items[index]->m_groups) | ranges::views::reverse) {
-        if (previous_item_group == this_item_group)
-            break;
+        return previous_item_group != this_item_group && !this_item_group->is_hidden();
+    });
+}
 
-        if (include_hidden || !this_item_group->is_hidden())
-            ++counter;
-    }
+bool ListView::is_group_visible(size_t item_index, size_t group_index) const
+{
+    const auto& group = m_items[item_index]->m_groups[group_index];
 
-    return counter;
+    if (item_index == 0)
+        return !group->is_hidden();
+
+    return group != m_items[item_index - 1]->m_groups[group_index] && !group->is_hidden();
 }
 
 ListView::ItemTransaction::~ItemTransaction() noexcept
@@ -92,14 +93,14 @@ void ListView::insert_items(size_t index_start, size_t count, const InsertItem* 
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
-void ListView::replace_items(size_t index_start, size_t count, const InsertItem* items)
+bool ListView::replace_items(size_t index_start, size_t count, const InsertItem* items)
 {
     assert(count > 0);
 
     if (count == 0)
-        return;
+        return false;
 
-    replace_items_in_internal_state(index_start, count, items);
+    const auto subsequent_display_indices_changed = replace_items_in_internal_state(index_start, count, items);
     calculate_item_positions(index_start);
 
     if (m_group_count > 0 || m_variable_height_items) {
@@ -108,6 +109,8 @@ void ListView::replace_items(size_t index_start, size_t count, const InsertItem*
     } else {
         invalidate_items(index_start, count);
     }
+
+    return subsequent_display_indices_changed;
 }
 
 void ListView::remove_items(const pfc::bit_array& mask)
@@ -129,7 +132,7 @@ void ListView::remove_all_items()
     RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
 }
 
-void ListView::replace_items_in_internal_state(size_t index_start, size_t replace_count, const InsertItem* items)
+bool ListView::replace_items_in_internal_state(size_t index_start, size_t replace_count, const InsertItem* items)
 {
     std::vector items_prev(m_items);
 
@@ -163,26 +166,33 @@ void ListView::replace_items_in_internal_state(size_t index_start, size_t replac
             bool b_left_same = false;
             bool b_right_same = false;
             bool b_self_same = false;
+
             if (!b_new && absolute_index) {
                 b_left_same = b_left_same_above
                     && !GROUP_STRING_COMPARE(
                         items[relative_index].m_groups[i], m_items[absolute_index - 1]->m_groups[i]->m_text);
             }
+
             if (!b_new && absolute_index + 1 < total_items && relative_index + 1 >= replace_count) {
                 b_right_same = b_right_same_above
                     && !GROUP_STRING_COMPARE(
                         items[relative_index].m_groups[i], m_items[absolute_index + 1]->m_groups[i]->m_text);
             }
+
             if (!b_new && item_old.is_valid()) {
                 b_self_same = b_self_same_above
                     && !GROUP_STRING_COMPARE(items[relative_index].m_groups[i], item_old->m_groups[i]->m_text);
             }
+
             if (b_new || (!b_left_same && !b_right_same && !b_self_same)) {
                 item->m_groups[i] = storage_create_group();
                 item->m_groups[i]->m_text = items[relative_index].m_groups[i];
                 b_new = true;
-                item->m_display_index++;
+
+                if (!item->m_groups[i]->is_hidden())
+                    ++item->m_display_index;
             }
+
             if (b_left_same && b_right_same) {
                 item->m_groups[i] = m_items[absolute_index - 1]->m_groups[i];
                 t_group_ptr test;
@@ -247,6 +257,8 @@ void ListView::replace_items_in_internal_state(size_t index_start, size_t replac
         m_items[item_index]->m_display_index += new_group_display_count - old_group_display_count;
         item_index++;
     }
+
+    return new_group_display_count != old_group_display_count && index_start + replace_count < total_items;
 }
 
 void ListView::insert_items_in_internal_state(size_t index_start, size_t insert_count, const InsertItem* items)
