@@ -86,6 +86,9 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
             const auto group = m_items[i]->m_groups[group_index];
 
             if (i > 0 && group == m_items[i - 1]->m_groups[group_index]) {
+                // Should be impossible for groups to be the same if one was already rendered.
+                assert(display_group_index == 0);
+
                 if (!group->is_hidden())
                     ++indentation_level;
                 continue;

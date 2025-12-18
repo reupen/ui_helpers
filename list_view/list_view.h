@@ -290,11 +290,11 @@ public:
         const std::optional<lv::SavedScrollPosition>& saved_scroll_position = std::nullopt);
 
     template <class TItems>
-    void replace_items(size_t index_start, const TItems& items)
+    auto replace_items(size_t index_start, const TItems& items)
     {
-        replace_items(index_start, items.get_size(), items.get_ptr());
+        return replace_items(index_start, items.get_size(), items.get_ptr());
     }
-    void replace_items(size_t index_start, size_t count, const InsertItem* items);
+    bool replace_items(size_t index_start, size_t count, const InsertItem* items);
     void remove_item(size_t index);
     void remove_items(const pfc::bit_array& mask);
     void remove_all_items();
@@ -604,7 +604,8 @@ protected:
 
     [[nodiscard]] bool get_is_new_group(size_t index) const;
 
-    [[nodiscard]] size_t get_item_display_group_count(size_t index, bool include_hidden = false) const;
+    [[nodiscard]] size_t get_item_display_group_count(size_t index) const;
+    [[nodiscard]] bool is_group_visible(size_t item_index, size_t group_index) const;
 
     void on_focus_change(size_t index_prev, size_t index_new);
 
@@ -841,7 +842,7 @@ private:
 
     void render_items(HDC dc, const RECT& rc_update);
     void insert_items_in_internal_state(size_t index_start, size_t count, const InsertItem* items);
-    void replace_items_in_internal_state(size_t index_start, size_t count, const InsertItem* items);
+    bool replace_items_in_internal_state(size_t index_start, size_t count, const InsertItem* items);
     void remove_item_in_internal_state(size_t remove_index);
     void remove_items_in_internal_state(const pfc::bit_array& mask);
     void calculate_item_positions(size_t index_start = 0);
