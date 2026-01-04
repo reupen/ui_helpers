@@ -161,6 +161,7 @@
     <ClInclude Include="direct_write.h" />
     <ClInclude Include="direct_write_cache.h" />
     <ClInclude Include="direct_write_emoji.h" />
+    <ClInclude Include="direct_write_style_utils.h" />
     <ClInclude Include="dpi.h" />
     <ClInclude Include="drag_image.h" />
     <ClInclude Include="drag_image_d2d.h" />
@@ -178,7 +179,8 @@
     <ClInclude Include="info_box.h" />
     <ClInclude Include="solid_fill.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="text_out_helpers.h" />
+    <ClInclude Include="text_format_parser.h" />
+    <ClInclude Include="text_style.h" />
     <ClInclude Include="uniscribe_text_out.h" />
     <ClInclude Include="direct_write_text_out.h" />
     <ClInclude Include="theming.h" />
@@ -195,12 +197,14 @@
     <ClCompile Include="direct_3d.cpp" />
     <ClCompile Include="direct_write.cpp" />
     <ClCompile Include="direct_write_emoji.cpp" />
+    <ClCompile Include="direct_write_style_utils.cpp" />
     <ClCompile Include="dpi.cpp" />
     <ClCompile Include="drag_image.cpp" />
     <ClCompile Include="drag_image_d2d.cpp" />
     <ClCompile Include="emoji.cpp" />
     <ClCompile Include="gdi.cpp" />
     <ClCompile Include="info_box.cpp" />
+    <ClInclude Include="lexy_user_config.hpp" />
     <ClCompile Include="list_view\list_view_columns.cpp" />
     <ClCompile Include="list_view\list_view_drag_image.cpp" />
     <ClCompile Include="list_view\list_view_header.cpp" />
@@ -227,7 +231,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="text_out_helpers.cpp" />
+    <ClCompile Include="text_format_parser.cpp" />
+    <ClCompile Include="text_style.cpp" />
     <ClCompile Include="uniscribe_text_out.cpp" />
     <ClCompile Include="direct_write_text_out.cpp" />
     <ClCompile Include="trackbar.cpp" />

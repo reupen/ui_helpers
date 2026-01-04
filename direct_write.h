@@ -1,4 +1,5 @@
 #pragma once
+
 #include "direct_write_cache.h"
 
 namespace uih::direct_write {
@@ -61,18 +62,23 @@ public:
         m_text_layout_4 = m_text_layout.try_query<IDWriteTextLayout4>();
     }
 
+    [[nodiscard]] DWRITE_FONT_WEIGHT get_weight() const;
+    [[nodiscard]] std::variant<DWRITE_FONT_STRETCH, float> get_stretch() const;
+    [[nodiscard]] DWRITE_FONT_STYLE get_style() const;
     float get_max_height() const noexcept;
     float get_max_width() const noexcept;
     DWRITE_TEXT_METRICS get_metrics() const;
     DWRITE_OVERHANG_METRICS get_overhang_metrics() const;
+
     void render_with_transparent_background(HWND wnd, HDC dc, RECT output_rect, COLORREF default_colour,
         bool is_selected = false, float x_origin_offset = 0.0f,
         wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target = {}) const;
+
     void set_colour(COLORREF colour, COLORREF selected_colour, DWRITE_TEXT_RANGE text_range) const;
     void set_effect(IUnknown* effect, DWRITE_TEXT_RANGE text_range) const;
     void set_max_height(float value) const;
     void set_max_width(float value) const;
-    void set_underline(bool is_underlined, DWRITE_TEXT_RANGE text_range) const;
+    void set_underline(bool is_underlined, DWRITE_TEXT_RANGE text_range);
     void set_family(const wchar_t* family_name, DWRITE_TEXT_RANGE text_range) const;
     void set_size(float size, DWRITE_TEXT_RANGE text_range) const;
     void set_wss(DWRITE_FONT_WEIGHT weight, std::variant<DWRITE_FONT_STRETCH, float> width_or_stretch,
@@ -88,6 +94,7 @@ private:
     wil::com_ptr<IDWriteTextLayout> m_text_layout;
     wil::com_ptr<IDWriteTextLayout4> m_text_layout_4;
     RenderingParams::Ptr m_rendering_params;
+    bool m_has_underline{};
 };
 
 struct TextPosition {
@@ -133,9 +140,7 @@ public:
         std::wstring_view text_key, float max_width, float max_height, bool enable_ellipsis,
         DWRITE_TEXT_ALIGNMENT alignment) const;
 
-    [[nodiscard]] DWRITE_FONT_WEIGHT get_weight() const;
-    [[nodiscard]] std::variant<DWRITE_FONT_STRETCH, float> get_stretch() const;
-    [[nodiscard]] DWRITE_FONT_STYLE get_style() const;
+    [[nodiscard]] float get_font_size_pt() const;
 
 private:
     [[nodiscard]] wil::com_ptr<IDWriteTextLayout> create_unwrapped_text_layout(std::wstring_view text, float max_width,

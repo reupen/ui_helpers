@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 #include "list_view.h"
+#include "../text_style.h"
 #include "../direct_write_text_out.h"
 
 using namespace std::string_view_literals;
@@ -261,9 +262,9 @@ void lv::DefaultRenderer::render_group(const RendererContext& context, size_t it
 
     const auto x_offset = 1_spx + indentation;
     const auto border = 3_spx;
-    const auto text_width = direct_write::text_out_columns_and_colours(*context.group_text_format, context.wnd,
-        context.dc, text, x_offset, border, rc, cr,
-        {.bitmap_render_target = context.bitmap_render_target, .enable_tab_columns = false});
+    const auto text_width
+        = direct_write::text_out_columns_and_styles(*context.group_text_format, context.wnd, context.dc, text, x_offset,
+            border, rc, cr, {.bitmap_render_target = context.bitmap_render_target, .enable_tab_columns = false});
 
     const auto line_height = 1_spx;
     const auto line_top = rc.top + wil::rect_height(rc) / 2 - line_height / 2;
@@ -333,8 +334,8 @@ void lv::DefaultRenderer::render_item(const RendererContext& context, size_t ind
         rc_subitem.right = rc_subitem.left + sub_item.width;
 
         if (context.item_text_format && context.bitmap_render_target)
-            direct_write::text_out_columns_and_colours(*context.item_text_format, context.wnd, context.dc,
-                sub_item.text, 1_spx + (column_index == 0 ? indentation : 0), 3_spx, rc_subitem, cr_text,
+            direct_write::text_out_columns_and_styles(*context.item_text_format, context.wnd, context.dc, sub_item.text,
+                1_spx + (column_index == 0 ? indentation : 0), 3_spx, rc_subitem, cr_text,
                 {.bitmap_render_target = context.bitmap_render_target,
                     .is_selected = b_selected,
                     .align = sub_item.alignment,
@@ -412,10 +413,10 @@ bool ListView::is_item_clipped(size_t index, size_t column)
         return false;
 
     const pfc::string8 text = get_item_text(index, column);
-    const auto render_text = uih::remove_colour_codes({text.c_str(), text.get_length()});
-    const auto text_width = m_items_text_format->measure_text_width(mmh::to_utf16(render_text));
+    const auto text_width = direct_write::measure_text_width_columns_and_styles(
+        *m_items_text_format, mmh::to_utf16(text.c_str()), 1_spx, 3_spx);
     const auto col_width = m_columns[column].m_display_size;
-    return text_width + 3_spx * 2 + 1_spx > col_width;
+    return text_width > col_width;
 }
 
 } // namespace uih

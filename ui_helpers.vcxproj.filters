@@ -10,6 +10,9 @@
     <Filter Include="Trackbar">
       <UniqueIdentifier>{cd91f854-e740-4719-bd4a-d0d160aae3bf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Text rendering">
+      <UniqueIdentifier>{f2d05201-0bdb-4ef5-8f1f-329ff9922b1e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gdi.h" />
@@ -17,7 +20,6 @@
     <ClInclude Include="message_hook.h" />
     <ClInclude Include="solid_fill.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="uniscribe_text_out.h" />
     <ClInclude Include="win32_helpers.h" />
     <ClInclude Include="ole.h" />
     <ClInclude Include="drag_image.h" />
@@ -47,22 +49,43 @@
     </ClInclude>
     <ClInclude Include="window_subclasser.h" />
     <ClInclude Include="event_token.h" />
-    <ClInclude Include="direct_write.h" />
-    <ClInclude Include="uniscribe.h" />
-    <ClInclude Include="direct_write_text_out.h" />
-    <ClInclude Include="text_out_helpers.h" />
     <ClInclude Include="direct_2d.h" />
     <ClInclude Include="emoji.h" />
-    <ClInclude Include="direct_write_emoji.h" />
     <ClInclude Include="drag_image_d2d.h" />
     <ClInclude Include="direct_3d.h" />
-    <ClInclude Include="direct_write_cache.h" />
+    <ClInclude Include="direct_write_text_out.h">
+      <Filter>Text rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="direct_write.h">
+      <Filter>Text rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="direct_write_cache.h">
+      <Filter>Text rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="direct_write_emoji.h">
+      <Filter>Text rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="uniscribe_text_out.h">
+      <Filter>Text rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="text_style.h">
+      <Filter>Text rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="uniscribe.h">
+      <Filter>Text rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="text_format_parser.h">
+      <Filter>Text rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="lexy_user_config.hpp" />
+    <ClInclude Include="direct_write_style_utils.h">
+      <Filter>Text rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="message_hook.cpp" />
     <ClCompile Include="solid_fill.cpp" />
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="uniscribe_text_out.cpp" />
     <ClCompile Include="win32_helpers.cpp" />
     <ClCompile Include="ole.cpp" />
     <ClCompile Include="drag_image.cpp" />
@@ -126,15 +149,32 @@
       <Filter>Trackbar</Filter>
     </ClCompile>
     <ClCompile Include="window_subclasser.cpp" />
-    <ClCompile Include="direct_write.cpp" />
-    <ClCompile Include="direct_write_text_out.cpp" />
-    <ClCompile Include="text_out_helpers.cpp" />
     <ClCompile Include="info_box.cpp" />
     <ClCompile Include="direct_2d.cpp" />
     <ClCompile Include="emoji.cpp" />
-    <ClCompile Include="direct_write_emoji.cpp" />
     <ClCompile Include="drag_image_d2d.cpp" />
     <ClCompile Include="direct_3d.cpp" />
+    <ClCompile Include="direct_write.cpp">
+      <Filter>Text rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="direct_write_emoji.cpp">
+      <Filter>Text rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="direct_write_text_out.cpp">
+      <Filter>Text rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="uniscribe_text_out.cpp">
+      <Filter>Text rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="text_style.cpp">
+      <Filter>Text rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="text_format_parser.cpp">
+      <Filter>Text rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="direct_write_style_utils.cpp">
+      <Filter>Text rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
