@@ -1,10 +1,42 @@
 #include "stdafx.h"
 
 #include "list_view.h"
+#include "../text_style.h"
 
 using namespace uih::literals::spx;
 
 namespace uih {
+
+namespace {
+
+std::string clean_tooltip_text(std::string_view text, size_t max_code_units = 128)
+{
+    auto cleaned_text = text_style::remove_colour_and_font_codes(text);
+    std::ranges::replace(cleaned_text, '\t', ' ');
+
+    if (cleaned_text.size() > max_code_units) {
+        size_t code_unit_counter{};
+        const char* pos{cleaned_text.c_str()};
+
+        while (code_unit_counter < max_code_units) {
+            if (!pfc::utf8_advance(pos))
+                break;
+
+            ++code_unit_counter;
+        }
+
+        const size_t truncate_num_bytes = pos - cleaned_text.c_str();
+
+        if (truncate_num_bytes < cleaned_text.size()) {
+            cleaned_text.resize(truncate_num_bytes);
+            cleaned_text += "…";
+        }
+    }
+
+    return cleaned_text;
+}
+
+} // namespace
 
 LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 {
@@ -326,17 +358,12 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                     if (m_tooltip_last_index != hit_result.index || m_tooltip_last_column != hit_result.column) {
                         bool is_clipped = is_item_clipped(hit_result.index, hit_result.column);
                         if (!m_limit_tooltips_to_clipped_items || is_clipped) {
-                            pfc::string8 temp;
-                            uih::remove_color_marks(get_item_text(hit_result.index, hit_result.column), temp);
-                            temp.replace_char(9, 0x20);
-                            if (temp.length() > 128) {
-                                temp.truncate(128);
-                                temp << "…";
-                            }
-                            create_tooltip(temp);
+                            const auto cleaned_text
+                                = clean_tooltip_text(get_item_text(hit_result.index, hit_result.column));
 
-                            calculate_tooltip_position(
-                                hit_result.index, hit_result.column, {temp.get_ptr(), temp.get_length()});
+                            create_tooltip(cleaned_text.c_str());
+
+                            calculate_tooltip_position(hit_result.index, hit_result.column, cleaned_text);
                         } else
                             destroy_tooltip();
                     }

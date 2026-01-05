@@ -274,6 +274,10 @@ public:
     void set_font(std::optional<direct_write::TextFormat> text_format, const LOGFONT& log_font);
     void set_group_font(std::optional<direct_write::TextFormat> text_format);
     void set_header_font(std::optional<direct_write::TextFormat> text_format, const LOGFONT& log_font);
+
+    std::optional<float> get_group_font_size_pt() const;
+    std::optional<float> get_items_font_size_pt() const;
+
     void set_sorting_enabled(bool b_val);
     void set_show_sort_indicators(bool b_val);
     void set_edge_style(uint32_t b_val);

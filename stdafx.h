@@ -20,8 +20,11 @@
 #define UIH_ENABLE_D3D_D2D_DEBUG_LAYER 0
 #endif
 
+#define UIH_HAS_LEXY __has_include(<lexy/dsl.hpp>)
+
 #include <algorithm>
 #include <functional>
+#include <iostream>
 #include <list>
 #include <memory>
 #include <optional>
@@ -29,6 +32,7 @@
 #include <regex>
 #include <set>
 #include <span>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -91,7 +95,6 @@
 
 #include "uniscribe.h"
 #include "uniscribe_text_out.h"
-#include "text_out_helpers.h"
 #include "drag_image.h"
 #include "info_box.h"
 #include "menu.h"

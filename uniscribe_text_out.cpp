@@ -2,22 +2,6 @@
 
 namespace uih {
 
-void remove_color_marks(const char* src, pfc::string_base& out, size_t len)
-{
-    out.reset();
-    const char* ptr = src;
-    while (*src && static_cast<size_t>(src - ptr) < len) {
-        if (*src == 3) {
-            src++;
-            while (*src && *src != 3)
-                src++;
-            if (*src == 3)
-                src++;
-        } else
-            out.add_byte(*src++);
-    }
-}
-
 bool is_rect_null_or_reversed(const RECT* r)
 {
     return r->right <= r->left || r->bottom <= r->top;

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 #include "list_view.h"
+#include "../text_style.h"
 
 using namespace uih::literals::spx;
 
@@ -95,8 +96,9 @@ bool ListView::copy_selected_items_as_text(size_t default_single_item_column)
                     text << (j ? "\t" : "") << get_item_text(i, j);
             }
     }
-    uih::remove_color_marks(text, cleanedText);
-    uih::set_clipboard_text(cleanedText);
+
+    const auto cleaned_text = text_style::remove_colour_and_font_codes(text.c_str());
+    set_clipboard_text(cleaned_text.c_str());
     return selected_count > 0;
 }
 
@@ -671,7 +673,7 @@ void ListView::on_search_string_change(WCHAR new_char)
         const char* item_text = context->get_item_text(item_index);
 
         if (strchr(item_text, 3)) {
-            const auto cleaned_item_text = uih::remove_colour_codes(item_text);
+            const auto cleaned_item_text = uih::text_style::remove_colour_and_font_codes(item_text);
             mmh::to_utf16(cleaned_item_text, item_text_utf16);
         } else {
             mmh::to_utf16(item_text, item_text_utf16);
@@ -786,6 +788,21 @@ void ListView::set_header_font(std::optional<direct_write::TextFormat> text_form
         SetWindowFont(m_wnd_header, m_header_font.get(), TRUE);
         on_size();
     }
+}
+std::optional<float> ListView::get_group_font_size_pt() const
+{
+    if (!m_group_text_format)
+        return {};
+
+    return m_group_text_format->get_font_size_pt();
+}
+
+std::optional<float> ListView::get_items_font_size_pt() const
+{
+    if (!m_items_text_format)
+        return {};
+
+    return m_items_text_format->get_font_size_pt();
 }
 
 void ListView::set_group_font(std::optional<direct_write::TextFormat> text_format)

@@ -54,7 +54,7 @@ void ListView::create_tooltip(/*size_t index, size_t column, */ const char* str)
     ti.lpszText = const_cast<wchar_t*>(wstr.get_ptr());
     ti.rect = rect;
 
-    uih::tooltip_add_tool(m_wnd_tooltip, &ti);
+    tooltip_add_tool(m_wnd_tooltip, &ti);
 }
 
 void ListView::destroy_tooltip()

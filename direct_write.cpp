@@ -423,6 +423,38 @@ wil::com_ptr<IDWriteRenderingParams> RenderingParams::get(HWND wnd) const
     return custom_rendering_params;
 }
 
+DWRITE_FONT_WEIGHT TextLayout::get_weight() const
+{
+    return m_text_layout->GetFontWeight();
+}
+
+std::variant<DWRITE_FONT_STRETCH, float> TextLayout::get_stretch() const
+{
+    if (const auto text_format_3 = m_text_layout.try_query<IDWriteTextFormat3>(); text_format_3) {
+        const auto axis_count = text_format_3->GetFontAxisValueCount();
+        std::vector<DWRITE_FONT_AXIS_VALUE> axis_values{axis_count};
+        try {
+            THROW_IF_FAILED(text_format_3->GetFontAxisValues(axis_values.data(), axis_count));
+        } catch (...) {
+            LOG_CAUGHT_EXCEPTION();
+            return m_text_layout->GetFontStretch();
+        }
+
+        if (const auto iter
+            = ranges::find_if(axis_values, [](auto& value) { return value.axisTag == DWRITE_FONT_AXIS_TAG_WIDTH; });
+            iter != axis_values.end()) {
+            return iter->value;
+        }
+    }
+
+    return m_text_layout->GetFontStretch();
+}
+
+DWRITE_FONT_STYLE TextLayout::get_style() const
+{
+    return m_text_layout->GetFontStyle();
+}
+
 float TextLayout::get_max_height() const noexcept
 {
     return m_text_layout->GetMaxHeight();
@@ -468,9 +500,10 @@ void TextLayout::set_max_width(float value) const
     THROW_IF_FAILED(m_text_layout->SetMaxWidth(value));
 }
 
-void TextLayout::set_underline(bool is_underlined, DWRITE_TEXT_RANGE text_range) const
+void TextLayout::set_underline(bool is_underlined, DWRITE_TEXT_RANGE text_range)
 {
     THROW_IF_FAILED(m_text_layout->SetUnderline(is_underlined, text_range));
+    m_has_underline = m_has_underline || is_underlined;
 }
 
 void TextLayout::set_family(const wchar_t* family_name, DWRITE_TEXT_RANGE text_range) const
@@ -533,8 +566,11 @@ void TextLayout::render_with_transparent_background(HWND wnd, HDC dc, RECT outpu
         gsl::narrow_cast<long>((x_origin_offset + layout_width + overhang_metrics.right) * scaling_factor + 1.0f) + 1);
 
     const auto draw_top_px = std::max(0l, gsl::narrow_cast<long>(-overhang_metrics.top * scaling_factor) - 1);
-    const auto draw_bottom_px = std::min(
-        rect_height, gsl::narrow_cast<long>((layout_height + overhang_metrics.bottom) * scaling_factor + 1.0f) + 1);
+
+    const auto draw_bottom_dip
+        = m_has_underline ? metrics.top + metrics.height : layout_height + overhang_metrics.bottom;
+    const auto draw_bottom_px
+        = std::min(rect_height, gsl::narrow_cast<long>(draw_bottom_dip * scaling_factor + 1.0f) + 1);
 
     const auto bitmap_width = std::min(rect_width, draw_right_px - draw_left_px);
     const auto bitmap_height = std::min(rect_height, draw_bottom_px - draw_top_px);
@@ -666,36 +702,9 @@ std::shared_ptr<TextLayout> TextFormat::create_cached_text_layout(std::wstring_v
     return text_layout;
 }
 
-DWRITE_FONT_WEIGHT TextFormat::get_weight() const
+float TextFormat::get_font_size_pt() const
 {
-    return m_text_format->GetFontWeight();
-}
-
-std::variant<DWRITE_FONT_STRETCH, float> TextFormat::get_stretch() const
-{
-    if (const auto text_format_3 = m_text_format.try_query<IDWriteTextFormat3>(); text_format_3) {
-        const auto axis_count = text_format_3->GetFontAxisValueCount();
-        std::vector<DWRITE_FONT_AXIS_VALUE> axis_values{axis_count};
-        try {
-            THROW_IF_FAILED(text_format_3->GetFontAxisValues(axis_values.data(), axis_count));
-        } catch (...) {
-            LOG_CAUGHT_EXCEPTION();
-            return m_text_format->GetFontStretch();
-        }
-
-        if (const auto iter
-            = ranges::find_if(axis_values, [](auto& value) { return value.axisTag == DWRITE_FONT_AXIS_TAG_WIDTH; });
-            iter != axis_values.end()) {
-            return iter->value;
-        }
-    }
-
-    return m_text_format->GetFontStretch();
-}
-
-DWRITE_FONT_STYLE TextFormat::get_style() const
-{
-    return m_text_format->GetFontStyle();
+    return dip_to_pt(m_text_format->GetFontSize());
 }
 
 wil::com_ptr<IDWriteTextLayout> TextFormat::create_unwrapped_text_layout(std::wstring_view text, float max_width,
