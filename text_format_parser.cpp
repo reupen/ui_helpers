@@ -53,13 +53,23 @@ struct FontSizeValue {
 };
 
 struct FontWeightValue {
+    struct Normal {
+        static constexpr auto rule = dsl::lit<"normal">;
+        static constexpr auto value = lexy::constant(DWRITE_FONT_WEIGHT_NORMAL);
+    };
+
+    struct Bold {
+        static constexpr auto rule = dsl::lit<"bold">;
+        static constexpr auto value = lexy::constant(DWRITE_FONT_WEIGHT_BOLD);
+    };
+
     struct Weight {
         static constexpr auto rule = dsl::integer<int>;
         static constexpr auto value = lexy::callback<DWRITE_FONT_WEIGHT>(
             [](int value) { return static_cast<DWRITE_FONT_WEIGHT>(std::clamp(value, 1, 999)); });
     };
 
-    static constexpr auto rule = dsl::p<Initial> | dsl::p<Weight>;
+    static constexpr auto rule = dsl::p<Initial> | dsl::p<Weight> | dsl::p<Normal> | dsl::p<Bold>;
     static constexpr auto value = lexy::forward<decltype(FormatProperties::font_weight)>;
 };
 
