@@ -9,6 +9,16 @@ using namespace uih::literals::spx;
 
 namespace uih {
 
+namespace {
+
+bool is_windows_11_22h2_or_newer()
+{
+    static bool result = mmh::check_windows_10_build(22'621);
+    return result;
+}
+
+} // namespace
+
 constexpr int _level_spacing_size = 2;
 
 int ListView::get_indentation_step() const
@@ -309,8 +319,8 @@ void lv::DefaultRenderer::render_item(const RendererContext& context, size_t ind
             DrawThemeParentBackground(context.wnd, context.dc, &rc);
 
         RECT rc_background{rc};
-        if (context.use_dark_mode)
-            // This is inexplicable, but it needs to be done to get the same appearance as Windows Explorer
+        if (context.use_dark_mode || is_windows_11_22h2_or_newer())
+            // Hide borders present on newer versions of Windows
             InflateRect(&rc_background, 1, 1);
         DrawThemeBackground(context.list_view_theme, context.dc, LVP_LISTITEM, theme_state, &rc_background, &rc);
     } else {
@@ -376,12 +386,13 @@ void lv::DefaultRenderer::render_focus_rect(const RendererContext& context, bool
         return;
     }
 
-    if (context.colours.m_themed && context.list_view_theme
+    if (context.colours.m_themed && !context.use_dark_mode && context.list_view_theme
         && IsThemePartDefined(context.list_view_theme, LVP_LISTITEM, LISS_SELECTED)) {
         MARGINS margins{};
 
         const auto hr = GetThemeMargins(
             context.list_view_theme, context.dc, LVP_LISTITEM, LISS_SELECTED, TMT_CONTENTMARGINS, nullptr, &margins);
+
         if (SUCCEEDED(hr)) {
             rc.left += margins.cxLeftWidth;
             rc.top += margins.cxRightWidth;
