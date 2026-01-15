@@ -1,7 +1,5 @@
 #include "stdafx.h"
 
-#if UIH_HAS_LEXY
-
 #include <lexy/action/parse.hpp>
 #include <lexy/callback.hpp>
 #include <lexy/dsl.hpp>
@@ -176,5 +174,3 @@ std::optional<FormatProperties> parse_format_properties(std::wstring_view input)
 }
 
 } // namespace uih::text_style
-
-#endif

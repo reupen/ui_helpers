@@ -18,8 +18,6 @@ struct FormatProperties {
     std::optional<std::variant<TextDecorationType, InitialPropertyValue>> text_decoration;
 };
 
-#if UIH_HAS_LEXY
 std::optional<FormatProperties> parse_format_properties(std::wstring_view input);
-#endif
 
 } // namespace uih::text_style
