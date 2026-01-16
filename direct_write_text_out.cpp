@@ -12,9 +12,10 @@ namespace uih::direct_write {
 
 namespace {
 
-int measure_text_width_styles(const TextFormat& text_format, std::wstring_view text)
+int measure_text_width_styles(
+    const TextFormat& text_format, std::wstring_view text, const text_style::FormatProperties& default_format)
 {
-    const auto [processed_text, _, font_segments] = text_style::process_colour_and_font_codes(text);
+    const auto [processed_text, _, font_segments] = text_style::process_colour_and_font_codes(text, default_format);
 
     try {
         auto text_layout = text_format.create_text_layout(processed_text, 65536.f, 65536.f, false);
@@ -28,8 +29,8 @@ int measure_text_width_styles(const TextFormat& text_format, std::wstring_view t
 }
 
 int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::wstring_view text, const RECT& rect,
-    bool selected, DWORD default_color, alignment align, bool enable_colour_codes, bool enable_ellipsis,
-    wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target)
+    bool selected, DWORD default_color, const text_style::FormatProperties& initial_format, alignment align,
+    bool enable_colour_codes, bool enable_ellipsis, wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target)
 {
     if (is_rect_null_or_reversed(&rect) || rect.right <= rect.left)
         return 0;
@@ -42,12 +43,15 @@ int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::wstri
     const auto max_width = gsl::narrow_cast<float>(wil::rect_width(rect)) / scaling_factor;
     const auto max_height = gsl::narrow_cast<float>(wil::rect_height(rect)) / scaling_factor;
     const auto dwrite_alignment = get_text_alignment(align);
+    const auto serialised_initial_format = initial_format.serialise();
 
-    auto layout = text_format.get_cached_text_layout(text, max_width, max_height, enable_ellipsis, dwrite_alignment);
+    auto layout = text_format.get_cached_text_layout(
+        text, max_width, max_height, enable_ellipsis, dwrite_alignment, serialised_initial_format);
 
     if (!layout) {
         if (enable_colour_codes)
-            std::tie(processed_text, colour_segments, font_segments) = text_style::process_colour_and_font_codes(text);
+            std::tie(processed_text, colour_segments, font_segments)
+                = text_style::process_colour_and_font_codes(text, initial_format);
 
         if (align != ALIGN_LEFT) {
             if (!processed_text)
@@ -64,7 +68,7 @@ int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::wstri
             const auto render_text = processed_text ? *processed_text : text;
 
             layout = text_format.create_cached_text_layout(
-                render_text, text, max_width, max_height, enable_ellipsis, dwrite_alignment);
+                render_text, text, max_width, max_height, enable_ellipsis, dwrite_alignment, serialised_initial_format);
 
             for (auto& [colour, selected_colour, start_character, character_count] : colour_segments) {
                 layout->set_colour(colour, selected_colour,
@@ -99,8 +103,8 @@ DWRITE_TEXT_ALIGNMENT get_text_alignment(alignment alignment_)
     }
 }
 
-int measure_text_width_columns_and_styles(
-    const TextFormat& text_format, std::wstring_view text, int x_offset, int border)
+int measure_text_width_columns_and_styles(const TextFormat& text_format, std::wstring_view text, int x_offset,
+    int border, const text_style::FormatProperties& initial_format)
 {
     if (text.empty())
         return 0;
@@ -114,7 +118,7 @@ int measure_text_width_columns_and_styles(
             segment_end != std::wstring_view::npos ? segment_end - segment_start : std::wstring_view::npos);
 
         if (!segment.empty()) {
-            total_width += measure_text_width_styles(text_format, segment);
+            total_width += measure_text_width_styles(text_format, segment, initial_format);
             total_width += 2 * border;
         }
 
@@ -144,7 +148,8 @@ int text_out_columns_and_styles(TextFormat& text_format, HWND wnd, HDC dc, std::
         adjusted_rect.right -= border;
 
         return text_out_colours(text_format, wnd, dc, text, adjusted_rect, options.is_selected, default_colour,
-            options.align, options.enable_style_codes, options.enable_ellipses, options.bitmap_render_target);
+            options.initial_format, options.align, options.enable_style_codes, options.enable_ellipses,
+            options.bitmap_render_target);
     }
 
     adjusted_rect.left += x_offset;
@@ -169,7 +174,7 @@ int text_out_columns_and_styles(TextFormat& text_format, HWND wnd, HDC dc, std::
                     adjusted_rect.right - MulDiv(cell_index, total_width, tab_count) + border, cell_rect.right);
 
             const int cell_render_width = text_out_colours(text_format, wnd, dc, cell_text, cell_rect,
-                options.is_selected, default_colour, cell_index == 0 ? ALIGN_RIGHT : ALIGN_LEFT,
+                options.is_selected, default_colour, options.initial_format, cell_index == 0 ? ALIGN_RIGHT : ALIGN_LEFT,
                 options.enable_style_codes, false, options.bitmap_render_target);
 
             if (cell_index == 0)

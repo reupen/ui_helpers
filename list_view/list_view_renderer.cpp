@@ -43,6 +43,12 @@ int ListView::get_default_indentation_step() const
     return *m_space_width * _level_spacing_size;
 }
 
+int ListView::measure_text_width(size_t item_index, size_t column_index)
+{
+    const char* text = get_item_text(item_index, column_index);
+    return direct_write::measure_text_width_columns_and_styles(*m_items_text_format, mmh::to_utf16(text), 1_spx, 3_spx);
+}
+
 void ListView::render_items(HDC dc, const RECT& rc_update)
 {
     auto _ = wil::SelectObject(dc, GetStockObject(DC_BRUSH));
