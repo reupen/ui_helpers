@@ -187,11 +187,8 @@ std::optional<LRESULT> ListView::on_wm_notify_header(LPNMHDR lpnm)
 
         int max_width = 0;
 
-        for (const auto item_index : std::ranges::views::iota(size_t{}, get_item_count())) {
-            const char* str = get_item_text(item_index, internal_column_index);
-            max_width = std::max(max_width, m_items_text_format->measure_text_width(mmh::to_utf16(str)));
-        }
-        max_width += 3_spx + 2 * 1_spx;
+        for (const auto item_index : std::ranges::views::iota(size_t{}, get_item_count()))
+            max_width = std::max(max_width, measure_text_width(item_index, internal_column_index));
 
         m_columns[internal_column_index].m_size = max_width;
         m_columns[internal_column_index].m_display_size = max_width;
