@@ -168,7 +168,8 @@ std::optional<ColourPair> parse_colour_code(std::wstring_view text)
 }
 
 std::tuple<std::wstring, std::vector<ColourSegment>, std::vector<FontSegment>> process_colour_and_font_codes(
-    std::wstring_view text, const std::function<void(std::wstring)>& print_legacy_feedback,
+    std::wstring_view text, const FormatProperties& initial_format_properties,
+    const std::function<void(std::wstring)>& print_legacy_feedback,
     const direct_write::Context::Ptr& direct_write_context)
 {
     auto result = std::tuple<std::wstring, std::vector<ColourSegment>, std::vector<FontSegment>>{};
@@ -178,7 +179,7 @@ std::tuple<std::wstring, std::vector<ColourSegment>, std::vector<FontSegment>> p
     size_t colour_segment_start{};
     size_t font_segment_start{};
     std::optional<ColourPair> cr_current;
-    std::optional<FormatProperties> current_font;
+    std::optional current_font{initial_format_properties};
 
     while (true) {
         const size_t index = text.find_first_of(L"\3\7"sv, offset);
@@ -198,13 +199,16 @@ std::tuple<std::wstring, std::vector<ColourSegment>, std::vector<FontSegment>> p
 
         if (current_font && (is_eos || is_font_code) && stripped_text.length() > font_segment_start) {
             FormatProperties cleaned_font{*current_font};
+
             for_each_property(cleaned_font, [](auto&& member) {
                 if (member && std::holds_alternative<InitialPropertyValue>(*member)) {
                     member.reset();
                 }
             });
 
-            font_segments.emplace_back(cleaned_font, font_segment_start, stripped_text.length() - font_segment_start);
+            if (cleaned_font)
+                font_segments.emplace_back(
+                    cleaned_font, font_segment_start, stripped_text.length() - font_segment_start);
         }
 
         if (is_eos)

@@ -1,4 +1,5 @@
 #pragma once
+#include "text_format_parser.h"
 
 namespace uih::direct_write {
 
@@ -11,6 +12,7 @@ struct TextOutOptions {
     bool enable_ellipses{true};
     bool enable_style_codes{true};
     bool enable_tab_columns{true};
+    text_style::FormatProperties initial_format;
 };
 
 int text_out_columns_and_styles(TextFormat& text_format, HWND wnd, HDC dc, std::wstring_view text, int x_offset,
@@ -19,7 +21,7 @@ int text_out_columns_and_styles(TextFormat& text_format, HWND wnd, HDC dc, std::
 int text_out_columns_and_styles(TextFormat& text_format, HWND wnd, HDC dc, std::string_view text, int x_offset,
     int border, const RECT& rect, COLORREF default_colour, TextOutOptions options = {});
 
-int measure_text_width_columns_and_styles(
-    const TextFormat& text_format, std::wstring_view text, int x_offset, int border);
+int measure_text_width_columns_and_styles(const TextFormat& text_format, std::wstring_view text, int x_offset,
+    int border, const text_style::FormatProperties& initial_format = {});
 
 } // namespace uih::direct_write

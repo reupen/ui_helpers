@@ -685,20 +685,25 @@ TextLayout TextFormat::create_text_layout(std::wstring_view text, float max_widt
 }
 
 std::shared_ptr<TextLayout> TextFormat::get_cached_text_layout(std::wstring_view text_key, float max_width,
-    float max_height, bool enable_ellipsis, DWRITE_TEXT_ALIGNMENT alignment) const
+    float max_height, bool enable_ellipsis, DWRITE_TEXT_ALIGNMENT alignment,
+    const std::vector<uint8_t>& serialised_initial_format) const
 {
-    return m_text_layout_cache.get({text_key, max_width, max_height, enable_ellipsis, alignment});
+    return m_text_layout_cache.get(
+        {text_key, max_width, max_height, enable_ellipsis, alignment, serialised_initial_format});
 }
 
 std::shared_ptr<TextLayout> TextFormat::create_cached_text_layout(std::wstring_view text, std::wstring_view text_key,
-    float max_width, float max_height, bool enable_ellipsis, DWRITE_TEXT_ALIGNMENT alignment) const
+    float max_width, float max_height, bool enable_ellipsis, DWRITE_TEXT_ALIGNMENT alignment,
+    const std::vector<uint8_t>& serialised_initial_format) const
 {
-    assert(!m_text_layout_cache.contains({text_key, max_width, max_height, enable_ellipsis, alignment}));
+    assert(!m_text_layout_cache.contains(
+        {text_key, max_width, max_height, enable_ellipsis, alignment, serialised_initial_format}));
 
     auto unwrapped_text_layout = create_unwrapped_text_layout(text, max_width, max_height, enable_ellipsis, alignment);
     const auto text_layout
         = std::make_shared<TextLayout>(m_factory, m_gdi_interop, unwrapped_text_layout, m_rendering_params);
-    m_text_layout_cache.put_new({text_key, max_width, max_height, enable_ellipsis, alignment}, text_layout);
+    m_text_layout_cache.put_new(
+        {text_key, max_width, max_height, enable_ellipsis, alignment, serialised_initial_format}, text_layout);
     return text_layout;
 }
 

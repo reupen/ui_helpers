@@ -1,5 +1,7 @@
 #pragma once
 
+#include "text_format_parser.h"
+
 namespace uih::direct_write {
 template <class CacheValue>
 class TextLayoutCache {
@@ -11,18 +13,21 @@ public:
         float height{};
         bool enable_ellipses{};
         DWRITE_TEXT_ALIGNMENT alignment{};
+        std::vector<uint8_t> serialised_format_properties{};
 
         template <typename Other>
         Other as() const
         {
-            return Other{decltype(Other::text)(text), width, height, enable_ellipses, alignment};
+            return Other{
+                decltype(Other::text)(text), width, height, enable_ellipses, alignment, serialised_format_properties};
         }
 
         template <typename OtherString>
         bool operator==(const GenericCacheKey<OtherString>& other) const
         {
             return text == other.text && width == other.width && height == other.height
-                && enable_ellipses == other.enable_ellipses && alignment == other.alignment;
+                && enable_ellipses == other.enable_ellipses && alignment == other.alignment
+                && serialised_format_properties == other.serialised_format_properties;
         }
     };
 
@@ -40,6 +45,11 @@ public:
             hash ^= make_hash(key_view.height) << 2;
             hash ^= make_hash(key_view.enable_ellipses) << 3;
             hash ^= make_hash(key_view.alignment) << 4;
+
+            std::string_view serialised_format_properties_as_string_view{
+                reinterpret_cast<const char*>(key_view.serialised_format_properties.data()),
+                key_view.serialised_format_properties.size()};
+            hash ^= make_hash(serialised_format_properties_as_string_view) << 5;
 
             return hash;
         }
