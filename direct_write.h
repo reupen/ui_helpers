@@ -131,14 +131,15 @@ public:
         bool enable_ellipsis = false, std::optional<DWRITE_TEXT_ALIGNMENT> alignment = {}) const;
 
     [[nodiscard]] std::shared_ptr<TextLayout> get_cached_text_layout(std::wstring_view text_key, float max_width,
-        float max_height, bool enable_ellipsis, DWRITE_TEXT_ALIGNMENT alignment) const;
+        float max_height, bool enable_ellipsis, DWRITE_TEXT_ALIGNMENT alignment,
+        const std::vector<uint8_t>& serialised_initial_format) const;
 
     /**
      * Only valid to call this if get_cached_text_layout() returned an empty std::shared_ptr.
      */
     [[nodiscard]] std::shared_ptr<TextLayout> create_cached_text_layout(std::wstring_view text,
         std::wstring_view text_key, float max_width, float max_height, bool enable_ellipsis,
-        DWRITE_TEXT_ALIGNMENT alignment) const;
+        DWRITE_TEXT_ALIGNMENT alignment, const std::vector<uint8_t>& serialised_initial_format) const;
 
     [[nodiscard]] float get_font_size_pt() const;
 

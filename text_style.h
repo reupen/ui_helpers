@@ -26,7 +26,8 @@ struct FontSegment {
 std::optional<ColourPair> parse_colour_code(std::wstring_view text);
 
 std::tuple<std::wstring, std::vector<ColourSegment>, std::vector<FontSegment>> process_colour_and_font_codes(
-    std::wstring_view text, const std::function<void(std::wstring)>& print_legacy_feedback = {},
+    std::wstring_view text, const FormatProperties& initial_format_properties = {},
+    const std::function<void(std::wstring)>& print_legacy_feedback = {},
     const direct_write::Context::Ptr& direct_write_context = {});
 
 std::string remove_colour_and_font_codes(std::string_view text);

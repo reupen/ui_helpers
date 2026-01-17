@@ -277,6 +277,7 @@ public:
 
     std::optional<float> get_group_font_size_pt() const;
     std::optional<float> get_items_font_size_pt() const;
+    const std::optional<direct_write::TextFormat>& get_items_text_format() const { return m_items_text_format; }
 
     void set_sorting_enabled(bool b_val);
     void set_show_sort_indicators(bool b_val);
@@ -802,6 +803,8 @@ private:
 
     virtual Item* storage_create_item() { return new Item; }
     virtual Group* storage_create_group() { return new Group; }
+
+    virtual int measure_text_width(size_t item_index, size_t column_index);
 
     virtual bool render_drag_image(LPSHDRAGIMAGE lpsdi);
     virtual wil::unique_hicon get_drag_image_icon() { return nullptr; }

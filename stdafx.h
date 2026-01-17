@@ -20,8 +20,6 @@
 #define UIH_ENABLE_D3D_D2D_DEBUG_LAYER 0
 #endif
 
-#define UIH_HAS_LEXY __has_include(<lexy/dsl.hpp>)
-
 #include <algorithm>
 #include <functional>
 #include <iostream>

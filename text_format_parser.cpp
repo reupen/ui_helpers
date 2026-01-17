@@ -1,7 +1,5 @@
 #include "stdafx.h"
 
-#if UIH_HAS_LEXY
-
 #include <lexy/action/parse.hpp>
 #include <lexy/callback.hpp>
 #include <lexy/dsl.hpp>
@@ -154,6 +152,71 @@ struct FormatPropertiesProduction {
 
 } // namespace
 
+std::vector<uint8_t> FormatProperties::serialise() const
+{
+    class ValueVisitor {
+    public:
+        explicit ValueVisitor(std::vector<uint8_t>& output) : m_output{output} {}
+
+        void operator()(const InitialPropertyValue& value) const {}
+        void operator()(const std::wstring& value) const
+        {
+            ranges::copy(std::span(reinterpret_cast<const uint8_t*>(value.data()), value.size() * sizeof(wchar_t)),
+                std::back_inserter(m_output));
+        }
+        void operator()(const float& value) const
+        {
+            ranges::copy(
+                std::span(reinterpret_cast<const uint8_t*>(&value), sizeof(value)), std::back_inserter(m_output));
+        }
+        void operator()(const DWRITE_FONT_WEIGHT& value) const
+        {
+            ranges::copy(
+                std::span(reinterpret_cast<const uint8_t*>(&value), sizeof(value)), std::back_inserter(m_output));
+        }
+        void operator()(const DWRITE_FONT_STRETCH& value) const
+        {
+            ranges::copy(
+                std::span(reinterpret_cast<const uint8_t*>(&value), sizeof(value)), std::back_inserter(m_output));
+        }
+        void operator()(const DWRITE_FONT_STYLE& value) const
+        {
+            ranges::copy(
+                std::span(reinterpret_cast<const uint8_t*>(&value), sizeof(value)), std::back_inserter(m_output));
+        }
+        void operator()(const TextDecorationType& value) const
+        {
+            ranges::copy(
+                std::span(reinterpret_cast<const uint8_t*>(&value), sizeof(value)), std::back_inserter(m_output));
+        }
+
+    private:
+        std::vector<uint8_t>& m_output;
+    };
+
+    if (!*this)
+        return {};
+
+    std::vector<uint8_t> result;
+    ValueVisitor visitor(result);
+
+    auto serialise_value = [&result, &visitor](auto&& value) {
+        if (value)
+            std::visit(visitor, *value);
+
+        result.emplace_back(0);
+    };
+
+    serialise_value(font_family);
+    serialise_value(font_size);
+    serialise_value(font_weight);
+    serialise_value(font_stretch);
+    serialise_value(font_style);
+    serialise_value(text_decoration);
+
+    return result;
+}
+
 std::optional<FormatProperties> parse_format_properties(std::wstring_view input)
 {
     auto input_buffer = lexy::string_input<lexy::utf16_encoding>(input);
@@ -176,5 +239,3 @@ std::optional<FormatProperties> parse_format_properties(std::wstring_view input)
 }
 
 } // namespace uih::text_style
-
-#endif
