@@ -111,7 +111,7 @@ void ListView::calculate_tooltip_position(size_t item_index, size_t column_index
         = {top_left.x + metrics.left, top_left.y, top_left.x + metrics.left + text_width, top_left.y + m_item_height};
 
     m_tooltip_text_rect.top = top_left.y + metrics.top;
-    m_tooltip_text_rect.bottom = top_left.y + metrics.height + 4_spx;
+    m_tooltip_text_rect.bottom = std::min(top_left.y + m_item_height, m_tooltip_text_rect.top + metrics.height + 2_spx);
     m_tooltip_text_rect.left = top_left.x + metrics.left;
     m_tooltip_text_rect.right = m_tooltip_text_rect.left + text_width;
 }
