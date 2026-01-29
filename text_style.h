@@ -30,6 +30,7 @@ std::tuple<std::wstring, std::vector<ColourSegment>, std::vector<FontSegment>> p
     const std::function<void(std::wstring)>& print_legacy_feedback = {},
     const direct_write::Context::Ptr& direct_write_context = {});
 
+std::optional<std::wstring> remove_newlines(std::wstring_view text);
 std::string remove_colour_and_font_codes(std::string_view text);
 
 } // namespace uih::text_style
