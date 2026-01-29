@@ -429,9 +429,7 @@ bool ListView::is_item_clipped(size_t index, size_t column)
     if (!m_items_text_format)
         return false;
 
-    const pfc::string8 text = get_item_text(index, column);
-    const auto text_width = direct_write::measure_text_width_columns_and_styles(
-        *m_items_text_format, mmh::to_utf16(text.c_str()), 1_spx, 3_spx);
+    const auto text_width = measure_text_width(index, column);
     const auto col_width = m_columns[column].m_display_size;
     return text_width > col_width;
 }
