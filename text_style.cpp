@@ -251,6 +251,37 @@ std::tuple<std::wstring, std::vector<ColourSegment>, std::vector<FontSegment>> p
     return result;
 }
 
+std::optional<std::wstring> remove_newlines(std::wstring_view text)
+{
+    std::optional<std::wstring> stripped_text;
+    size_t offset{};
+
+    while (true) {
+        const size_t index = text.find_first_of(L"\r\n"sv, offset);
+
+        const auto fragment_length = index == std::string_view::npos ? std::string_view::npos : index - offset;
+        const auto fragment = text.substr(offset, fragment_length);
+
+        if (index == std::string_view::npos && !stripped_text)
+            return {};
+
+        if (!stripped_text)
+            stripped_text.emplace(fragment);
+        else if (!fragment.empty())
+            stripped_text->append(fragment);
+
+        if (index == std::string_view::npos)
+            break;
+
+        offset = text.find_first_not_of(L"\r\n"sv, index + 1);
+
+        if (offset == std::string_view::npos)
+            break;
+    }
+
+    return stripped_text;
+}
+
 std::string remove_colour_and_font_codes(std::string_view text)
 {
     std::string stripped_text;
