@@ -3,9 +3,44 @@
 #include "list_view.h"
 #include "../direct_write_text_out.h"
 
+using namespace std::string_view_literals;
 using namespace uih::literals::spx;
 
 namespace uih {
+
+namespace {
+
+std::tuple<int, int> calculate_tooltip_window_offset(const RECT& tooltip_rect, const RECT& root_window_rect)
+{
+    if (tooltip_rect.left >= root_window_rect.left && tooltip_rect.right <= root_window_rect.right
+        && tooltip_rect.top >= root_window_rect.top && tooltip_rect.bottom <= root_window_rect.bottom)
+        return {};
+
+    HMONITOR monitor = MonitorFromRect(&tooltip_rect, MONITOR_DEFAULTTONEAREST);
+
+    MONITORINFO mi{sizeof(MONITORINFO)};
+    if (!GetMonitorInfo(monitor, &mi))
+        return {};
+
+    int x_offset{};
+    int y_offset{};
+
+    const auto [clip_left, clip_top, clip_right, clip_bottom] = mi.rcWork;
+
+    if (tooltip_rect.left < clip_left)
+        x_offset = clip_left - tooltip_rect.left;
+    else if (tooltip_rect.right > clip_right)
+        x_offset = clip_right - tooltip_rect.right;
+
+    if (tooltip_rect.top < clip_top)
+        y_offset = clip_top - tooltip_rect.top;
+    else if (tooltip_rect.bottom > clip_bottom)
+        y_offset = clip_bottom - tooltip_rect.bottom;
+
+    return std::make_tuple(x_offset, y_offset);
+}
+
+} // namespace
 
 void ListView::set_show_tooltips(bool b_val)
 {
@@ -102,18 +137,27 @@ void ListView::calculate_tooltip_position(size_t item_index, size_t column_index
         utf16_text.push_back(L'\u200b');
 
     const auto alignment = direct_write::get_text_alignment(column.m_alignment);
+    const auto has_newline = utf16_text.find_first_of(L"\r\n"sv) != std::string_view::npos;
     const auto metrics
-        = m_items_text_format->measure_text_position(utf16_text, m_item_height, max_width, true, alignment);
+        = m_items_text_format->measure_text_position(utf16_text, m_item_height, max_width, !has_newline, alignment);
 
+    m_tooltip_window_x_offset = 0;
+    m_tooltip_window_y_offset = 0;
     m_tooltip_text_left_offset = metrics.left_remainder_dip;
 
-    m_tooltip_placement_rect
-        = {top_left.x + metrics.left, top_left.y, top_left.x + metrics.left + text_width, top_left.y + m_item_height};
+    const auto text_y = top_left.y + (has_newline ? metrics.top : 0);
 
-    m_tooltip_text_rect.top = top_left.y + metrics.top;
-    m_tooltip_text_rect.bottom = std::min(top_left.y + m_item_height, m_tooltip_text_rect.top + metrics.height + 2_spx);
-    m_tooltip_text_rect.left = top_left.x + metrics.left;
-    m_tooltip_text_rect.right = m_tooltip_text_rect.left + text_width;
+    m_tooltip_text_render_rect = {top_left.x + metrics.left, text_y, top_left.x + metrics.left + text_width,
+        text_y + (has_newline ? metrics.height : m_item_height)};
+
+    m_tooltip_internal_rect.top = top_left.y + metrics.top;
+    m_tooltip_internal_rect.bottom = m_tooltip_internal_rect.top + metrics.height + 2_spx;
+
+    if (!has_newline)
+        m_tooltip_internal_rect.bottom = std::min(m_tooltip_internal_rect.bottom, top_left.y + m_item_height);
+
+    m_tooltip_internal_rect.left = top_left.x + metrics.left;
+    m_tooltip_internal_rect.right = m_tooltip_internal_rect.left + text_width;
 }
 
 std::optional<LRESULT> ListView::on_wm_notify_tooltip(LPNMHDR lpnm)
@@ -154,11 +198,20 @@ std::optional<LRESULT> ListView::on_wm_notify_tooltip(LPNMHDR lpnm)
         break;
     }
     case TTN_SHOW: {
-        RECT rc = m_tooltip_text_rect;
+        RECT rc = m_tooltip_internal_rect;
 
         SendMessage(m_wnd_tooltip, TTM_ADJUSTRECT, TRUE, reinterpret_cast<LPARAM>(&rc));
 
-        SetWindowPos(m_wnd_tooltip, nullptr, rc.left, rc.top, RECT_CX(rc), RECT_CY(rc), SWP_NOZORDER | SWP_NOACTIVATE);
+        RECT root_window_rect{};
+        GetWindowRect(GetAncestor(get_wnd(), GA_ROOT), &root_window_rect);
+
+        std::tie(m_tooltip_window_x_offset, m_tooltip_window_y_offset)
+            = calculate_tooltip_window_offset(rc, root_window_rect);
+        OffsetRect(&rc, m_tooltip_window_x_offset, m_tooltip_window_y_offset);
+
+        SetWindowPos(m_wnd_tooltip, nullptr, rc.left, rc.top, wil::rect_width(rc), wil::rect_height(rc),
+            SWP_NOZORDER | SWP_NOACTIVATE);
+
         return TRUE;
     }
     }
@@ -172,7 +225,8 @@ void ListView::render_tooltip_text(HWND wnd, HDC dc, COLORREF colour) const
 
     auto text = get_window_text(wnd);
 
-    RECT rc_text = m_tooltip_placement_rect;
+    RECT rc_text = m_tooltip_text_render_rect;
+    OffsetRect(&rc_text, m_tooltip_window_x_offset, m_tooltip_window_y_offset);
     MapWindowPoints(HWND_DESKTOP, wnd, reinterpret_cast<LPPOINT>(&rc_text), 2);
 
     if (m_items_text_format) {
