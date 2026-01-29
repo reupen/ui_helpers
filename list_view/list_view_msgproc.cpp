@@ -9,7 +9,7 @@ namespace uih {
 
 namespace {
 
-std::string clean_tooltip_text(std::string_view text, size_t max_code_units = 128)
+std::string clean_tooltip_text(std::string_view text, size_t max_code_units = 2048)
 {
     auto cleaned_text = text_style::remove_colour_and_font_codes(text);
     std::ranges::replace(cleaned_text, '\t', ' ');
