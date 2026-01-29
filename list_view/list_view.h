@@ -972,8 +972,10 @@ private:
     bool m_show_tooltips{true};
     bool m_limit_tooltips_to_clipped_items{true};
     HWND m_wnd_tooltip{nullptr};
-    RECT m_tooltip_text_rect{};
-    RECT m_tooltip_placement_rect{};
+    RECT m_tooltip_internal_rect{};
+    RECT m_tooltip_text_render_rect{};
+    int m_tooltip_window_x_offset{};
+    int m_tooltip_window_y_offset{};
     float m_tooltip_text_left_offset{};
     size_t m_tooltip_last_index{std::numeric_limits<size_t>::max()};
     size_t m_tooltip_last_column{std::numeric_limits<size_t>::max()};

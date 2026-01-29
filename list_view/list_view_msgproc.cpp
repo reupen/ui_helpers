@@ -9,20 +9,20 @@ namespace uih {
 
 namespace {
 
-std::string clean_tooltip_text(std::string_view text, size_t max_code_units = 128)
+std::string clean_tooltip_text(std::string_view text, size_t max_code_points = 2048)
 {
     auto cleaned_text = text_style::remove_colour_and_font_codes(text);
     std::ranges::replace(cleaned_text, '\t', ' ');
 
-    if (cleaned_text.size() > max_code_units) {
-        size_t code_unit_counter{};
+    if (cleaned_text.size() > max_code_points) {
+        size_t code_point_counter{};
         const char* pos{cleaned_text.c_str()};
 
-        while (code_unit_counter < max_code_units) {
+        while (code_point_counter < max_code_points) {
             if (!pfc::utf8_advance(pos))
                 break;
 
-            ++code_unit_counter;
+            ++code_point_counter;
         }
 
         const size_t truncate_num_bytes = pos - cleaned_text.c_str();
