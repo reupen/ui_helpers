@@ -15,7 +15,10 @@ namespace {
 int measure_text_width_styles(
     const TextFormat& text_format, std::wstring_view text, const text_style::FormatProperties& default_format)
 {
-    const auto [processed_text, _, font_segments] = text_style::process_colour_and_font_codes(text, default_format);
+    const auto text_without_newlines = text_style::remove_newlines(text);
+    const auto text_without_newlines_view = text_without_newlines ? std::wstring_view(*text_without_newlines) : text;
+    const auto [processed_text, _, font_segments]
+        = text_style::process_colour_and_font_codes(text_without_newlines_view, default_format);
 
     try {
         auto text_layout = text_format.create_text_layout(processed_text, 65536.f, 65536.f, false);
@@ -49,9 +52,13 @@ int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::wstri
         text, max_width, max_height, enable_ellipsis, dwrite_alignment, serialised_initial_format);
 
     if (!layout) {
+        const auto text_without_newlines = text_style::remove_newlines(text);
+        const auto text_without_newlines_view
+            = text_without_newlines ? std::wstring_view(*text_without_newlines) : text;
+
         if (enable_colour_codes)
             std::tie(processed_text, colour_segments, font_segments)
-                = text_style::process_colour_and_font_codes(text, initial_format);
+                = text_style::process_colour_and_font_codes(text_without_newlines_view, initial_format);
 
         if (align != ALIGN_LEFT) {
             if (!processed_text)
@@ -109,15 +116,12 @@ int measure_text_width_columns_and_styles(const TextFormat& text_format, std::ws
     if (text.empty())
         return 0;
 
-    const auto text_without_newlines = text_style::remove_newlines(text);
-    const std::wstring_view resolved_text = text_without_newlines ? *text_without_newlines : text;
-
     size_t segment_start{};
     int total_width{x_offset};
 
     while (segment_start != std::wstring_view::npos) {
-        const auto segment_end = resolved_text.find_first_of('\t', segment_start);
-        const auto segment = resolved_text.substr(segment_start,
+        const auto segment_end = text.find_first_of('\t', segment_start);
+        const auto segment = text.substr(segment_start,
             segment_end != std::wstring_view::npos ? segment_end - segment_start : std::wstring_view::npos);
 
         if (!segment.empty()) {
@@ -128,7 +132,7 @@ int measure_text_width_columns_and_styles(const TextFormat& text_format, std::ws
         if (segment_end == std::wstring_view::npos)
             break;
 
-        segment_start = resolved_text.find_first_not_of('\t', segment_end);
+        segment_start = text.find_first_not_of('\t', segment_end);
     }
     return total_width;
 }
@@ -141,19 +145,16 @@ int text_out_columns_and_styles(TextFormat& text_format, HWND wnd, HDC dc, std::
     if (is_rect_null_or_reversed(&adjusted_rect))
         return 0;
 
-    const auto text_without_newlines = text_style::remove_newlines(text);
-    const std::wstring_view resolved_text = text_without_newlines ? *text_without_newlines : text;
-
     int tab_count = 0;
 
     if (options.enable_tab_columns)
-        tab_count = gsl::narrow<int>(std::ranges::count(resolved_text, L'\t'));
+        tab_count = gsl::narrow<int>(std::ranges::count(text, L'\t'));
 
     if (tab_count == 0) {
         adjusted_rect.left += border + x_offset;
         adjusted_rect.right -= border;
 
-        return text_out_colours(text_format, wnd, dc, resolved_text, adjusted_rect, options.is_selected, default_colour,
+        return text_out_colours(text_format, wnd, dc, text, adjusted_rect, options.is_selected, default_colour,
             options.initial_format, options.align, options.enable_style_codes, options.enable_ellipses,
             options.bitmap_render_target);
     }
@@ -161,16 +162,16 @@ int text_out_columns_and_styles(TextFormat& text_format, HWND wnd, HDC dc, std::
     adjusted_rect.left += x_offset;
     const int total_width = adjusted_rect.right - adjusted_rect.left;
 
-    auto position = resolved_text.length();
+    auto position = text.length();
     int cell_index = 0;
     RECT cell_rect = adjusted_rect;
 
     do {
         const auto end = position;
-        while (position > 0 && resolved_text[position - 1] != L'\t')
+        while (position > 0 && text[position - 1] != L'\t')
             position--;
 
-        const auto cell_text = resolved_text.substr(position, end - position);
+        const auto cell_text = text.substr(position, end - position);
 
         if (!cell_text.empty()) {
             cell_rect.right -= border;
