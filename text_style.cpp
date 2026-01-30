@@ -265,9 +265,12 @@ std::optional<std::wstring> remove_newlines(std::wstring_view text)
         const auto fragment_length = index == std::string_view::npos ? std::string_view::npos : index - offset;
         const auto fragment = text.substr(offset, fragment_length);
 
-        if (!stripped_text)
-            stripped_text.emplace(fragment);
-        else if (!fragment.empty())
+        if (!stripped_text) {
+            stripped_text.emplace();
+            stripped_text->reserve(text.size());
+        }
+
+        if (!fragment.empty())
             stripped_text->append(fragment);
 
         if (index == std::string_view::npos)
