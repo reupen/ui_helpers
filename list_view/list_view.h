@@ -884,9 +884,14 @@ private:
     void build_header();
     void update_header();
 
-    void create_tooltip(/*size_t index, size_t column, */ const char* str);
+    void create_tooltip();
     void destroy_tooltip();
+    void clear_tooltip_state();
+    void hide_tooltip();
+    void reposition_tooltip();
+    void handle_mousemove_for_tooltip(POINT pt);
     void set_tooltip_window_theme() const;
+    void set_tooltip_tool_rect() const;
     void calculate_tooltip_position(size_t item_index, size_t column_index, std::string_view text);
     std::optional<LRESULT> on_wm_notify_tooltip(LPNMHDR lpnm);
     void render_tooltip_text(HWND wnd, HDC dc, COLORREF colour) const;
@@ -972,13 +977,17 @@ private:
     bool m_show_tooltips{true};
     bool m_limit_tooltips_to_clipped_items{true};
     HWND m_wnd_tooltip{nullptr};
-    RECT m_tooltip_internal_rect{};
+    RECT m_tooltip_item_rect{};
     RECT m_tooltip_text_render_rect{};
     int m_tooltip_window_x_offset{};
     int m_tooltip_window_y_offset{};
     float m_tooltip_text_left_offset{};
     size_t m_tooltip_last_index{std::numeric_limits<size_t>::max()};
     size_t m_tooltip_last_column{std::numeric_limits<size_t>::max()};
+    bool m_is_tooltip_visible{};
+    bool m_tooltip_ignore_next_mousemove{};
+    alignment m_tooltip_alignment{ALIGN_LEFT};
+    std::wstring m_tooltip_text;
 
     bool m_sorting_enabled{false};
     bool m_show_sort_indicators{true};
