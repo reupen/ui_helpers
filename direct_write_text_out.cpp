@@ -31,13 +31,10 @@ int measure_text_width_styles(
     return 0;
 }
 
-int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::wstring_view text, const RECT& rect,
-    bool selected, DWORD default_color, const text_style::FormatProperties& initial_format, alignment align,
-    bool enable_colour_codes, bool enable_ellipsis, wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target)
+std::shared_ptr<TextLayout> create_cached_text_layout_styles(const TextFormat& text_format, std::wstring_view text,
+    const RECT& rect, const text_style::FormatProperties& initial_format, alignment align, bool enable_colour_codes,
+    bool enable_ellipsis)
 {
-    if (is_rect_null_or_reversed(&rect) || rect.right <= rect.left)
-        return 0;
-
     std::optional<std::wstring> processed_text;
     std::vector<text_style::ColourSegment> colour_segments;
     std::vector<text_style::FontSegment> font_segments;
@@ -85,13 +82,44 @@ int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::wstri
             set_layout_font_segments(*layout, font_segments);
         }
 
-        const auto metrics = layout->get_metrics();
-
-        layout->render_with_transparent_background(wnd, dc, rect, default_color, selected, 0.0f, bitmap_render_target);
-
-        return gsl::narrow_cast<int>(metrics.width * scaling_factor + 1);
+        return layout;
     }
     CATCH_LOG()
+
+    return {};
+}
+
+int is_text_trimmed_styles(const TextFormat& text_format, std::wstring_view text, const RECT& rect,
+    const text_style::FormatProperties& initial_format, alignment align, bool enable_colour_codes, bool enable_ellipsis)
+{
+    if (const auto text_layout = create_cached_text_layout_styles(
+            text_format, text, rect, initial_format, align, enable_colour_codes, enable_ellipsis))
+        return text_layout->is_trimmed();
+
+    return false;
+}
+
+int text_out_styles(const TextFormat& text_format, HWND wnd, HDC dc, std::wstring_view text, const RECT& rect,
+    bool selected, DWORD default_color, const text_style::FormatProperties& initial_format, alignment align,
+    bool enable_colour_codes, bool enable_ellipsis, wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target)
+{
+    if (is_rect_null_or_reversed(&rect) || rect.right <= rect.left)
+        return 0;
+
+    if (const auto text_layout = create_cached_text_layout_styles(
+            text_format, text, rect, initial_format, align, enable_colour_codes, enable_ellipsis)) {
+        try {
+            const auto metrics = text_layout->get_metrics();
+
+            text_layout->render_with_transparent_background(
+                wnd, dc, rect, default_color, selected, 0.0f, bitmap_render_target);
+
+            const auto scaling_factor = get_default_scaling_factor();
+
+            return gsl::narrow_cast<int>(metrics.width * scaling_factor + 1);
+        }
+        CATCH_LOG()
+    }
 
     return 0;
 }
@@ -137,8 +165,24 @@ int measure_text_width_columns_and_styles(const TextFormat& text_format, std::ws
     return total_width;
 }
 
-int text_out_columns_and_styles(TextFormat& text_format, HWND wnd, HDC dc, std::wstring_view text, int x_offset,
-    int border, const RECT& rect, COLORREF default_colour, TextOutOptions options)
+int is_text_trimmed_columns_and_styles(const TextFormat& text_format, std::wstring_view text, int x_offset, int border,
+    const RECT& rect, const TextOutOptions& options)
+{
+    if (options.enable_tab_columns && text.find_first_of('\t') != std::wstring_view::npos) {
+        return measure_text_width_columns_and_styles(text_format, text, x_offset, border, options.initial_format)
+            > wil::rect_width(rect);
+    }
+
+    RECT adjusted_rect{rect};
+    adjusted_rect.left += border + x_offset;
+    adjusted_rect.right -= border;
+
+    return is_text_trimmed_styles(text_format, text, adjusted_rect, options.initial_format, options.align,
+        options.enable_style_codes, options.enable_ellipses);
+}
+
+int text_out_columns_and_styles(const TextFormat& text_format, HWND wnd, HDC dc, std::wstring_view text, int x_offset,
+    int border, const RECT& rect, COLORREF default_colour, const TextOutOptions& options)
 {
     RECT adjusted_rect = rect;
 
@@ -154,7 +198,7 @@ int text_out_columns_and_styles(TextFormat& text_format, HWND wnd, HDC dc, std::
         adjusted_rect.left += border + x_offset;
         adjusted_rect.right -= border;
 
-        return text_out_colours(text_format, wnd, dc, text, adjusted_rect, options.is_selected, default_colour,
+        return text_out_styles(text_format, wnd, dc, text, adjusted_rect, options.is_selected, default_colour,
             options.initial_format, options.align, options.enable_style_codes, options.enable_ellipses,
             options.bitmap_render_target);
     }
@@ -180,7 +224,7 @@ int text_out_columns_and_styles(TextFormat& text_format, HWND wnd, HDC dc, std::
                 cell_rect.left = std::min(
                     adjusted_rect.right - MulDiv(cell_index, total_width, tab_count) + border, cell_rect.right);
 
-            const int cell_render_width = text_out_colours(text_format, wnd, dc, cell_text, cell_rect,
+            const int cell_render_width = text_out_styles(text_format, wnd, dc, cell_text, cell_rect,
                 options.is_selected, default_colour, options.initial_format, cell_index == 0 ? ALIGN_RIGHT : ALIGN_LEFT,
                 options.enable_style_codes, false, options.bitmap_render_target);
 
@@ -200,10 +244,10 @@ int text_out_columns_and_styles(TextFormat& text_format, HWND wnd, HDC dc, std::
 }
 
 int text_out_columns_and_styles(TextFormat& text_format, HWND wnd, HDC dc, std::string_view text, int x_offset,
-    int border, const RECT& rect, COLORREF default_colour, TextOutOptions options)
+    int border, const RECT& rect, COLORREF default_colour, const TextOutOptions& options)
 {
     return text_out_columns_and_styles(
-        text_format, wnd, dc, mmh::to_utf16(text), x_offset, border, rect, default_colour, std::move(options));
+        text_format, wnd, dc, mmh::to_utf16(text), x_offset, border, rect, default_colour, options);
 }
 
 } // namespace uih::direct_write

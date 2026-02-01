@@ -892,7 +892,7 @@ private:
     void calculate_tooltip_position(size_t item_index, size_t column_index);
     std::optional<LRESULT> on_wm_notify_tooltip(LPNMHDR lpnm);
     void render_tooltip_text(HWND wnd, HDC dc, COLORREF colour) const;
-    bool is_item_clipped(size_t index, size_t column);
+    virtual bool is_item_clipped(size_t item_index, size_t column_index);
 
     wil::unique_hfont m_items_font;
     wil::unique_hfont m_header_font;

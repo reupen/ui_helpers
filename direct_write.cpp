@@ -479,6 +479,20 @@ DWRITE_OVERHANG_METRICS TextLayout::get_overhang_metrics() const
     return overhang_metrics;
 }
 
+bool TextLayout::is_trimmed() const
+{
+    DWRITE_LINE_METRICS line_metrics{};
+    uint32_t line_count{};
+
+    try {
+        THROW_IF_FAILED(m_text_layout->GetLineMetrics(&line_metrics, 1, &line_count));
+        return line_count >= 1 && line_metrics.isTrimmed;
+    }
+    CATCH_LOG()
+
+    return false;
+}
+
 void TextLayout::set_colour(COLORREF colour, COLORREF selected_colour, DWRITE_TEXT_RANGE text_range) const
 {
     const auto colour_effect = wil::com_ptr<ColourEffect>(new ColourEffect(colour, selected_colour));

@@ -120,6 +120,14 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_UPDATEUISTATE:
         RedrawWindow(wnd, nullptr, nullptr, RDW_INVALIDATE);
         break;
+    case WM_SETCURSOR: {
+        static const auto cursor = LoadCursorW(nullptr, IDC_ARROW);
+
+        if (cursor)
+            SetCursor(cursor);
+
+        return TRUE;
+    }
     case WM_SETFOCUS:
         invalidate_all();
         if (!HWND(wp) || (HWND(wp) != wnd && !IsChild(wnd, HWND(wp))))

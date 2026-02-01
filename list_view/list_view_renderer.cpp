@@ -351,7 +351,7 @@ void lv::DefaultRenderer::render_item(const RendererContext& context, size_t ind
 
         if (context.item_text_format && context.bitmap_render_target)
             direct_write::text_out_columns_and_styles(*context.item_text_format, context.wnd, context.dc, sub_item.text,
-                1_spx + (column_index == 0 ? indentation : 0), 3_spx, rc_subitem, cr_text,
+                1_spx, 3_spx, rc_subitem, cr_text,
                 {.bitmap_render_target = context.bitmap_render_target,
                     .is_selected = b_selected,
                     .align = sub_item.alignment,
@@ -424,14 +424,17 @@ void lv::DefaultRenderer::render_background(const RendererContext& context, cons
     PatBlt(context.dc, rc->left, rc->top, wil::rect_width(*rc), wil::rect_height(*rc), PATCOPY);
 }
 
-bool ListView::is_item_clipped(size_t index, size_t column)
+bool ListView::is_item_clipped(size_t item_index, size_t column_index)
 {
     if (!m_items_text_format)
         return false;
 
-    const auto text_width = measure_text_width(index, column);
-    const auto col_width = m_columns[column].m_display_size;
-    return text_width > col_width;
+    const auto text = get_item_text(item_index, column_index);
+    const auto& column_obj = m_columns[column_index];
+    const RECT rect{0, 0, column_obj.m_display_size, m_item_height};
+
+    return direct_write::is_text_trimmed_columns_and_styles(*m_items_text_format, mmh::to_utf16(text), 1_spx, 2_spx,
+        rect, {.align = column_obj.m_alignment, .enable_tab_columns = m_renderer->are_tab_columns_enabled()});
 }
 
 } // namespace uih
