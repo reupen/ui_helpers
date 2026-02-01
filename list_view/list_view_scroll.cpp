@@ -93,13 +93,15 @@ void ListView::scroll(int position, bool b_horizontal, bool suppress_scroll_wind
     if (scroll_position == scroll_info.nPos)
         return;
 
-    destroy_tooltip();
     scroll_position = SetScrollInfo(get_wnd(), scroll_bar_type, &scroll_info, true);
 
     const auto items_rect = get_items_rect();
     int dx = 0;
     int dy = 0;
     (b_horizontal ? dx : dy) = original_scroll_position - scroll_position;
+
+    if (dx != 0 || dy != 0)
+        destroy_tooltip();
 
     if (b_horizontal)
         reposition_header();
