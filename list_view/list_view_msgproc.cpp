@@ -197,10 +197,14 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             if (m_selection_mode == SelectionMode::Multiple) {
                 if (!m_lbutton_down_ctrl) {
                     const auto [index, count] = get_item_group_range(hit_result.index, hit_result.group_level);
-                    set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
 
-                    if (count > 0)
+                    if (!hit_result.is_stuck || b_shift_down)
+                        set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
+
+                    if (count > 0) {
+                        ensure_visible(index, EnsureVisibleMode::PreferMinimalScrolling);
                         set_focus_item(index);
+                    }
                 }
             }
         } else // if (hit_result.result != hit_test_)
@@ -254,6 +258,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                         if (count > 0) {
                             set_selection_state(pfc::bit_array_range(index, count),
                                 pfc::bit_array_range(index, count, !is_range_selected(index, count)), true);
+                            ensure_visible(index, EnsureVisibleMode::PreferMinimalScrolling);
                             set_focus_item(index);
                         }
                     }
@@ -348,7 +353,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             // size_t index;
             if (!m_selecting_move) {
                 HitTestResult hit_result;
-                hit_test_ex(pt, hit_result);
+                hit_test_ex(pt, hit_result, true);
                 {
                     if (hit_result.category == HitTestCategory::AboveViewport
                         || hit_result.category == HitTestCategory::BelowViewport
@@ -389,7 +394,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 
                         if (get_focus_item() != target_index) {
                             if (!is_partially_visible(target_index)) {
-                                if (gsl::narrow_cast<int>(target_index) > get_last_viewable_item())
+                                if (gsl::narrow_cast<int>(target_index) > get_last_unobscured_item())
                                     scroll(get_item_position_bottom(target_index) - get_item_area_height());
                                 else
                                     scroll(get_item_position(target_index));
@@ -654,7 +659,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             {
                 if (from_keyboard) {
                     const auto focus = gsl::narrow_cast<int>(get_focus_item());
-                    const auto last = get_last_viewable_item();
+                    const auto last = get_last_unobscured_item();
                     if (focus < 0 || focus < get_item_at_or_after(m_scroll_position) || focus > last) {
                         px.x = 0;
                         px.y = 0;

@@ -171,6 +171,7 @@ public:
         size_t insertion_index{};
         size_t group_level{};
         size_t column{};
+        bool is_stuck{};
     };
 
     enum class ItemVisibility {
@@ -304,7 +305,7 @@ public:
     void remove_items(const pfc::bit_array& mask);
     void remove_all_items();
 
-    void hit_test_ex(POINT pt_client, HitTestResult& result);
+    void hit_test_ex(POINT pt_client, HitTestResult& result, bool exclude_stuck_headers = false);
     void update_scroll_info(bool b_vertical = true, bool b_horizontal = true, bool redraw = true,
         std::optional<int> new_vertical_position = std::nullopt);
     ItemVisibility get_item_visibility(size_t index);
@@ -356,6 +357,7 @@ public:
     enum class VerticalPositionCategory {
         OnItem,
         OnGroupHeader,
+        BetweenGroupHeaderAndItem,
         BetweenItems,
         NoItems,
     };
@@ -368,21 +370,25 @@ public:
         /** The item at the y-position if position_category == OnItem, or the item after it if position_category ==
          * BetweenItems */
         int item_rightmost{};
+        size_t group_index{};
+        bool is_on_stuck_group_header{};
     };
 
-    [[nodiscard]] VerticalHitTestResult vertical_hit_test(int y) const;
+    [[nodiscard]] VerticalHitTestResult underlying_items_vertical_hit_test(int y) const;
+    [[nodiscard]] VerticalHitTestResult visible_items_vertical_hit_test(int y) const;
 
     [[nodiscard]] int get_item_at_or_before(int y_position) const
     {
-        return vertical_hit_test(y_position).item_leftmost;
+        return underlying_items_vertical_hit_test(y_position).item_leftmost;
     }
     [[nodiscard]] int get_item_at_or_after(int y_position) const
     {
-        return vertical_hit_test(y_position).item_rightmost;
+        return underlying_items_vertical_hit_test(y_position).item_rightmost;
     }
 
-    int get_first_viewable_item();
-    int get_last_viewable_item();
+    [[nodiscard]] int get_first_or_previous_visible_item(std::optional<int> scroll_position = {});
+    int get_first_unobscured_item();
+    int get_last_unobscured_item();
     int get_default_item_height();
     int get_default_group_height();
 
@@ -434,9 +440,13 @@ public:
         return get_item_position(index) + get_item_height(index);
     }
 
-    int get_group_minimum_inner_height() { return get_show_group_info_area() ? get_group_info_area_total_height() : 0; }
+    int get_group_minimum_inner_height() const
+    {
+        return get_show_group_info_area() ? get_group_info_area_total_height() : 0;
+    }
     int get_group_items_bottom_margin(size_t index) const;
-    int get_leaf_group_header_bottom_margin(size_t index) const;
+    int get_leaf_group_header_bottom_margin(std::optional<size_t> index = {}) const;
+    int get_stuck_leaf_group_header_bottom_margin() const;
 
     int get_item_group_bottom(size_t index) const
     {
@@ -609,7 +619,18 @@ protected:
 
     [[nodiscard]] bool get_is_new_group(size_t index) const;
 
-    [[nodiscard]] size_t get_item_display_group_count(size_t index) const;
+    [[nodiscard]] size_t display_group_reverse_index_to_group_index(
+        size_t item_index, size_t display_group_reverse_index) const;
+
+    /**
+     * Includes group headers shown in earlier siblings.
+     */
+    [[nodiscard]] size_t get_cumulative_item_display_group_count(
+        size_t index, std::optional<size_t> max_groups = {}) const;
+
+    [[nodiscard]] size_t get_item_display_group_count(size_t index, std::optional<size_t> max_groups = {}) const;
+    [[nodiscard]] size_t get_item_cumulative_display_group_count(
+        size_t index, std::optional<size_t> max_groups = {}) const;
     [[nodiscard]] bool is_group_visible(size_t item_index, size_t group_index) const;
 
     void on_focus_change(size_t index_prev, size_t index_new);
@@ -656,6 +677,7 @@ protected:
     int get_indentation_step() const;
     int get_default_indentation_step() const;
 
+    void set_are_group_headers_sticky(bool value);
     void set_is_group_info_area_sticky(bool group_info_area_sticky);
     void set_is_group_info_area_header_spacing_enabled(bool value);
 
@@ -726,6 +748,29 @@ protected:
     bool get_show_group_info_area() const { return m_group_count ? m_show_group_info_area : false; }
 
     int get_total_indentation() const;
+    [[nodiscard]] int get_stuck_group_headers_height(std::optional<int> scroll_position = {}) const;
+
+    struct StuckGroupHeadersInfo {
+        int height{};
+        size_t last_index{};
+
+        auto operator<=>(const StuckGroupHeadersInfo&) const = default;
+    };
+
+    [[nodiscard]] StuckGroupHeadersInfo get_stuck_group_headers_info(std::optional<int> scroll_position = {}) const;
+
+    struct GroupHeaderRenderInfo {
+        size_t group_start{};
+        size_t group_count{};
+        int items_viewport_y{};
+        int height{};
+        bool is_display_leaf{};
+        bool is_hidden{};
+        bool is_stuck{};
+    };
+
+    GroupHeaderRenderInfo get_group_header_render_info(
+        size_t item_index, size_t group_index, std::optional<int> scroll_position = {}) const;
 
     ColourData render_get_colour_data()
     {
@@ -833,6 +878,7 @@ private:
 
     virtual void notify_exit_inline_edit() {}
 
+    int get_items_viewport_height() const;
     void update_vertical_scroll_info(bool redraw = true, std::optional<int> new_vertical_position = std::nullopt);
     void update_horizontal_scroll_info(bool redraw = true);
 
@@ -950,6 +996,7 @@ private:
     size_t m_group_count{0};
     int m_item_height{1};
     int m_group_height{1};
+    bool m_are_group_headers_sticky{};
     size_t m_shift_start{std::numeric_limits<size_t>::max()};
     bool m_timer_scroll_up{false};
     bool m_timer_scroll_down{false};
