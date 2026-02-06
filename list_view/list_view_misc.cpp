@@ -160,53 +160,57 @@ void ListView::on_size(bool b_update_scroll)
 
 void ListView::on_size(int cxd, int cyd, bool b_update_scroll)
 {
-    if (!m_sizing) {
-        pfc::vartoggle_t<bool> toggler(m_sizing, true);
-        RECT rc_header;
-        get_header_rect(&rc_header);
+    if (m_sizing)
+        return;
 
-        RECT rc;
-        GetClientRect(get_wnd(), &rc);
-        int cx = RECT_CX(rc);
+    pfc::vartoggle_t<bool> toggler(m_sizing, true);
 
-        auto old_search_height = get_search_box_height();
-        auto new_search_height = m_search_editbox ? m_item_height + scale_dpi_value(4) : 0;
+    hide_tooltip();
 
-        if (m_search_editbox) {
-            SetWindowPos(m_search_editbox, nullptr, 0, 0, cx, new_search_height, SWP_NOZORDER);
-        }
+    RECT rc_header;
+    get_header_rect(&rc_header);
 
-        auto new_header_height = calculate_header_height();
-        if (new_header_height != RECT_CY(rc_header) && m_wnd_header)
-            // Update height because affects scroll info
-            SetWindowPos(m_wnd_header, nullptr, -m_horizontal_scroll_position, new_search_height,
-                cx + m_horizontal_scroll_position, new_header_height, SWP_NOZORDER);
+    RECT rc{};
+    GetClientRect(get_wnd(), &rc);
+    int cx = RECT_CX(rc);
 
-        if (b_update_scroll)
-            update_scroll_info();
+    auto old_search_height = get_search_box_height();
+    auto new_search_height = m_search_editbox ? m_item_height + scale_dpi_value(4) : 0;
 
-        if (m_autosize)
-            update_column_sizes();
-        if (m_autosize)
-            update_header();
-
-        GetClientRect(get_wnd(), &rc);
-        cx = RECT_CX(rc);
-
-        // Reposition again due to potential vertical scrollbar changes
-        if (m_wnd_header)
-            SetWindowPos(m_wnd_header, nullptr, -m_horizontal_scroll_position, new_search_height,
-                cx + m_horizontal_scroll_position, new_header_height, SWP_NOZORDER);
-
-        if (m_search_editbox) {
-            SetWindowPos(m_search_editbox, nullptr, 0, 0, cx, new_search_height, SWP_NOZORDER);
-        }
-
-        if (new_header_height != RECT_CY(rc_header))
-            RedrawWindow(m_wnd_header, nullptr, nullptr, RDW_INVALIDATE);
-        if (m_autosize || new_header_height != RECT_CY(rc_header) || get_search_box_height() != old_search_height)
-            invalidate_all();
+    if (m_search_editbox) {
+        SetWindowPos(m_search_editbox, nullptr, 0, 0, cx, new_search_height, SWP_NOZORDER);
     }
+
+    auto new_header_height = calculate_header_height();
+    if (new_header_height != RECT_CY(rc_header) && m_wnd_header)
+        // Update height because affects scroll info
+        SetWindowPos(m_wnd_header, nullptr, -m_horizontal_scroll_position, new_search_height,
+            cx + m_horizontal_scroll_position, new_header_height, SWP_NOZORDER);
+
+    if (b_update_scroll)
+        update_scroll_info();
+
+    if (m_autosize)
+        update_column_sizes();
+    if (m_autosize)
+        update_header();
+
+    GetClientRect(get_wnd(), &rc);
+    cx = RECT_CX(rc);
+
+    // Reposition again due to potential vertical scrollbar changes
+    if (m_wnd_header)
+        SetWindowPos(m_wnd_header, nullptr, -m_horizontal_scroll_position, new_search_height,
+            cx + m_horizontal_scroll_position, new_header_height, SWP_NOZORDER);
+
+    if (m_search_editbox) {
+        SetWindowPos(m_search_editbox, nullptr, 0, 0, cx, new_search_height, SWP_NOZORDER);
+    }
+
+    if (new_header_height != RECT_CY(rc_header))
+        RedrawWindow(m_wnd_header, nullptr, nullptr, RDW_INVALIDATE);
+    if (m_autosize || new_header_height != RECT_CY(rc_header) || get_search_box_height() != old_search_height)
+        invalidate_all();
 }
 
 RECT ListView::get_items_rect() const
@@ -766,7 +770,7 @@ void ListView::set_font(std::optional<direct_write::TextFormat> text_format, con
 
     if (m_initialised) {
         exit_inline_edit();
-        destroy_tooltip();
+        hide_tooltip();
 
         refresh_items_font();
 
@@ -811,7 +815,7 @@ void ListView::set_group_font(std::optional<direct_write::TextFormat> text_forma
 
     if (m_initialised) {
         exit_inline_edit();
-        destroy_tooltip();
+        hide_tooltip();
 
         refresh_group_font();
         refresh_item_positions();

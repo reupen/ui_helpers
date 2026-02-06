@@ -7,37 +7,6 @@ using namespace uih::literals::spx;
 
 namespace uih {
 
-namespace {
-
-std::string clean_tooltip_text(std::string_view text, size_t max_code_points = 2048)
-{
-    auto cleaned_text = text_style::remove_colour_and_font_codes(text);
-    std::ranges::replace(cleaned_text, '\t', ' ');
-
-    if (cleaned_text.size() > max_code_points) {
-        size_t code_point_counter{};
-        const char* pos{cleaned_text.c_str()};
-
-        while (code_point_counter < max_code_points) {
-            if (!pfc::utf8_advance(pos))
-                break;
-
-            ++code_point_counter;
-        }
-
-        const size_t truncate_num_bytes = pos - cleaned_text.c_str();
-
-        if (truncate_num_bytes < cleaned_text.size()) {
-            cleaned_text.resize(truncate_num_bytes);
-            cleaned_text += "…";
-        }
-    }
-
-    return cleaned_text;
-}
-
-} // namespace
-
 LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 {
 #if 1
@@ -346,32 +315,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_MOUSEMOVE: {
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
         if (!m_selecting) {
-            if (m_show_tooltips && (pt.y >= 0 && pt.y > get_items_top())) {
-                HitTestResult hit_result;
-                hit_test_ex(pt, hit_result);
-
-                if (m_items_text_format
-                    && (hit_result.category == HitTestCategory::OnUnobscuredItem
-                        || hit_result.category == HitTestCategory::OnItemObscuredBelow
-                        || hit_result.category == HitTestCategory::OnItemObscuredAbove)
-                    && hit_result.column != -1) {
-                    if (m_tooltip_last_index != hit_result.index || m_tooltip_last_column != hit_result.column) {
-                        bool is_clipped = is_item_clipped(hit_result.index, hit_result.column);
-                        if (!m_limit_tooltips_to_clipped_items || is_clipped) {
-                            const auto cleaned_text
-                                = clean_tooltip_text(get_item_text(hit_result.index, hit_result.column));
-
-                            create_tooltip(cleaned_text.c_str());
-
-                            calculate_tooltip_position(hit_result.index, hit_result.column, cleaned_text);
-                        } else
-                            destroy_tooltip();
-                    }
-                    m_tooltip_last_index = hit_result.index;
-                    m_tooltip_last_column = hit_result.column;
-                } else
-                    destroy_tooltip();
-            }
+            handle_mousemove_for_tooltip(pt);
         }
         if (m_selecting_move || (m_selection_mode != SelectionMode::Multiple && m_selecting) || m_dragging_rmb) {
             const auto cx_drag = (unsigned)abs(GetSystemMetrics(SM_CXDRAG));
@@ -389,7 +333,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 b_enter_drag = true;
 
             if (b_enter_drag) {
-                destroy_tooltip();
+                hide_tooltip();
                 if (do_drag_drop(wp)) {
                     m_selecting_moved = false;
                     m_selecting_move = false;
@@ -463,8 +407,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 }
             }
         }
-    }
         return 0;
+    }
     case WM_LBUTTONDBLCLK: {
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
         HitTestResult hit_result;
@@ -482,10 +426,10 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             || hit_result.category == HitTestCategory::NotOnItem)
             if (notify_on_doubleleftclick_nowhere())
                 return 0;
-    } break;
-    case WM_MBUTTONDOWN: {
-        SetFocus(wnd);
+        break;
     }
+    case WM_MBUTTONDOWN:
+        SetFocus(wnd);
         return 0;
     case WM_MBUTTONUP: {
         m_inline_edit_prevent = false;
