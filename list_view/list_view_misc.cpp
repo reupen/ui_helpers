@@ -21,18 +21,23 @@ int ListView::get_group_items_bottom_margin(size_t index) const
     return m_group_height / 6;
 }
 
-int ListView::get_leaf_group_header_bottom_margin(size_t index) const
+int ListView::get_leaf_group_header_bottom_margin(std::optional<size_t> index) const
 {
     if (!get_show_group_info_area() || !m_is_group_info_area_header_spacing_enabled)
         return 0;
 
-    if (!get_is_new_group(index))
+    if (index && !get_is_new_group(*index))
         return 0;
 
     if (m_group_level_indentation_enabled)
         return m_group_count > 1 ? m_group_height / 4 : m_group_height / 8;
 
     return m_group_count > 1 ? m_group_height / 5 : m_group_height / 8;
+}
+
+int ListView::get_stuck_leaf_group_header_bottom_margin() const
+{
+    return get_leaf_group_header_bottom_margin() / 3;
 }
 
 ListView::GroupInfoAreaPadding ListView::get_group_info_area_padding() const
@@ -61,6 +66,90 @@ int ListView::get_total_indentation() const
     return m_root_group_indentation_amount
         + get_indentation_step() * gsl::narrow<int>(m_group_count - (get_show_group_info_area() ? 1 : 0))
         + get_group_info_area_total_width();
+}
+
+ListView::GroupHeaderRenderInfo ListView::get_group_header_render_info(
+    size_t item_index, size_t group_index, std::optional<int> scroll_position) const
+{
+    assert(item_index < m_items.size());
+    assert(group_index < m_group_count);
+
+    const auto resolved_scroll_position = scroll_position.value_or(m_scroll_position);
+    auto [group_start, group_item_count] = get_item_group_range(item_index, group_index);
+
+    const auto display_group_count = get_item_display_group_count(group_start);
+    const auto display_group_index = get_item_display_group_count(group_start, group_index);
+    const auto is_leaf = display_group_index + 1 == display_group_count;
+    const auto is_hidden = m_items[item_index]->m_groups[group_index]->is_hidden();
+    const auto height = is_hidden ? 0 : m_group_height;
+
+    const auto min_group_top = get_item_position(group_start) - resolved_scroll_position
+        - m_group_height * gsl::narrow<int>(display_group_count - display_group_index)
+        - get_leaf_group_header_bottom_margin();
+
+    if (!m_are_group_headers_sticky)
+        return GroupHeaderRenderInfo{group_start, group_item_count, min_group_top, height, is_leaf, is_hidden, false};
+
+    auto [final_leaf_group_start, final_leaf_group_item_count]
+        = get_item_group_range(group_start + group_item_count - 1, m_group_count - 1);
+    const auto final_leaf_group_first_item_top = get_item_position(final_leaf_group_start) - resolved_scroll_position;
+    const auto group_bottom = final_leaf_group_first_item_top
+        + std::max(get_group_minimum_inner_height(), gsl::narrow<int>(final_leaf_group_item_count) * m_item_height);
+
+    const auto cumulative_display_group_index = get_item_cumulative_display_group_count(group_start, group_index);
+
+    const auto max_group_top = group_bottom
+        - m_group_height * gsl::narrow<int>(display_group_count - display_group_index)
+        - get_stuck_leaf_group_header_bottom_margin();
+
+    const auto render_pos = std::max(
+        min_group_top, std::min(gsl::narrow<int>(cumulative_display_group_index) * m_group_height, max_group_top));
+
+    const auto is_stuck = render_pos != min_group_top;
+
+    return GroupHeaderRenderInfo{group_start, group_item_count, render_pos, height, is_leaf, is_hidden, is_stuck};
+}
+
+int ListView::get_stuck_group_headers_height(std::optional<int> scroll_position) const
+{
+    return get_stuck_group_headers_info(scroll_position).height;
+}
+
+ListView::StuckGroupHeadersInfo ListView::get_stuck_group_headers_info(std::optional<int> scroll_position) const
+{
+    if (!m_are_group_headers_sticky || m_group_count == 0)
+        return {};
+
+    const auto resolved_scroll_position = scroll_position.value_or(m_scroll_position);
+
+    if (resolved_scroll_position == 0)
+        return {};
+
+    const auto vht_result = underlying_items_vertical_hit_test(resolved_scroll_position);
+
+    if (vht_result.position_category == VerticalPositionCategory::NoItems)
+        return {};
+
+    const auto item_index = vht_result.item_leftmost;
+    const auto render_info = get_group_header_render_info(item_index, m_group_count - 1, resolved_scroll_position);
+
+    if (!render_info.is_stuck)
+        return {};
+
+    const auto next_child_group_index = render_info.group_start + render_info.group_count;
+
+    if (next_child_group_index < m_items.size()) {
+        const auto next_render_info
+            = get_group_header_render_info(next_child_group_index, m_group_count - 1, resolved_scroll_position);
+
+        if (next_render_info.is_stuck)
+            return {next_render_info.items_viewport_y + next_render_info.height
+                    + get_stuck_leaf_group_header_bottom_margin(),
+                next_render_info.group_start};
+    }
+
+    return {render_info.items_viewport_y + render_info.height + get_stuck_leaf_group_header_bottom_margin(),
+        gsl::narrow<size_t>(render_info.group_start)};
 }
 
 void ListView::refresh_item_positions()
@@ -268,8 +357,8 @@ void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
 
     const auto focused_item_is_visible = is_partially_visible(focus);
 
-    const auto first_visible_item = get_first_viewable_item();
-    const auto last_visible_item = get_last_viewable_item();
+    const auto first_visible_item = get_first_unobscured_item();
+    const auto last_visible_item = get_last_unobscured_item();
     const auto focus_top = get_item_position(focus);
 
     int target_item{};
@@ -285,7 +374,12 @@ void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
         if (focused_item_is_visible && focus > first_visible_item) {
             target_item = first_visible_item;
         } else {
-            target_item = get_item_at_or_after(focus_top - gsl::narrow<int>(si.nPage));
+            auto target_pos = focus_top - gsl::narrow<int>(si.nPage);
+
+            if (focus_top > si.nMin)
+                target_pos += get_stuck_group_headers_height(focus_top);
+
+            target_item = get_item_at_or_after(target_pos);
 
             if (target_item == focus && target_item > 0)
                 --target_item;
@@ -295,7 +389,9 @@ void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
         if (focused_item_is_visible && focus < last_visible_item) {
             target_item = last_visible_item;
         } else {
-            target_item = get_item_at_or_before(focus_top + gsl::narrow<int>(si.nPage));
+            auto target_pos = focus_top + gsl::narrow<int>(si.nPage);
+            target_pos -= get_stuck_group_headers_height(std::min(si.nMax, target_pos));
+            target_item = get_item_at_or_before(target_pos);
 
             if (target_item == focus && target_item + 1 < total)
                 ++target_item;
@@ -407,31 +503,6 @@ void ListView::invalidate_items(size_t index, size_t count) const
     const auto items_rect = get_items_rect();
     const auto has_group_info_area = get_show_group_info_area();
 
-    if (has_group_info_area) {
-        const auto first_visible = std::max(index, gsl::narrow<size_t>(get_item_at_or_after(m_scroll_position)));
-        const auto last_visible = std::min(index + count,
-            gsl::narrow<size_t>(get_item_at_or_before(m_scroll_position + wil::rect_height(items_rect))));
-
-        if (last_visible > first_visible) {
-            for (const auto item_index : ranges::views::iota(first_visible, last_visible + 1)) {
-                const auto group_headers_height = get_item_group_header_total_height(item_index);
-
-                if (group_headers_height <= 0)
-                    continue;
-
-                const auto item_position = get_item_position(item_index);
-
-                const RECT groups_invalidate_rect
-                    = {items_rect.left, item_position - m_scroll_position + items_rect.top - group_headers_height,
-                        items_rect.right, item_position - m_scroll_position + items_rect.top};
-
-                RECT visible_invalidate_rect{};
-                if (IntersectRect(&visible_invalidate_rect, &items_rect, &groups_invalidate_rect))
-                    RedrawWindow(get_wnd(), &visible_invalidate_rect, nullptr, RDW_INVALIDATE);
-            }
-        }
-    }
-
     const auto items_left
         = has_group_info_area ? get_total_indentation() - m_horizontal_scroll_position : items_rect.left;
 
@@ -462,6 +533,26 @@ void ListView::invalidate_items(const pfc::bit_array& mask)
     }
 }
 
+void ListView::set_are_group_headers_sticky(bool value)
+{
+    if (m_are_group_headers_sticky == value)
+        return;
+
+    if (!m_initialised) {
+        m_are_group_headers_sticky = value;
+        return;
+    }
+
+    const auto old_stuck_headers_height = get_stuck_group_headers_height();
+
+    m_are_group_headers_sticky = value;
+
+    const auto new_stuck_headers_height = get_stuck_group_headers_height();
+
+    if (old_stuck_headers_height != new_stuck_headers_height)
+        invalidate_all();
+}
+
 void ListView::set_is_group_info_area_sticky(bool group_info_area_sticky)
 {
     if (group_info_area_sticky == m_is_group_info_area_sticky)
@@ -471,7 +562,7 @@ void ListView::set_is_group_info_area_sticky(bool group_info_area_sticky)
     bool is_invalidation_needed{};
 
     if (m_initialised && get_show_group_info_area()) {
-        first_item_index = gsl::narrow_cast<size_t>(get_item_at_or_before(m_scroll_position));
+        first_item_index = gsl::narrow_cast<size_t>(get_first_or_previous_visible_item());
 
         if (first_item_index < m_items.size()) {
             is_invalidation_needed = true;
@@ -508,27 +599,36 @@ RECT ListView::get_item_group_info_area_render_rect(
     const auto resolved_items_rect = items_rect ? *items_rect : get_items_rect();
     const auto resolved_scroll_position = scroll_position.value_or(m_scroll_position);
 
+    const auto leaf_group_header_render_info
+        = get_group_header_render_info(index, m_group_count - 1, resolved_scroll_position);
+
     const auto artwork_indentation
         = m_root_group_indentation_amount + get_indentation_step() * (gsl::narrow<int>(m_group_count) - 1);
     const auto group_info_area_padding = get_group_info_area_padding();
 
     const auto [group_first_item, group_item_count] = get_item_group_range(index, m_group_count - 1);
 
-    const auto group_first_item_top = get_item_position(group_first_item);
-    const auto group_last_item_bottom = group_first_item_top + gsl::narrow<int>(group_item_count) * m_item_height;
+    const auto group_first_item_top = get_item_position(group_first_item) - resolved_scroll_position;
+    const auto group_leaf_header_bottom = m_is_group_info_area_sticky && leaf_group_header_render_info.is_stuck
+        ? leaf_group_header_render_info.items_viewport_y + leaf_group_header_render_info.height
+            + get_leaf_group_header_bottom_margin()
+        : group_first_item_top;
+    const auto group_bottom = group_first_item_top
+        + std::max(get_group_minimum_inner_height(), gsl::narrow<int>(group_item_count) * m_item_height);
 
     const auto left = 0 - m_horizontal_scroll_position + artwork_indentation + group_info_area_padding.left;
     const auto right = left + get_group_info_area_width();
 
-    int top = group_first_item_top - resolved_scroll_position + resolved_items_rect.top + group_info_area_padding.top;
+    int top = group_leaf_header_bottom + resolved_items_rect.top + group_info_area_padding.top;
 
     if (top < resolved_items_rect.top && m_is_group_info_area_sticky) {
-        const auto items_bottom_minus_info_height = group_last_item_bottom - get_group_info_area_height()
-            - resolved_scroll_position + static_cast<int>(resolved_items_rect.top);
-        const auto sticky_pos = std::min(static_cast<int>(resolved_items_rect.top), items_bottom_minus_info_height);
-
+        const auto sticky_pos = static_cast<int>(resolved_items_rect.top);
         top = std::max(top, sticky_pos);
     }
+
+    const auto items_bottom_minus_info_height = group_bottom - get_group_info_area_height()
+        + static_cast<int>(resolved_items_rect.top) - group_info_area_padding.bottom;
+    top = std::min(top, items_bottom_minus_info_height);
 
     const auto bottom = top + get_group_info_area_height();
 

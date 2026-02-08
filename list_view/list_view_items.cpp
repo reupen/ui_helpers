@@ -28,18 +28,53 @@ bool ListView::get_is_new_group(size_t index) const
     return m_items[index - 1]->m_groups.back() != m_items[index]->m_groups.back();
 }
 
-size_t ListView::get_item_display_group_count(size_t index) const
+size_t ListView::display_group_reverse_index_to_group_index(size_t item_index, size_t display_group_reverse_index) const
 {
-    if (index == 0) {
-        return ranges::count_if(m_items[index]->m_groups, [](auto& group) { return !group->is_hidden(); });
+    assert(m_group_count > 0);
+
+    auto levels_remaining = display_group_reverse_index + 1;
+    auto group_index = m_group_count - 1;
+
+    for (auto&& [index, group] : ranges::views::enumerate(m_items[item_index]->m_groups) | ranges::views::reverse) {
+        if (!group->is_hidden())
+            --levels_remaining;
+
+        if (levels_remaining == 0) {
+            group_index = index;
+            break;
+        }
+
+        assert(index > 0);
     }
 
-    auto zipped_groups = ranges::views::zip(m_items[index - 1]->m_groups, m_items[index]->m_groups);
-    return ranges::count_if(zipped_groups, [](const auto& pair) {
-        const auto& [previous_item_group, this_item_group] = pair;
+    return group_index;
+}
 
-        return previous_item_group != this_item_group && !this_item_group->is_hidden();
-    });
+size_t ListView::get_cumulative_item_display_group_count(size_t index, std::optional<size_t> max_groups) const
+{
+    return ranges::count_if(m_items[index]->m_groups | ranges::views::take(max_groups.value_or(m_group_count)),
+        [](auto& group) { return !group->is_hidden(); });
+}
+
+size_t ListView::get_item_display_group_count(size_t index, std::optional<size_t> max_groups) const
+{
+    if (index == 0)
+        return get_cumulative_item_display_group_count(index, max_groups);
+
+    auto zipped_groups = ranges::views::zip(m_items[index - 1]->m_groups, m_items[index]->m_groups);
+
+    return ranges::count_if(
+        zipped_groups | ranges::views::take(max_groups.value_or(m_group_count)), [](const auto& pair) {
+            const auto& [previous_item_group, this_item_group] = pair;
+
+            return previous_item_group != this_item_group && !this_item_group->is_hidden();
+        });
+}
+
+size_t ListView::get_item_cumulative_display_group_count(size_t index, std::optional<size_t> max_groups) const
+{
+    return ranges::count_if(m_items[index]->m_groups | ranges::views::take(max_groups.value_or(m_group_count)),
+        [](auto& group) { return !group->is_hidden(); });
 }
 
 bool ListView::is_group_visible(size_t item_index, size_t group_index) const

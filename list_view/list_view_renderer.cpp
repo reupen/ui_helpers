@@ -93,30 +93,38 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
     size_t i_start = i;
     size_t i_end = gsl::narrow<size_t>(get_item_at_or_after(
         (rc_update.bottom > rc_items.top + 1 ? rc_update.bottom - rc_items.top - 1 : 0) + m_scroll_position));
+
+    const auto stuck_headers_height = rc_update.top > rc_items.top ? get_stuck_group_headers_height() : 0;
+    bool has_excluded_stuck_headers{};
+
     for (; i <= i_end && i < count; i++) {
-        const auto display_group_count = get_item_display_group_count(i);
+        const auto is_first_item = i == i_start;
         const size_t group_count = m_items[i]->m_groups.size();
-        size_t display_group_index{};
+        [[maybe_unused]] size_t display_group_index{};
         size_t indentation_level{};
 
         for (size_t group_index = 0; group_index < group_count; group_index++) {
             const auto group = m_items[i]->m_groups[group_index];
 
-            if (i > 0 && group == m_items[i - 1]->m_groups[group_index]) {
-                // Should be impossible for groups to be the same if one was already rendered.
-                assert(display_group_index == 0);
-
+            auto _scope_exit = wil::scope_exit([&] {
                 if (!group->is_hidden())
                     ++indentation_level;
-                continue;
+            });
+
+            if (i > 0 && group == m_items[i - 1]->m_groups[group_index]) {
+                // Should be impossible for groups to be the same if one was already rendered.
+                assert(m_are_group_headers_sticky || display_group_index == 0);
+
+                if (!(m_are_group_headers_sticky && is_first_item))
+                    continue;
             }
 
             if (group->is_hidden())
                 continue;
 
-            const int y = get_item_position(i) - m_scroll_position
-                - m_group_height * gsl::narrow<int>(display_group_count - display_group_index)
-                - get_leaf_group_header_bottom_margin(i) + gsl::narrow_cast<int>(rc_items.top);
+            const auto header_info = get_group_header_render_info(i, group_index);
+
+            const auto y = header_info.items_viewport_y + rc_items.top;
             const int x = -m_horizontal_scroll_position + rc_items.left;
 
             const RECT rc = {x, y, x + cx, y + m_group_height};
@@ -127,17 +135,22 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
             const auto indentation
                 = m_root_group_indentation_amount + indentation_step * gsl::narrow<int>(indentation_level);
 
-            if (RectVisible(dc, &rc))
-                m_renderer->render_group(context, i, group_index, group->m_text.get_ptr(), indentation, rc);
+            if (RectVisible(dc, &rc)) {
+                m_renderer->render_group(
+                    context, header_info.group_start, group_index, group->m_text.get_ptr(), indentation, rc);
+
+                if (header_info.is_stuck)
+                    ExcludeClipRect(dc, rc.left, rc.top, rc.right,
+                        rc.bottom + (header_info.is_display_leaf ? get_stuck_leaf_group_header_bottom_margin() : 0));
+            }
 
             ++display_group_index;
-            ++indentation_level;
         }
 
         if (b_show_group_info_area) {
             const auto [item_group_start, _] = get_item_group_range(i, m_group_count ? m_group_count - 1 : 0);
 
-            if (i == i_start || i == item_group_start) {
+            if (is_first_item || i == item_group_start) {
                 RECT rc_group_info = get_item_group_info_area_render_rect(item_group_start, rc_items);
 
                 if (rc_group_info.top >= rc_update.bottom)
@@ -148,18 +161,24 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
             }
         }
 
-        bool b_selected = get_item_selected(i) || i == m_highlight_selected_item_index;
+        bool is_selected = get_item_selected(i) || i == m_highlight_selected_item_index;
 
         t_item_ptr item = m_items[i];
 
-        RECT rc = {0 - m_horizontal_scroll_position + item_indentation,
+        RECT rc_item = {0 - m_horizontal_scroll_position + item_indentation,
             get_item_position(i) - m_scroll_position + rc_items.top, cx - m_horizontal_scroll_position,
             get_item_position(i) + get_item_height(i) - m_scroll_position + rc_items.top};
 
-        if (rc.top >= rc_update.bottom)
+        if (rc_item.top >= rc_update.bottom)
             break;
 
-        if (RectVisible(dc, &rc)) {
+        if (!has_excluded_stuck_headers && stuck_headers_height > 0
+            && rc_item.bottom > rc_items.top + stuck_headers_height) {
+            has_excluded_stuck_headers = true;
+            ExcludeClipRect(dc, rc_items.left, rc_items.top, rc_items.right, rc_items.top + stuck_headers_height);
+        }
+
+        if (RectVisible(dc, &rc_item)) {
             const auto show_item_focus = index_focus == i && (b_window_focused || m_always_show_focus);
             std::vector<lv::RendererSubItem> sub_items;
 
@@ -170,8 +189,8 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
                 sub_items.emplace_back(lv::RendererSubItem{text, column.m_display_size, column.m_alignment});
             }
 
-            m_renderer->render_item(context, i, sub_items, 0 /*item_indentation*/, b_selected, b_window_focused,
-                (m_highlight_item_index == i) || (highlight_index == i), should_hide_focus, show_item_focus, rc);
+            m_renderer->render_item(context, i, sub_items, 0 /*item_indentation*/, is_selected, b_window_focused,
+                (m_highlight_item_index == i) || (highlight_index == i), should_hide_focus, show_item_focus, rc_item);
         }
     }
 
