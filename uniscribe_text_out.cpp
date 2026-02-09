@@ -2,11 +2,6 @@
 
 namespace uih {
 
-bool is_rect_null_or_reversed(const RECT* r)
-{
-    return r->right <= r->left || r->bottom <= r->top;
-}
-
 void get_text_size(HDC dc, const char* src, int len, SIZE& sz)
 {
     sz.cx = 0;

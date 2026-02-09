@@ -38,6 +38,8 @@ struct RendererContext {
 
 class RendererBase {
 public:
+    [[nodiscard]] virtual bool are_tab_columns_enabled() const { return false; }
+
     virtual void render_begin(const RendererContext& context) {}
 
     virtual void render_background(const RendererContext& context, const RECT* rc) = 0;
@@ -59,6 +61,8 @@ public:
 class DefaultRenderer : public RendererBase {
 public:
     DefaultRenderer(bool enable_item_tab_columns = false) : m_enable_item_tab_columns{enable_item_tab_columns} {}
+
+    bool are_tab_columns_enabled() const override { return m_enable_item_tab_columns; }
 
     void render_background(const RendererContext& context, const RECT* rc) override;
 

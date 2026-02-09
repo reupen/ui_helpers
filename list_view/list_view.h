@@ -849,7 +849,12 @@ private:
     virtual Item* storage_create_item() { return new Item; }
     virtual Group* storage_create_group() { return new Group; }
 
-    virtual int measure_text_width(size_t item_index, size_t column_index);
+    virtual std::optional<std::reference_wrapper<text_style::FormatProperties>> get_initial_format(
+        size_t item_index, size_t column_index)
+    {
+        return {};
+    }
+    int measure_text_width(size_t item_index, size_t column_index);
 
     virtual bool render_drag_image(LPSHDRAGIMAGE lpsdi);
     virtual wil::unique_hicon get_drag_image_icon() { return nullptr; }
@@ -941,7 +946,7 @@ private:
     void calculate_tooltip_position(size_t item_index, size_t column_index, std::string_view text);
     std::optional<LRESULT> on_wm_notify_tooltip(LPNMHDR lpnm);
     void render_tooltip_text(HWND wnd, HDC dc, COLORREF colour) const;
-    bool is_item_clipped(size_t index, size_t column);
+    bool is_item_clipped(size_t item_index, size_t column_index);
 
     wil::unique_hfont m_items_font;
     wil::unique_hfont m_header_font;

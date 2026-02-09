@@ -46,7 +46,9 @@ int ListView::get_default_indentation_step() const
 int ListView::measure_text_width(size_t item_index, size_t column_index)
 {
     const char* text = get_item_text(item_index, column_index);
-    return direct_write::measure_text_width_columns_and_styles(*m_items_text_format, mmh::to_utf16(text), 1_spx, 3_spx);
+    const auto initial_format = get_initial_format(item_index, column_index);
+    return direct_write::measure_text_width_columns_and_styles(*m_items_text_format, mmh::to_utf16(text), 1_spx, 3_spx,
+        initial_format ? *initial_format : text_style::FormatProperties{});
 }
 
 void ListView::render_items(HDC dc, const RECT& rc_update)
@@ -443,14 +445,20 @@ void lv::DefaultRenderer::render_background(const RendererContext& context, cons
     PatBlt(context.dc, rc->left, rc->top, wil::rect_width(*rc), wil::rect_height(*rc), PATCOPY);
 }
 
-bool ListView::is_item_clipped(size_t index, size_t column)
+bool ListView::is_item_clipped(size_t item_index, size_t column_index)
 {
     if (!m_items_text_format)
         return false;
 
-    const auto text_width = measure_text_width(index, column);
-    const auto col_width = m_columns[column].m_display_size;
-    return text_width > col_width;
+    const auto text = get_item_text(item_index, column_index);
+    const auto initial_format = get_initial_format(item_index, column_index);
+    const auto& column = m_columns[column_index];
+
+    return direct_write::is_text_trimmed_columns_and_styles(*m_items_text_format, mmh::to_utf16(text), 1_spx, 3_spx,
+        column.m_display_size, m_item_height,
+        {.align = column.m_alignment,
+            .enable_tab_columns = m_renderer->are_tab_columns_enabled(),
+            .initial_format = initial_format ? *initial_format : text_style::FormatProperties{}});
 }
 
 } // namespace uih
