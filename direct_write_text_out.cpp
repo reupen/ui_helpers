@@ -182,7 +182,7 @@ int text_out_columns_and_styles(TextFormat& text_format, HWND wnd, HDC dc, std::
 
             const int cell_render_width = text_out_colours(text_format, wnd, dc, cell_text, cell_rect,
                 options.is_selected, default_colour, options.initial_format, cell_index == 0 ? ALIGN_RIGHT : ALIGN_LEFT,
-                options.enable_style_codes, false, options.bitmap_render_target);
+                options.enable_style_codes, options.enable_ellipses, options.bitmap_render_target);
 
             if (cell_index == 0)
                 cell_rect.left = cell_rect.right - cell_render_width;
