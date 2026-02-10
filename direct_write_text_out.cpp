@@ -31,20 +31,17 @@ int measure_text_width_styles(
     return 0;
 }
 
-int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::wstring_view text, const RECT& rect,
-    bool selected, DWORD default_color, const text_style::FormatProperties& initial_format, alignment align,
-    bool enable_colour_codes, bool enable_ellipsis, wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target)
+std::shared_ptr<TextLayout> create_cached_text_layout_styles(const TextFormat& text_format, std::wstring_view text,
+    const RECT& rect, const text_style::FormatProperties& initial_format, alignment align, bool enable_colour_codes,
+    bool enable_ellipsis)
 {
-    if (is_rect_null_or_reversed(&rect) || rect.right <= rect.left)
-        return 0;
-
     std::optional<std::wstring> processed_text;
     std::vector<text_style::ColourSegment> colour_segments;
     std::vector<text_style::FontSegment> font_segments;
 
     const auto scaling_factor = get_default_scaling_factor();
-    const auto max_width = gsl::narrow_cast<float>(wil::rect_width(rect)) / scaling_factor;
-    const auto max_height = gsl::narrow_cast<float>(wil::rect_height(rect)) / scaling_factor;
+    const auto max_width = std::max(0.f, gsl::narrow_cast<float>(wil::rect_width(rect)) / scaling_factor);
+    const auto max_height = std::max(0.f, gsl::narrow_cast<float>(wil::rect_height(rect)) / scaling_factor);
     const auto dwrite_alignment = get_text_alignment(align);
     const auto serialised_initial_format = initial_format.serialise();
 
@@ -85,15 +82,92 @@ int text_out_colours(const TextFormat& text_format, HWND wnd, HDC dc, std::wstri
             set_layout_font_segments(*layout, font_segments);
         }
 
-        const auto metrics = layout->get_metrics();
-
-        layout->render_with_transparent_background(wnd, dc, rect, default_color, selected, 0.0f, bitmap_render_target);
-
-        return gsl::narrow_cast<int>(metrics.width * scaling_factor + 1);
+        return layout;
     }
     CATCH_LOG()
 
+    return {};
+}
+
+int text_out_styles(const TextFormat& text_format, HWND wnd, HDC dc, std::wstring_view text, const RECT& rect,
+    bool selected, DWORD default_color, const text_style::FormatProperties& initial_format, alignment align,
+    bool enable_colour_codes, bool enable_ellipsis, wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target)
+{
+    if (wil::rect_is_empty(rect))
+        return 0;
+
+    if (const auto text_layout = create_cached_text_layout_styles(
+            text_format, text, rect, initial_format, align, enable_colour_codes, enable_ellipsis)) {
+        try {
+            const auto metrics = text_layout->get_metrics();
+
+            text_layout->render_with_transparent_background(
+                wnd, dc, rect, default_color, selected, 0.0f, bitmap_render_target);
+
+            const auto scaling_factor = get_default_scaling_factor();
+
+            return gsl::narrow_cast<int>(metrics.width * scaling_factor + 1);
+        }
+        CATCH_LOG()
+    }
+
     return 0;
+}
+
+int for_each_tab_column(std::wstring_view text, int x_offset, int border, const RECT& rect,
+    const TextOutOptions& options,
+    const std::function<std::optional<int>(
+        std::wstring_view cell_text, const RECT& cell_rect, int cell_index, alignment align)>& process_cell)
+{
+    const auto tab_count = options.enable_tab_columns ? gsl::narrow<int>(std::ranges::count(text, L'\t')) : 0;
+
+    if (tab_count == 0) {
+        const RECT adjusted_rect{rect.left + border + x_offset, rect.top, rect.right - border, rect.bottom};
+        return process_cell(text, adjusted_rect, 0, options.align).value_or(0);
+    }
+
+    const int total_width = std::max(0, static_cast<int>(wil::rect_width(rect)) - x_offset);
+
+    if (total_width == 0)
+        return 0;
+
+    auto position = text.length();
+    int cell_index{};
+    RECT cell_rect{rect.left + x_offset, rect.top, rect.right, rect.bottom};
+
+    do {
+        const auto end = position;
+        while (position > 0 && text[position - 1] != L'\t')
+            --position;
+
+        const auto cell_text = text.substr(position, end - position);
+
+        if (!cell_text.empty()) {
+            cell_rect.right -= border;
+
+            if (cell_index != 0)
+                cell_rect.left
+                    = std::min(rect.right - MulDiv(cell_index, total_width, tab_count) + border, cell_rect.right);
+
+            const auto consumed_width
+                = process_cell(cell_text, cell_rect, cell_index, cell_index == 0 ? ALIGN_RIGHT : ALIGN_LEFT);
+
+            if (!consumed_width)
+                return total_width;
+
+            if (cell_index == 0)
+                cell_rect.left = cell_rect.right - *consumed_width;
+
+            cell_rect.right = cell_rect.left - border;
+        }
+
+        if (position > 0) {
+            --position;
+            ++cell_index;
+        }
+    } while (position > 0);
+
+    return total_width;
 }
 
 } // namespace
@@ -137,73 +211,63 @@ int measure_text_width_columns_and_styles(const TextFormat& text_format, std::ws
     return total_width;
 }
 
-int text_out_columns_and_styles(TextFormat& text_format, HWND wnd, HDC dc, std::wstring_view text, int x_offset,
-    int border, const RECT& rect, COLORREF default_colour, TextOutOptions options)
+int is_text_trimmed_columns_and_styles(const TextFormat& text_format, std::wstring_view text, int x_offset, int border,
+    int max_width, int max_height, const TextOutOptions& options)
 {
-    RECT adjusted_rect = rect;
+    if (max_width <= 0 || max_height <= 0 || text.empty())
+        return false;
 
-    if (is_rect_null_or_reversed(&adjusted_rect))
-        return 0;
+    const RECT rect{0, 0, max_width, max_height};
+    bool is_trimmed{};
 
-    int tab_count = 0;
+    for_each_tab_column(text, x_offset, border, rect, options,
+        [&](std::wstring_view cell_text, const RECT& cell_rect, int cell_index, alignment align) -> std::optional<int> {
+            const auto text_layout = create_cached_text_layout_styles(text_format, cell_text, cell_rect,
+                options.initial_format, align, options.enable_style_codes, options.enable_ellipses);
 
-    if (options.enable_tab_columns)
-        tab_count = gsl::narrow<int>(std::ranges::count(text, L'\t'));
+            if (!text_layout)
+                return {};
 
-    if (tab_count == 0) {
-        adjusted_rect.left += border + x_offset;
-        adjusted_rect.right -= border;
+            if (text_layout->is_trimmed()) {
+                is_trimmed = true;
+                return {};
+            }
 
-        return text_out_colours(text_format, wnd, dc, text, adjusted_rect, options.is_selected, default_colour,
-            options.initial_format, options.align, options.enable_style_codes, options.enable_ellipses,
-            options.bitmap_render_target);
-    }
+            if (cell_index == 0) {
+                try {
+                    const auto metrics = text_layout->get_metrics();
+                    return gsl::narrow_cast<int>(metrics.width * get_default_scaling_factor() + 1);
+                } catch (...) {
+                    LOG_CAUGHT_EXCEPTION();
+                    return {};
+                }
+            }
 
-    adjusted_rect.left += x_offset;
-    const int total_width = adjusted_rect.right - adjusted_rect.left;
+            return 0;
+        });
 
-    auto position = text.length();
-    int cell_index = 0;
-    RECT cell_rect = adjusted_rect;
-
-    do {
-        const auto end = position;
-        while (position > 0 && text[position - 1] != L'\t')
-            position--;
-
-        const auto cell_text = text.substr(position, end - position);
-
-        if (!cell_text.empty()) {
-            cell_rect.right -= border;
-
-            if (cell_index != 0)
-                cell_rect.left = std::min(
-                    adjusted_rect.right - MulDiv(cell_index, total_width, tab_count) + border, cell_rect.right);
-
-            const int cell_render_width = text_out_colours(text_format, wnd, dc, cell_text, cell_rect,
-                options.is_selected, default_colour, options.initial_format, cell_index == 0 ? ALIGN_RIGHT : ALIGN_LEFT,
-                options.enable_style_codes, options.enable_ellipses, options.bitmap_render_target);
-
-            if (cell_index == 0)
-                cell_rect.left = cell_rect.right - cell_render_width;
-
-            cell_rect.right = cell_rect.left - border;
-        }
-
-        if (position > 0) {
-            position--;
-            cell_index++;
-        }
-    } while (position > 0);
-
-    return total_width;
+    return is_trimmed;
 }
 
-int text_out_columns_and_styles(TextFormat& text_format, HWND wnd, HDC dc, std::string_view text, int x_offset,
-    int border, const RECT& rect, COLORREF default_colour, TextOutOptions options)
+int text_out_columns_and_styles(const TextFormat& text_format, HWND wnd, HDC dc, std::wstring_view text, int x_offset,
+    int border, const RECT& rect, COLORREF default_colour, const TextOutOptions& options)
+{
+    if (wil::rect_is_empty(rect) || text.empty())
+        return 0;
+
+    return for_each_tab_column(text, x_offset, border, rect, options,
+        [&](std::wstring_view cell_text, const RECT& cell_rect, int cell_index, alignment align) -> std::optional<int> {
+            return text_out_styles(text_format, wnd, dc, cell_text, cell_rect, options.is_selected, default_colour,
+                options.initial_format, align, options.enable_style_codes, options.enable_ellipses,
+                options.bitmap_render_target);
+        });
+}
+
+int text_out_columns_and_styles(const TextFormat& text_format, HWND wnd, HDC dc, std::string_view text, int x_offset,
+    int border, const RECT& rect, COLORREF default_colour, const TextOutOptions& options)
 {
     return text_out_columns_and_styles(
-        text_format, wnd, dc, mmh::to_utf16(text), x_offset, border, rect, default_colour, std::move(options));
+        text_format, wnd, dc, mmh::to_utf16(text), x_offset, border, rect, default_colour, options);
 }
 
 } // namespace uih::direct_write

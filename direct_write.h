@@ -69,6 +69,7 @@ public:
     float get_max_width() const noexcept;
     DWRITE_TEXT_METRICS get_metrics() const;
     DWRITE_OVERHANG_METRICS get_overhang_metrics() const;
+    [[nodiscard]] bool is_trimmed() const;
 
     void render_with_transparent_background(HWND wnd, HDC dc, RECT output_rect, COLORREF default_colour,
         bool is_selected = false, float x_origin_offset = 0.0f,
