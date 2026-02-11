@@ -172,7 +172,7 @@ void ListView::scroll(int position, bool b_horizontal, bool suppress_scroll_wind
                     invalidate_after_scroll_window.push_back(invalidate_rect);
             }
 
-            clip_rect.top += new_stuck_group_headers_info.height;
+            clip_rect.top += dy > 0 ? old_stuck_group_headers_info.height : new_stuck_group_headers_info.height;
         }
 
         RECT rc_invalidated{};
