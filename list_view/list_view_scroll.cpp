@@ -104,13 +104,15 @@ void ListView::scroll(int position, bool b_horizontal, bool suppress_scroll_wind
 
     scroll_position = SetScrollInfo(get_wnd(), scroll_bar_type, &scroll_info, true);
 
+    if (scroll_position == original_scroll_position)
+        return;
+
     const auto items_rect = get_items_rect();
     int dx = 0;
     int dy = 0;
     (b_horizontal ? dx : dy) = original_scroll_position - scroll_position;
 
-    if (dx != 0 || dy != 0)
-        hide_tooltip();
+    hide_tooltip();
 
     if (b_horizontal)
         reposition_header();
@@ -119,76 +121,77 @@ void ListView::scroll(int position, bool b_horizontal, bool suppress_scroll_wind
 
     if (suppress_scroll_window) {
         invalidate_all();
-    } else {
-        if (m_group_count > 0 && get_show_group_info_area() && m_is_group_info_area_sticky && dy != 0) {
-            const auto first_items = std::unordered_set{
-                gsl::narrow_cast<size_t>(get_first_or_previous_visible_item(original_scroll_position)),
+        return;
+    }
+
+    if (m_group_count > 0 && get_show_group_info_area() && m_is_group_info_area_sticky && dy != 0) {
+        const auto first_items
+            = std::unordered_set{gsl::narrow_cast<size_t>(get_first_or_previous_visible_item(original_scroll_position)),
                 gsl::narrow_cast<size_t>(get_first_or_previous_visible_item(m_scroll_position))};
 
-            const auto first_group_items = first_items | ranges::views::transform([this](auto index) -> size_t {
-                return std::get<0>(get_item_group_range(index, m_group_count - 1));
-            }) | ranges::to<std::unordered_set>;
+        const auto first_group_items = first_items | ranges::views::transform([this](auto index) -> size_t {
+            return std::get<0>(get_item_group_range(index, m_group_count - 1));
+        }) | ranges::to<std::unordered_set>;
 
-            for (const auto index : first_group_items) {
-                if (index >= m_items.size())
-                    continue;
+        for (const auto index : first_group_items) {
+            if (index >= m_items.size())
+                continue;
 
-                const auto old_rect = get_item_group_info_area_render_rect(index, items_rect, original_scroll_position);
-                const RECT adjusted_old_rect{old_rect.left, old_rect.top + dy, old_rect.right, old_rect.bottom + dy};
+            const auto old_rect = get_item_group_info_area_render_rect(index, items_rect, original_scroll_position);
+            const RECT adjusted_old_rect{old_rect.left, old_rect.top + dy, old_rect.right, old_rect.bottom + dy};
 
-                const auto new_rect = get_item_group_info_area_render_rect(index, items_rect);
+            const auto new_rect = get_item_group_info_area_render_rect(index, items_rect);
 
-                if (adjusted_old_rect == new_rect)
-                    continue;
+            if (adjusted_old_rect == new_rect)
+                continue;
 
-                RECT invalidate_rect{};
+            RECT invalidate_rect{};
 
-                if (IntersectRect(&invalidate_rect, &items_rect, &old_rect))
-                    RedrawWindow(get_wnd(), &invalidate_rect, nullptr, RDW_INVALIDATE);
+            if (IntersectRect(&invalidate_rect, &items_rect, &old_rect))
+                RedrawWindow(get_wnd(), &invalidate_rect, nullptr, RDW_INVALIDATE);
 
-                if (IntersectRect(&invalidate_rect, &items_rect, &new_rect))
-                    invalidate_after_scroll_window.push_back(invalidate_rect);
-            }
+            if (IntersectRect(&invalidate_rect, &items_rect, &new_rect))
+                invalidate_after_scroll_window.push_back(invalidate_rect);
         }
-
-        RECT clip_rect{items_rect};
-
-        if (m_group_count > 0 && m_are_group_headers_sticky && dy != 0) {
-            const auto old_stuck_group_headers_info = get_stuck_group_headers_info(original_scroll_position);
-            RECT old_stuck_headers_rect{items_rect.left, items_rect.top, items_rect.right,
-                items_rect.top + old_stuck_group_headers_info.height};
-
-            const auto new_stuck_group_headers_info = get_stuck_group_headers_info();
-            RECT new_stuck_headers_rect{items_rect.left, items_rect.top, items_rect.right,
-                items_rect.top + new_stuck_group_headers_info.height};
-
-            if (old_stuck_group_headers_info != new_stuck_group_headers_info) {
-                RECT invalidate_rect{};
-
-                if (IntersectRect(&invalidate_rect, &items_rect, &old_stuck_headers_rect))
-                    RedrawWindow(get_wnd(), &invalidate_rect, nullptr, RDW_INVALIDATE);
-
-                if (IntersectRect(&invalidate_rect, &items_rect, &new_stuck_headers_rect))
-                    invalidate_after_scroll_window.push_back(invalidate_rect);
-            }
-
-            clip_rect.top += new_stuck_group_headers_info.height;
-        }
-
-        RECT rc_invalidated{};
-
-        const int rgn_type
-            = ScrollWindowEx(get_wnd(), dx, dy, &clip_rect, &clip_rect, nullptr, &rc_invalidated, SW_INVALIDATE);
-
-        const auto skip_update_now = dx == 0 && rgn_type == SIMPLEREGION && rc_invalidated == items_rect;
-
-        for (const auto& rect : invalidate_after_scroll_window) {
-            RedrawWindow(get_wnd(), &rect, nullptr, RDW_INVALIDATE);
-        }
-
-        if (!skip_update_now)
-            RedrawWindow(get_wnd(), nullptr, nullptr, RDW_UPDATENOW | RDW_ALLCHILDREN);
     }
+
+    RECT clip_rect{items_rect};
+
+    if (m_group_count > 0 && m_are_group_headers_sticky && dy != 0) {
+        const auto old_stuck_group_headers_info = get_stuck_group_headers_info(original_scroll_position);
+        RECT old_stuck_headers_rect{
+            items_rect.left, items_rect.top, items_rect.right, items_rect.top + old_stuck_group_headers_info.height};
+
+        const auto new_stuck_group_headers_info = get_stuck_group_headers_info();
+        RECT new_stuck_headers_rect{
+            items_rect.left, items_rect.top, items_rect.right, items_rect.top + new_stuck_group_headers_info.height};
+
+        if (old_stuck_group_headers_info != new_stuck_group_headers_info) {
+            RECT invalidate_rect{};
+
+            if (IntersectRect(&invalidate_rect, &items_rect, &old_stuck_headers_rect))
+                RedrawWindow(get_wnd(), &invalidate_rect, nullptr, RDW_INVALIDATE);
+
+            if (IntersectRect(&invalidate_rect, &items_rect, &new_stuck_headers_rect))
+                invalidate_after_scroll_window.push_back(invalidate_rect);
+        }
+
+        clip_rect.top += dy > 0 ? old_stuck_group_headers_info.height : new_stuck_group_headers_info.height;
+    }
+
+    RECT rc_invalidated{};
+
+    const int rgn_type
+        = ScrollWindowEx(get_wnd(), dx, dy, &clip_rect, &clip_rect, nullptr, &rc_invalidated, SW_INVALIDATE);
+
+    const auto skip_update_now = dx == 0 && rgn_type == SIMPLEREGION && rc_invalidated == items_rect;
+
+    for (const auto& rect : invalidate_after_scroll_window) {
+        RedrawWindow(get_wnd(), &rect, nullptr, RDW_INVALIDATE);
+    }
+
+    if (!skip_update_now)
+        RedrawWindow(get_wnd(), nullptr, nullptr, RDW_UPDATENOW | RDW_ALLCHILDREN);
 }
 
 void ListView::scroll_from_scroll_bar(short scroll_bar_command, bool b_horizontal)

@@ -99,6 +99,14 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
     const auto stuck_headers_height = rc_update.top > rc_items.top ? get_stuck_group_headers_height() : 0;
     bool has_excluded_stuck_headers{};
 
+    auto exclude_sticky_headers_from_clip_region = [&](const RECT& render_area) {
+        if (!has_excluded_stuck_headers && stuck_headers_height > 0
+            && render_area.bottom > rc_items.top + stuck_headers_height) {
+            has_excluded_stuck_headers = true;
+            ExcludeClipRect(dc, rc_items.left, rc_items.top, rc_items.right, rc_items.top + stuck_headers_height);
+        }
+    };
+
     for (; i <= i_end && i < count; i++) {
         const auto is_first_item = i == i_start;
         const size_t group_count = m_items[i]->m_groups.size();
@@ -158,6 +166,8 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
                 if (rc_group_info.top >= rc_update.bottom)
                     break;
 
+                exclude_sticky_headers_from_clip_region(rc_group_info);
+
                 if (RectVisible(dc, &rc_group_info))
                     m_renderer->render_group_info(context, item_group_start, rc_group_info);
             }
@@ -174,11 +184,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
         if (rc_item.top >= rc_update.bottom)
             break;
 
-        if (!has_excluded_stuck_headers && stuck_headers_height > 0
-            && rc_item.bottom > rc_items.top + stuck_headers_height) {
-            has_excluded_stuck_headers = true;
-            ExcludeClipRect(dc, rc_items.left, rc_items.top, rc_items.right, rc_items.top + stuck_headers_height);
-        }
+        exclude_sticky_headers_from_clip_region(rc_item);
 
         if (RectVisible(dc, &rc_item)) {
             const auto show_item_focus = index_focus == i && (b_window_focused || m_always_show_focus);
