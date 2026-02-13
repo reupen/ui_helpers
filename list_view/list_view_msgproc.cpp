@@ -22,6 +22,10 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     switch (msg) {
     case WM_CREATE:
         m_buffered_paint_initialiser.emplace();
+        m_smooth_scroll_helper.emplace(
+            wnd, MSG_SMOOTH_SCROLL, SMOOTH_SCROLL_TIMER_ID, [this] { return m_scroll_position; },
+            [this] { return m_horizontal_scroll_position; },
+            [this](ScrollAxis axis, int new_position) { internal_scroll(new_position, axis); });
 
         // For dark mode, the window needs to have the DarkMode_Explorer theme to get dark scroll bars,
         // but we also need access to DarkMode_ItemsView themes. To do this, a dummy window with a
@@ -92,9 +96,11 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         m_group_text_format.reset();
         m_direct_write_context.reset();
         m_drag_image_creator.reset();
+        m_smooth_scroll_helper->shut_down();
         notify_on_destroy();
         return 0;
     case WM_NCDESTROY:
+        m_smooth_scroll_helper.reset();
         m_buffered_paint_initialiser.reset();
         break;
     case WM_SIZE:
@@ -403,9 +409,9 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                         if (get_focus_item() != target_index) {
                             if (!is_partially_visible(target_index)) {
                                 if (gsl::narrow_cast<int>(target_index) > get_last_unobscured_item())
-                                    scroll(get_item_position_bottom(target_index) - get_item_area_height());
+                                    absolute_scroll(get_item_position_bottom(target_index) - get_item_area_height());
                                 else
-                                    scroll(get_item_position(target_index));
+                                    absolute_scroll(get_item_position(target_index));
                             }
 
                             const auto num_to_select
@@ -501,10 +507,11 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         }
 
         exit_inline_edit();
-        scroll(scroll_delta + (scroll_horizontally ? m_horizontal_scroll_position : m_scroll_position),
-            scroll_horizontally);
-    }
+        const auto axis = scroll_horizontally ? ScrollAxis::Horizontal : ScrollAxis::Vertical;
+        const auto supress_smooth_scroll = !m_smooth_scroll_helper->should_smooth_scroll_mouse_wheel(axis, wheel_delta);
+        delta_scroll(scroll_delta, axis, supress_smooth_scroll);
         return 0;
+    }
     case WM_GETDLGCODE:
         return DefWindowProc(wnd, msg, wp, lp) | DLGC_WANTARROWS;
     case WM_SHOWWINDOW:
@@ -539,7 +546,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         return 0;
     case WM_HSCROLL:
         exit_inline_edit();
-        scroll_from_scroll_bar(LOWORD(wp), true);
+        scroll_from_scroll_bar(LOWORD(wp), ScrollAxis::Horizontal);
         return 0;
     case WM_COMMAND:
         switch (LOWORD(wp)) {
@@ -644,11 +651,17 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             }
             return 0;
         }
+        case SMOOTH_SCROLL_TIMER_ID:
+            m_smooth_scroll_helper->on_timer();
+            return 0;
         default:
             if (notify_on_timer(wp))
                 return 0;
             break;
         };
+        break;
+    case MSG_SMOOTH_SCROLL:
+        m_smooth_scroll_helper->on_message();
         break;
     case MSG_KILL_INLINE_EDIT:
         m_inline_edit_prevent_kill = true;

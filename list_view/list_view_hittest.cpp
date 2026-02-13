@@ -107,23 +107,24 @@ void ListView::hit_test_ex(POINT pt_client, HitTestResult& result, bool exclude_
 
 ListView::ItemVisibility ListView::get_item_visibility(size_t index)
 {
+    const auto scroll_position = m_smooth_scroll_helper->current_target(ScrollAxis::Vertical);
     const auto item_area_height = get_item_area_height();
     const auto item_start_position = get_item_position(index);
     const auto item_end_position = get_item_position_bottom(index);
     const auto stuck_headers_height = get_stuck_group_headers_height();
 
-    if (item_end_position < m_scroll_position + stuck_headers_height)
+    if (item_end_position < scroll_position + stuck_headers_height)
         return ItemVisibility::AboveViewport;
 
-    if (item_start_position >= m_scroll_position + item_area_height)
+    if (item_start_position >= scroll_position + item_area_height)
         return ItemVisibility::BelowViewport;
 
     // The case where both the top and bottom of the item is obscured is ignored as it has little practical use
-    if (item_start_position < m_scroll_position + stuck_headers_height) {
+    if (item_start_position < scroll_position + stuck_headers_height) {
         return ItemVisibility::ObscuredAbove;
     }
 
-    if (item_end_position > m_scroll_position + item_area_height) {
+    if (item_end_position > scroll_position + item_area_height) {
         return ItemVisibility::ObscuredBelow;
     }
 

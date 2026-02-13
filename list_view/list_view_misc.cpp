@@ -3,6 +3,7 @@
 #include "list_view.h"
 #include "../text_style.h"
 
+using namespace std::chrono_literals;
 using namespace uih::literals::spx;
 
 namespace uih {
@@ -786,7 +787,7 @@ void ListView::on_search_string_change(WCHAR new_char)
         if ((b_all_same && mmh::search_starts_with({&new_char, 1}, item_text_utf16, false))
             || mmh::search_starts_with(m_search_string, item_text_utf16, false)) {
             if (!is_partially_visible(item_index)) {
-                scroll(get_item_position(item_index));
+                absolute_scroll(get_item_position(item_index), ScrollAxis::Vertical, false, 200.ms);
             }
             set_item_selected_single(item_index);
             break;

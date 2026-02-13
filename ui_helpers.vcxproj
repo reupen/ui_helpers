@@ -93,7 +93,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;NOMINMAX;_DEBUG;_LIB;_WIN32_WINNT=0x600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NOMINMAX;_DEBUG;_LIB;_WIN32_WINNT=0x601;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -107,7 +107,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;NOMINMAX;_DEBUG;_LIB;_WIN32_WINNT=0x600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NOMINMAX;_DEBUG;_LIB;_WIN32_WINNT=0x601;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -121,7 +121,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;NOMINMAX;NDEBUG;_LIB;WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NOMINMAX;NDEBUG;_LIB;WIN32_WINNT=0x601;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -138,7 +138,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;NOMINMAX;NDEBUG;_LIB;WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NOMINMAX;NDEBUG;_LIB;WIN32_WINNT=0x601;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -165,6 +165,7 @@
     <ClInclude Include="dpi.h" />
     <ClInclude Include="drag_image.h" />
     <ClInclude Include="drag_image_d2d.h" />
+    <ClInclude Include="dxgi_utils.h" />
     <ClInclude Include="emoji.h" />
     <ClInclude Include="list_view\list_view.h" />
     <ClInclude Include="list_view\list_view_renderer.h" />
@@ -176,6 +177,7 @@
     <ClInclude Include="menu.h" />
     <ClInclude Include="message_hook.h" />
     <ClInclude Include="info_box.h" />
+    <ClInclude Include="scroll.h" />
     <ClInclude Include="solid_fill.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="text_format_parser.h" />
@@ -200,6 +202,7 @@
     <ClCompile Include="dpi.cpp" />
     <ClCompile Include="drag_image.cpp" />
     <ClCompile Include="drag_image_d2d.cpp" />
+    <ClCompile Include="dxgi_utils.cpp" />
     <ClCompile Include="emoji.cpp" />
     <ClCompile Include="gdi.cpp" />
     <ClCompile Include="info_box.cpp" />
@@ -223,6 +226,7 @@
     <ClCompile Include="ole\data_object.cpp" />
     <ClCompile Include="ole\enum_format_etc.cpp" />
     <ClCompile Include="message_hook.cpp" />
+    <ClCompile Include="scroll.cpp" />
     <ClCompile Include="solid_fill.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

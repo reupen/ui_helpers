@@ -80,6 +80,8 @@
     <ClInclude Include="direct_write_style_utils.h">
       <Filter>Text rendering</Filter>
     </ClInclude>
+    <ClInclude Include="scroll.h" />
+    <ClInclude Include="dxgi_utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="message_hook.cpp" />
@@ -174,6 +176,8 @@
     <ClCompile Include="direct_write_style_utils.cpp">
       <Filter>Text rendering</Filter>
     </ClCompile>
+    <ClCompile Include="scroll.cpp" />
+    <ClCompile Include="dxgi_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
