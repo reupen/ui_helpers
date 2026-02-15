@@ -461,53 +461,39 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_MOUSEHWHEEL:
     case WM_MOUSEWHEEL: {
         const auto style = GetWindowLongPtr(get_wnd(), GWL_STYLE);
-        const auto has_vscroll = (style & WS_VSCROLL) != 0;
-        const auto has_hscroll = (style & WS_HSCROLL) != 0;
-        const auto ctrl_down = (wp & MK_CONTROL) != 0;
-        const auto is_vert_mousewheel = msg == WM_MOUSEWHEEL;
-        const auto is_horz_mousewheel = msg == WM_MOUSEHWHEEL;
-        const bool scroll_horizontally = is_horz_mousewheel || ((!has_vscroll || ctrl_down) && has_hscroll);
+        const auto has_vertical_scroll_bar = (style & WS_VSCROLL) != 0;
+        const auto has_horizontal_scroll_bar = (style & WS_HSCROLL) != 0;
+        const auto is_ctrl_down = (wp & MK_CONTROL) != 0;
+
+        if (!(has_vertical_scroll_bar || has_horizontal_scroll_bar))
+            return 0;
+
+        if ((msg == WM_MOUSEHWHEEL || is_ctrl_down) && !has_horizontal_scroll_bar)
+            return 0;
+
+        const auto is_horizontal = msg == WM_MOUSEHWHEEL || !has_vertical_scroll_bar || is_ctrl_down;
 
         SCROLLINFO si{};
         si.cbSize = sizeof(SCROLLINFO);
-        si.fMask = SIF_POS | SIF_TRACKPOS | SIF_PAGE | SIF_RANGE;
-        GetScrollInfo(get_wnd(), scroll_horizontally ? SB_HORZ : SB_VERT, &si);
+        si.fMask = SIF_PAGE;
+        GetScrollInfo(get_wnd(), is_horizontal ? SB_HORZ : SB_VERT, &si);
 
-        UINT system_scroll_lines = 3; // 3 is default
+        UINT system_scroll_lines{3};
         SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &system_scroll_lines, 0);
 
-        if (!si.nPage)
-            si.nPage++;
+        const auto scroll_step = std::max(0,
+            system_scroll_lines == -1 ? gsl::narrow_cast<int>(si.nPage)
+                                      : gsl::narrow_cast<int>(system_scroll_lines) * m_item_height);
 
-        int scroll_unit{};
+        const auto wheel_delta = GET_WHEEL_DELTA_WPARAM(wp);
 
-        if (system_scroll_lines == -1)
-            scroll_unit = si.nPage - 1;
-        else
-            scroll_unit = system_scroll_lines * m_item_height;
+        auto scroll_delta = MulDiv(wheel_delta, scroll_step, WHEEL_DELTA);
 
-        if (scroll_unit == 0)
-            scroll_unit = 1;
-
-        int wheel_delta = GET_WHEEL_DELTA_WPARAM(wp);
-        if (is_vert_mousewheel)
-            wheel_delta *= -1;
-
-        int scroll_delta = MulDiv(wheel_delta, scroll_unit, 120);
-
-        // Limit scrolling to one page ?!?!?! It was in Columns Playlist code...
-        if (scroll_delta < 0 && static_cast<UINT>(-scroll_delta) > si.nPage) {
-            scroll_delta = si.nPage * -1;
-            if (scroll_delta < -1)
-                scroll_delta++;
-        } else if (scroll_delta > 0 && static_cast<UINT>(scroll_delta) > si.nPage) {
-            scroll_delta = si.nPage;
-            if (scroll_delta > 1)
-                scroll_delta--;
-        }
+        if (msg == WM_MOUSEWHEEL)
+            scroll_delta *= -1;
 
         exit_inline_edit();
-        const auto axis = scroll_horizontally ? ScrollAxis::Horizontal : ScrollAxis::Vertical;
+        const auto axis = is_horizontal ? ScrollAxis::Horizontal : ScrollAxis::Vertical;
         const auto supress_smooth_scroll = !m_smooth_scroll_helper->should_smooth_scroll_mouse_wheel(axis, wheel_delta);
         delta_scroll(scroll_delta, axis, supress_smooth_scroll);
         return 0;
