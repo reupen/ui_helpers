@@ -92,7 +92,7 @@ private:
     MessageHookCallback m_callback;
 };
 
-struct MessageHookToken : EventToken {
+struct MessageHookToken : mmh::EventToken {
     MessageHookToken(MessageHookType type, MessageHookCallback callback)
         : m_type(type)
         , m_callback_wrapper(std::move(callback))
@@ -106,7 +106,7 @@ private:
     CallbackMessageHook m_callback_wrapper;
 };
 
-std::unique_ptr<EventToken> register_message_hook(MessageHookType type, MessageHookCallback callback)
+mmh::EventToken::Ptr register_message_hook(MessageHookType type, MessageHookCallback callback)
 {
     return std::make_unique<MessageHookToken>(type, std::move(callback));
 }

@@ -24,6 +24,6 @@ void register_message_hook(MessageHookType p_type, MessageHook* p_hook);
 void deregister_message_hook(MessageHookType p_type, MessageHook* p_hook);
 
 using MessageHookCallback = std::function<bool(int code, WPARAM wp, LPARAM lp)>;
-std::unique_ptr<EventToken> register_message_hook(MessageHookType type, MessageHookCallback callback);
+mmh::EventToken::Ptr register_message_hook(MessageHookType type, MessageHookCallback callback);
 
 } // namespace uih

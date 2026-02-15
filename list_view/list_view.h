@@ -963,7 +963,7 @@ private:
     HWND m_wnd_inline_edit{};
     WNDPROC m_proc_inline_edit{};
     WNDPROC m_proc_original_inline_edit{};
-    std::unique_ptr<EventToken> m_inline_edit_mouse_hook;
+    mmh::EventToken::Ptr m_inline_edit_mouse_hook;
     pfc::string8 m_inline_edit_initial_text;
     bool m_inline_edit_save{false};
     bool m_inline_edit_saving{false};

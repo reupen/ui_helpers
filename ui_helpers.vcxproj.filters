@@ -48,7 +48,6 @@
       <Filter>Trackbar</Filter>
     </ClInclude>
     <ClInclude Include="window_subclasser.h" />
-    <ClInclude Include="event_token.h" />
     <ClInclude Include="direct_2d.h" />
     <ClInclude Include="emoji.h" />
     <ClInclude Include="drag_image_d2d.h" />

@@ -78,7 +78,6 @@
 #endif
 
 #include "literals.h"
-#include "event_token.h"
 
 #include "win32_helpers.h"
 #include "ole.h"
