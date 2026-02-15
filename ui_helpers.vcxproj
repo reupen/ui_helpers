@@ -166,7 +166,6 @@
     <ClInclude Include="drag_image.h" />
     <ClInclude Include="drag_image_d2d.h" />
     <ClInclude Include="emoji.h" />
-    <ClInclude Include="event_token.h" />
     <ClInclude Include="list_view\list_view.h" />
     <ClInclude Include="list_view\list_view_renderer.h" />
     <ClInclude Include="literals.h" />
