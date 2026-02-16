@@ -1,6 +1,7 @@
 #pragma once
 
 #include "list_view_renderer.h"
+#include "../scroll.h"
 #include "../drag_image_d2d.h"
 
 namespace uih {
@@ -23,12 +24,14 @@ public:
     static constexpr short IDC_SEARCHBOX = 668;
 
     static constexpr unsigned MSG_KILL_INLINE_EDIT = WM_USER + 3;
+    static constexpr unsigned MSG_SMOOTH_SCROLL = WM_USER + 4;
 
     enum {
         TIMER_SCROLL_UP = 1001,
         TIMER_SCROLL_DOWN = 1002,
         TIMER_END_SEARCH,
         EDIT_TIMER_ID,
+        SMOOTH_SCROLL_TIMER_ID,
         TIMER_BASE
     };
 
@@ -264,6 +267,7 @@ public:
         m_allow_header_rearrange = b_allow_header_rearrange;
     }
 
+    void set_use_smooth_scroll(bool use_smooth_scroll) { m_use_smooth_scroll = use_smooth_scroll; }
     void set_use_dark_mode(bool use_dark_mode);
     void set_dark_edit_colours(COLORREF text_colour, COLORREF background_colour)
     {
@@ -314,8 +318,16 @@ public:
 
     void ensure_visible(size_t index, EnsureVisibleMode mode = EnsureVisibleMode::PreferCentringItem);
 
-    void scroll(int position, bool b_horizontal = false, bool suppress_scroll_window = false);
-    void scroll_from_scroll_bar(short scroll_bar_command, bool b_horizontal = false);
+    void absolute_scroll(int new_position, ScrollAxis axis = ScrollAxis::Vertical, bool supress_smooth_scroll = false,
+        SmoothScrollHelper::Duration duration = SmoothScrollHelper::default_duration);
+    void delta_scroll(int delta, ScrollAxis axis = ScrollAxis::Vertical, bool supress_smooth_scroll = false);
+    void internal_scroll(int position, ScrollAxis axis = ScrollAxis::Vertical);
+    void scroll_from_scroll_bar(short scroll_bar_command, ScrollAxis axis = ScrollAxis::Vertical);
+
+    auto& get_scroll_position(ScrollAxis axis)
+    {
+        return axis == ScrollAxis::Vertical ? m_scroll_position : m_horizontal_scroll_position;
+    }
 
     std::tuple<size_t, size_t> get_item_group_range(size_t index, size_t level) const;
     void set_insert_mark(size_t index);
@@ -997,6 +1009,8 @@ private:
     int m_scroll_position{0};
     int m_horizontal_scroll_position{0};
     bool m_scroll_bar_update_in_progress{};
+    bool m_use_smooth_scroll{};
+    std::optional<SmoothScrollHelper> m_smooth_scroll_helper;
     bool m_ensure_visible_suspended{};
     size_t m_group_count{0};
     int m_item_height{1};

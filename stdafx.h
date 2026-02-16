@@ -21,6 +21,7 @@
 #endif
 
 #include <algorithm>
+#include <chrono>
 #include <functional>
 #include <iostream>
 #include <list>
@@ -58,6 +59,7 @@
 #include <CommonControls.h>
 #include <intsafe.h>
 #include <dwmapi.h>
+#include <dxgi1_2.h>
 #include <d3d11.h>
 #include <d2d1_1.h>
 #include <dwrite_3.h>

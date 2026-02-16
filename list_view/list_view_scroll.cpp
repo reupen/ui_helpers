@@ -2,6 +2,8 @@
 
 #include "list_view.h"
 
+using namespace std::chrono_literals;
+
 namespace uih {
 
 lv::SavedScrollPosition ListView::save_scroll_position() const
@@ -10,14 +12,15 @@ lv::SavedScrollPosition ListView::save_scroll_position() const
     // scroll position, or between the previous and next items if the scroll
     // position is between items
 
-    const auto previous_item_index = get_item_at_or_before(m_scroll_position);
-    const auto next_item_index = get_item_at_or_after(m_scroll_position);
+    const auto scroll_position = m_smooth_scroll_helper->current_target(ScrollAxis::Vertical);
+    const auto previous_item_index = get_item_at_or_before(scroll_position);
+    const auto next_item_index = get_item_at_or_after(scroll_position);
     const auto next_item_bottom = get_item_position_bottom(next_item_index);
     const auto previous_item_top = get_item_position(previous_item_index);
 
     // If next_item_bottom == previous_item_bottom == 0, there are probably no items
     const auto proportional_position = next_item_bottom != previous_item_top
-        ? static_cast<double>(m_scroll_position - previous_item_top)
+        ? static_cast<double>(scroll_position - previous_item_top)
             / static_cast<double>(next_item_bottom - previous_item_top)
         : 0.0;
 
@@ -61,26 +64,26 @@ void ListView::ensure_visible(size_t index, EnsureVisibleMode mode)
     case EnsureVisibleMode::PreferCentringItem:
         switch (item_visibility) {
         case ItemVisibility::ObscuredAbove:
-            scroll(item_start_position - stuck_headers_height());
+            absolute_scroll(item_start_position - stuck_headers_height());
             break;
         case ItemVisibility::ObscuredBelow:
-            scroll(item_end_position - item_area_height);
+            absolute_scroll(item_end_position - item_area_height);
             break;
         case ItemVisibility::FullyVisible:
             break;
         default:
-            scroll(item_start_position - (item_area_height - item_height) / 2);
+            absolute_scroll(item_start_position - (item_area_height - item_height) / 2);
         }
         break;
     case EnsureVisibleMode::PreferMinimalScrolling:
         switch (item_visibility) {
         case ItemVisibility::ObscuredAbove:
         case ItemVisibility::AboveViewport:
-            scroll(item_start_position - stuck_headers_height());
+            absolute_scroll(item_start_position - stuck_headers_height());
             break;
         case ItemVisibility::ObscuredBelow:
         case ItemVisibility::BelowViewport:
-            scroll(item_end_position - item_area_height);
+            absolute_scroll(item_end_position - item_area_height);
             break;
         case ItemVisibility::FullyVisible:
             break;
@@ -88,10 +91,39 @@ void ListView::ensure_visible(size_t index, EnsureVisibleMode mode)
     }
 }
 
-void ListView::scroll(int position, bool b_horizontal, bool suppress_scroll_window)
+void ListView::absolute_scroll(
+    int new_position, ScrollAxis axis, bool supress_smooth_scroll, SmoothScrollHelper::Duration duration)
 {
-    const INT scroll_bar_type = b_horizontal ? SB_HORZ : SB_VERT;
-    int& scroll_position = b_horizontal ? m_horizontal_scroll_position : m_scroll_position;
+    if (m_use_smooth_scroll && !supress_smooth_scroll) {
+        m_smooth_scroll_helper->absolute_scroll(axis, new_position, duration);
+        return;
+    }
+
+    if (supress_smooth_scroll)
+        m_smooth_scroll_helper->abandon_animation(axis);
+
+    internal_scroll(new_position, axis);
+}
+
+void ListView::delta_scroll(int delta, ScrollAxis axis, bool supress_smooth_scroll)
+{
+    if (m_use_smooth_scroll && !supress_smooth_scroll) {
+        m_smooth_scroll_helper->delta_scroll(axis, delta);
+        return;
+    }
+
+    if (supress_smooth_scroll)
+        m_smooth_scroll_helper->abandon_animation(axis);
+
+    internal_scroll(get_scroll_position(axis) + delta, axis);
+}
+
+void ListView::internal_scroll(int position, ScrollAxis axis)
+{
+    if (!m_initialised)
+        return;
+
+    auto& scroll_position = get_scroll_position(axis);
     const int original_scroll_position = scroll_position;
 
     SCROLLINFO scroll_info{};
@@ -102,7 +134,7 @@ void ListView::scroll(int position, bool b_horizontal, bool suppress_scroll_wind
     if (scroll_position == scroll_info.nPos)
         return;
 
-    scroll_position = SetScrollInfo(get_wnd(), scroll_bar_type, &scroll_info, true);
+    scroll_position = SetScrollInfo(get_wnd(), scroll_axis_to_win32_type(axis), &scroll_info, true);
 
     if (scroll_position == original_scroll_position)
         return;
@@ -110,19 +142,14 @@ void ListView::scroll(int position, bool b_horizontal, bool suppress_scroll_wind
     const auto items_rect = get_items_rect();
     int dx = 0;
     int dy = 0;
-    (b_horizontal ? dx : dy) = original_scroll_position - scroll_position;
+    (axis == ScrollAxis::Vertical ? dy : dx) = original_scroll_position - scroll_position;
 
     hide_tooltip();
 
-    if (b_horizontal)
+    if (axis == ScrollAxis::Horizontal)
         reposition_header();
 
     std::vector<RECT> invalidate_after_scroll_window{};
-
-    if (suppress_scroll_window) {
-        invalidate_all();
-        return;
-    }
 
     if (m_group_count > 0 && get_show_group_info_area() && m_is_group_info_area_sticky && dy != 0) {
         const auto first_items
@@ -184,7 +211,7 @@ void ListView::scroll(int position, bool b_horizontal, bool suppress_scroll_wind
     const int rgn_type
         = ScrollWindowEx(get_wnd(), dx, dy, &clip_rect, &clip_rect, nullptr, &rc_invalidated, SW_INVALIDATE);
 
-    const auto skip_update_now = dx == 0 && rgn_type == SIMPLEREGION && rc_invalidated == items_rect;
+    const auto skip_update_now = dx == 0 && rgn_type == SIMPLEREGION && rc_invalidated == clip_rect;
 
     for (const auto& rect : invalidate_after_scroll_window) {
         RedrawWindow(get_wnd(), &rect, nullptr, RDW_INVALIDATE);
@@ -194,41 +221,54 @@ void ListView::scroll(int position, bool b_horizontal, bool suppress_scroll_wind
         RedrawWindow(get_wnd(), nullptr, nullptr, RDW_UPDATENOW | RDW_ALLCHILDREN);
 }
 
-void ListView::scroll_from_scroll_bar(short scroll_bar_command, bool b_horizontal)
+void ListView::scroll_from_scroll_bar(short scroll_bar_command, ScrollAxis axis)
 {
-    const int scroll_bar_type = b_horizontal ? SB_HORZ : SB_VERT;
-    int& scroll_position = b_horizontal ? m_horizontal_scroll_position : m_scroll_position;
-
     SCROLLINFO si{};
     si.cbSize = sizeof(SCROLLINFO);
     si.fMask = SIF_ALL;
-    GetScrollInfo(get_wnd(), scroll_bar_type, &si);
+    GetScrollInfo(get_wnd(), scroll_axis_to_win32_type(axis), &si);
 
-    int pos{};
-    if (scroll_bar_command == SB_LINEDOWN)
-        pos = (std::min)(scroll_position + m_item_height, si.nMax);
-    else if (scroll_bar_command == SB_LINEUP)
-        pos = (std::max)(scroll_position - m_item_height, si.nMin);
-    else if (scroll_bar_command == SB_PAGEUP) {
-        pos = scroll_position - si.nPage;
+    const auto unclamped_current_target_position = m_smooth_scroll_helper->current_target(axis);
+    const auto current_target_position = std::clamp(unclamped_current_target_position, si.nMin, si.nMax);
 
-        if (scroll_position > si.nMin)
-            pos += get_stuck_group_headers_height();
-    } else if (scroll_bar_command == SB_PAGEDOWN) {
-        pos = scroll_position + si.nPage;
-        pos -= get_stuck_group_headers_height(std::min(si.nMax, pos));
-    } else if (scroll_bar_command == SB_THUMBTRACK)
-        pos = si.nTrackPos;
-    else if (scroll_bar_command == SB_THUMBPOSITION)
-        pos = si.nTrackPos;
-    else if (scroll_bar_command == SB_BOTTOM)
-        pos = si.nMax;
-    else if (scroll_bar_command == SB_TOP)
-        pos = si.nMin;
-    else // SB_ENDSCROLL
-        return;
+    switch (scroll_bar_command) {
+    case SB_LINEDOWN:
+        delta_scroll(m_item_height, axis);
+        break;
+    case SB_LINEUP:
+        delta_scroll(-m_item_height, axis);
+        break;
+    case SB_PAGEUP: {
+        int delta = -gsl::narrow_cast<int>(si.nPage);
 
-    scroll(pos, b_horizontal);
+        if (axis == ScrollAxis::Vertical && current_target_position > si.nMin)
+            delta += get_stuck_group_headers_height(current_target_position);
+
+        delta_scroll(delta, axis);
+        break;
+    }
+    case SB_PAGEDOWN: {
+        int delta = gsl::narrow_cast<int>(si.nPage);
+
+        if (axis == ScrollAxis::Vertical)
+            delta -= get_stuck_group_headers_height(std::min(si.nMax, current_target_position + delta));
+
+        delta_scroll(delta, axis);
+        break;
+    }
+    case SB_THUMBTRACK:
+    case SB_THUMBPOSITION:
+        absolute_scroll(si.nTrackPos, axis, false, 50.ms);
+        break;
+    case SB_BOTTOM:
+        absolute_scroll(si.nMax, axis);
+        break;
+    case SB_TOP:
+        absolute_scroll(si.nMin, axis);
+        break;
+    default:
+        break;
+    }
 }
 
 int ListView::get_items_viewport_height() const
@@ -239,6 +279,8 @@ int ListView::get_items_viewport_height() const
 
 void ListView::update_vertical_scroll_info(bool redraw, std::optional<int> new_vertical_position)
 {
+    m_smooth_scroll_helper->abandon_animation(ScrollAxis::Vertical, !new_vertical_position);
+
     const auto old_scroll_position = m_scroll_position;
 
     SCROLLINFO scroll{};
@@ -258,6 +300,8 @@ void ListView::update_vertical_scroll_info(bool redraw, std::optional<int> new_v
 
 void ListView::update_horizontal_scroll_info(bool redraw)
 {
+    m_smooth_scroll_helper->abandon_animation(ScrollAxis::Horizontal);
+
     auto rc = get_items_rect();
 
     const auto old_scroll_position = m_horizontal_scroll_position;
@@ -270,7 +314,7 @@ void ListView::update_horizontal_scroll_info(bool redraw)
     horizontal_si.nMax = m_autosize ? 0 : (cx ? cx - 1 : 0);
     horizontal_si.nPage = m_autosize ? 0 : wil::rect_width(rc);
     bool b_old_show = (GetWindowLongPtr(get_wnd(), GWL_STYLE) & WS_HSCROLL) != 0;
-    ;
+
     m_horizontal_scroll_position = SetScrollInfo(get_wnd(), SB_HORZ, &horizontal_si, redraw);
 
     bool b_show = (GetWindowLongPtr(get_wnd(), GWL_STYLE) & WS_HSCROLL) != 0;

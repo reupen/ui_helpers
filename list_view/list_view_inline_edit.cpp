@@ -232,6 +232,9 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<size_t>& indices,
         m_timer_inline_edit = false;
     }
 
+    m_smooth_scroll_helper->abandon_animation(ScrollAxis::Vertical);
+    m_smooth_scroll_helper->abandon_animation(ScrollAxis::Horizontal);
+
     const auto start_visible = is_fully_visible(indices[0]);
     const auto end_visible = is_fully_visible(indices[indices_count - 1]);
 
@@ -250,7 +253,7 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<size_t>& indices,
             new_scroll_position = get_item_position(indices[0]);
         }
 
-        scroll(new_scroll_position);
+        absolute_scroll(new_scroll_position, ScrollAxis::Vertical, true);
     }
 
     int x;
@@ -282,10 +285,10 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<size_t>& indices,
     if (!m_autosize
         && ((x - m_horizontal_scroll_position < 0) || x + cx - m_horizontal_scroll_position > rc_items.right)) {
         if (x - m_horizontal_scroll_position < 0) {
-            scroll(x, true);
+            absolute_scroll(x, ScrollAxis::Horizontal, true);
         } else if (x + cx - m_horizontal_scroll_position > rc_items.right) {
             const int x_right = x + cx - rc_items.right;
-            scroll(cx > rc_items.right ? x : x_right, true);
+            absolute_scroll(cx > rc_items.right ? x : x_right, ScrollAxis::Horizontal, true);
         }
     }
 
