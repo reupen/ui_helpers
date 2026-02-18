@@ -2,6 +2,7 @@
 
 #include "scroll.h"
 
+#include "dcomp_utils.h"
 #include "dxgi_utils.h"
 
 using namespace std::chrono_literals;
@@ -134,16 +135,18 @@ void SmoothScrollHelper::start_timer_thread()
     m_timer_thread = std::jthread([this](std::stop_token stop_token) {
         mmh::set_thread_description(GetCurrentThread(), thread_name.c_str());
 
-        wil::com_ptr<IDXGIOutput> dxgi_output;
+        dcomp::DcompApi dcomp_api;
+        wil::com_ptr<IDXGIOutput> primary_output;
 
-        try {
-            const auto dxgi_factory = dxgi::create_dxgi_factory();
-
-            dxgi_output = dxgi::find_output_by_wnd(dxgi_factory.get(), m_wnd);
-        } catch (const wil::ResultException&) {
+        if (!dcomp_api.has_wait_for_composition_clock() && mmh::is_windows_8_or_newer()) {
+            try {
+                const auto dxgi_factory = dxgi::create_dxgi_factory();
+                primary_output = dxgi::get_primary_output(dxgi_factory);
+            } catch (const wil::ResultException&) {
 #ifdef _DEBUG
-            LOG_CAUGHT_EXCEPTION();
+                LOG_CAUGHT_EXCEPTION();
 #endif
+            }
         }
 
         std::optional<MMRESULT> time_begin_period_result;
@@ -153,39 +156,52 @@ void SmoothScrollHelper::start_timer_thread()
                 timeEndPeriod(1);
         });
 
-        auto last_now = std::chrono::high_resolution_clock::now();
+        auto last_vblank_time_point = std::chrono::high_resolution_clock::now() - 16ms;
 
         while (!stop_token.stop_requested()) {
-            uint32_t elapsed_time{};
+            const auto second_last_vblank_time_point = last_vblank_time_point;
 
-            if (m_timer_active.load(std::memory_order_acquire)) {
-                if (dxgi_output) {
-                    [[maybe_unused]] const auto hr = dxgi_output->WaitForVBlank();
+            if (dcomp_api.has_wait_for_composition_clock()) {
+                const auto dcomp_status = dcomp_api.wait_for_composition_clock(0, nullptr, 50);
 #ifdef _DEBUG
-                    LOG_IF_FAILED(hr);
+                LOG_IF_NTSTATUS_FAILED(dcomp_status);
 #endif
-                }
-
-                if (stop_token.stop_requested())
-                    return;
-
-                SendMessageTimeout(m_wnd, m_message_id, 0, 0, SMTO_BLOCK, 50, nullptr);
-
-                auto now = std::chrono::high_resolution_clock::now();
-                elapsed_time = gsl::narrow_cast<uint32_t>(std::clamp((now - last_now) / 1ms, 0ll, 16ll));
-                last_now = now;
+            } else if (primary_output) {
+                [[maybe_unused]] const auto hr = primary_output->WaitForVBlank();
+#ifdef _DEBUG
+                LOG_IF_FAILED(hr);
+#endif
+            } else {
+                [[maybe_unused]] const auto hr = DwmFlush();
+#ifdef _DEBUG
+                LOG_IF_FAILED(hr);
+#endif
             }
 
             if (stop_token.stop_requested())
                 return;
 
-            if (elapsed_time >= 10)
+            const auto vblank_time_point = std::chrono::high_resolution_clock::now();
+            const auto vblank_gap_ms = (vblank_time_point - last_vblank_time_point) / 1ms;
+            last_vblank_time_point = vblank_time_point;
+
+            if (m_timer_active.load(std::memory_order_acquire))
+                SendMessageTimeout(m_wnd, m_message_id, 0, 0, SMTO_BLOCK, 50, nullptr);
+
+            if (stop_token.stop_requested())
+                return;
+
+            if (vblank_gap_ms >= 10)
                 continue;
 
             if (!time_begin_period_result)
                 time_begin_period_result = timeBeginPeriod(1);
 
-            Sleep(16 - elapsed_time);
+            auto now = std::chrono::high_resolution_clock::now();
+            const auto time_since_second_last_vblank
+                = gsl::narrow_cast<uint32_t>(std::clamp((now - second_last_vblank_time_point) / 1ms, 0ll, 16ll));
+
+            Sleep(16 - time_since_second_last_vblank);
         }
     });
 }
