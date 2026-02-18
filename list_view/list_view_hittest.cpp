@@ -25,14 +25,14 @@ void ListView::hit_test_ex(POINT pt_client, HitTestResult& result, bool exclude_
     }
 
     if (pt_client.y < rc_item_area.top + (exclude_stuck_headers ? get_stuck_group_headers_height() : 0)) {
-        result.index = get_first_unobscured_item();
+        result.index = get_first_unobscured_item(false);
         result.insertion_index = result.index;
         result.category = HitTestCategory::AboveViewport;
         return;
     }
 
     if (pt_client.y >= rc_item_area.bottom) {
-        result.index = get_last_unobscured_item();
+        result.index = get_last_unobscured_item(false);
         result.insertion_index = result.index;
         result.category = HitTestCategory::BelowViewport;
         return;
@@ -74,7 +74,7 @@ void ListView::hit_test_ex(POINT pt_client, HitTestResult& result, bool exclude_
 
         result.index = item_index > 0 ? item_index - 1 : item_index;
         result.insertion_index
-            = vertical_hit_test_result.is_on_stuck_group_header ? get_first_unobscured_item() : item_index;
+            = vertical_hit_test_result.is_on_stuck_group_header ? get_first_unobscured_item(false) : item_index;
         result.category = HitTestCategory::NotOnItem;
         return;
     }
@@ -85,7 +85,7 @@ void ListView::hit_test_ex(POINT pt_client, HitTestResult& result, bool exclude_
         result.category = HitTestCategory::OnGroupHeader;
         result.index = vertical_hit_test_result.item_leftmost;
         result.insertion_index
-            = vertical_hit_test_result.is_on_stuck_group_header ? get_first_unobscured_item() : result.index;
+            = vertical_hit_test_result.is_on_stuck_group_header ? get_first_unobscured_item(false) : result.index;
         result.group_level = vertical_hit_test_result.group_index;
 
         assert(result.group_level < m_group_count);
@@ -105,9 +105,9 @@ void ListView::hit_test_ex(POINT pt_client, HitTestResult& result, bool exclude_
     result.category = HitTestCategory::NotOnItem;
 }
 
-ListView::ItemVisibility ListView::get_item_visibility(size_t index)
+ListView::ItemVisibility ListView::get_item_visibility(size_t index, bool use_target_position) const
 {
-    const auto scroll_position = m_smooth_scroll_helper->current_target(ScrollAxis::Vertical);
+    const auto scroll_position = get_scroll_position(ScrollAxis::Vertical, use_target_position);
     const auto item_area_height = get_item_area_height();
     const auto item_start_position = get_item_position(index);
     const auto item_end_position = get_item_position_bottom(index);
@@ -144,16 +144,17 @@ bool ListView::is_fully_visible(size_t index)
     return get_item_visibility(index) == ItemVisibility::FullyVisible;
 }
 
-int ListView::get_last_unobscured_item()
+int ListView::get_last_unobscured_item(bool use_target_position)
 {
     if (!m_items.size())
         return 0;
 
     const auto item_area_height = get_item_area_height();
-    const auto vertical_hit_test_result = underlying_items_vertical_hit_test(m_scroll_position + item_area_height);
+    const auto scroll_position = get_scroll_position(ScrollAxis::Vertical, use_target_position);
+    const auto vertical_hit_test_result = underlying_items_vertical_hit_test(scroll_position + item_area_height);
 
     const int index = vertical_hit_test_result.item_leftmost;
-    const auto item_visibility = get_item_visibility(index);
+    const auto item_visibility = get_item_visibility(index, use_target_position);
 
     if (item_visibility == ItemVisibility::BelowViewport || item_visibility == ItemVisibility::ObscuredBelow)
         return (std::max)(0, index - 1);
@@ -167,17 +168,18 @@ int ListView::get_first_or_previous_visible_item(std::optional<int> scroll_posit
     return get_item_at_or_before(resolved_scroll_position + get_stuck_group_headers_height(resolved_scroll_position));
 }
 
-int ListView::get_first_unobscured_item()
+int ListView::get_first_unobscured_item(bool use_target_position)
 {
     const auto item_count = gsl::narrow<int>(m_items.size());
     if (item_count == 0)
         return 0;
 
+    const auto scroll_position = get_scroll_position(ScrollAxis::Vertical, use_target_position);
     const auto vertical_hit_test_result
-        = underlying_items_vertical_hit_test(m_scroll_position + get_stuck_group_headers_height());
+        = underlying_items_vertical_hit_test(scroll_position + get_stuck_group_headers_height());
 
     const int index = vertical_hit_test_result.item_rightmost;
-    const auto item_visibility = get_item_visibility(index);
+    const auto item_visibility = get_item_visibility(index, use_target_position);
 
     if (item_visibility == ItemVisibility::AboveViewport || item_visibility == ItemVisibility::ObscuredAbove)
         return (std::min)(index + 1, item_count);

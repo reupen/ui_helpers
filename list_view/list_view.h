@@ -312,7 +312,7 @@ public:
     void hit_test_ex(POINT pt_client, HitTestResult& result, bool exclude_stuck_headers = false);
     void update_scroll_info(bool b_vertical = true, bool b_horizontal = true, bool redraw = true,
         std::optional<int> new_vertical_position = std::nullopt);
-    ItemVisibility get_item_visibility(size_t index);
+    ItemVisibility get_item_visibility(size_t index, bool use_target_position = true) const;
     bool is_partially_visible(size_t index);
     bool is_fully_visible(size_t index);
 
@@ -326,6 +326,14 @@ public:
 
     auto& get_scroll_position(ScrollAxis axis)
     {
+        return axis == ScrollAxis::Vertical ? m_scroll_position : m_horizontal_scroll_position;
+    }
+
+    auto get_scroll_position(ScrollAxis axis, bool use_target_position) const
+    {
+        if (use_target_position)
+            return m_smooth_scroll_helper->current_target(axis);
+
         return axis == ScrollAxis::Vertical ? m_scroll_position : m_horizontal_scroll_position;
     }
 
@@ -399,8 +407,8 @@ public:
     }
 
     [[nodiscard]] int get_first_or_previous_visible_item(std::optional<int> scroll_position = {});
-    int get_first_unobscured_item();
-    int get_last_unobscured_item();
+    int get_first_unobscured_item(bool use_target_position = true);
+    int get_last_unobscured_item(bool use_target_position = true);
     int get_default_item_height();
     int get_default_group_height();
 
