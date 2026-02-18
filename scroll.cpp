@@ -162,7 +162,7 @@ void SmoothScrollHelper::start_timer_thread()
             const auto second_last_vblank_time_point = last_vblank_time_point;
 
             if (dcomp_api.has_wait_for_composition_clock()) {
-                const auto dcomp_status = dcomp_api.wait_for_composition_clock(0, nullptr, 50);
+                [[maybe_unused]] const auto dcomp_status = dcomp_api.wait_for_composition_clock(0, nullptr, 50);
 #ifdef _DEBUG
                 LOG_IF_NTSTATUS_FAILED(dcomp_status);
 #endif
