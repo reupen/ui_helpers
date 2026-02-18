@@ -82,6 +82,7 @@
     </ClInclude>
     <ClInclude Include="scroll.h" />
     <ClInclude Include="dxgi_utils.h" />
+    <ClInclude Include="dcomp_utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="message_hook.cpp" />
@@ -178,6 +179,7 @@
     </ClCompile>
     <ClCompile Include="scroll.cpp" />
     <ClCompile Include="dxgi_utils.cpp" />
+    <ClCompile Include="dcomp_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />

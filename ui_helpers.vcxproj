@@ -155,6 +155,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="container_window.h" />
+    <ClInclude Include="dcomp_utils.h" />
     <ClInclude Include="dialog.h" />
     <ClInclude Include="direct_2d.h" />
     <ClInclude Include="direct_3d.h" />
@@ -193,6 +194,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="container_window.cpp" />
+    <ClCompile Include="dcomp_utils.cpp" />
     <ClCompile Include="dialog.cpp" />
     <ClCompile Include="direct_2d.cpp" />
     <ClCompile Include="direct_3d.cpp" />

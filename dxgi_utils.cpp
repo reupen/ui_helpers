@@ -60,4 +60,18 @@ wil::com_ptr<IDXGIOutput> find_output_by_wnd(const wil::com_ptr<IDXGIFactory1>& 
     return best_output;
 }
 
+wil::com_ptr<IDXGIOutput> get_primary_output(const wil::com_ptr<IDXGIFactory1>& dxgi_factory)
+{
+    wil::com_ptr<IDXGIAdapter1> adapter;
+    THROW_IF_FAILED(dxgi_factory->EnumAdapters1(0, &adapter));
+
+    wil::com_ptr<IDXGIOutput> output;
+    THROW_IF_FAILED(adapter->EnumOutputs(0, &output));
+
+    DXGI_OUTPUT_DESC desc{};
+    THROW_IF_FAILED(output->GetDesc(&desc));
+
+    return output;
+}
+
 } // namespace uih::dxgi
