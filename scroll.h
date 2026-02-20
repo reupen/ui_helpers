@@ -73,7 +73,7 @@ private:
     };
 
     struct ScrollState {
-        std::chrono::time_point<std::chrono::high_resolution_clock> start_time{};
+        std::chrono::time_point<std::chrono::steady_clock> start_time{};
         int start_position{};
         int target_delta{};
         Duration duration{default_duration};
@@ -100,7 +100,7 @@ private:
     void scroll(ScrollAxis axis);
 
     void update_state(ScrollAxis axis, int delta, bool accumulate, Duration duration,
-        std::chrono::time_point<std::chrono::high_resolution_clock> now);
+        std::chrono::time_point<std::chrono::steady_clock> now);
 
     int remaining_delta(ScrollAxis axis) const
     {

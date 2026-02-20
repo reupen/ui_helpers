@@ -13,7 +13,7 @@ void SmoothScrollHelper::absolute_scroll(ScrollAxis axis, int target_position, D
 {
     auto& state = axis_state(axis);
     const auto current_position = state.current_position();
-    const auto now = std::chrono::high_resolution_clock::now();
+    const auto now = std::chrono::steady_clock::now();
     update_state(axis, target_position - current_position, false, duration, now);
 
     const auto has_exiting_timer = m_timer_thread.has_value();
@@ -25,7 +25,7 @@ void SmoothScrollHelper::absolute_scroll(ScrollAxis axis, int target_position, D
 
 void SmoothScrollHelper::delta_scroll(ScrollAxis axis, int delta, Duration duration)
 {
-    const auto now = std::chrono::high_resolution_clock::now();
+    const auto now = std::chrono::steady_clock::now();
     update_state(axis, delta, true, duration, now);
 
     const auto has_exiting_timer = m_timer_thread.has_value();
@@ -75,7 +75,7 @@ void SmoothScrollHelper::scroll(ScrollAxis axis)
     auto& state = axis_state(axis);
     auto& scroll_state = *state.scroll_state;
 
-    const auto now = std::chrono::high_resolution_clock::now();
+    const auto now = std::chrono::steady_clock::now();
     const auto normalised_time = (now - scroll_state.start_time) / scroll_state.duration;
 
     const auto scroll_distance = scroll_state.target_delta;
@@ -101,7 +101,7 @@ void SmoothScrollHelper::scroll(ScrollAxis axis)
 }
 
 void SmoothScrollHelper::update_state(ScrollAxis axis, int delta, bool accumulate, Duration duration,
-    std::chrono::time_point<std::chrono::high_resolution_clock> now)
+    std::chrono::time_point<std::chrono::steady_clock> now)
 {
     auto& state = axis_state(axis);
     auto& scroll_state = state.scroll_state;
@@ -156,7 +156,7 @@ void SmoothScrollHelper::start_timer_thread()
                 timeEndPeriod(1);
         });
 
-        auto last_vblank_time_point = std::chrono::high_resolution_clock::now() - 16ms;
+        auto last_vblank_time_point = std::chrono::steady_clock::now() - 16ms;
 
         while (!stop_token.stop_requested()) {
             const auto second_last_vblank_time_point = last_vblank_time_point;
@@ -181,7 +181,7 @@ void SmoothScrollHelper::start_timer_thread()
             if (stop_token.stop_requested())
                 return;
 
-            const auto vblank_time_point = std::chrono::high_resolution_clock::now();
+            const auto vblank_time_point = std::chrono::steady_clock::now();
             const auto vblank_gap_ms = (vblank_time_point - last_vblank_time_point) / 1ms;
             last_vblank_time_point = vblank_time_point;
 
@@ -197,7 +197,7 @@ void SmoothScrollHelper::start_timer_thread()
             if (!time_begin_period_result)
                 time_begin_period_result = timeBeginPeriod(1);
 
-            auto now = std::chrono::high_resolution_clock::now();
+            auto now = std::chrono::steady_clock::now();
             const auto time_since_second_last_vblank
                 = gsl::narrow_cast<uint32_t>(std::clamp((now - second_last_vblank_time_point) / 1ms, 0ll, 16ll));
 
