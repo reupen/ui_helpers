@@ -9,11 +9,82 @@ using namespace std::chrono_literals;
 
 namespace uih {
 
+namespace {
+
+class FrameTimeAverager {
+public:
+    void add_frame(double frame_time)
+    {
+        m_sum -= m_frame_times[m_index];
+        m_frame_times[m_index] = frame_time;
+        m_sum += frame_time;
+
+        m_index = (m_index + 1) % num_frames;
+
+        if (m_count < num_frames)
+            ++m_count;
+    }
+
+    double get_average() const
+    {
+        if (m_count == 0)
+            return 0.;
+
+        return m_sum / m_count;
+    }
+
+private:
+    static constexpr size_t num_frames{25};
+
+    std::array<double, num_frames> m_frame_times{};
+    double m_sum{0.};
+    size_t m_index{};
+    size_t m_count{};
+};
+
+class FrameTimeMinimum {
+public:
+    void add_frame_time(double frame_time)
+    {
+        const double evicted = m_frame_times[m_index];
+        m_frame_times[m_index] = frame_time;
+        m_index = (m_index + 1) % num_frames;
+
+        if (m_count < num_frames)
+            ++m_count;
+
+        if (frame_time <= m_minimum)
+            m_minimum = frame_time;
+        else if (evicted == m_minimum)
+            update_minimum();
+    }
+
+    double get_minimum() const { return m_minimum; }
+
+private:
+    void update_minimum()
+    {
+        m_minimum = m_frame_times[0];
+
+        for (size_t i{1}; i < m_count; ++i)
+            m_minimum = std::min(m_minimum, m_frame_times[i]);
+    }
+
+    static constexpr size_t num_frames{10};
+
+    std::array<double, num_frames> m_frame_times{};
+    double m_minimum{std::numeric_limits<double>::max()};
+    size_t m_index{};
+    size_t m_count{};
+};
+
+} // namespace
+
 void SmoothScrollHelper::absolute_scroll(ScrollAxis axis, int target_position, Duration duration)
 {
     auto& state = axis_state(axis);
     const auto current_position = state.current_position();
-    const auto now = std::chrono::high_resolution_clock::now();
+    const auto now = std::chrono::steady_clock::now();
     update_state(axis, target_position - current_position, false, duration, now);
 
     const auto has_exiting_timer = m_timer_thread.has_value();
@@ -25,7 +96,7 @@ void SmoothScrollHelper::absolute_scroll(ScrollAxis axis, int target_position, D
 
 void SmoothScrollHelper::delta_scroll(ScrollAxis axis, int delta, Duration duration)
 {
-    const auto now = std::chrono::high_resolution_clock::now();
+    const auto now = std::chrono::steady_clock::now();
     update_state(axis, delta, true, duration, now);
 
     const auto has_exiting_timer = m_timer_thread.has_value();
@@ -75,7 +146,7 @@ void SmoothScrollHelper::scroll(ScrollAxis axis)
     auto& state = axis_state(axis);
     auto& scroll_state = *state.scroll_state;
 
-    const auto now = std::chrono::high_resolution_clock::now();
+    const auto now = std::chrono::steady_clock::now();
     const auto normalised_time = (now - scroll_state.start_time) / scroll_state.duration;
 
     const auto scroll_distance = scroll_state.target_delta;
@@ -101,7 +172,7 @@ void SmoothScrollHelper::scroll(ScrollAxis axis)
 }
 
 void SmoothScrollHelper::update_state(ScrollAxis axis, int delta, bool accumulate, Duration duration,
-    std::chrono::time_point<std::chrono::high_resolution_clock> now)
+    std::chrono::time_point<std::chrono::steady_clock> now)
 {
     auto& state = axis_state(axis);
     auto& scroll_state = state.scroll_state;
@@ -132,11 +203,18 @@ void SmoothScrollHelper::start_timer_thread()
     if (m_timer_thread)
         return;
 
+    if (m_shutdown_event)
+        m_shutdown_event.ResetEvent();
+    else
+        m_shutdown_event.create();
+
     m_timer_thread = std::jthread([this](std::stop_token stop_token) {
         mmh::set_thread_description(GetCurrentThread(), thread_name.c_str());
 
         dcomp::DcompApi dcomp_api;
         wil::com_ptr<IDXGIOutput> primary_output;
+        FrameTimeAverager frame_time_averager;
+        FrameTimeMinimum vblank_time_minimum;
 
         if (!dcomp_api.has_wait_for_composition_clock() && mmh::is_windows_8_or_newer()) {
             try {
@@ -149,59 +227,72 @@ void SmoothScrollHelper::start_timer_thread()
             }
         }
 
-        std::optional<MMRESULT> time_begin_period_result;
-
-        auto _ = wil::scope_exit([&] {
-            if (time_begin_period_result == TIMERR_NOERROR)
-                timeEndPeriod(1);
-        });
-
-        auto last_vblank_time_point = std::chrono::high_resolution_clock::now() - 16ms;
+        auto last_vblank_time_point = std::chrono::steady_clock::now() - 16ms;
 
         while (!stop_token.stop_requested()) {
-            const auto second_last_vblank_time_point = last_vblank_time_point;
+            double vblank_time_ms{};
 
-            if (dcomp_api.has_wait_for_composition_clock()) {
-                [[maybe_unused]] const auto dcomp_status = dcomp_api.wait_for_composition_clock(0, nullptr, 50);
+            const auto wait_for_vblank = [&] {
+                if (dcomp_api.has_wait_for_composition_clock()) {
+                    const auto event = m_shutdown_event.get();
+                    [[maybe_unused]] const auto dcomp_status
+                        = dcomp_api.wait_for_composition_clock(m_shutdown_event ? 1 : 0, &event, 50);
+
 #ifdef _DEBUG
-                LOG_IF_NTSTATUS_FAILED(dcomp_status);
+                    LOG_IF_NTSTATUS_FAILED(dcomp_status);
 #endif
-            } else if (primary_output) {
-                [[maybe_unused]] const auto hr = primary_output->WaitForVBlank();
+                } else if (primary_output) {
+                    [[maybe_unused]] const auto hr = primary_output->WaitForVBlank();
 #ifdef _DEBUG
-                LOG_IF_FAILED(hr);
+                    LOG_IF_FAILED(hr);
 #endif
-            } else {
-                [[maybe_unused]] const auto hr = DwmFlush();
+                } else {
+                    [[maybe_unused]] const auto hr = DwmFlush();
 #ifdef _DEBUG
-                LOG_IF_FAILED(hr);
+                    LOG_IF_FAILED(hr);
 #endif
+                }
+
+                const auto vblank_time_point = std::chrono::steady_clock::now();
+
+                vblank_time_ms = (vblank_time_point - last_vblank_time_point) / 1.ms;
+
+                if (vblank_time_ms > 1.)
+                    vblank_time_minimum.add_frame_time(vblank_time_ms);
+
+                last_vblank_time_point = vblank_time_point;
+            };
+
+            wait_for_vblank();
+
+            // Possibly this could happen in scenarios like the display being off or RDP being in use
+            const auto need_to_sleep = vblank_time_ms < 1.;
+
+            if (stop_token.stop_requested())
+                return;
+
+            if (m_timer_active.load(std::memory_order_acquire)) {
+                if (!need_to_sleep) {
+                    // Throttle if the average frame time is more than 50% of minimum time between vblanks
+                    const auto num_frames_to_skip = std::max(
+                        0, static_cast<int>(frame_time_averager.get_average() * 2 / vblank_time_minimum.get_minimum()));
+
+                    for (size_t index{}; index < num_frames_to_skip; ++index)
+                        wait_for_vblank();
+                }
+
+                const auto frame_start = std::chrono::steady_clock::now();
+                SendMessageTimeout(m_wnd, m_message_id, 0, 0, SMTO_BLOCK, 50, nullptr);
+                const auto frame_time = (std::chrono::steady_clock::now() - frame_start) / 1.ms;
+                frame_time_averager.add_frame(frame_time);
             }
 
             if (stop_token.stop_requested())
                 return;
 
-            const auto vblank_time_point = std::chrono::high_resolution_clock::now();
-            const auto vblank_gap_ms = (vblank_time_point - last_vblank_time_point) / 1ms;
-            last_vblank_time_point = vblank_time_point;
-
-            if (m_timer_active.load(std::memory_order_acquire))
-                SendMessageTimeout(m_wnd, m_message_id, 0, 0, SMTO_BLOCK, 50, nullptr);
-
-            if (stop_token.stop_requested())
-                return;
-
-            if (vblank_gap_ms >= 10)
-                continue;
-
-            if (!time_begin_period_result)
-                time_begin_period_result = timeBeginPeriod(1);
-
-            auto now = std::chrono::high_resolution_clock::now();
-            const auto time_since_second_last_vblank
-                = gsl::narrow_cast<uint32_t>(std::clamp((now - second_last_vblank_time_point) / 1ms, 0ll, 16ll));
-
-            Sleep(16 - time_since_second_last_vblank);
+            // Will typically sleep for longer in practice (as the usual Windows timer resolution is 15.6ms)
+            if (need_to_sleep)
+                Sleep(15);
         }
     });
 }
@@ -214,6 +305,11 @@ void SmoothScrollHelper::pause_timer_thread()
 
 void SmoothScrollHelper::stop_timer_thread()
 {
+    if (m_timer_thread) {
+        m_timer_thread->request_stop();
+        m_shutdown_event.SetEvent();
+    }
+
     m_timer_thread.reset();
 }
 

@@ -29,6 +29,7 @@ public:
 
     {
     }
+    ~SmoothScrollHelper() { stop_timer_thread(); }
 
     int current_target(ScrollAxis axis) const
     {
@@ -73,7 +74,7 @@ private:
     };
 
     struct ScrollState {
-        std::chrono::time_point<std::chrono::high_resolution_clock> start_time{};
+        std::chrono::time_point<std::chrono::steady_clock> start_time{};
         int start_position{};
         int target_delta{};
         Duration duration{default_duration};
@@ -100,7 +101,7 @@ private:
     void scroll(ScrollAxis axis);
 
     void update_state(ScrollAxis axis, int delta, bool accumulate, Duration duration,
-        std::chrono::time_point<std::chrono::high_resolution_clock> now);
+        std::chrono::time_point<std::chrono::steady_clock> now);
 
     int remaining_delta(ScrollAxis axis) const
     {
@@ -121,9 +122,10 @@ private:
     AxisState m_vertical_state{};
     AxisState m_horizontal_state{};
     std::function<void(ScrollAxis axis, int new_position)> m_handle_scroll;
-    std::optional<std::jthread> m_timer_thread;
     std::atomic<bool> m_timer_active{};
     bool m_shutdown_timer_active{};
+    wil::unique_event_nothrow m_shutdown_event;
+    std::optional<std::jthread> m_timer_thread;
 };
 
 } // namespace uih
