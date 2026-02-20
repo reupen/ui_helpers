@@ -203,6 +203,11 @@ void SmoothScrollHelper::start_timer_thread()
     if (m_timer_thread)
         return;
 
+    if (m_shutdown_event)
+        m_shutdown_event.ResetEvent();
+    else
+        m_shutdown_event.create();
+
     m_timer_thread = std::jthread([this](std::stop_token stop_token) {
         mmh::set_thread_description(GetCurrentThread(), thread_name.c_str());
 
@@ -229,7 +234,9 @@ void SmoothScrollHelper::start_timer_thread()
 
             const auto wait_for_vblank = [&] {
                 if (dcomp_api.has_wait_for_composition_clock()) {
-                    [[maybe_unused]] const auto dcomp_status = dcomp_api.wait_for_composition_clock(0, nullptr, 50);
+                    const auto event = m_shutdown_event.get();
+                    [[maybe_unused]] const auto dcomp_status
+                        = dcomp_api.wait_for_composition_clock(m_shutdown_event ? 1 : 0, &event, 50);
 
 #ifdef _DEBUG
                     LOG_IF_NTSTATUS_FAILED(dcomp_status);
@@ -298,6 +305,11 @@ void SmoothScrollHelper::pause_timer_thread()
 
 void SmoothScrollHelper::stop_timer_thread()
 {
+    if (m_timer_thread) {
+        m_timer_thread->request_stop();
+        m_shutdown_event.SetEvent();
+    }
+
     m_timer_thread.reset();
 }
 
