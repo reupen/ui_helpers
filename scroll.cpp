@@ -277,7 +277,7 @@ void SmoothScrollHelper::start_timer_thread()
                     const auto num_frames_to_skip = std::max(
                         0, static_cast<int>(frame_time_averager.get_average() * 2 / vblank_time_minimum.get_minimum()));
 
-                    for (size_t index{}; index < num_frames_to_skip; ++index)
+                    for (int index{}; index < num_frames_to_skip; ++index)
                         wait_for_vblank();
                 }
 
