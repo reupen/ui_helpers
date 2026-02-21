@@ -55,16 +55,17 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
 {
     auto _ = wil::SelectObject(dc, GetStockObject(DC_BRUSH));
 
-    wil::com_ptr<IDWriteBitmapRenderTarget> bitmap_render_target;
-    try {
-        bitmap_render_target = m_direct_write_context->create_bitmap_render_target(dc, 0, 0);
+    if (!m_bitmap_render_target) {
+        try {
+            m_bitmap_render_target = m_direct_write_context->create_bitmap_render_target(dc, 0, 0);
+        }
+        CATCH_LOG()
     }
-    CATCH_LOG()
 
     ColourData colours = render_get_colour_data();
     lv::RendererContext context
         = {colours, m_use_dark_mode, m_is_high_contrast_active, get_wnd(), dc, m_list_view_theme.get(),
-            m_items_view_theme.get(), m_items_text_format, m_group_text_format, bitmap_render_target};
+            m_items_view_theme.get(), m_items_text_format, m_group_text_format, m_bitmap_render_target};
 
     size_t highlight_index = get_highlight_item();
     size_t index_focus = get_focus_item();

@@ -1000,6 +1000,7 @@ private:
     std::optional<LOGFONT> m_items_log_font{};
     std::optional<LOGFONT> m_header_log_font{};
     direct_write::Context::Ptr m_direct_write_context;
+    wil::com_ptr<IDWriteBitmapRenderTarget> m_bitmap_render_target;
     std::optional<direct_write::TextFormat> m_items_text_format;
     mutable std::optional<int> m_space_width;
     std::optional<direct_write::TextFormat> m_header_text_format;
