@@ -321,7 +321,7 @@ public:
     void absolute_scroll(int new_position, ScrollAxis axis = ScrollAxis::Vertical, bool supress_smooth_scroll = false,
         SmoothScrollHelper::Duration duration = SmoothScrollHelper::default_duration);
     void delta_scroll(int delta, ScrollAxis axis = ScrollAxis::Vertical, bool supress_smooth_scroll = false);
-    void internal_scroll(int position, ScrollAxis axis = ScrollAxis::Vertical);
+    void internal_scroll(int new_position, ScrollAxis axis = ScrollAxis::Vertical);
     void scroll_from_scroll_bar(short scroll_bar_command, ScrollAxis axis = ScrollAxis::Vertical);
 
     auto& get_scroll_position(ScrollAxis axis)
@@ -1015,8 +1015,8 @@ private:
     size_t m_selecting_start{std::numeric_limits<size_t>::max()};
     size_t m_selecting_start_column{std::numeric_limits<size_t>::max()};
     HitTestResult m_lbutton_down_hittest;
-    int m_scroll_position{0};
-    int m_horizontal_scroll_position{0};
+    int m_scroll_position{};
+    int m_horizontal_scroll_position{};
     bool m_scroll_bar_update_in_progress{};
     bool m_use_smooth_scroll{};
     std::optional<SmoothScrollHelper> m_smooth_scroll_helper;

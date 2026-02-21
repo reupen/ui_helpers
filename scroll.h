@@ -12,6 +12,8 @@ constexpr auto scroll_axis_to_win32_type(ScrollAxis axis)
     return axis == ScrollAxis::Vertical ? SB_VERT : SB_HORZ;
 }
 
+int set_scroll_position(HWND wnd, ScrollAxis axis, int old_position, int new_position);
+
 class SmoothScrollHelper {
 public:
     using Duration = std::chrono::duration<double, std::milli>;
