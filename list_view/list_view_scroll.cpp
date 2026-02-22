@@ -118,7 +118,7 @@ void ListView::delta_scroll(int delta, ScrollAxis axis, bool supress_smooth_scro
     internal_scroll(get_scroll_position(axis) + delta, axis);
 }
 
-void ListView::internal_scroll(int position, ScrollAxis axis)
+void ListView::internal_scroll(int new_position, ScrollAxis axis)
 {
     if (!m_initialised)
         return;
@@ -126,15 +126,7 @@ void ListView::internal_scroll(int position, ScrollAxis axis)
     auto& scroll_position = get_scroll_position(axis);
     const int original_scroll_position = scroll_position;
 
-    SCROLLINFO scroll_info{};
-    scroll_info.cbSize = sizeof(SCROLLINFO);
-    scroll_info.fMask = SIF_POS;
-    scroll_info.nPos = position;
-
-    if (scroll_position == scroll_info.nPos)
-        return;
-
-    scroll_position = SetScrollInfo(get_wnd(), scroll_axis_to_win32_type(axis), &scroll_info, true);
+    scroll_position = set_scroll_position(get_wnd(), axis, original_scroll_position, new_position);
 
     if (scroll_position == original_scroll_position)
         return;
@@ -287,8 +279,10 @@ void ListView::update_vertical_scroll_info(bool redraw, std::optional<int> new_v
     scroll.cbSize = sizeof(SCROLLINFO);
     scroll.fMask = SIF_RANGE | SIF_PAGE | SIF_POS;
     scroll.nMin = 0;
+
     const auto count = m_items.size();
-    scroll.nMax = count ? get_item_group_bottom(count - 1) : 0;
+    scroll.nMax = count > 0 ? get_item_group_bottom(count - 1) : 0;
+
     scroll.nPage = get_items_viewport_height();
     scroll.nPos = new_vertical_position.value_or(m_scroll_position);
 
@@ -311,7 +305,7 @@ void ListView::update_horizontal_scroll_info(bool redraw)
     horizontal_si.cbSize = sizeof(SCROLLINFO);
     horizontal_si.fMask = SIF_RANGE | SIF_PAGE;
     horizontal_si.nMin = 0;
-    horizontal_si.nMax = m_autosize ? 0 : (cx ? cx - 1 : 0);
+    horizontal_si.nMax = m_autosize || cx == 0 ? 0 : cx - 1;
     horizontal_si.nPage = m_autosize ? 0 : wil::rect_width(rc);
     bool b_old_show = (GetWindowLongPtr(get_wnd(), GWL_STYLE) & WS_HSCROLL) != 0;
 

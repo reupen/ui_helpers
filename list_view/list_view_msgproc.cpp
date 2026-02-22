@@ -94,6 +94,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         m_items_text_format.reset();
         m_header_text_format.reset();
         m_group_text_format.reset();
+        m_bitmap_render_target.reset();
         m_direct_write_context.reset();
         m_drag_image_creator.reset();
         m_smooth_scroll_helper->shut_down();
