@@ -13,6 +13,8 @@ constexpr auto scroll_axis_to_win32_type(ScrollAxis axis)
 }
 
 int set_scroll_position(HWND wnd, ScrollAxis axis, int old_position, int new_position);
+int clamp_scroll_delta(HWND wnd, ScrollAxis axis, int delta);
+int clamp_scroll_position(HWND wnd, ScrollAxis axis, int position);
 
 class SmoothScrollHelper {
 public:
@@ -52,6 +54,9 @@ public:
 
     void on_message()
     {
+        if (!m_timer_active.load(std::memory_order_acquire))
+            return;
+
         assert(m_vertical_state.scroll_state || m_horizontal_state.scroll_state);
 
         if (m_vertical_state.scroll_state)
