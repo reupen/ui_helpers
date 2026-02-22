@@ -13,6 +13,8 @@ constexpr auto scroll_axis_to_win32_type(ScrollAxis axis)
 }
 
 int set_scroll_position(HWND wnd, ScrollAxis axis, int old_position, int new_position);
+int clamp_scroll_delta(HWND wnd, ScrollAxis axis, int delta);
+int clamp_scroll_position(HWND wnd, ScrollAxis axis, int position);
 
 class SmoothScrollHelper {
 public:

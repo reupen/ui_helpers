@@ -114,6 +114,44 @@ int set_scroll_position(HWND wnd, ScrollAxis axis, int old_position, int new_pos
     return actual_new_position;
 }
 
+int clamp_scroll_delta(HWND wnd, ScrollAxis axis, int delta)
+{
+    SCROLLINFO si{};
+    si.cbSize = sizeof(SCROLLINFO);
+    si.fMask = SIF_PAGE | SIF_RANGE | SIF_POS;
+    GetScrollInfo(wnd, scroll_axis_to_win32_type(axis), &si);
+
+    if (si.nPos + delta < si.nMin)
+        return si.nMin - si.nPos;
+
+    const auto page_size = gsl::narrow_cast<int>(si.nPage);
+    const auto adjusted_max = si.nMax - page_size + (page_size > 0 ? 1 : 0);
+
+    if (si.nPos + delta > adjusted_max)
+        return adjusted_max - si.nPos;
+
+    return delta;
+}
+
+int clamp_scroll_position(HWND wnd, ScrollAxis axis, int position)
+{
+    SCROLLINFO si{};
+    si.cbSize = sizeof(SCROLLINFO);
+    si.fMask = SIF_PAGE | SIF_RANGE;
+    GetScrollInfo(wnd, scroll_axis_to_win32_type(axis), &si);
+
+    if (position < si.nMin)
+        return si.nMin;
+
+    const auto page_size = gsl::narrow_cast<int>(si.nPage);
+    const auto adjusted_max = si.nMax - page_size + (page_size > 0 ? 1 : 0);
+
+    if (position > adjusted_max)
+        return adjusted_max;
+
+    return position;
+}
+
 void SmoothScrollHelper::absolute_scroll(ScrollAxis axis, int target_position, Duration duration)
 {
     auto& state = axis_state(axis);
