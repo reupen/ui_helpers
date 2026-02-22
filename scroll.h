@@ -54,6 +54,9 @@ public:
 
     void on_message()
     {
+        if (!m_timer_active.load(std::memory_order_acquire))
+            return;
+
         assert(m_vertical_state.scroll_state || m_horizontal_state.scroll_state);
 
         if (m_vertical_state.scroll_state)
