@@ -23,8 +23,11 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_CREATE:
         m_buffered_paint_initialiser.emplace();
         m_smooth_scroll_helper.emplace(
-            wnd, MSG_SMOOTH_SCROLL, SMOOTH_SCROLL_TIMER_ID, [this] { return m_scroll_position; },
-            [this] { return m_horizontal_scroll_position; },
+            wnd, MSG_SMOOTH_SCROLL, SMOOTH_SCROLL_TIMER_ID,
+            [this](ScrollAxis axis) {
+                return axis == ScrollAxis::Vertical ? m_scroll_position : m_horizontal_scroll_position;
+            },
+            [this](ScrollAxis axis, int position) { return clamp_scroll_position(get_wnd(), axis, position); },
             [this](ScrollAxis axis, int new_position) { internal_scroll(new_position, axis); });
 
         // For dark mode, the window needs to have the DarkMode_Explorer theme to get dark scroll bars,
