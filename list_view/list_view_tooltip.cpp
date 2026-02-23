@@ -345,7 +345,12 @@ std::optional<LRESULT> ListView::on_wm_notify_tooltip(LPNMHDR lpnm)
     case TTN_SHOW: {
         m_is_tooltip_visible = true;
         reposition_tooltip();
-        DwmFlush();
+
+        // Suppress artefacts when the tooltip reappears after already being shown
+        if (const auto styles_ex = GetWindowLongPtr(m_wnd_tooltip, GWL_EXSTYLE); styles_ex & WS_EX_LAYERED) {
+            SetWindowLongPtr(m_wnd_tooltip, GWL_EXSTYLE, styles_ex & ~WS_EX_LAYERED);
+            SetWindowLongPtr(m_wnd_tooltip, GWL_EXSTYLE, styles_ex);
+        }
         return TRUE;
     }
     }
