@@ -13,22 +13,23 @@ constexpr auto scroll_axis_to_win32_type(ScrollAxis axis)
 }
 
 int set_scroll_position(HWND wnd, ScrollAxis axis, int old_position, int new_position);
-int clamp_scroll_delta(HWND wnd, ScrollAxis axis, int delta);
 int clamp_scroll_position(HWND wnd, ScrollAxis axis, int position);
 
 class SmoothScrollHelper {
 public:
+    using CurrentPositionFunc = std::function<int(ScrollAxis axis)>;
+    using ClampPositionFunc = std::function<int(ScrollAxis axis, int position)>;
+    using HandleScrollFunc = std::function<void(ScrollAxis axis, int new_position)>;
     using Duration = std::chrono::duration<double, std::milli>;
     static constexpr auto default_duration = Duration(250.);
 
-    SmoothScrollHelper(HWND wnd, uint32_t message_id, uint32_t timer_id, std::function<int()> current_vertical_position,
-        std::function<int()> current_horizontal_position,
-        std::function<void(ScrollAxis axis, int new_position)> handle_scroll)
+    SmoothScrollHelper(HWND wnd, uint32_t message_id, uint32_t timer_id, CurrentPositionFunc current_position,
+        ClampPositionFunc clamp_position, HandleScrollFunc handle_scroll)
         : m_wnd(wnd)
         , m_message_id(message_id)
         , m_timer_id(timer_id)
-        , m_vertical_state(std::move(current_vertical_position))
-        , m_horizontal_state(std::move(current_horizontal_position))
+        , m_current_position(std::move(current_position))
+        , m_clamp_position(std::move(clamp_position))
         , m_handle_scroll(std::move(handle_scroll))
 
     {
@@ -39,7 +40,7 @@ public:
     {
         auto& state = axis_state(axis);
         return state.scroll_state ? state.scroll_state->start_position + state.scroll_state->target_delta
-                                  : state.current_position();
+                                  : m_current_position(axis);
     }
 
     void absolute_scroll(ScrollAxis axis, int target_position, Duration duration = default_duration);
@@ -84,12 +85,12 @@ private:
         std::chrono::time_point<std::chrono::steady_clock> start_time{};
         int start_position{};
         int target_delta{};
+        int last_delta{};
         Duration duration{default_duration};
         EasingFunction easing_function{EasingFunction::CubicEaseOut};
     };
 
     struct AxisState {
-        std::function<int()> current_position;
         std::optional<ScrollState> scroll_state;
         std::optional<uint64_t> last_mouse_wheel_tick_count;
     };
@@ -113,7 +114,7 @@ private:
     int remaining_delta(ScrollAxis axis) const
     {
         auto& state = axis_state(axis);
-        return state.scroll_state->target_delta - state.current_position() + state.scroll_state->start_position;
+        return state.scroll_state->target_delta - m_current_position(axis) + state.scroll_state->start_position;
     }
 
     void start_timer_thread();
@@ -128,7 +129,9 @@ private:
     uint32_t m_timer_id{};
     AxisState m_vertical_state{};
     AxisState m_horizontal_state{};
-    std::function<void(ScrollAxis axis, int new_position)> m_handle_scroll;
+    CurrentPositionFunc m_current_position;
+    ClampPositionFunc m_clamp_position;
+    HandleScrollFunc m_handle_scroll;
     std::atomic<bool> m_timer_active{};
     bool m_shutdown_timer_active{};
     wil::unique_event_nothrow m_shutdown_event;

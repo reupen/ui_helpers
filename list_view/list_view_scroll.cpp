@@ -95,8 +95,7 @@ void ListView::absolute_scroll(
     int new_position, ScrollAxis axis, bool supress_smooth_scroll, SmoothScrollHelper::Duration duration)
 {
     if (m_use_smooth_scroll && !supress_smooth_scroll) {
-        const auto clamped_position = clamp_scroll_position(get_wnd(), axis, new_position);
-        m_smooth_scroll_helper->absolute_scroll(axis, clamped_position, duration);
+        m_smooth_scroll_helper->absolute_scroll(axis, new_position, duration);
         return;
     }
 
@@ -109,8 +108,7 @@ void ListView::absolute_scroll(
 void ListView::delta_scroll(int delta, ScrollAxis axis, bool supress_smooth_scroll)
 {
     if (m_use_smooth_scroll && !supress_smooth_scroll) {
-        const auto clamped_delta = clamp_scroll_delta(get_wnd(), axis, delta);
-        m_smooth_scroll_helper->delta_scroll(axis, clamped_delta);
+        m_smooth_scroll_helper->delta_scroll(axis, delta);
         return;
     }
 

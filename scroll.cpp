@@ -114,25 +114,6 @@ int set_scroll_position(HWND wnd, ScrollAxis axis, int old_position, int new_pos
     return actual_new_position;
 }
 
-int clamp_scroll_delta(HWND wnd, ScrollAxis axis, int delta)
-{
-    SCROLLINFO si{};
-    si.cbSize = sizeof(SCROLLINFO);
-    si.fMask = SIF_PAGE | SIF_RANGE | SIF_POS;
-    GetScrollInfo(wnd, scroll_axis_to_win32_type(axis), &si);
-
-    if (si.nPos + delta < si.nMin)
-        return si.nMin - si.nPos;
-
-    const auto page_size = gsl::narrow_cast<int>(si.nPage);
-    const auto adjusted_max = si.nMax - page_size + (page_size > 0 ? 1 : 0);
-
-    if (si.nPos + delta > adjusted_max)
-        return adjusted_max - si.nPos;
-
-    return delta;
-}
-
 int clamp_scroll_position(HWND wnd, ScrollAxis axis, int position)
 {
     SCROLLINFO si{};
@@ -154,8 +135,7 @@ int clamp_scroll_position(HWND wnd, ScrollAxis axis, int position)
 
 void SmoothScrollHelper::absolute_scroll(ScrollAxis axis, int target_position, Duration duration)
 {
-    auto& state = axis_state(axis);
-    const auto current_position = state.current_position();
+    const auto current_position = m_current_position(axis);
     const auto now = std::chrono::steady_clock::now();
     update_state(axis, target_position - current_position, false, duration, now);
 
@@ -234,7 +214,7 @@ void SmoothScrollHelper::scroll(ScrollAxis axis)
             scroll_state.start_position + std::max(scroll_state.target_delta, 0));
     m_handle_scroll(axis, bounded_new_scroll_position);
 
-    const auto updated_position = state.current_position();
+    const auto updated_position = m_current_position(axis);
 
     if (updated_position != new_scroll_position
         || updated_position == scroll_state.start_position + scroll_state.target_delta) {
@@ -248,18 +228,20 @@ void SmoothScrollHelper::update_state(ScrollAxis axis, int delta, bool accumulat
 {
     auto& state = axis_state(axis);
     auto& scroll_state = state.scroll_state;
-    auto current_position = state.current_position();
+    auto current_position = m_current_position(axis);
 
     if (!scroll_state || !accumulate) {
-        scroll_state.emplace(now - 8ms, current_position, delta, duration);
+        const auto clamped_delta = m_clamp_position(axis, current_position + delta) - current_position;
+        scroll_state.emplace(now - 8ms, current_position, clamped_delta, clamped_delta, duration);
         return;
     }
 
-    if (scroll_state->easing_function == EasingFunction::Linear) {
+    if (scroll_state->easing_function == EasingFunction::Linear && delta == scroll_state->last_delta) {
         scroll_state->target_delta += delta;
         scroll_state->duration = now - scroll_state->start_time + duration / 2.;
     } else {
         scroll_state->target_delta += scroll_state->start_position - current_position + delta;
+        scroll_state->last_delta = delta;
         scroll_state->start_position = current_position;
         scroll_state->duration = duration / 2.;
         scroll_state->start_time = now;
