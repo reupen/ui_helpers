@@ -92,27 +92,27 @@ void ListView::ensure_visible(size_t index, EnsureVisibleMode mode)
 }
 
 void ListView::absolute_scroll(
-    int new_position, ScrollAxis axis, bool supress_smooth_scroll, SmoothScrollHelper::Duration duration)
+    int new_position, ScrollAxis axis, bool suppress_smooth_scroll, SmoothScrollHelper::Duration duration)
 {
-    if (m_use_smooth_scroll && !supress_smooth_scroll) {
+    if (m_use_smooth_scroll && !suppress_smooth_scroll) {
         m_smooth_scroll_helper->absolute_scroll(axis, new_position, duration);
         return;
     }
 
-    if (supress_smooth_scroll)
+    if (suppress_smooth_scroll)
         m_smooth_scroll_helper->abandon_animation(axis);
 
     internal_scroll(new_position, axis);
 }
 
-void ListView::delta_scroll(int delta, ScrollAxis axis, bool supress_smooth_scroll)
+void ListView::delta_scroll(int delta, ScrollAxis axis, bool suppress_smooth_scroll)
 {
-    if (m_use_smooth_scroll && !supress_smooth_scroll) {
+    if (m_use_smooth_scroll && !suppress_smooth_scroll) {
         m_smooth_scroll_helper->delta_scroll(axis, delta);
         return;
     }
 
-    if (supress_smooth_scroll)
+    if (suppress_smooth_scroll)
         m_smooth_scroll_helper->abandon_animation(axis);
 
     internal_scroll(get_scroll_position(axis) + delta, axis);

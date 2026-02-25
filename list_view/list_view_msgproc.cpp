@@ -498,8 +498,9 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 
         exit_inline_edit();
         const auto axis = is_horizontal ? ScrollAxis::Horizontal : ScrollAxis::Vertical;
-        const auto supress_smooth_scroll = !m_smooth_scroll_helper->should_smooth_scroll_mouse_wheel(axis, wheel_delta);
-        delta_scroll(scroll_delta, axis, supress_smooth_scroll);
+        const auto suppress_smooth_scroll
+            = !m_smooth_scroll_helper->should_smooth_scroll_mouse_wheel(axis, wheel_delta);
+        delta_scroll(scroll_delta, axis, suppress_smooth_scroll);
         return 0;
     }
     case WM_GETDLGCODE:

@@ -318,9 +318,9 @@ public:
 
     void ensure_visible(size_t index, EnsureVisibleMode mode = EnsureVisibleMode::PreferCentringItem);
 
-    void absolute_scroll(int new_position, ScrollAxis axis = ScrollAxis::Vertical, bool supress_smooth_scroll = false,
+    void absolute_scroll(int new_position, ScrollAxis axis = ScrollAxis::Vertical, bool suppress_smooth_scroll = false,
         SmoothScrollHelper::Duration duration = SmoothScrollHelper::default_duration);
-    void delta_scroll(int delta, ScrollAxis axis = ScrollAxis::Vertical, bool supress_smooth_scroll = false);
+    void delta_scroll(int delta, ScrollAxis axis = ScrollAxis::Vertical, bool suppress_smooth_scroll = false);
     void internal_scroll(int new_position, ScrollAxis axis = ScrollAxis::Vertical);
     void scroll_from_scroll_bar(short scroll_bar_command, ScrollAxis axis = ScrollAxis::Vertical);
 
