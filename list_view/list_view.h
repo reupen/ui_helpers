@@ -267,7 +267,15 @@ public:
         m_allow_header_rearrange = b_allow_header_rearrange;
     }
 
-    void set_use_smooth_scroll(bool use_smooth_scroll) { m_use_smooth_scroll = use_smooth_scroll; }
+    void set_use_smooth_scroll(bool use_smooth_scroll)
+    {
+        m_use_smooth_scroll = use_smooth_scroll;
+
+        if (!m_use_smooth_scroll && m_smooth_scroll_helper) {
+            m_smooth_scroll_helper->abandon_animation(ScrollAxis::Horizontal);
+            m_smooth_scroll_helper->abandon_animation(ScrollAxis::Vertical);
+        }
+    }
     void set_use_dark_mode(bool use_dark_mode);
     void set_dark_edit_colours(COLORREF text_colour, COLORREF background_colour)
     {
