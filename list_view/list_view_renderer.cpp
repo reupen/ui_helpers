@@ -164,19 +164,14 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
             if (is_first_item || i == item_group_start) {
                 RECT rc_group_info = get_item_group_info_area_render_rect(item_group_start, rc_items);
 
-                if (rc_group_info.top >= rc_update.bottom)
-                    break;
+                if (rc_group_info.top < rc_update.bottom) {
+                    exclude_sticky_headers_from_clip_region(rc_group_info);
 
-                exclude_sticky_headers_from_clip_region(rc_group_info);
-
-                if (RectVisible(dc, &rc_group_info))
-                    m_renderer->render_group_info(context, item_group_start, rc_group_info);
+                    if (RectVisible(dc, &rc_group_info))
+                        m_renderer->render_group_info(context, item_group_start, rc_group_info);
+                }
             }
         }
-
-        bool is_selected = get_item_selected(i) || i == m_highlight_selected_item_index;
-
-        t_item_ptr item = m_items[i];
 
         RECT rc_item = {0 - m_horizontal_scroll_position + item_indentation,
             get_item_position(i) - m_scroll_position + rc_items.top, cx - m_horizontal_scroll_position,
@@ -188,7 +183,9 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
         exclude_sticky_headers_from_clip_region(rc_item);
 
         if (RectVisible(dc, &rc_item)) {
+            const auto is_selected = get_item_selected(i) || i == m_highlight_selected_item_index;
             const auto show_item_focus = index_focus == i && (b_window_focused || m_always_show_focus);
+
             std::vector<lv::RendererSubItem> sub_items;
 
             for (size_t column_index{}; column_index < m_columns.size(); ++column_index) {
