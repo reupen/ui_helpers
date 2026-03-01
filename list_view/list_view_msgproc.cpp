@@ -131,6 +131,9 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         RedrawWindow(wnd, nullptr, nullptr, RDW_INVALIDATE);
         break;
     case WM_SETCURSOR: {
+        if (reinterpret_cast<HWND>(wp) != wnd)
+            break;
+
         static const auto cursor = LoadCursor(nullptr, IDC_ARROW);
 
         if (cursor)
