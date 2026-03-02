@@ -47,13 +47,11 @@ public:
     virtual void render_group_info(const RendererContext& context, size_t index, RECT rc) {}
 
     virtual void render_group(const RendererContext& context, size_t item_index, size_t group_index,
-        std::string_view text, int indentation, RECT rc)
-        = 0;
+        std::string_view text, int indentation, RECT rc) = 0;
 
     virtual void render_item(const RendererContext& context, size_t index, std::vector<RendererSubItem> sub_items,
         int indentation, bool b_selected, bool b_window_focused, bool b_highlight, bool should_hide_focus,
-        bool b_focused, RECT rc)
-        = 0;
+        bool b_focused, RECT rc) = 0;
 
     virtual ~RendererBase() = default;
 };
