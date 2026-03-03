@@ -94,8 +94,8 @@ void ListView::ensure_visible(size_t index, EnsureVisibleMode mode)
 void ListView::absolute_scroll(
     int new_position, ScrollAxis axis, bool suppress_smooth_scroll, SmoothScrollHelper::Duration duration)
 {
-    const auto computed_suppress_smooth_scroll
-        = suppress_smooth_scroll || (m_use_smooth_scroll && !IsWindowVisible(get_wnd()));
+    const auto computed_suppress_smooth_scroll = suppress_smooth_scroll || m_is_smooth_scrolling_suspended
+        || (m_use_smooth_scroll && !IsWindowVisible(get_wnd()));
 
     if (m_use_smooth_scroll && !computed_suppress_smooth_scroll) {
         m_smooth_scroll_helper->absolute_scroll(axis, new_position, duration);
@@ -109,8 +109,8 @@ void ListView::absolute_scroll(
 
 void ListView::delta_scroll(int delta, ScrollAxis axis, bool suppress_smooth_scroll)
 {
-    const auto computed_suppress_smooth_scroll
-        = suppress_smooth_scroll || (m_use_smooth_scroll && !IsWindowVisible(get_wnd()));
+    const auto computed_suppress_smooth_scroll = suppress_smooth_scroll || m_is_smooth_scrolling_suspended
+        || (m_use_smooth_scroll && !IsWindowVisible(get_wnd()));
 
     if (m_use_smooth_scroll && !computed_suppress_smooth_scroll) {
         m_smooth_scroll_helper->delta_scroll(axis, delta);
