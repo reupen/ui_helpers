@@ -582,7 +582,15 @@ public:
     auto suspend_ensure_visible()
     {
         m_ensure_visible_suspended = true;
-        return gsl::finally([this]() { m_ensure_visible_suspended = false; });
+        return wil::scope_exit([&] { m_ensure_visible_suspended = false; });
+    }
+
+    auto suspend_smooth_scrolling()
+    {
+        m_smooth_scroll_helper->abandon_animation(ScrollAxis::Horizontal);
+        m_smooth_scroll_helper->abandon_animation(ScrollAxis::Vertical);
+        m_is_smooth_scrolling_suspended = true;
+        return wil::scope_exit([&] { m_is_smooth_scrolling_suspended = false; });
     }
 
     const char* get_item_text(size_t index, size_t column);
@@ -1027,6 +1035,7 @@ private:
     int m_horizontal_scroll_position{};
     bool m_scroll_bar_update_in_progress{};
     bool m_use_smooth_scroll{};
+    bool m_is_smooth_scrolling_suspended{};
     std::optional<SmoothScrollHelper> m_smooth_scroll_helper;
     bool m_ensure_visible_suspended{};
     size_t m_group_count{0};
