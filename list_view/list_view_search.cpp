@@ -2,197 +2,415 @@
 
 #include "list_view.h"
 
-namespace uih {
+using namespace wil::literals;
+using namespace uih::literals::spx;
 
-bool ListView::is_search_box_open()
+namespace uih::lv {
+
+namespace {
+
+struct ToolbarButtonConfig {
+    SearchBarIconId icon_id{};
+    int command_id{};
+    wil::zwstring_view label;
+};
+
+struct CreateToolbarResult {
+    wil::unique_hwnd wnd;
+    int width{};
+    int height{};
+};
+
+constexpr std::array left_commands{
+    ToolbarButtonConfig{SearchBarIconId::Up, ID_SEARCH_BAR_UP, L"Previous result"_zv},
+    ToolbarButtonConfig{SearchBarIconId::Down, ID_SEARCH_BAR_DOWN, L"Next result"_zv},
+};
+
+constexpr std::array right_commands{
+    ToolbarButtonConfig{SearchBarIconId::Close, ID_SEARCH_BAR_CLOSE, L"Close search bar"_zv},
+};
+
+template <size_t button_count>
+wil::unique_himagelist create_toolbar_imagelist(const SearchBarHost::Ptr& host,
+    const std::array<ToolbarButtonConfig, button_count>& buttons, int width, int height, bool is_dark)
 {
-    return m_search_editbox != nullptr;
+    wil::unique_himagelist imagelist(ImageList_Create(width, height, ILC_COLOR32, 0, 0));
+    ImageList_SetImageCount(imagelist.get(), gsl::narrow<int>(buttons.size()));
+
+    for (auto&& [index, button] : ranges::views::enumerate(buttons)) {
+        const auto icon = host->create_icon(button.icon_id, width, height, is_dark);
+
+        if (std::holds_alternative<wil::unique_hbitmap>(icon))
+            ImageList_Replace(
+                imagelist.get(), gsl::narrow<int>(index), std::get<wil::unique_hbitmap>(icon).get(), nullptr);
+        else
+            ImageList_ReplaceIcon(imagelist.get(), gsl::narrow<int>(index), std::get<wil::unique_hicon>(icon).get());
+    }
+
+    return imagelist;
 }
-void ListView::focus_search_box()
+
+bool is_imagelist_same_size(HIMAGELIST imagelist, int width, int height)
 {
-    if (m_search_editbox)
-        SetFocus(m_search_editbox);
+    int current_width{};
+    int current_height{};
+    ImageList_GetIconSize(imagelist, &current_width, &current_height);
+    return current_width == width && current_height == height;
 }
 
-void ListView::show_search_box(const char* label, bool b_focus)
+template <size_t button_count>
+CreateToolbarResult create_toolbar(HWND parent_wnd, uint32_t ctrl_id, HIMAGELIST imagelist,
+    const std::array<ToolbarButtonConfig, button_count>& buttons, bool is_dark)
 {
-    if (!m_search_editbox) {
-        m_search_editbox
-            = CreateWindowEx(WS_EX_CLIENTEDGE, WC_EDIT, L"" /*pfc::stringcvt::string_os_from_utf8("").get_ptr()*/,
-                WS_CHILD | WS_CLIPSIBLINGS | ES_LEFT | WS_VISIBLE | WS_CLIPCHILDREN | ES_AUTOHSCROLL | WS_TABSTOP, 0, 0,
-                0, 0, get_wnd(), HMENU(668), wil::GetModuleInstanceHandle(), nullptr);
+    wil::unique_hwnd wnd(CreateWindowEx(WS_EX_TOOLWINDOW, TOOLBARCLASSNAME, nullptr,
+        WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_TRANSPARENT
+            | TBSTYLE_TOOLTIPS | CCS_NORESIZE | CCS_NOPARENTALIGN | CCS_NODIVIDER,
+        0, 0, 0, 0, parent_wnd, reinterpret_cast<HMENU>(static_cast<size_t>(ctrl_id)), wil::GetModuleInstanceHandle(),
+        nullptr));
 
-        m_search_label = label;
+    SetWindowTheme(wnd.get(), is_dark ? L"DarkMode" : nullptr, nullptr);
 
-        SetWindowLongPtr(m_search_editbox, GWLP_USERDATA, (LPARAM)(this));
-        m_proc_search_edit
-            = (WNDPROC)SetWindowLongPtr(m_search_editbox, GWLP_WNDPROC, (LPARAM)(s_on_search_edit_message));
-        // SetWindowPos(m_wnd_inline_edit,HWND_TOP,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);
-        SendMessage(m_search_editbox, WM_SETFONT, (WPARAM)m_items_font.get(), MAKELONG(TRUE, 0));
-        SetWindowTheme(m_search_editbox, L"SearchBoxEdit", nullptr);
+    const unsigned icon_width = GetSystemMetrics(SM_CXSMICON);
+    const unsigned icon_height = GetSystemMetrics(SM_CYSMICON);
 
-        // m_search_box_theme = OpenThemeData(m_search_editbox, L"Edit");
-        /*    COLORREF cr = NULL;
-            GetThemeColor(m_theme, NULL, NULL, TMT_EDGEHIGHLIGHTCOLOR, &cr);
-            m_search_box_hot_brush = CreateSolidBrush(cr);
-            BYTE b = LOBYTE(HIWORD(cr)), g = HIBYTE(LOWORD(cr)), r = LOBYTE(LOWORD(cr));
-            r-=r/20;
-            g-=g/20;
-            b-=b/20;
-            //r = pfc::rint32(r*0.9);
-            //g = pfc::rint32(g*0.9);
-            //b = pfc::rint32(b*0.9);
-            cr = RGB(r, g, b);
-            m_search_box_nofocus_brush = CreateSolidBrush(cr);*/
-        // SendMessage(m_search_editbox, EM_SETMARGINS, EC_LEFTMARGIN, 0);
-        Edit_SetCueBannerText(m_search_editbox, pfc::stringcvt::string_wide_from_utf8(label).get_ptr());
-        if (b_focus)
-            SetFocus(m_search_editbox);
-        on_size();
+    std::array<TBBUTTON, button_count> tbbuttons{};
 
-#if 0
-            HTHEME thm = OpenThemeData(m_search_editbox, L"Edit");
-            size_t i;
-            for (i = TMT_RESERVEDLOW; i < TMT_RESERVEDHIGH; i++)
-            {
-                COLORREF cr = 0;
-                if (SUCCEEDED(GetThemeColor(thm, EP_BACKGROUND, EBS_NORMAL, i, &cr)) && cr)
-                    console::formatter() << i << " " << (unsigned)GetRValue(cr) << " " << (unsigned)GetGValue(cr) << " " << (unsigned)GetBValue(cr);
-                cr = 0;
-                if (SUCCEEDED(GetThemeColor(thm, EP_BACKGROUND, EBS_HOT, i, &cr)) && cr)
-                    console::formatter() << i << " " << (unsigned)GetRValue(cr) << " " << (unsigned)GetGValue(cr) << " " << (unsigned)GetBValue(cr);
-                cr = 0;
-                if (SUCCEEDED(GetThemeColor(thm, EP_BACKGROUND, EBS_FOCUSED, i, &cr)) && cr)
-                    console::formatter() << i << " " << (unsigned)GetRValue(cr) << " " << (unsigned)GetGValue(cr) << " " << (unsigned)GetBValue(cr);
+    for (auto&& [index, command, tbbutton] : ranges::views::zip(ranges::views::iota(int{}), buttons, tbbuttons)) {
+        tbbutton.iBitmap = index;
+        tbbutton.idCommand = command.command_id;
+        tbbutton.fsState = TBSTATE_ENABLED;
+        tbbutton.fsStyle = BTNS_AUTOSIZE | BTNS_BUTTON;
+        tbbutton.iString = reinterpret_cast<INT_PTR>(command.label.c_str());
+    }
+
+    SendMessage(wnd.get(), TB_SETEXTENDEDSTYLE, 0, TBSTYLE_EX_DRAWDDARROWS | TBSTYLE_EX_MIXEDBUTTONS);
+    SendMessage(wnd.get(), TB_SETBITMAPSIZE, 0, MAKELONG(icon_width, icon_height));
+
+    SendMessage(wnd.get(), TB_SETIMAGELIST, 0, reinterpret_cast<LPARAM>(imagelist));
+
+    SendMessage(wnd.get(), TB_BUTTONSTRUCTSIZE, sizeof(TBBUTTON), 0);
+    SendMessage(wnd.get(), TB_ADDBUTTONS, tbbuttons.size(), reinterpret_cast<LPARAM>(tbbuttons.data()));
+
+    SendMessage(wnd.get(), TB_AUTOSIZE, 0, 0);
+
+    RECT last_button_rect{};
+    SendMessage(wnd.get(), TB_GETITEMRECT, button_count - 1, reinterpret_cast<LPARAM>(&last_button_rect));
+
+    return {std::move(wnd), last_button_rect.right, last_button_rect.bottom};
+}
+
+void create_toolbar_and_imagelist(SearchBarToolbarState& toolbar, auto&& commands, HWND parent_wnd,
+    const SearchBarHost::Ptr& host, uint32_t control_id, int icon_width, int icon_height, bool is_dark)
+{
+    if (toolbar.wnd)
+        return;
+
+    if (!toolbar.imagelist || !is_imagelist_same_size(toolbar.imagelist.get(), icon_width, icon_height))
+        toolbar.imagelist = create_toolbar_imagelist(
+            host, std::forward<decltype(commands)>(commands), icon_width, icon_height, is_dark);
+
+    auto result = create_toolbar(
+        parent_wnd, control_id, toolbar.imagelist.get(), std::forward<decltype(commands)>(commands), is_dark);
+
+    toolbar.wnd = std::move(result.wnd);
+    toolbar.width = result.width;
+    toolbar.height = result.height;
+}
+
+} // namespace
+
+void SearchBar::create(HWND parent_wnd, const char* label, HFONT font, int item_height, bool is_dark)
+{
+    if (m_edit_control)
+        return;
+
+    m_parent_wnd = parent_wnd;
+    m_item_height = item_height;
+    m_is_dark = is_dark;
+
+    m_edit_control.reset(CreateWindowEx(WS_EX_CLIENTEDGE, WC_EDIT, L"",
+        WS_CHILD | WS_CLIPSIBLINGS | ES_LEFT | WS_CLIPCHILDREN | ES_AUTOHSCROLL | WS_TABSTOP, 0, 0, 0, 0, parent_wnd,
+        reinterpret_cast<HMENU>(IDC_SEARCH_BAR_EDIT), wil::GetModuleInstanceHandle(), nullptr));
+
+    if (!m_edit_control)
+        return;
+
+    m_search_label = label;
+
+    enhance_edit_control(m_edit_control.get());
+
+    subclass_window(
+        m_edit_control.get(), [&](auto wnd_proc, auto wnd, auto msg, auto wp, auto lp) -> std::optional<LRESULT> {
+            switch (msg) {
+            case WM_KILLFOCUS:
+                m_on_kill_focus(reinterpret_cast<HWND>(wp));
+                break;
+            case WM_SETFOCUS:
+                m_on_set_focus(reinterpret_cast<HWND>(wp));
+                break;
+            case WM_KEYDOWN:
+                m_prevent_wm_char_processing = false;
+
+                switch (wp) {
+                case VK_TAB:
+                    uih::handle_tab_down(wnd);
+                    return 0;
+                case VK_ESCAPE:
+                    destroy();
+                    return 0;
+                case VK_UP:
+                    m_search_bar_host->on_previous();
+                    return 0;
+                case VK_DOWN:
+                    m_search_bar_host->on_next();
+                    return 0;
+                case VK_F3:
+                    if (GetKeyState(VK_SHIFT) & 0x8000)
+                        m_search_bar_host->on_previous();
+                    else
+                        m_search_bar_host->on_next();
+                    return 0;
+                case VK_RETURN:
+                    m_prevent_wm_char_processing = true;
+                    m_search_bar_host->on_return();
+                    return 0;
+                }
+                break;
+            case WM_SYSKEYDOWN:
+                m_prevent_wm_char_processing = false;
+                break;
+            case WM_CHAR:
+                if (m_prevent_wm_char_processing) {
+                    m_prevent_wm_char_processing = false;
+                    return 0;
+                }
+                return {};
             }
-            CloseThemeData(thm);
-#endif
+            return {};
+        });
+
+    SendMessage(m_edit_control.get(), WM_SETFONT, (WPARAM)font, MAKELONG(TRUE, 0));
+    SetWindowTheme(m_edit_control.get(), is_dark ? L"DarkMode_CFD" : nullptr, nullptr);
+
+    Edit_SetCueBannerTextFocused(m_edit_control.get(), mmh::to_utf16(label).c_str(), true);
+
+    focus();
+
+    const unsigned icon_width = GetSystemMetrics(SM_CXSMICON);
+    const unsigned icon_height = GetSystemMetrics(SM_CYSMICON);
+
+    create_toolbar_and_imagelist(m_right_toolbar, right_commands, parent_wnd, m_search_bar_host,
+        IDC_SEARCH_BAR_RIGHT_TOOLBAR, icon_width, icon_height, is_dark);
+
+    create_toolbar_and_imagelist(m_left_toolbar, left_commands, parent_wnd, m_search_bar_host,
+        IDC_SEARCH_BAR_LEFT_TOOLBAR, icon_width, icon_height, is_dark);
+
+    invalidate();
+
+    if (!m_last_string.empty()) {
+        SetWindowText(m_edit_control.get(), m_last_string.c_str());
+        select_all();
     }
+
+    ShowWindow(m_edit_control.get(), SW_SHOWNORMAL);
+
+    if (m_left_toolbar.wnd)
+        ShowWindow(m_left_toolbar.wnd.get(), SW_SHOWNORMAL);
+
+    if (m_right_toolbar.wnd)
+        ShowWindow(m_right_toolbar.wnd.get(), SW_SHOWNORMAL);
 }
-void ListView::close_search_box(bool b_notify)
+
+void SearchBar::destroy()
 {
-    if (m_search_editbox) {
-        DestroyWindow(m_search_editbox);
-        m_search_editbox = nullptr;
-    }
-    /*if (m_search_box_theme)
-    {
-        CloseThemeData(m_search_box_theme);
-        m_search_box_theme = NULL;
-    }*/
+    if (!m_edit_control)
+        return;
+
+    invalidate();
+
+    m_edit_control.reset();
     m_search_label.reset();
-    on_size();
-    if (b_notify)
-        notify_on_search_box_close();
+    m_left_toolbar.wnd.reset();
+    m_right_toolbar.wnd.reset();
+    m_search_bar_host->on_close();
+
+    m_on_destroy();
 }
 
-void ListView::get_search_box_rect(LPRECT rc) const
+void SearchBar::shut_down()
 {
-    if (m_search_editbox) {
-        *rc = uih::get_relative_rect(m_search_editbox, get_wnd());
-        // rc->top -= 2;
-        // rc->bottom += 2;
-    } else {
-        GetClientRect(get_wnd(), rc);
-        rc->top = rc->bottom;
+    m_edit_control.reset();
+    m_search_label.reset();
+    m_left_toolbar.wnd.reset();
+    m_right_toolbar.wnd.reset();
+    m_left_toolbar.imagelist.reset();
+    m_right_toolbar.imagelist.reset();
+    m_on_destroy = {};
+}
+
+SearchBar::Metrics SearchBar::get_metrics() const
+{
+    if (!m_edit_control)
+        return {};
+
+    RECT rect{};
+    GetWindowRect(m_edit_control.get(), &rect);
+
+    const auto edit_height = static_cast<int>(wil::rect_height(rect));
+    const auto edit_width = static_cast<int>(wil::rect_width(rect));
+
+    const auto total_height = std::max(edit_height, m_left_toolbar.height) + get_vertical_padding() * 2;
+
+    return {edit_width, edit_height, total_height};
+}
+
+int SearchBar::get_total_height() const
+{
+    return get_metrics().total_height;
+}
+
+void SearchBar::reposition(int client_width, int client_height) const
+{
+    const auto vertical_padding = get_vertical_padding();
+    const auto horizontal_padding = get_horizontal_padding();
+    const auto max_edit_width = 300_spx;
+    const auto edit_width = std::clamp(
+        client_width - 2 * horizontal_padding - m_left_toolbar.width - m_right_toolbar.width, 0, max_edit_width);
+    const auto edit_height = m_edit_control ? m_item_height + horizontal_padding : 0;
+    const auto total_height = std::max(edit_height, m_right_toolbar.height) + vertical_padding * 2;
+    bool should_invalidate{};
+
+    if (m_edit_control) {
+        RECT old_edit_rect{};
+        GetWindowRect(m_edit_control.get(), &old_edit_rect);
+
+        SetWindowPos(m_edit_control.get(), nullptr, 0, client_height - (total_height + edit_height) / 2, edit_width,
+            edit_height, SWP_NOZORDER);
+
+        should_invalidate = wil::rect_width(old_edit_rect) != edit_width;
     }
+
+    auto reposition_toolbar = [&](const SearchBarToolbarState& toolbar, int x) {
+        if (toolbar.wnd)
+            SetWindowPos(toolbar.wnd.get(), nullptr, x, client_height - (total_height + toolbar.height) / 2,
+                toolbar.width, toolbar.height, SWP_NOZORDER);
+    };
+
+    reposition_toolbar(m_left_toolbar, horizontal_padding + edit_width);
+    reposition_toolbar(m_right_toolbar, client_width - m_right_toolbar.width);
+
+    if (should_invalidate)
+        invalidate();
 }
-int ListView::get_search_box_height() const
+
+void SearchBar::on_string_change()
 {
-    int ret = 0;
-    if (m_search_editbox) {
-        RECT rc;
-        get_search_box_rect(&rc);
-        ret = RECT_CY(rc);
-    }
-    return ret;
+    const auto new_string = get_window_text(m_edit_control.get());
+
+    if (new_string.size() == m_last_string.size() + 1
+        && wcsncmp(m_last_string.c_str(), new_string.c_str(), m_last_string.size()) == 0)
+        m_search_bar_host->on_char(gsl::narrow<wchar_t>(new_string[new_string.size() - 1]));
+    else
+        m_search_bar_host->on_string_replaced(new_string.c_str());
+
+    m_last_string = new_string;
 }
 
-LRESULT WINAPI ListView::s_on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcept
+void SearchBar::set_use_dark_mode(bool is_dark)
 {
-    ListView* p_this;
-    LRESULT rv;
+    if (m_is_dark == is_dark)
+        return;
 
-    p_this = reinterpret_cast<ListView*>(GetWindowLongPtr(wnd, GWLP_USERDATA));
+    m_is_dark = is_dark;
 
-    rv = p_this ? p_this->on_search_edit_message(wnd, msg, wp, lp) : DefWindowProc(wnd, msg, wp, lp);
-    ;
+    if (m_edit_control)
+        SetWindowTheme(m_edit_control.get(), is_dark ? L"DarkMode_CFD" : nullptr, nullptr);
 
-    return rv;
+    m_left_toolbar.imagelist.reset();
+    m_right_toolbar.imagelist.reset();
+
+    const unsigned cx = GetSystemMetrics(SM_CXSMICON);
+    const unsigned cy = GetSystemMetrics(SM_CYSMICON);
+
+    auto set_toolbar_dark_mode = [&](SearchBarToolbarState& toolbar, auto&& commands) {
+        toolbar.imagelist
+            = create_toolbar_imagelist(m_search_bar_host, std::forward<decltype(commands)>(commands), cx, cy, is_dark);
+        SendMessage(toolbar.wnd.get(), TB_SETIMAGELIST, 0, reinterpret_cast<LPARAM>(toolbar.imagelist.get()));
+        SetWindowTheme(toolbar.wnd.get(), is_dark ? L"DarkMode" : nullptr, nullptr);
+
+        if (const auto tooltip_wnd = reinterpret_cast<HWND>(SendMessage(toolbar.wnd.get(), TB_GETTOOLTIPS, 0, 0)))
+            SetWindowTheme(tooltip_wnd, is_dark ? L"DarkMode_Explorer" : nullptr, nullptr);
+    };
+
+    if (m_left_toolbar.wnd)
+        set_toolbar_dark_mode(m_left_toolbar, left_commands);
+
+    if (m_right_toolbar.wnd)
+        set_toolbar_dark_mode(m_right_toolbar, right_commands);
 }
 
-LRESULT ListView::on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
+void SearchBar::set_results_text(std::wstring_view new_text)
 {
-    switch (msg) {
-    case WM_KILLFOCUS:
-        break;
-    case WM_SETFOCUS:
-        break;
-    case WM_GETDLGCODE:
-        // return CallWindowProc(m_proc_search_edit,wnd,msg,wp,lp)|DLGC_WANTALLKEYS;
-        break;
-    case WM_KEYDOWN:
-        switch (wp) {
-        case VK_TAB: {
-            uih::handle_tab_down(wnd);
-        }
-        // return 0;
-        break;
-        case VK_ESCAPE:
-            close_search_box();
-            // notify_on_search_box_close();
-            return 0;
-        case VK_RETURN:
-            return 0;
-        }
-        break;
-    case WM_MOUSEMOVE: {
-        POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
-        update_search_box_hot_status(pt);
-    } break;
-#if 0
-        case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC dc = BeginPaint(wnd, &ps);
-            RECT rc;
-            GetClientRect(m_search_editbox, &rc);
-            HTHEME thm = OpenThemeData(m_search_editbox, L"SearchBox");//SearchBox
-            size_t step = rc.right / 10;
-            size_t i;
-            for (i = 0; i < 10; i++)
-            {
-                rc.left = i*step;
-                rc.right = (i + 1)*step;
-                FillRect(dc, &rc, GetSysColorBrush(COLOR_3DLIGHT));
-                DrawThemeBackground(thm, (HDC)dc, 1, i, &rc, NULL);
-            }
-            CloseThemeData(thm);
-            EndPaint(wnd, &ps);
-        }
-        return 0;
-#endif
-    }
-    return CallWindowProc(m_proc_search_edit, wnd, msg, wp, lp);
+    m_results_text = new_text;
+    invalidate();
 }
 
-void ListView::update_search_box_hot_status(const POINT& pt)
+void SearchBar::invalidate() const
 {
-    POINT pts = pt;
-    MapWindowPoints(get_wnd(), HWND_DESKTOP, &pts, 1);
+    RECT invalidate_rect{};
+    GetClientRect(m_parent_wnd, &invalidate_rect);
+    invalidate_rect.top = invalidate_rect.bottom - get_total_height();
 
-    bool b_in_wnd = WindowFromPoint(pts) == m_search_editbox;
-    bool b_focused = GetFocus() == m_search_editbox;
-    bool b_new_hot = b_in_wnd && !b_focused;
-
-    if (m_search_box_hot != b_new_hot) {
-        m_search_box_hot = b_new_hot;
-        if (m_search_box_hot)
-            SetCapture(m_search_editbox);
-        else if (GetCapture() == m_search_editbox)
-            ReleaseCapture();
-        RedrawWindow(m_search_editbox, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE);
-    }
+    RedrawWindow(m_parent_wnd, &invalidate_rect, nullptr, RDW_INVALIDATE);
 }
 
-} // namespace uih
+RECT SearchBar::render(HDC dc, int items_width, int items_bottom, const ColourData& colours,
+    const std::optional<direct_write::TextFormat>& text_format)
+{
+    const auto metrics = get_metrics();
+
+    RECT search_area_rect = RECT{0, items_bottom, items_width, items_bottom + metrics.total_height};
+
+    if (!RectVisible(dc, &search_area_rect))
+        return search_area_rect;
+
+    SetDCBrushColor(dc, m_is_dark ? colours.m_background : GetSysColor(COLOR_BTNFACE));
+    PatBlt(dc, search_area_rect.left, search_area_rect.top, wil::rect_width(search_area_rect), metrics.total_height,
+        PATCOPY);
+
+    if (!text_format)
+        return search_area_rect;
+
+    const auto horizontal_padding = get_horizontal_padding();
+
+    const auto text_available_width
+        = items_width - metrics.edit_width - m_left_toolbar.width - m_right_toolbar.width - horizontal_padding * 3;
+
+    if (text_available_width <= 0)
+        return search_area_rect;
+
+    const auto text_layout = text_format->create_text_layout(m_results_text,
+        direct_write::px_to_dip(static_cast<float>(text_available_width)),
+        direct_write::px_to_dip(static_cast<float>(metrics.total_height)), true);
+
+    const auto text_colour = m_is_dark ? colours.m_text : GetSysColor(COLOR_BTNTEXT);
+
+    const auto left = metrics.edit_width + m_left_toolbar.width + horizontal_padding * 2;
+    RECT text_rect{left, items_bottom, left + text_available_width, items_bottom + metrics.total_height};
+
+    text_layout.render_with_transparent_background(m_parent_wnd, dc, text_rect, text_colour);
+
+    return search_area_rect;
+}
+
+int SearchBar::get_horizontal_padding()
+{
+    return 4_spx;
+}
+
+int SearchBar::get_vertical_padding()
+{
+    return 2_spx;
+}
+
+} // namespace uih::lv

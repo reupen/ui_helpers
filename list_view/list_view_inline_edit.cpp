@@ -111,8 +111,10 @@ LRESULT ListView::on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
             PostMessage(get_wnd(), MSG_KILL_INLINE_EDIT, 0, 0);
         }
         invalidate_all();
+        on_kill_focus(reinterpret_cast<HWND>(wp));
         break;
     case WM_SETFOCUS:
+        on_set_focus(reinterpret_cast<HWND>(wp));
         break;
     case WM_GETDLGCODE:
         return CallWindowProc(m_proc_inline_edit, wnd, msg, wp, lp) | DLGC_WANTALLKEYS;
@@ -267,8 +269,6 @@ void ListView::create_inline_edit(const pfc::list_base_const_t<size_t>& indices,
         }
     }
 
-    RECT rc_playlist;
-    GetClientRect(get_wnd(), &rc_playlist);
     const auto rc_items = get_items_rect();
 
     int font_height = uih::get_font_height(m_items_font.get());

@@ -55,6 +55,14 @@ bool ListView::on_wm_keydown(WPARAM wp, LPARAM lp)
     case VK_DELETE:
         return notify_on_keyboard_keydown_remove();
     case VK_F3:
+        if (m_search_bar) {
+            if (GetKeyState(VK_SHIFT) & 0x8000)
+                m_search_bar.previous();
+            else
+                m_search_bar.next();
+
+            return true;
+        }
         return notify_on_keyboard_keydown_search();
     case 'A':
         if (process_ctrl_char_shortcuts && m_selection_mode == SelectionMode::Multiple) {
