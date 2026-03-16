@@ -18,12 +18,14 @@ public:
             redraw();
     }
 
-    void set_fill_themed(Mode mode, const WCHAR* pclass, int part, int state, bool is_dark, COLORREF fallback)
+    void set_fill_themed(Mode mode, const WCHAR* pclass, int part, int state, bool is_dark, COLORREF fallback,
+        std::optional<COLORREF> initial_background = {})
     {
         m_mode = mode;
         m_theme_state = state;
         m_theme_part = part;
         m_fill_colour = fallback;
+        m_initial_background = initial_background;
         m_theme_class = pclass;
         m_theme.reset();
         m_is_dark = is_dark;
@@ -93,13 +95,24 @@ private:
                 break;
             }
 
+            auto _ = wil::SelectObject(dc.get(), GetStockObject(DC_BRUSH));
+
+            const auto fill_rect = [&](auto colour) {
+                SetDCBrushColor(dc.get(), colour);
+                PatBlt(dc.get(), ps.rcPaint.left, ps.rcPaint.top, wil::rect_width(ps.rcPaint),
+                    wil::rect_height(ps.rcPaint), PATCOPY);
+            };
+
             if (m_mode == Mode::SolidFill || !m_theme
                 || !IsThemePartDefined(m_theme.get(), m_theme_part, m_theme_state)) {
-                const wil::unique_hbrush brush(CreateSolidBrush(m_fill_colour));
-                FillRect(dc.get(), &ps.rcPaint, brush.get());
+                fill_rect(m_fill_colour);
             } else if (m_mode == Mode::ThemeBackgroundFill) {
-                if (IsThemeBackgroundPartiallyTransparent(m_theme.get(), m_theme_part, m_theme_state))
-                    DrawThemeParentBackground(wnd, dc.get(), &client_rect);
+                if (IsThemeBackgroundPartiallyTransparent(m_theme.get(), m_theme_part, m_theme_state)) {
+                    if (m_initial_background)
+                        fill_rect(*m_initial_background);
+                    else
+                        DrawThemeParentBackground(wnd, dc.get(), &ps.rcPaint);
+                }
 
                 RECT background_rect = client_rect;
 
@@ -109,14 +122,12 @@ private:
 
                 if (FAILED(DrawThemeBackground(
                         m_theme.get(), dc.get(), m_theme_part, m_theme_state, &background_rect, &client_rect))) {
-                    const wil::unique_hbrush brush(CreateSolidBrush(m_fill_colour));
-                    FillRect(dc.get(), &ps.rcPaint, brush.get());
+                    fill_rect(m_fill_colour);
                 }
             } else if (m_mode == Mode::ThemeTextColourFill) {
                 COLORREF fill_colour = m_fill_colour;
                 GetThemeColor(m_theme.get(), m_theme_part, m_theme_state, TMT_TEXTCOLOR, &fill_colour);
-                const wil::unique_hbrush brush(CreateSolidBrush(fill_colour));
-                FillRect(dc.get(), &ps.rcPaint, brush.get());
+                fill_rect(fill_colour);
             }
 
             return 0;
@@ -127,12 +138,13 @@ private:
 
     Mode m_mode{Mode::SolidFill};
     std::wstring m_theme_class;
-    COLORREF m_fill_colour = NULL;
+    COLORREF m_fill_colour{};
+    std::optional<COLORREF> m_initial_background{};
     wil::unique_htheme m_theme;
-    int m_theme_part = NULL;
-    int m_theme_state = NULL;
-    int m_theme_colour_index = NULL;
-    std::unique_ptr<uih::ContainerWindow> m_container_window;
+    int m_theme_part{};
+    int m_theme_state{};
+    int m_theme_colour_index{};
+    std::unique_ptr<ContainerWindow> m_container_window;
     bool m_is_dark{};
 };
 

@@ -346,9 +346,6 @@ void lv::DefaultRenderer::render_item(const RendererContext& context, size_t ind
         if (FAILED(GetThemeColor(context.list_view_theme, LVP_LISTITEM, LISS_SELECTED, TMT_TEXTCOLOR, &cr_text)))
             cr_text = GetThemeSysColor(context.list_view_theme, b_selected ? COLOR_BTNTEXT : COLOR_WINDOWTEXT);
 
-        if (IsThemeBackgroundPartiallyTransparent(context.list_view_theme, LVP_LISTITEM, theme_state))
-            DrawThemeParentBackground(context.wnd, context.dc, &rc);
-
         RECT rc_background{rc};
         if (context.use_dark_mode || is_windows_11_22h2_or_newer())
             // Hide borders present on newer versions of Windows
