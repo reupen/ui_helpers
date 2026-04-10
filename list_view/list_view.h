@@ -1,5 +1,6 @@
 #pragma once
 
+#include "list_view_search.h"
 #include "list_view_renderer.h"
 #include "../scroll.h"
 #include "../drag_image_d2d.h"
@@ -21,7 +22,6 @@ public:
     static constexpr short IDC_HEADER = 1001;
     static constexpr short IDC_TOOLTIP = 1002;
     static constexpr short IDC_INLINEEDIT = 667;
-    static constexpr short IDC_SEARCHBOX = 668;
 
     static constexpr unsigned MSG_KILL_INLINE_EDIT = WM_USER + 3;
     static constexpr unsigned MSG_SMOOTH_SCROLL = WM_USER + 4;
@@ -363,9 +363,6 @@ public:
     [[nodiscard]] int get_item_area_height() const;
 
     [[nodiscard]] int get_items_top() const { return get_items_rect().top; }
-
-    void get_search_box_rect(LPRECT rc) const;
-    [[nodiscard]] int get_search_box_height() const;
 
     void invalidate_all(bool b_children = false, bool non_client = false);
     void invalidate_items(size_t index, size_t count) const;
@@ -822,10 +819,16 @@ protected:
 
     void clear_sort_column() { set_sort_column({}, false); }
 
-    void show_search_box(const char* label, bool b_focus = true);
-    void close_search_box(bool b_notify = true);
-    bool is_search_box_open();
-    void focus_search_box();
+    void show_search_box(const char* label);
+
+    void close_search_box() { m_search_bar.destroy(); }
+
+    void set_search_bar_host(lv::SearchBarHost::Ptr search_bar_host)
+    {
+        m_search_bar.set_host(std::move(search_bar_host));
+    }
+
+    void set_search_bar_results_text(std::wstring_view results_text) { m_search_bar.set_results_text(results_text); }
 
 private:
     struct ItemsFontConfig {
@@ -900,9 +903,6 @@ private:
     [[nodiscard]] virtual const char* get_drag_unit_singular() const { return "item"; }
     [[nodiscard]] virtual const char* get_drag_unit_plural() const { return "items"; }
 
-    virtual void notify_on_search_box_contents_change(const char* p_str) {}
-    virtual void notify_on_search_box_close() {}
-
     virtual bool notify_before_create_inline_edit(
         const pfc::list_base_const_t<size_t>& indices, size_t column, bool b_source_mouse)
     {
@@ -931,6 +931,8 @@ private:
     void process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat);
     std::optional<LRESULT> on_wm_notify_header(LPNMHDR lpnm);
     bool on_wm_keydown(WPARAM wp, LPARAM lp);
+    void on_kill_focus(HWND new_focus_wnd);
+    void on_set_focus(HWND old_focus_wnd);
 
     LRESULT on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 
@@ -951,10 +953,6 @@ private:
     void set_inline_edit_rect() const;
 
     void on_search_string_change(WCHAR c);
-
-    static LRESULT WINAPI s_on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcept;
-    LRESULT on_search_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
-    void update_search_box_hot_status(const POINT& pt);
 
     void reset_columns();
 
@@ -1100,12 +1098,8 @@ private:
     bool m_have_indent_column{};
     int m_root_group_indentation_amount{};
 
-    HWND m_search_editbox{nullptr};
-    WNDPROC m_proc_search_edit{nullptr};
-    pfc::string8 m_search_label;
-    bool m_search_box_hot{false};
-    // HTHEME m_search_box_theme;
-    // gdi_object_t<HBRUSH>::ptr_t m_search_box_hot_brush, m_search_box_nofocus_brush;
+    lv::SearchBar m_search_bar;
+
     bool m_is_high_contrast_active{};
 
     bool m_group_level_indentation_enabled{true};

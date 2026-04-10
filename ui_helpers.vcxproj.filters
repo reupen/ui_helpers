@@ -83,6 +83,9 @@
     <ClInclude Include="scroll.h" />
     <ClInclude Include="dxgi_utils.h" />
     <ClInclude Include="dcomp_utils.h" />
+    <ClInclude Include="list_view\list_view_search.h">
+      <Filter>List View</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="message_hook.cpp" />

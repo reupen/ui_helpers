@@ -51,7 +51,7 @@ int ListView::measure_text_width(size_t item_index, size_t column_index)
         initial_format ? *initial_format : text_style::FormatProperties{});
 }
 
-void ListView::render_items(HDC dc, const RECT& rc_update)
+void ListView::render_items(HDC dc, const RECT& paint_rect)
 {
     auto _ = wil::SelectObject(dc, GetStockObject(DC_BRUSH));
 
@@ -70,16 +70,29 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
     size_t highlight_index = get_highlight_item();
     size_t index_focus = get_focus_item();
     HWND wnd_focus = GetFocus();
-    const bool should_hide_focus
-        = (SendMessage(get_wnd(), WM_QUERYUISTATE, NULL, NULL) & UISF_HIDEFOCUS) != 0 && !m_always_show_focus;
+    const bool should_hide_focus = (SendMessage(get_wnd(), WM_QUERYUISTATE, NULL, NULL) & UISF_HIDEFOCUS) != 0
+        && !m_always_show_focus && (!m_search_bar || wnd_focus != m_search_bar.get_edit_wnd());
     bool b_window_focused = (wnd_focus == get_wnd()) || IsChild(get_wnd(), wnd_focus);
-
-    m_renderer->render_begin(context);
-    m_renderer->render_background(context, &rc_update);
-
     const auto rc_items = get_items_rect();
 
-    if (rc_update.bottom <= rc_update.top || rc_update.bottom < rc_items.top)
+    m_renderer->render_begin(context);
+
+    RECT items_paint_rect{};
+
+    if (m_search_bar) {
+        const auto search_area_rect
+            = m_search_bar.render(dc, rc_items.right, rc_items.bottom, context.colours, m_items_text_format);
+
+        SubtractRect(&items_paint_rect, &paint_rect, &search_area_rect);
+        ExcludeClipRect(
+            dc, search_area_rect.left, search_area_rect.top, search_area_rect.right, search_area_rect.bottom);
+    } else {
+        items_paint_rect = paint_rect;
+    }
+
+    m_renderer->render_background(context, &items_paint_rect);
+
+    if (items_paint_rect.bottom <= items_paint_rect.top || items_paint_rect.bottom < rc_items.top)
         return;
 
     size_t i;
@@ -90,14 +103,15 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
 
     bool b_show_group_info_area = get_show_group_info_area();
 
-    i = gsl::narrow<size_t>(
-        get_item_at_or_before((rc_update.top > rc_items.top ? rc_update.top - rc_items.top : 0) + m_scroll_position));
+    i = gsl::narrow<size_t>(get_item_at_or_before(
+        (items_paint_rect.top > rc_items.top ? items_paint_rect.top - rc_items.top : 0) + m_scroll_position));
 
     size_t i_start = i;
     size_t i_end = gsl::narrow<size_t>(get_item_at_or_after(
-        (rc_update.bottom > rc_items.top + 1 ? rc_update.bottom - rc_items.top - 1 : 0) + m_scroll_position));
+        (items_paint_rect.bottom > rc_items.top + 1 ? items_paint_rect.bottom - rc_items.top - 1 : 0)
+        + m_scroll_position));
 
-    const auto stuck_headers_height = rc_update.top > rc_items.top ? get_stuck_group_headers_height() : 0;
+    const auto stuck_headers_height = items_paint_rect.top > rc_items.top ? get_stuck_group_headers_height() : 0;
     bool has_excluded_stuck_headers{};
 
     auto exclude_sticky_headers_from_clip_region = [&](const RECT& render_area) {
@@ -140,7 +154,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
 
             const RECT rc = {x, y, x + cx, y + m_group_height};
 
-            if (rc.top >= rc_update.bottom)
+            if (rc.top >= items_paint_rect.bottom)
                 break;
 
             const auto indentation
@@ -164,7 +178,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
             if (is_first_item || i == item_group_start) {
                 RECT rc_group_info = get_item_group_info_area_render_rect(item_group_start, rc_items);
 
-                if (rc_group_info.top < rc_update.bottom) {
+                if (rc_group_info.top < items_paint_rect.bottom) {
                     exclude_sticky_headers_from_clip_region(rc_group_info);
 
                     if (RectVisible(dc, &rc_group_info))
@@ -177,7 +191,7 @@ void ListView::render_items(HDC dc, const RECT& rc_update)
             get_item_position(i) - m_scroll_position + rc_items.top, cx - m_horizontal_scroll_position,
             get_item_position(i) + get_item_height(i) - m_scroll_position + rc_items.top};
 
-        if (rc_item.top >= rc_update.bottom)
+        if (rc_item.top >= items_paint_rect.bottom)
             break;
 
         exclude_sticky_headers_from_clip_region(rc_item);

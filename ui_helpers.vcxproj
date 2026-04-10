@@ -170,6 +170,7 @@
     <ClInclude Include="emoji.h" />
     <ClInclude Include="list_view\list_view.h" />
     <ClInclude Include="list_view\list_view_renderer.h" />
+    <ClInclude Include="list_view\list_view_search.h" />
     <ClInclude Include="literals.h" />
     <ClInclude Include="ole.h" />
     <ClInclude Include="OLE\data_object.h" />

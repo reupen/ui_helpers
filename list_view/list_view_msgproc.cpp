@@ -30,6 +30,11 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             [this](ScrollAxis axis, int position) { return clamp_scroll_position(get_wnd(), axis, position); },
             [this](ScrollAxis axis, int new_position) { internal_scroll(new_position, axis); });
 
+        m_search_bar.on_kill_focus([&](HWND new_focus_wnd) { on_kill_focus(new_focus_wnd); });
+        m_search_bar.on_set_focus([&](HWND old_focus_wnd) { on_set_focus(old_focus_wnd); });
+
+        m_search_bar.on_destroy([&] { on_size(); });
+
         // For dark mode, the window needs to have the DarkMode_Explorer theme to get dark scroll bars,
         // but we also need access to DarkMode_ItemsView themes. To do this, a dummy window with a
         // different window theme is created.
@@ -101,6 +106,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         m_direct_write_context.reset();
         m_drag_image_creator.reset();
         m_smooth_scroll_helper->shut_down();
+        m_search_bar.shut_down();
         notify_on_destroy();
         return 0;
     case WM_NCDESTROY:
@@ -120,6 +126,27 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_MENUSELECT:
         notify_on_menu_select(wp, lp);
         break;
+    case WM_ERASEBKGND: {
+        const auto dc = reinterpret_cast<HDC>(wp);
+        const auto dc_wnd = WindowFromDC(dc);
+
+        if (dc_wnd == wnd)
+            return FALSE;
+
+        auto _ = wil::SelectObject(dc, GetStockObject(DC_BRUSH));
+
+        if (m_use_dark_mode) {
+            const auto colours = render_get_colour_data();
+            SetDCBrushColor(dc, colours.m_background);
+        } else {
+            SetDCBrushColor(dc, GetSysColor(COLOR_BTNFACE));
+        }
+
+        RECT client_rect{};
+        GetClientRect(wnd, &client_rect);
+        PatBlt(dc, 0, 0, client_rect.right, client_rect.bottom, PATCOPY);
+        return TRUE;
+    }
     case WM_PAINT: {
         PAINTSTRUCT ps{};
         const auto dc = wil::BeginPaint(wnd, &ps);
@@ -142,14 +169,10 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         return TRUE;
     }
     case WM_SETFOCUS:
-        invalidate_all();
-        if (!HWND(wp) || (HWND(wp) != wnd && !IsChild(wnd, HWND(wp))))
-            notify_on_set_focus(HWND(wp));
+        on_set_focus(reinterpret_cast<HWND>(wp));
         break;
     case WM_KILLFOCUS:
-        invalidate_all();
-        if (!HWND(wp) || (HWND(wp) != wnd && !IsChild(wnd, HWND(wp))))
-            notify_on_kill_focus(HWND(wp));
+        on_kill_focus(reinterpret_cast<HWND>(wp));
         break;
     case WM_MOUSEACTIVATE:
         if (GetFocus() != wnd)
@@ -228,12 +251,10 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                     }
                 }
             }
-        } else // if (hit_result.result != hit_test_)
-        {
+        } else if (hit_result.category != HitTestCategory::BelowViewport) {
             if (m_selection_mode != SelectionMode::SingleStrict)
                 set_selection_state(pfc::bit_array_true(), pfc::bit_array_false());
         }
-        // console::formatter() << hit_result.result ;
     }
         return 0;
     case WM_LBUTTONUP: {
@@ -333,7 +354,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
 
             set_focus_item(index);
-        } else if (m_selection_mode != SelectionMode::SingleStrict) {
+        } else if (hit_result.category != HitTestCategory::BelowViewport
+            && m_selection_mode != SelectionMode::SingleStrict) {
             set_selection_state(pfc::bit_array_true(), pfc::bit_array_false());
         }
         break;
@@ -462,9 +484,12 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
         HitTestResult hit_result;
         hit_test_ex(pt, hit_result);
-        if (notify_on_middleclick(hit_result.category == HitTestCategory::OnUnobscuredItem, hit_result.index))
-            return 0;
-    } break;
+
+        if (hit_result.category != HitTestCategory::BelowViewport)
+            notify_on_middleclick(hit_result.category == HitTestCategory::OnUnobscuredItem, hit_result.index);
+
+        return 0;
+    }
     case WM_MOUSEHWHEEL:
     case WM_MOUSEWHEEL: {
         const auto style = GetWindowLongPtr(get_wnd(), GWL_STYLE);
@@ -544,35 +569,23 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         return 0;
     case WM_COMMAND:
         switch (LOWORD(wp)) {
-        case IDC_INLINEEDIT:
+        case lv::ID_SEARCH_BAR_UP:
+            m_search_bar.previous();
+            break;
+        case lv::ID_SEARCH_BAR_DOWN:
+            m_search_bar.next();
+            break;
+        case lv::ID_SEARCH_BAR_CLOSE:
+            close_search_box();
+            break;
+        case lv::IDC_SEARCH_BAR_EDIT:
             switch (HIWORD(wp)) {
-            case EN_KILLFOCUS: {
-                HWND wnd_focus = GetFocus();
-                if (!HWND(wnd_focus) || (HWND(wnd_focus) != wnd && !IsChild(wnd, wnd_focus)))
-                    notify_on_kill_focus(wnd_focus);
+            case EN_CHANGE:
+                m_search_bar.on_string_change();
                 break;
             }
-            }
             break;
-        case IDC_SEARCHBOX:
-            switch (HIWORD(wp)) {
-            case EN_CHANGE: {
-                pfc::string8 text;
-                uih::get_window_text(reinterpret_cast<HWND>(lp), text);
-                notify_on_search_box_contents_change(text);
-            } break;
-            case EN_KILLFOCUS: {
-                RedrawWindow(HWND(lp), nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE);
-                HWND wnd_focus = GetFocus();
-                if (!HWND(wnd_focus) || (HWND(wnd_focus) != wnd && !IsChild(wnd, wnd_focus)))
-                    notify_on_kill_focus(wnd_focus);
-            } break;
-            case EN_SETFOCUS:
-                RedrawWindow(HWND(lp), nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE);
-                break;
-            };
-            break;
-        };
+        }
         break;
     case WM_CTLCOLOREDIT:
     case WM_CTLCOLORSTATIC: {
@@ -582,7 +595,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         if (!wnd_edit)
             break;
 
-        if (wnd_edit == m_wnd_inline_edit && m_use_dark_mode) {
+        if ((wnd_edit == m_wnd_inline_edit || wnd_edit == m_search_bar.get_edit_wnd()) && m_use_dark_mode) {
             SetTextColor(dc, m_dark_edit_text_colour);
             SetBkColor(dc, m_dark_edit_background_colour);
 
@@ -591,31 +604,14 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             }
             return reinterpret_cast<LPARAM>(m_edit_background_brush.get());
         }
-
-        if (wnd_edit == m_search_editbox) {
-            /*POINT pt;
-            GetMessagePos(&pt);
-            HWND wnd_focus = GetFocus();
-
-            bool b_hot = WindowFromPoint(pt) == m_search_editbox;*/
-            bool b_focused = GetFocus() == m_search_editbox;
-
-            if (b_focused)
-                return (LRESULT)GetSysColorBrush(COLOR_WINDOW);
-
-            if (m_search_box_hot)
-                return (LRESULT)GetSysColorBrush(
-                    COLOR_WINDOW); // m_search_box_hot_brush.get();//GetSysColorBrush(COLOR_BTNFACE);
-
-            return (LRESULT)GetSysColorBrush(IsThemeActive() && IsAppThemed()
-                    ? COLOR_BTNFACE
-                    : COLOR_WINDOW); // m_search_box_nofocus_brush.get();//GetSysColorBrush(COLOR_3DLIGHT);
-        }
         break;
     }
     case WM_NOTIFY: {
         const auto lpnm = reinterpret_cast<LPNMHDR>(lp);
-        if (m_wnd_header && lpnm->hwndFrom == m_wnd_header) {
+        if (lpnm->code == NM_TOOLTIPSCREATED) {
+            const auto lpnmttc = reinterpret_cast<LPNMTOOLTIPSCREATED>(lp);
+            SetWindowTheme(lpnmttc->hwndToolTips, m_use_dark_mode ? L"DarkMode_Explorer" : nullptr, nullptr);
+        } else if (m_wnd_header && lpnm->hwndFrom == m_wnd_header) {
             if (auto result = on_wm_notify_header(lpnm))
                 return *result;
         } else if (m_wnd_tooltip && lpnm->hwndFrom == m_wnd_tooltip) {
@@ -688,10 +684,11 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 } else {
                     px = pt;
                     ScreenToClient(wnd, &px);
-                    RECT rc;
-                    GetClientRect(wnd, &rc);
-                    if (!PtInRect(&rc, px))
-                        break;
+
+                    const auto items_rect = get_items_rect();
+
+                    if (!PtInRect(&items_rect, px))
+                        return 0;
                 }
             }
             if (notify_on_contextmenu(pt, from_keyboard))

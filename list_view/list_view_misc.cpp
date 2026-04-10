@@ -220,6 +220,18 @@ void ListView::set_sort_column(std::optional<size_t> index, bool b_direction)
     }
 }
 
+void ListView::show_search_box(const char* label)
+{
+    if (m_search_bar) {
+        m_search_bar.select_all();
+        m_search_bar.focus();
+        return;
+    }
+
+    m_search_bar.create(get_wnd(), label, m_items_font.get(), m_item_height, m_use_dark_mode);
+    on_size();
+}
+
 void ListView::set_autosize(bool b_val)
 {
     m_autosize = b_val;
@@ -262,44 +274,39 @@ void ListView::on_size(int cxd, int cyd, bool b_update_scroll)
 
     RECT rc{};
     GetClientRect(get_wnd(), &rc);
-    int cx = RECT_CX(rc);
+    int cx = wil::rect_width(rc);
 
-    auto old_search_height = get_search_box_height();
-    auto new_search_height = m_search_editbox ? m_item_height + scale_dpi_value(4) : 0;
+    m_search_bar.reposition(wil::rect_width(rc), wil::rect_height(rc));
 
-    if (m_search_editbox) {
-        SetWindowPos(m_search_editbox, nullptr, 0, 0, cx, new_search_height, SWP_NOZORDER);
-    }
+    const auto new_header_height = calculate_header_height();
 
-    auto new_header_height = calculate_header_height();
-    if (new_header_height != RECT_CY(rc_header) && m_wnd_header)
+    if (new_header_height != wil::rect_height(rc_header) && m_wnd_header)
         // Update height because affects scroll info
-        SetWindowPos(m_wnd_header, nullptr, -m_horizontal_scroll_position, new_search_height,
-            cx + m_horizontal_scroll_position, new_header_height, SWP_NOZORDER);
+        SetWindowPos(m_wnd_header, nullptr, -m_horizontal_scroll_position, 0, cx + m_horizontal_scroll_position,
+            new_header_height, SWP_NOZORDER);
 
     if (b_update_scroll)
         update_scroll_info();
 
-    if (m_autosize)
+    if (m_autosize) {
         update_column_sizes();
-    if (m_autosize)
         update_header();
+    }
 
     GetClientRect(get_wnd(), &rc);
     cx = RECT_CX(rc);
 
     // Reposition again due to potential vertical scrollbar changes
     if (m_wnd_header)
-        SetWindowPos(m_wnd_header, nullptr, -m_horizontal_scroll_position, new_search_height,
-            cx + m_horizontal_scroll_position, new_header_height, SWP_NOZORDER);
+        SetWindowPos(m_wnd_header, nullptr, -m_horizontal_scroll_position, 0, cx + m_horizontal_scroll_position,
+            new_header_height, SWP_NOZORDER);
 
-    if (m_search_editbox) {
-        SetWindowPos(m_search_editbox, nullptr, 0, 0, cx, new_search_height, SWP_NOZORDER);
-    }
+    m_search_bar.reposition(wil::rect_width(rc), wil::rect_height(rc));
 
-    if (new_header_height != RECT_CY(rc_header))
+    if (new_header_height != wil::rect_height(rc_header))
         RedrawWindow(m_wnd_header, nullptr, nullptr, RDW_INVALIDATE);
-    if (m_autosize || new_header_height != RECT_CY(rc_header) || get_search_box_height() != old_search_height)
+
+    if (m_autosize || new_header_height != wil::rect_height(rc_header))
         invalidate_all();
 }
 
@@ -309,7 +316,7 @@ RECT ListView::get_items_rect() const
 
     GetClientRect(get_wnd(), &rc);
     rc.top += get_header_height();
-    rc.top += get_search_box_height();
+    rc.bottom -= m_search_bar.get_total_height();
 
     if (rc.bottom < rc.top)
         rc.bottom = rc.top;
@@ -463,8 +470,15 @@ void ListView::on_focus_change(size_t index_prev, size_t index_new)
 
 void ListView::invalidate_all(bool b_children, bool non_client)
 {
+    std::optional<RECT> invalidate_rect;
+
+    if (m_search_bar && !b_children) {
+        invalidate_rect.emplace();
+        invalidate_rect = get_items_rect();
+    }
+
     auto flags = RDW_INVALIDATE | (b_children ? RDW_ALLCHILDREN : 0) | (non_client ? RDW_FRAME : 0);
-    RedrawWindow(get_wnd(), nullptr, nullptr, flags);
+    RedrawWindow(get_wnd(), invalidate_rect ? &*invalidate_rect : nullptr, nullptr, flags);
 }
 
 void ListView::update_items(size_t index, size_t count)
@@ -835,6 +849,8 @@ void ListView::set_use_dark_mode(bool use_dark_mode)
     set_inline_edit_window_theme();
     set_inline_edit_rect();
     set_tooltip_window_theme();
+
+    m_search_bar.set_use_dark_mode(use_dark_mode);
 }
 
 void ListView::set_vertical_item_padding(int val)
@@ -966,4 +982,19 @@ void ListView::set_edge_style(uint32_t b_val)
         SetWindowPos(get_wnd(), nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED);
     }
 }
+
+void ListView::on_kill_focus(HWND new_focus_wnd)
+{
+    invalidate_all();
+    if (!new_focus_wnd || (new_focus_wnd != get_wnd() && !IsChild(get_wnd(), new_focus_wnd)))
+        notify_on_kill_focus(new_focus_wnd);
+}
+
+void ListView::on_set_focus(HWND old_focus_wnd)
+{
+    invalidate_all();
+    if (!old_focus_wnd || (old_focus_wnd != get_wnd() && !IsChild(get_wnd(), old_focus_wnd)))
+        notify_on_set_focus(old_focus_wnd);
+}
+
 } // namespace uih
