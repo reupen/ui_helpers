@@ -125,17 +125,14 @@ void SearchBar::create(HWND parent_wnd, const char* label, HFONT font, int item_
         return;
 
     m_parent_wnd = parent_wnd;
-    m_item_height = item_height;
     m_is_dark = is_dark;
 
-    m_edit_control.reset(CreateWindowEx(WS_EX_CLIENTEDGE, WC_EDIT, L"",
-        WS_CHILD | WS_CLIPSIBLINGS | ES_LEFT | WS_CLIPCHILDREN | ES_AUTOHSCROLL | WS_TABSTOP, 0, 0, 0, 0, parent_wnd,
-        reinterpret_cast<HMENU>(IDC_SEARCH_BAR_EDIT), wil::GetModuleInstanceHandle(), nullptr));
+    m_edit_control.reset(CreateWindowEx(0, WC_EDIT, L"",
+        WS_CHILD | WS_CLIPSIBLINGS | ES_LEFT | WS_CLIPCHILDREN | ES_AUTOHSCROLL | WS_TABSTOP | WS_BORDER, 0, 0, 0, 0,
+        parent_wnd, reinterpret_cast<HMENU>(IDC_SEARCH_BAR_EDIT), wil::GetModuleInstanceHandle(), nullptr));
 
     if (!m_edit_control)
         return;
-
-    m_search_label = label;
 
     enhance_edit_control(m_edit_control.get());
 
@@ -143,10 +140,10 @@ void SearchBar::create(HWND parent_wnd, const char* label, HFONT font, int item_
         m_edit_control.get(), [&](auto wnd_proc, auto wnd, auto msg, auto wp, auto lp) -> std::optional<LRESULT> {
             switch (msg) {
             case WM_KILLFOCUS:
-                m_on_kill_focus(reinterpret_cast<HWND>(wp));
+                m_on_kill_focus_func(reinterpret_cast<HWND>(wp));
                 break;
             case WM_SETFOCUS:
-                m_on_set_focus(reinterpret_cast<HWND>(wp));
+                m_on_set_focus_func(reinterpret_cast<HWND>(wp));
                 break;
             case WM_KEYDOWN:
                 m_prevent_wm_char_processing = false;
@@ -189,8 +186,8 @@ void SearchBar::create(HWND parent_wnd, const char* label, HFONT font, int item_
             return {};
         });
 
-    SendMessage(m_edit_control.get(), WM_SETFONT, (WPARAM)font, MAKELONG(TRUE, 0));
-    SetWindowTheme(m_edit_control.get(), is_dark ? L"DarkMode_CFD" : nullptr, nullptr);
+    set_font(font);
+    SetWindowTheme(m_edit_control.get(), is_dark ? L"DarkMode_Explorer" : nullptr, nullptr);
 
     Edit_SetCueBannerTextFocused(m_edit_control.get(), mmh::to_utf16(label).c_str(), true);
 
@@ -229,23 +226,21 @@ void SearchBar::destroy()
     invalidate();
 
     m_edit_control.reset();
-    m_search_label.reset();
     m_left_toolbar.wnd.reset();
     m_right_toolbar.wnd.reset();
     m_search_bar_host->on_close();
 
-    m_on_destroy();
+    m_on_destroy_func();
 }
 
 void SearchBar::shut_down()
 {
     m_edit_control.reset();
-    m_search_label.reset();
     m_left_toolbar.wnd.reset();
     m_right_toolbar.wnd.reset();
     m_left_toolbar.imagelist.reset();
     m_right_toolbar.imagelist.reset();
-    m_on_destroy = {};
+    m_on_destroy_func = {};
 }
 
 SearchBar::Metrics SearchBar::get_metrics() const
@@ -269,6 +264,13 @@ int SearchBar::get_total_height() const
     return get_metrics().total_height;
 }
 
+void SearchBar::reposition() const
+{
+    RECT client_rect{};
+    GetClientRect(m_parent_wnd, &client_rect);
+    reposition(wil::rect_width(client_rect), wil::rect_height(client_rect));
+}
+
 void SearchBar::reposition(int client_width, int client_height) const
 {
     const auto vertical_padding = get_vertical_padding();
@@ -276,16 +278,15 @@ void SearchBar::reposition(int client_width, int client_height) const
     const auto max_edit_width = 300_spx;
     const auto edit_width = std::clamp(
         client_width - 2 * horizontal_padding - m_left_toolbar.width - m_right_toolbar.width, 0, max_edit_width);
-    const auto edit_height = m_edit_control ? m_item_height + horizontal_padding : 0;
-    const auto total_height = std::max(edit_height, m_right_toolbar.height) + vertical_padding * 2;
+    const auto total_height = std::max(m_edit_height, m_right_toolbar.height) + vertical_padding * 2;
     bool should_invalidate{};
 
     if (m_edit_control) {
         RECT old_edit_rect{};
         GetWindowRect(m_edit_control.get(), &old_edit_rect);
 
-        SetWindowPos(m_edit_control.get(), nullptr, 0, client_height - (total_height + edit_height) / 2, edit_width,
-            edit_height, SWP_NOZORDER);
+        SetWindowPos(m_edit_control.get(), nullptr, 0, client_height - (total_height + m_edit_height) / 2, edit_width,
+            m_edit_height, SWP_NOZORDER);
 
         should_invalidate = wil::rect_width(old_edit_rect) != edit_width;
     }
@@ -324,7 +325,7 @@ void SearchBar::set_use_dark_mode(bool is_dark)
     m_is_dark = is_dark;
 
     if (m_edit_control)
-        SetWindowTheme(m_edit_control.get(), is_dark ? L"DarkMode_CFD" : nullptr, nullptr);
+        SetWindowTheme(m_edit_control.get(), is_dark ? L"DarkMode_Explorer" : nullptr, nullptr);
 
     m_left_toolbar.imagelist.reset();
     m_right_toolbar.imagelist.reset();
@@ -347,6 +348,15 @@ void SearchBar::set_use_dark_mode(bool is_dark)
 
     if (m_right_toolbar.wnd)
         set_toolbar_dark_mode(m_right_toolbar, right_commands);
+}
+
+void SearchBar::set_font(HFONT font)
+{
+    if (!m_edit_control.get())
+        return;
+
+    m_edit_height = get_font_height(font) + 2 * 3_spx;
+    SetWindowFont(m_edit_control.get(), font, FALSE);
 }
 
 void SearchBar::set_results_text(std::wstring_view new_text)

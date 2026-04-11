@@ -30,10 +30,10 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             [this](ScrollAxis axis, int position) { return clamp_scroll_position(get_wnd(), axis, position); },
             [this](ScrollAxis axis, int new_position) { internal_scroll(new_position, axis); });
 
-        m_search_bar.on_kill_focus([&](HWND new_focus_wnd) { on_kill_focus(new_focus_wnd); });
-        m_search_bar.on_set_focus([&](HWND old_focus_wnd) { on_set_focus(old_focus_wnd); });
+        m_search_bar.set_kill_focus_callback([&](HWND new_focus_wnd) { on_kill_focus(new_focus_wnd); });
+        m_search_bar.set_set_focus_callback([&](HWND old_focus_wnd) { on_set_focus(old_focus_wnd); });
 
-        m_search_bar.on_destroy([&] { on_size(); });
+        m_search_bar.set_destroy_callback([&] { on_size(); });
 
         // For dark mode, the window needs to have the DarkMode_Explorer theme to get dark scroll bars,
         // but we also need access to DarkMode_ItemsView themes. To do this, a dummy window with a

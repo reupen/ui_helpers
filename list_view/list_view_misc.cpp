@@ -894,6 +894,12 @@ void ListView::set_font(std::optional<direct_write::TextFormat> text_format, con
         if (m_group_count)
             update_header();
 
+        if (m_search_bar) {
+            m_search_bar.invalidate();
+            m_search_bar.set_font(m_items_font.get());
+            m_search_bar.reposition();
+        }
+
         refresh_item_positions();
     }
 }
