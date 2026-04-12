@@ -56,9 +56,9 @@ public:
     void focus() const { SetFocus(m_edit_control.get()); }
     void select_all() const { SendMessage(m_edit_control.get(), EM_SETSEL, 0, -1); }
 
-    void on_destroy(OnDestroyCallback on_destroy) { m_on_destroy = std::move(on_destroy); }
-    void on_kill_focus(OnFocusCallback on_kill_focus) { m_on_kill_focus = std::move(on_kill_focus); }
-    void on_set_focus(OnFocusCallback on_set_focus) { m_on_set_focus = std::move(on_set_focus); }
+    void set_destroy_callback(OnDestroyCallback on_destroy) { m_on_destroy_func = std::move(on_destroy); }
+    void set_kill_focus_callback(OnFocusCallback on_kill_focus) { m_on_kill_focus_func = std::move(on_kill_focus); }
+    void set_set_focus_callback(OnFocusCallback on_set_focus) { m_on_set_focus_func = std::move(on_set_focus); }
 
     struct Metrics {
         int edit_width{};
@@ -70,6 +70,7 @@ public:
     [[nodiscard]] int get_total_height() const;
     [[nodiscard]] HWND get_edit_wnd() const { return m_edit_control.get(); }
 
+    void reposition() const;
     void reposition(int client_width, int client_height) const;
 
     void previous() const
@@ -87,6 +88,7 @@ public:
     void on_string_change();
 
     void set_use_dark_mode(bool is_dark);
+    void set_font(HFONT font);
 
     void set_results_text(std::wstring_view new_text);
     void invalidate() const;
@@ -104,13 +106,13 @@ private:
     HWND m_parent_wnd{};
     bool m_is_dark{};
     pfc::string8 m_search_label;
-    int m_item_height{};
+    int m_edit_height{};
     std::wstring m_results_text;
     SearchBarHost::Ptr m_search_bar_host;
     std::wstring m_last_string{};
-    OnDestroyCallback m_on_destroy;
-    OnFocusCallback m_on_set_focus;
-    OnFocusCallback m_on_kill_focus;
+    OnDestroyCallback m_on_destroy_func;
+    OnFocusCallback m_on_set_focus_func;
+    OnFocusCallback m_on_kill_focus_func;
 };
 
 } // namespace uih::lv
