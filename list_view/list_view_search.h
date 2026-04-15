@@ -28,6 +28,7 @@ struct SearchBarHost {
     virtual void on_char(const wchar_t chr) {}
     virtual void on_string_replaced(const wchar_t* text) {}
     virtual void on_close() {}
+    virtual bool on_keydown(WPARAM wp) { return false; }
     virtual std::variant<wil::unique_hbitmap, wil::unique_hicon> create_icon(
         SearchBarIconId icon_id, int width, int height, bool is_dark) = 0;
 
@@ -100,7 +101,8 @@ private:
     static int get_vertical_padding();
 
     wil::unique_hwnd m_edit_control;
-    bool m_prevent_wm_char_processing{};
+    bool m_ignore_next_wm_char_message{};
+    bool m_ignore_next_wm_syschar_message{};
     SearchBarToolbarState m_left_toolbar;
     SearchBarToolbarState m_right_toolbar;
     HWND m_parent_wnd{};

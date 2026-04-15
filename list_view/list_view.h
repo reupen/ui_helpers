@@ -919,6 +919,8 @@ private:
 
     virtual void notify_exit_inline_edit() {}
 
+    virtual bool notify_inline_edit_keydown(WPARAM wp) { return false; }
+
     int get_items_viewport_height() const;
     void update_vertical_scroll_info(bool redraw = true, std::optional<int> new_vertical_position = std::nullopt);
     void update_horizontal_scroll_info(bool redraw = true);
@@ -1004,6 +1006,8 @@ private:
     bool m_timer_inline_edit{false};
     bool m_inline_edit_prevent{false};
     bool m_inline_edit_prevent_kill{false};
+    bool m_ignore_next_inline_edit_wm_char_message{};
+    bool m_ignore_next_inline_edit_wm_syschar_message{};
     size_t m_inline_edit_column{std::numeric_limits<size_t>::max()};
     pfc::list_t<size_t> m_inline_edit_indices;
     wil::com_ptr<IAutoComplete> m_inline_edit_autocomplete;
@@ -1060,7 +1064,8 @@ private:
 
     bool m_variable_height_items{false};
 
-    bool m_prevent_wm_char_processing{false};
+    bool m_ignore_next_wm_char_message{};
+    bool m_ignore_next_wm_syschar_message{};
     bool m_timer_search{false};
     std::wstring m_search_string;
 
