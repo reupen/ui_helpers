@@ -118,7 +118,25 @@ LRESULT ListView::on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
         break;
     case WM_GETDLGCODE:
         return CallWindowProc(m_proc_inline_edit, wnd, msg, wp, lp) | DLGC_WANTALLKEYS;
+    case WM_CHAR:
+        if (m_ignore_next_inline_edit_wm_char_message) {
+            m_ignore_next_inline_edit_wm_char_message = false;
+            return 0;
+        }
+        break;
+    case WM_SYSCHAR:
+        if (m_ignore_next_inline_edit_wm_syschar_message) {
+            m_ignore_next_inline_edit_wm_syschar_message = false;
+            return 0;
+        }
+        break;
+    case WM_SYSKEYDOWN:
+        if ((m_ignore_next_inline_edit_wm_syschar_message = notify_inline_edit_keydown(wp)))
+            return 0;
+        break;
     case WM_KEYDOWN:
+        m_ignore_next_inline_edit_wm_char_message = false;
+
         switch (wp) {
         case VK_TAB: {
             size_t count = m_columns.size();
@@ -200,6 +218,11 @@ LRESULT ListView::on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
             // else
             //    return CallWindowProc(m_proc_original_inline_edit,wnd,msg,wp,lp); //cheat
             return 0;
+        default:
+            if (notify_inline_edit_keydown(wp)) {
+                m_ignore_next_inline_edit_wm_char_message = true;
+                return 0;
+            }
         }
         break;
     }

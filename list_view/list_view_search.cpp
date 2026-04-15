@@ -146,7 +146,7 @@ void SearchBar::create(HWND parent_wnd, const char* label, HFONT font, int item_
                 m_on_set_focus_func(reinterpret_cast<HWND>(wp));
                 break;
             case WM_KEYDOWN:
-                m_prevent_wm_char_processing = false;
+                m_ignore_next_wm_char_message = false;
 
                 switch (wp) {
                 case VK_TAB:
@@ -168,17 +168,30 @@ void SearchBar::create(HWND parent_wnd, const char* label, HFONT font, int item_
                         m_search_bar_host->on_next();
                     return 0;
                 case VK_RETURN:
-                    m_prevent_wm_char_processing = true;
+                    m_ignore_next_wm_char_message = true;
                     m_search_bar_host->on_return();
                     return 0;
+                default:
+                    if (m_search_bar_host->on_keydown(wp)) {
+                        m_ignore_next_wm_char_message = true;
+                        return 0;
+                    }
+                    break;
                 }
                 break;
             case WM_SYSKEYDOWN:
-                m_prevent_wm_char_processing = false;
+                if ((m_ignore_next_wm_syschar_message = m_search_bar_host->on_keydown(wp)))
+                    return 0;
                 break;
             case WM_CHAR:
-                if (m_prevent_wm_char_processing) {
-                    m_prevent_wm_char_processing = false;
+                if (m_ignore_next_wm_char_message) {
+                    m_ignore_next_wm_char_message = false;
+                    return 0;
+                }
+                return {};
+            case WM_SYSCHAR:
+                if (m_ignore_next_wm_syschar_message) {
+                    m_ignore_next_wm_syschar_message = false;
                     return 0;
                 }
                 return {};

@@ -540,18 +540,26 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         }
         break;
     case WM_KEYDOWN: {
-        if ((m_prevent_wm_char_processing = on_wm_keydown(wp, lp)))
+        if ((m_ignore_next_wm_char_message = on_wm_keydown(wp, lp)))
             return 0;
-    } break;
+        break;
+    }
     case WM_CHAR:
         // Values below 32, and 127, are special values (e.g. Ctrl-A and Ctrl-Backspace)
-        if (!m_prevent_wm_char_processing && wp >= 32u && wp != 127u)
+        if (!m_ignore_next_wm_char_message && wp >= 32u && wp != 127u)
             on_search_string_change(LOWORD(wp));
         break;
     case WM_SYSKEYDOWN: {
-        if ((m_prevent_wm_char_processing = notify_on_keyboard_keydown_filter(WM_SYSKEYDOWN, wp, lp)))
+        if ((m_ignore_next_wm_syschar_message = notify_on_keyboard_keydown_filter(WM_SYSKEYDOWN, wp, lp)))
             return 0;
-    } break;
+        break;
+    }
+    case WM_SYSCHAR:
+        if (m_ignore_next_wm_syschar_message) {
+            m_ignore_next_wm_syschar_message = false;
+            return 0;
+        }
+        break;
     case WM_VSCROLL:
         // IDropTargetHelper inexplicably sends these messages. They aren't processed to
         // avoid interfering with the timer usually used by clients.
