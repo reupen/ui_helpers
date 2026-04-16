@@ -26,7 +26,7 @@ struct SearchBarHost {
     virtual void on_next() = 0;
     virtual void on_return() = 0;
     virtual void on_char(const wchar_t chr) {}
-    virtual void on_string_replaced(const wchar_t* text) {}
+    virtual void on_string_replaced(const wchar_t* text, bool is_initial) {}
     virtual void on_close() {}
     virtual bool on_keydown(WPARAM wp) { return false; }
     virtual std::variant<wil::unique_hbitmap, wil::unique_hicon> create_icon(
@@ -100,6 +100,7 @@ private:
     static int get_horizontal_padding();
     static int get_vertical_padding();
 
+    bool m_is_initialising{};
     wil::unique_hwnd m_edit_control;
     bool m_ignore_next_wm_char_message{};
     bool m_ignore_next_wm_syschar_message{};

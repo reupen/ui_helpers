@@ -127,6 +127,10 @@ void SearchBar::create(HWND parent_wnd, const char* label, HFONT font, int item_
     m_parent_wnd = parent_wnd;
     m_is_dark = is_dark;
 
+    m_is_initialising = true;
+
+    auto _ = wil::scope_exit([&] { m_is_initialising = false; });
+
     m_edit_control.reset(CreateWindowEx(0, WC_EDIT, L"",
         WS_CHILD | WS_CLIPSIBLINGS | ES_LEFT | WS_CLIPCHILDREN | ES_AUTOHSCROLL | WS_TABSTOP | WS_BORDER, 0, 0, 0, 0,
         parent_wnd, reinterpret_cast<HMENU>(IDC_SEARCH_BAR_EDIT), wil::GetModuleInstanceHandle(), nullptr));
@@ -321,11 +325,11 @@ void SearchBar::on_string_change()
 {
     const auto new_string = get_window_text(m_edit_control.get());
 
-    if (new_string.size() == m_last_string.size() + 1
+    if (!m_is_initialising && new_string.size() == m_last_string.size() + 1
         && wcsncmp(m_last_string.c_str(), new_string.c_str(), m_last_string.size()) == 0)
         m_search_bar_host->on_char(gsl::narrow<wchar_t>(new_string[new_string.size() - 1]));
     else
-        m_search_bar_host->on_string_replaced(new_string.c_str());
+        m_search_bar_host->on_string_replaced(new_string.c_str(), m_is_initialising);
 
     m_last_string = new_string;
 }
