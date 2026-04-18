@@ -13,7 +13,13 @@ bool ListView::on_wm_keydown(WPARAM wp, LPARAM lp)
 
     const auto is_alt_down = (HIWORD(lp) & KF_ALTDOWN) != 0;
     const auto is_ctrl_down = (GetKeyState(VK_CONTROL) & KF_UP) != 0;
-    const auto process_ctrl_char_shortcuts = is_ctrl_down && !is_alt_down;
+
+    const auto should_process_ctrl_shortcuts = [&] {
+        const auto is_shift_down = (GetKeyState(VK_SHIFT) & KF_UP) != 0;
+        const auto is_lwin_down = (GetKeyState(VK_LWIN) & KF_UP) != 0;
+        const auto is_rwin_down = (GetKeyState(VK_RWIN) & KF_UP) != 0;
+        return is_ctrl_down && !(is_alt_down || is_shift_down || is_lwin_down || is_rwin_down);
+    };
 
     switch (wp) {
     case VK_TAB:
@@ -65,23 +71,23 @@ bool ListView::on_wm_keydown(WPARAM wp, LPARAM lp)
         }
         return notify_on_keyboard_keydown_search();
     case 'A':
-        if (process_ctrl_char_shortcuts && m_selection_mode == SelectionMode::Multiple) {
+        if (should_process_ctrl_shortcuts() && m_selection_mode == SelectionMode::Multiple) {
             set_selection_state(pfc::bit_array_true(), pfc::bit_array_true());
             return true;
         }
         return false;
     case 'C':
-        return process_ctrl_char_shortcuts && notify_on_keyboard_keydown_copy();
+        return should_process_ctrl_shortcuts() && notify_on_keyboard_keydown_copy();
     case 'F':
-        return process_ctrl_char_shortcuts && notify_on_keyboard_keydown_search();
+        return should_process_ctrl_shortcuts() && notify_on_keyboard_keydown_search();
     case 'V':
-        return process_ctrl_char_shortcuts && notify_on_keyboard_keydown_paste();
+        return should_process_ctrl_shortcuts() && notify_on_keyboard_keydown_paste();
     case 'X':
-        return process_ctrl_char_shortcuts && notify_on_keyboard_keydown_cut();
+        return should_process_ctrl_shortcuts() && notify_on_keyboard_keydown_cut();
     case 'Y':
-        return process_ctrl_char_shortcuts && notify_on_keyboard_keydown_redo();
+        return should_process_ctrl_shortcuts() && notify_on_keyboard_keydown_redo();
     case 'Z':
-        return process_ctrl_char_shortcuts && notify_on_keyboard_keydown_undo();
+        return should_process_ctrl_shortcuts() && notify_on_keyboard_keydown_undo();
     default:
         return false;
     }
