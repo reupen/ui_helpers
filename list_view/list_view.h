@@ -373,7 +373,7 @@ public:
         size_t index, const std::optional<RECT>& items_rect = {}, std::optional<int> scroll_position = {});
     void invalidate_item_group_info_area(size_t index);
 
-    void update_items(size_t index, size_t count);
+    void update_items(size_t index, size_t count, bool invalidate = true);
     void update_all_items();
 
     // Current implementation clears sub-items.
