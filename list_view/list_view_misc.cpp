@@ -481,12 +481,13 @@ void ListView::invalidate_all(bool b_children, bool non_client)
     RedrawWindow(get_wnd(), invalidate_rect ? &*invalidate_rect : nullptr, nullptr, flags);
 }
 
-void ListView::update_items(size_t index, size_t count)
+void ListView::update_items(size_t index, size_t count, bool invalidate)
 {
-    size_t i;
-    for (i = 0; i < count; i++)
+    for (size_t i{}; i < count; ++i)
         m_items[i + index]->m_subitems.resize(0);
-    invalidate_items(index, count);
+
+    if (invalidate)
+        invalidate_items(index, count);
 }
 
 void ListView::reorder_items_partial(size_t base, const size_t* order, size_t count, bool update_focus_item)
