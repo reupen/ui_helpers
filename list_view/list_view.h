@@ -126,7 +126,11 @@ public:
         void remove_items(const pfc::bit_array& mask);
 
     private:
-        ItemTransaction(ListView& list_view) : m_list_view(list_view) {}
+        ItemTransaction(ListView& list_view)
+            : m_list_view(list_view)
+            , m_saved_scroll_position(list_view.save_scroll_position())
+        {
+        }
 
         ItemTransaction(const ItemTransaction&) = delete;
         ItemTransaction& operator=(const ItemTransaction&) = delete;
@@ -136,6 +140,7 @@ public:
 
         std::optional<size_t> m_start_index;
         ListView& m_list_view;
+        lv::SavedScrollPosition m_saved_scroll_position;
 
         friend class ListView;
     };
@@ -244,7 +249,7 @@ public:
     size_t get_column_count();
 
     lv::SavedScrollPosition save_scroll_position() const;
-    void restore_scroll_position(const lv::SavedScrollPosition& position);
+    void restore_scroll_position(const lv::SavedScrollPosition& position, bool redraw_scroll_bars = true);
 
     void _set_scroll_position(int val) { m_scroll_position = val; }
 
@@ -467,7 +472,7 @@ public:
 
     int get_group_minimum_inner_height() const
     {
-        return get_show_group_info_area() ? get_group_info_area_total_height() : 0;
+        return get_show_group_info_area() && m_visible_group_count > 0 ? get_group_info_area_total_height() : 0;
     }
     int get_group_items_bottom_margin(size_t index) const;
     int get_leaf_group_header_bottom_margin(std::optional<size_t> index = {}) const;
@@ -489,7 +494,7 @@ public:
 
         int ret = get_item_position(index) + m_item_height - 1;
 
-        if (get_show_group_info_area() && m_group_count > 0) {
+        if (get_show_group_info_area() && m_visible_group_count > 0) {
             int gheight = gsl::narrow<int>(group_size) * m_item_height;
             int group_cy = get_group_info_area_total_height();
             const auto bottom_margin = get_group_items_bottom_margin(index);
@@ -778,7 +783,7 @@ protected:
         return header_item_index - 1;
     }
 
-    bool get_show_group_info_area() const { return m_group_count ? m_show_group_info_area : false; }
+    bool get_show_group_info_area() const { return m_group_count > 0 ? m_show_group_info_area : false; }
 
     int get_total_indentation() const;
     [[nodiscard]] int get_stuck_group_headers_height(std::optional<int> scroll_position = {}) const;
@@ -944,6 +949,9 @@ private:
     void remove_item_in_internal_state(size_t remove_index);
     void remove_items_in_internal_state(const pfc::bit_array& mask);
     void calculate_item_positions(size_t index_start = 0);
+    void calculate_visible_group_count();
+    bool update_item_and_group_positioning(size_t index_start = 0);
+    bool are_group_headers_sticky_active() const { return m_are_group_headers_sticky && m_visible_group_count > 0; }
 
     static LRESULT WINAPI s_on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcept;
     LRESULT on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
@@ -1040,7 +1048,8 @@ private:
     bool m_is_smooth_scrolling_suspended{};
     std::optional<SmoothScrollHelper> m_smooth_scroll_helper;
     bool m_ensure_visible_suspended{};
-    size_t m_group_count{0};
+    size_t m_group_count{};
+    size_t m_visible_group_count{};
     int m_item_height{1};
     int m_group_height{1};
     bool m_are_group_headers_sticky{};

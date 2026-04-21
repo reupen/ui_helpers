@@ -27,7 +27,7 @@ lv::SavedScrollPosition ListView::save_scroll_position() const
     return {previous_item_index, next_item_index, proportional_position};
 }
 
-void ListView::restore_scroll_position(const lv::SavedScrollPosition& position)
+void ListView::restore_scroll_position(const lv::SavedScrollPosition& position, bool redraw_scroll_bars)
 {
     const auto new_next_item_bottom = get_item_position_bottom(position.next_item_index);
     const auto new_previous_item_top = get_item_position(position.previous_item_index);
@@ -36,7 +36,7 @@ void ListView::restore_scroll_position(const lv::SavedScrollPosition& position)
         + new_previous_item_top;
     const auto new_position_rounded = gsl::narrow<int>(std::lround(new_position));
 
-    update_scroll_info(true, true, true, new_position_rounded);
+    update_scroll_info(true, true, redraw_scroll_bars, new_position_rounded);
 }
 
 void ListView::ensure_visible(size_t index, EnsureVisibleMode mode)
@@ -50,7 +50,7 @@ void ListView::ensure_visible(size_t index, EnsureVisibleMode mode)
     const auto item_height = get_item_height(index);
     const auto item_start_position = get_item_position(index);
     const auto stuck_headers_height = [&] {
-        if (!m_are_group_headers_sticky || m_group_count == 0)
+        if (!are_group_headers_sticky_active())
             return 0;
 
         const auto is_new_group = get_is_new_group(index);
@@ -147,7 +147,7 @@ void ListView::internal_scroll(int new_position, ScrollAxis axis)
 
     std::vector<RECT> invalidate_after_scroll_window{};
 
-    if (m_group_count > 0 && get_show_group_info_area() && m_is_group_info_area_sticky && dy != 0) {
+    if (m_visible_group_count > 0 && get_show_group_info_area() && m_is_group_info_area_sticky && dy != 0) {
         const auto first_items
             = std::unordered_set{gsl::narrow_cast<size_t>(get_first_or_previous_visible_item(original_scroll_position)),
                 gsl::narrow_cast<size_t>(get_first_or_previous_visible_item(m_scroll_position))};
@@ -180,7 +180,7 @@ void ListView::internal_scroll(int new_position, ScrollAxis axis)
 
     RECT clip_rect{items_rect};
 
-    if (m_group_count > 0 && m_are_group_headers_sticky && dy != 0) {
+    if (are_group_headers_sticky_active() && dy != 0) {
         const auto old_stuck_group_headers_info = get_stuck_group_headers_info(original_scroll_position);
         RECT old_stuck_headers_rect{
             items_rect.left, items_rect.top, items_rect.right, items_rect.top + old_stuck_group_headers_info.height};

@@ -92,8 +92,11 @@ ListView::ItemTransaction::~ItemTransaction() noexcept
     if (!m_start_index)
         return;
 
-    m_list_view.calculate_item_positions(*m_start_index);
-    m_list_view.update_scroll_info(true, true, false);
+    if (m_list_view.update_item_and_group_positioning(*m_start_index))
+        m_list_view.restore_scroll_position(m_saved_scroll_position, false);
+    else
+        m_list_view.update_scroll_info(true, true, false);
+
     m_list_view.invalidate_all(false, true);
 }
 
@@ -117,15 +120,19 @@ ListView::ItemTransaction ListView::start_transaction()
 void ListView::insert_items(size_t index_start, size_t count, const InsertItem* items,
     const std::optional<lv::SavedScrollPosition>& saved_scroll_position)
 {
+    const auto grouping_saved_scroll_position
+        = saved_scroll_position ? saved_scroll_position : std::make_optional(save_scroll_position());
     insert_items_in_internal_state(index_start, count, items);
-    calculate_item_positions(index_start);
+    update_item_and_group_positioning(index_start);
 
-    if (saved_scroll_position)
-        restore_scroll_position(*saved_scroll_position);
+    if (update_item_and_group_positioning(index_start))
+        restore_scroll_position(*grouping_saved_scroll_position);
+    else if (saved_scroll_position)
+        restore_scroll_position(*grouping_saved_scroll_position);
     else
         update_scroll_info();
 
-    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
+    invalidate_all();
 }
 
 bool ListView::replace_items(size_t index_start, size_t count, const InsertItem* items)
@@ -135,10 +142,13 @@ bool ListView::replace_items(size_t index_start, size_t count, const InsertItem*
     if (count == 0)
         return false;
 
+    const auto grouping_saved_scroll_position = save_scroll_position();
     const auto subsequent_display_indices_changed = replace_items_in_internal_state(index_start, count, items);
-    calculate_item_positions(index_start);
 
-    if (m_group_count > 0 || m_variable_height_items) {
+    if (update_item_and_group_positioning(index_start)) {
+        restore_scroll_position(grouping_saved_scroll_position);
+        invalidate_all();
+    } else if (m_visible_group_count > 0 || m_variable_height_items) {
         update_scroll_info();
         invalidate_all();
     } else {
@@ -150,10 +160,15 @@ bool ListView::replace_items(size_t index_start, size_t count, const InsertItem*
 
 void ListView::remove_items(const pfc::bit_array& mask)
 {
+    const auto grouping_saved_scroll_position = save_scroll_position();
     remove_items_in_internal_state(mask);
-    calculate_item_positions();
-    update_scroll_info();
-    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
+
+    if (update_item_and_group_positioning())
+        restore_scroll_position(grouping_saved_scroll_position);
+    else
+        update_scroll_info();
+
+    invalidate_all();
 }
 
 void ListView::remove_all_items()
@@ -164,7 +179,7 @@ void ListView::remove_all_items()
     m_items.clear();
     update_scroll_info();
 
-    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
+    invalidate_all();
 }
 
 bool ListView::replace_items_in_internal_state(size_t index_start, size_t replace_count, const InsertItem* items)
@@ -433,20 +448,27 @@ void ListView::calculate_item_positions(size_t index_start)
         return;
 
     int y_pointer = 0;
-    if (m_group_count)
-        while (index_start && !get_is_new_group(index_start))
-            index_start--;
-    if (!index_start)
-        y_pointer += 0; // m_item_height * m_group_count;
-    else {
-        if (m_group_count)
+
+    if (m_group_count > 0) {
+        if (m_visible_group_count == 0) {
+            index_start = 0;
+        } else {
+            while (index_start > 0 && !get_is_new_group(index_start))
+                --index_start;
+        }
+    }
+
+    if (index_start > 0) {
+        if (m_visible_group_count > 0)
             y_pointer = get_item_group_bottom(index_start - 1) + 1;
         else
             y_pointer = get_item_position(index_start - 1) + get_item_height(index_start - 1);
     }
+
     size_t count = m_items.size();
     int group_height_counter = 0;
     const auto group_minimum_inner_height = get_group_minimum_inner_height();
+
     for (size_t i = index_start; i < count; i++) {
         const auto is_new_group = get_is_new_group(i);
         const auto display_group_count = gsl::narrow<int>(get_item_display_group_count(i));
@@ -472,14 +494,62 @@ void ListView::calculate_item_positions(size_t index_start)
     }
 }
 
+void ListView::calculate_visible_group_count()
+{
+    if (m_group_count == 0 || m_items.empty()) {
+        m_visible_group_count = 0;
+        return;
+    }
+
+    m_visible_group_count = 0;
+
+    for (const auto index : std::views::iota(size_t{}, m_items.size())) {
+        if (!get_is_new_group(index))
+            continue;
+
+        m_visible_group_count = std::max(m_visible_group_count,
+            ranges::accumulate(m_items[index]->m_groups, size_t{}, std::plus<size_t>(),
+                [](const auto& group) { return group->is_hidden() ? size_t{} : size_t{1}; }));
+
+        if (m_visible_group_count == m_group_count)
+            return;
+    }
+
+    assert(m_visible_group_count <= m_group_count);
+}
+
+bool ListView::update_item_and_group_positioning(size_t index_start)
+{
+    const auto old_visible_group_count = m_visible_group_count;
+    calculate_visible_group_count();
+
+    const auto has_vertical_padding_changed
+        = std::min(size_t{2}, old_visible_group_count) != std::min(size_t{2}, m_visible_group_count);
+    calculate_item_positions(has_vertical_padding_changed ? 0 : index_start);
+
+    if (old_visible_group_count != m_visible_group_count) {
+        update_column_sizes();
+        update_header();
+        return true;
+    }
+
+    return false;
+}
+
 void ListView::remove_item(size_t index)
 {
     if (m_timer_inline_edit)
         exit_inline_edit();
+
+    const auto grouping_saved_scroll_position = save_scroll_position();
     remove_item_in_internal_state(index);
-    calculate_item_positions();
-    update_scroll_info();
-    RedrawWindow(get_wnd(), nullptr, nullptr, RDW_INVALIDATE);
+
+    if (update_item_and_group_positioning())
+        restore_scroll_position(grouping_saved_scroll_position);
+    else
+        update_scroll_info();
+
+    invalidate_all();
 }
 
 void ListView::remove_items_in_internal_state(const pfc::bit_array& mask)
