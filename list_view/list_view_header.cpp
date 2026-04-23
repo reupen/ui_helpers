@@ -324,19 +324,32 @@ int ListView::calculate_header_height()
 
 void ListView::update_header()
 {
-    if (m_wnd_header) {
-        pfc::vartoggle_t<bool> toggle(m_ignore_column_size_change_notification, true);
-        auto count = gsl::narrow<int>(m_columns.size());
-        int j = 0;
-        if (m_have_indent_column) {
-            uih::header_set_item_width(m_wnd_header, j, get_total_indentation());
-            j++;
+    if (!m_wnd_header)
+        return;
+
+    pfc::vartoggle_t<bool> toggle(m_ignore_column_size_change_notification, true);
+
+    const auto indentation = get_total_indentation();
+    const auto need_indentation_column = indentation > 0;
+
+    if (m_have_indent_column != need_indentation_column) {
+        if (!need_indentation_column) {
+            Header_DeleteItem(m_wnd_header, 0);
+        } else {
+            HDITEM hdi{};
+            hdi.mask = HDI_WIDTH;
+            hdi.cxy = indentation;
+            Header_InsertItem(m_wnd_header, 0, &hdi);
         }
-        for (int i = 0; i < count; i++) {
-            uih::header_set_item_width(m_wnd_header, i + j, m_columns[i].m_display_size);
-        }
-        // SendMessage(m_wnd_header, WM_SETREDRAW, TRUE, NULL);
-        // RedrawWindow(m_wnd_header, NULL, NULL, RDW_INVALIDATE|(b_update?RDW_UPDATENOW:0));
+        m_have_indent_column = need_indentation_column;
+    } else if (m_have_indent_column) {
+        header_set_item_width(m_wnd_header, 0, indentation);
+    }
+
+    auto count = gsl::narrow<int>(m_columns.size());
+
+    for (int index{}; index < count; index++) {
+        header_set_item_width(m_wnd_header, index + (m_have_indent_column ? 1 : 0), m_columns[index].m_display_size);
     }
 }
 

@@ -97,11 +97,11 @@ void ListView::render_items(HDC dc, const RECT& paint_rect)
 
     size_t i;
     size_t count = m_items.size();
-    const auto indentation_step = m_group_count > 0 ? get_indentation_step() : 0;
+    const auto indentation_step = m_visible_group_count > 0 ? get_indentation_step() : 0;
     const auto item_indentation = get_total_indentation();
     const auto cx = get_columns_display_width() + item_indentation;
 
-    bool b_show_group_info_area = get_show_group_info_area();
+    bool b_show_group_info_area = get_show_group_info_area() && m_visible_group_count > 0;
 
     i = gsl::narrow<size_t>(get_item_at_or_before(
         (items_paint_rect.top > rc_items.top ? items_paint_rect.top - rc_items.top : 0) + m_scroll_position));
@@ -138,9 +138,9 @@ void ListView::render_items(HDC dc, const RECT& paint_rect)
 
             if (i > 0 && group == m_items[i - 1]->m_groups[group_index]) {
                 // Should be impossible for groups to be the same if one was already rendered.
-                assert(m_are_group_headers_sticky || display_group_index == 0);
+                assert(are_group_headers_sticky_active() || display_group_index == 0);
 
-                if (!(m_are_group_headers_sticky && is_first_item))
+                if (!(are_group_headers_sticky_active() && is_first_item))
                     continue;
             }
 

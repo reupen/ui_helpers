@@ -236,8 +236,7 @@ ListView::VerticalHitTestResult ListView::visible_items_vertical_hit_test(int y)
 {
     const auto result = underlying_items_vertical_hit_test(y);
 
-    if (!m_are_group_headers_sticky || m_group_count == 0
-        || result.position_category == VerticalPositionCategory::NoItems)
+    if (!are_group_headers_sticky_active() || result.position_category == VerticalPositionCategory::NoItems)
         return result;
 
     const auto first_item = underlying_items_vertical_hit_test(m_scroll_position).item_leftmost;

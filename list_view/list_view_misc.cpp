@@ -16,7 +16,8 @@ void ListView::on_first_show()
 
 int ListView::get_group_items_bottom_margin(size_t index) const
 {
-    if (!get_show_group_info_area() || !m_is_group_info_area_header_spacing_enabled || index + 1 == m_items.size())
+    if (!get_show_group_info_area() || !m_is_group_info_area_header_spacing_enabled || m_visible_group_count == 0
+        || index + 1 == m_items.size())
         return 0;
 
     return m_group_height / 6;
@@ -24,16 +25,16 @@ int ListView::get_group_items_bottom_margin(size_t index) const
 
 int ListView::get_leaf_group_header_bottom_margin(std::optional<size_t> index) const
 {
-    if (!get_show_group_info_area() || !m_is_group_info_area_header_spacing_enabled)
+    if (!get_show_group_info_area() || !m_is_group_info_area_header_spacing_enabled || m_visible_group_count == 0)
         return 0;
 
     if (index && !get_is_new_group(*index))
         return 0;
 
     if (m_group_level_indentation_enabled)
-        return m_group_count > 1 ? m_group_height / 4 : m_group_height / 8;
+        return m_visible_group_count > 1 ? m_group_height / 4 : m_group_height / 8;
 
-    return m_group_count > 1 ? m_group_height / 5 : m_group_height / 8;
+    return m_visible_group_count > 1 ? m_group_height / 5 : m_group_height / 8;
 }
 
 int ListView::get_stuck_leaf_group_header_bottom_margin() const
@@ -43,7 +44,7 @@ int ListView::get_stuck_leaf_group_header_bottom_margin() const
 
 ListView::GroupInfoAreaPadding ListView::get_group_info_area_padding() const
 {
-    if (!get_show_group_info_area())
+    if (!get_show_group_info_area() || m_visible_group_count == 0)
         return {};
 
     const auto min_left_padding = 2_spx + 3_spx;
@@ -52,7 +53,7 @@ ListView::GroupInfoAreaPadding ListView::get_group_info_area_padding() const
     const auto indentation_step = get_indentation_step();
 
     return GroupInfoAreaPadding{
-        std::max(min_left_padding, m_group_count > 1 ? indentation_step : 0),
+        std::max(min_left_padding, m_visible_group_count > 1 ? indentation_step : 0),
         0,
         std::max(min_right_padding, indentation_step),
         std::max(min_bottom_padding, indentation_step),
@@ -61,11 +62,11 @@ ListView::GroupInfoAreaPadding ListView::get_group_info_area_padding() const
 
 int ListView::get_total_indentation() const
 {
-    if (m_group_count == 0)
+    if (m_visible_group_count == 0)
         return 0;
 
     return m_root_group_indentation_amount
-        + get_indentation_step() * gsl::narrow<int>(m_group_count - (get_show_group_info_area() ? 1 : 0))
+        + get_indentation_step() * gsl::narrow<int>(m_visible_group_count - (get_show_group_info_area() ? 1 : 0))
         + get_group_info_area_total_width();
 }
 
@@ -88,7 +89,7 @@ ListView::GroupHeaderRenderInfo ListView::get_group_header_render_info(
         - m_group_height * gsl::narrow<int>(display_group_count - display_group_index)
         - get_leaf_group_header_bottom_margin();
 
-    if (!m_are_group_headers_sticky)
+    if (!are_group_headers_sticky_active())
         return GroupHeaderRenderInfo{group_start, group_item_count, min_group_top, height, is_leaf, is_hidden, false};
 
     auto [final_leaf_group_start, final_leaf_group_item_count]
@@ -118,7 +119,7 @@ int ListView::get_stuck_group_headers_height(std::optional<int> scroll_position)
 
 ListView::StuckGroupHeadersInfo ListView::get_stuck_group_headers_info(std::optional<int> scroll_position) const
 {
-    if (!m_are_group_headers_sticky || m_group_count == 0)
+    if (!are_group_headers_sticky_active())
         return {};
 
     const auto resolved_scroll_position = scroll_position.value_or(m_scroll_position);
@@ -517,7 +518,7 @@ void ListView::invalidate_items(size_t index, size_t count) const
         return;
 
     const auto items_rect = get_items_rect();
-    const auto has_group_info_area = get_show_group_info_area();
+    const auto has_group_info_area = get_show_group_info_area() && m_visible_group_count > 0;
 
     const auto items_left
         = has_group_info_area ? get_total_indentation() - m_horizontal_scroll_position : items_rect.left;
@@ -577,7 +578,7 @@ void ListView::set_is_group_info_area_sticky(bool group_info_area_sticky)
     size_t first_item_index{};
     bool is_invalidation_needed{};
 
-    if (m_initialised && get_show_group_info_area()) {
+    if (m_initialised && get_show_group_info_area() && m_visible_group_count > 0) {
         first_item_index = gsl::narrow_cast<size_t>(get_first_or_previous_visible_item());
 
         if (first_item_index < m_items.size()) {
@@ -607,7 +608,7 @@ void ListView::set_is_group_info_area_header_spacing_enabled(bool value)
 RECT ListView::get_item_group_info_area_render_rect(
     size_t index, const std::optional<RECT>& items_rect, std::optional<int> scroll_position)
 {
-    if (!get_show_group_info_area()) {
+    if (!get_show_group_info_area() || m_visible_group_count == 0) {
         assert(false);
         return {};
     }
@@ -619,7 +620,7 @@ RECT ListView::get_item_group_info_area_render_rect(
         = get_group_header_render_info(index, m_group_count - 1, resolved_scroll_position);
 
     const auto artwork_indentation
-        = m_root_group_indentation_amount + get_indentation_step() * (gsl::narrow<int>(m_group_count) - 1);
+        = m_root_group_indentation_amount + get_indentation_step() * (gsl::narrow<int>(m_visible_group_count) - 1);
     const auto group_info_area_padding = get_group_info_area_padding();
 
     const auto [group_first_item, group_item_count] = get_item_group_range(index, m_group_count - 1);
@@ -892,8 +893,10 @@ void ListView::set_font(std::optional<direct_write::TextFormat> text_format, con
 
         refresh_items_font();
 
-        if (m_group_count)
+        if (m_visible_group_count > 0) {
+            update_column_sizes();
             update_header();
+        }
 
         if (m_search_bar) {
             m_search_bar.invalidate();
