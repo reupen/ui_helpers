@@ -161,7 +161,7 @@ public:
     {
         auto window_config = uih::ContainerWindowConfig{L"columns_ui_transparent_fill"};
         window_config.window_styles = WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
-        window_config.window_ex_styles = WS_EX_LAYERED;
+        window_config.window_ex_styles = WS_EX_LAYERED | WS_EX_TRANSPARENT;
         m_container_window = std::make_unique<uih::ContainerWindow>(
             window_config, [this](auto&&... args) { return on_message(std::forward<decltype(args)>(args)...); });
     }
