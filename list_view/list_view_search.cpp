@@ -275,6 +275,11 @@ void SearchBar::shut_down()
     m_on_destroy_func = {};
 }
 
+bool SearchBar::show_context_menu(POINT pt)
+{
+    return m_search_bar_host->on_context_menu(m_parent_wnd, pt);
+}
+
 SearchBar::Metrics SearchBar::get_metrics() const
 {
     if (!m_edit_control)

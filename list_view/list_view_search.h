@@ -31,6 +31,7 @@ struct SearchBarHost {
     virtual bool on_keydown(WPARAM wp) { return false; }
     virtual std::variant<wil::unique_hbitmap, wil::unique_hicon> create_icon(
         SearchBarIconId icon_id, int width, int height, bool is_dark) = 0;
+    virtual bool on_context_menu(HWND wnd, POINT pt) { return false; }
 
     virtual ~SearchBarHost() {}
 };
@@ -56,6 +57,7 @@ public:
     void set_host(SearchBarHost::Ptr host) { m_search_bar_host = std::move(host); }
     void focus() const { SetFocus(m_edit_control.get()); }
     void select_all() const { SendMessage(m_edit_control.get(), EM_SETSEL, 0, -1); }
+    bool show_context_menu(POINT pt);
 
     void set_destroy_callback(OnDestroyCallback on_destroy) { m_on_destroy_func = std::move(on_destroy); }
     void set_kill_focus_callback(OnFocusCallback on_kill_focus) { m_on_kill_focus_func = std::move(on_kill_focus); }
