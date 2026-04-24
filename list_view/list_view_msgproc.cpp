@@ -674,42 +674,44 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
         const auto from_keyboard = pt.x == -1 && pt.y == -1;
         if (get_wnd() == (HWND)wp) {
-            POINT px;
-            {
-                if (from_keyboard) {
-                    const auto focus = gsl::narrow_cast<int>(get_focus_item());
-                    const auto last = get_last_unobscured_item(false);
-                    if (focus < 0 || focus < get_item_at_or_after(m_scroll_position) || focus > last) {
-                        px.x = 0;
-                        px.y = 0;
-                    } else {
-                        const auto rc = get_items_rect();
-                        px.x = 0;
-                        px.y = (get_item_position(focus) - m_scroll_position) + m_item_height / 2 + rc.top;
-                    }
-                    pt = px;
-                    MapWindowPoints(wnd, HWND_DESKTOP, &pt, 1);
-                } else {
-                    px = pt;
-                    ScreenToClient(wnd, &px);
+            POINT screen_pt{};
 
-                    const auto items_rect = get_items_rect();
+            if (from_keyboard) {
+                POINT client_pt{get_total_indentation(), 0};
+                const auto focus = gsl::narrow_cast<int>(get_focus_item());
+                const auto last = get_last_unobscured_item(false);
 
-                    if (!PtInRect(&items_rect, px))
-                        return 0;
+                if (focus >= 0 && focus >= get_item_at_or_after(m_scroll_position) && focus <= last) {
+                    const auto rc = get_items_rect();
+                    client_pt.y = get_item_position(focus) - m_scroll_position + m_item_height / 2 + rc.top;
+                }
+
+                screen_pt = client_pt;
+                MapWindowPoints(wnd, HWND_DESKTOP, &screen_pt, 1);
+            } else {
+                screen_pt = pt;
+            }
+
+            if (!from_keyboard && m_search_bar) {
+                POINT client_pt{pt};
+                ScreenToClient(wnd, &client_pt);
+
+                const auto items_rect = get_items_rect();
+
+                if (client_pt.y >= items_rect.bottom) {
+                    m_search_bar.show_context_menu(screen_pt);
+                    return 0;
                 }
             }
-            if (notify_on_contextmenu(pt, from_keyboard))
+
+            if (notify_on_contextmenu(screen_pt, from_keyboard))
                 return 0;
         } else if (m_wnd_header && (HWND)wp == m_wnd_header) {
-            POINT temp;
-            temp.x = pt.x;
-            temp.y = pt.y;
-            ScreenToClient(m_wnd_header, &temp);
-            HDHITTESTINFO hittest;
-            hittest.pt.x = temp.x;
-            hittest.pt.y = temp.y;
-            SendMessage(m_wnd_header, HDM_HITTEST, 0, (LPARAM)&hittest);
+            POINT client_pt = pt;
+            ScreenToClient(m_wnd_header, &client_pt);
+            HDHITTESTINFO hittest{};
+            hittest.pt = client_pt;
+            SendMessage(m_wnd_header, HDM_HITTEST, 0, reinterpret_cast<LPARAM>(&hittest));
 
             if (notify_on_contextmenu_header(pt, hittest))
                 return 0;
