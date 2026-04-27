@@ -1093,6 +1093,116 @@ std::vector<Font> FontFamily::fonts() const
     return fonts;
 }
 
+std::wstring_view FontFamily::typographic_name() const
+{
+    return is_typographic_model ? std::wstring_view(name) : L""sv;
+}
+
+std::wstring FontFamily::wss_name(const Font& font) const
+{
+    if (!is_typographic_model)
+        return name;
+
+    try {
+        const auto font_3 = font.font.query<IDWriteFont3>();
+
+        wil::com_ptr<IDWriteFontFace3> font_face;
+        THROW_IF_FAILED(font_3->CreateFontFace(&font_face));
+
+        const auto font_face_6 = font_face.query<IDWriteFontFace6>();
+
+        wil::com_ptr<IDWriteLocalizedStrings> wss_family_name_strings;
+        THROW_IF_FAILED(
+            font_face_6->GetFamilyNames(DWRITE_FONT_FAMILY_MODEL_WEIGHT_STRETCH_STYLE, &wss_family_name_strings));
+
+        return get_localised_string(wss_family_name_strings);
+    }
+    CATCH_LOG()
+
+    return name;
+}
+
+std::vector<AxisRange> FontFamily::axes() const
+{
+    if (!is_typographic_model)
+        return {};
+
+    try {
+        std::vector<DWRITE_FONT_AXIS_RANGE> axis_ranges;
+        std::unordered_map<uint32_t, std::set<std::tuple<float, float>>> unique_axis_ranges_map;
+
+        const auto family_2 = family.query<IDWriteFontFamily2>();
+
+        wil::com_ptr<IDWriteFontSet1> font_set;
+        THROW_IF_FAILED(family_2->GetFontSet(&font_set));
+
+        wil::com_ptr<IDWriteFontSet1> first_font_resources_set;
+        THROW_IF_FAILED(font_set->GetFirstFontResources(&first_font_resources_set));
+
+        const auto resources_count = first_font_resources_set->GetFontCount();
+
+        const bool has_variations
+            = ranges::any_of(ranges::views::iota(0u, resources_count), [&first_font_resources_set](auto font_index) {
+                  wil::com_ptr<IDWriteFontResource> font_resource;
+                  THROW_IF_FAILED(first_font_resources_set->CreateFontResource(font_index, &font_resource));
+                  return font_resource->HasVariations();
+              });
+
+        if (!has_variations)
+            return {};
+
+        uint32_t set_axis_count{};
+        HRESULT hr = font_set->GetFontAxisRanges(nullptr, 0, &set_axis_count);
+
+        THROW_HR_IF(hr, hr != E_NOT_SUFFICIENT_BUFFER);
+
+        if (set_axis_count > 0) {
+            axis_ranges.resize(set_axis_count);
+            THROW_IF_FAILED(font_set->GetFontAxisRanges(axis_ranges.data(), set_axis_count, &set_axis_count));
+        }
+
+        for (const auto font_index : ranges::views::iota(0u, resources_count)) {
+            uint32_t resource_axis_count{};
+            hr = first_font_resources_set->GetFontAxisRanges(nullptr, 0, &resource_axis_count);
+
+            THROW_HR_IF(hr, hr != E_NOT_SUFFICIENT_BUFFER);
+
+            std::vector<DWRITE_FONT_AXIS_RANGE> resource_axis_ranges{};
+            if (resource_axis_count > 0) {
+                resource_axis_ranges.resize(resource_axis_count);
+                THROW_IF_FAILED(first_font_resources_set->GetFontAxisRanges(
+                    font_index, resource_axis_ranges.data(), resource_axis_count, &resource_axis_count));
+            }
+
+            for (auto&& axis_range : resource_axis_ranges) {
+                auto& set = unique_axis_ranges_map[WI_EnumValue(axis_range.axisTag)];
+                set.emplace(axis_range.minValue, axis_range.maxValue);
+            }
+        }
+
+        const auto calculate_is_toggle = [&unique_axis_ranges_map](auto tag) {
+            if (!unique_axis_ranges_map.contains(tag))
+                return false;
+
+            auto& unique_ranges = unique_axis_ranges_map.at(tag);
+
+            return unique_ranges.size() == 2 && ranges::all_of(unique_ranges, [](auto&& element) {
+                return std::get<0>(element) == std::get<1>(element);
+            });
+        };
+
+        return axis_ranges | ranges::views::filter([](auto&& range) { return range.minValue != range.maxValue; })
+            | ranges::views::transform([&calculate_is_toggle](auto&& range) {
+                  const auto tag = WI_EnumValue(range.axisTag);
+                  return AxisRange{tag, range.minValue, range.maxValue, calculate_is_toggle(tag)};
+              })
+            | ranges::to<std::vector>;
+    }
+    CATCH_LOG()
+
+    return {};
+}
+
 std::vector<FontFamily> Context::get_font_families() const
 {
     const auto typographic_font_collection = get_typographic_font_collection(m_factory);
@@ -1109,109 +1219,18 @@ std::vector<FontFamily> Context::get_font_families() const
 
         wil::com_ptr<IDWriteLocalizedStrings> family_names;
         THROW_IF_FAILED(family->GetFamilyNames(&family_names));
+        auto family_name = get_localised_string(family_names);
 
         wil::com_ptr<IDWriteFont> first_font;
         THROW_IF_FAILED(family->GetFont(0, &first_font));
-
         const auto is_symbol_font = first_font->IsSymbolFont() != 0;
 
-        std::vector<DWRITE_FONT_AXIS_RANGE> axis_ranges;
-        std::unordered_map<uint32_t, std::set<std::tuple<float, float>>> unique_axis_ranges_map;
-        std::wstring wss_family_name;
-        std::wstring typographic_family_name;
-
-        if (typographic_font_collection) {
-            typographic_family_name = get_localised_string(family_names);
-
-            const auto family_2 = family.query<IDWriteFontFamily2>();
-
-            wil::com_ptr<IDWriteFontSet1> font_set;
-            THROW_IF_FAILED(family_2->GetFontSet(&font_set));
-
-            wil::com_ptr<IDWriteFontSet1> first_font_resources_set;
-            THROW_IF_FAILED(font_set->GetFirstFontResources(&first_font_resources_set));
-
-            const auto resources_count = first_font_resources_set->GetFontCount();
-
-            const bool has_variations = ranges::any_of(
-                ranges::views::iota(0u, resources_count), [&first_font_resources_set](auto font_index) {
-                    wil::com_ptr<IDWriteFontResource> font_resource;
-                    THROW_IF_FAILED(first_font_resources_set->CreateFontResource(font_index, &font_resource));
-                    return font_resource->HasVariations();
-                });
-
-            if (has_variations) {
-                uint32_t set_axis_count{};
-                HRESULT hr = font_set->GetFontAxisRanges(nullptr, 0, &set_axis_count);
-
-                THROW_HR_IF(hr, hr != E_NOT_SUFFICIENT_BUFFER);
-
-                if (set_axis_count > 0) {
-                    axis_ranges.resize(set_axis_count);
-                    THROW_IF_FAILED(font_set->GetFontAxisRanges(axis_ranges.data(), set_axis_count, &set_axis_count));
-                }
-
-                for (const auto font_index : ranges::views::iota(0u, resources_count)) {
-                    uint32_t resource_axis_count{};
-                    hr = first_font_resources_set->GetFontAxisRanges(nullptr, 0, &resource_axis_count);
-
-                    THROW_HR_IF(hr, hr != E_NOT_SUFFICIENT_BUFFER);
-
-                    std::vector<DWRITE_FONT_AXIS_RANGE> resource_axis_ranges{};
-                    if (resource_axis_count > 0) {
-                        resource_axis_ranges.resize(resource_axis_count);
-                        THROW_IF_FAILED(first_font_resources_set->GetFontAxisRanges(
-                            font_index, resource_axis_ranges.data(), resource_axis_count, &resource_axis_count));
-                    }
-
-                    for (auto&& axis_range : resource_axis_ranges) {
-                        auto& set = unique_axis_ranges_map[WI_EnumValue(axis_range.axisTag)];
-                        set.emplace(axis_range.minValue, axis_range.maxValue);
-                    }
-                }
-            }
-
-            wil::com_ptr<IDWriteFontFace5> font_face;
-            THROW_IF_FAILED(font_set->CreateFontFace(0, &font_face));
-
-            const auto font_face_6 = font_face.query<IDWriteFontFace6>();
-
-            wil::com_ptr<IDWriteLocalizedStrings> wss_family_name_strings;
-            THROW_IF_FAILED(
-                font_face_6->GetFamilyNames(DWRITE_FONT_FAMILY_MODEL_WEIGHT_STRETCH_STYLE, &wss_family_name_strings));
-
-            wss_family_name = get_localised_string(wss_family_name_strings);
-        } else {
-            wss_family_name = get_localised_string(family_names);
-        }
-
-        const auto calculate_is_toggle = [&unique_axis_ranges_map](auto tag) {
-            if (!unique_axis_ranges_map.contains(tag))
-                return false;
-
-            auto& unique_ranges = unique_axis_ranges_map.at(tag);
-
-            return unique_ranges.size() == 2 && ranges::all_of(unique_ranges, [](auto&& element) {
-                return std::get<0>(element) == std::get<1>(element);
-            });
-        };
-
-        const auto axis_ranges_view = axis_ranges | ranges::views::filter([](auto&& range) {
-            return range.minValue != range.maxValue;
-        }) | ranges::views::transform([&calculate_is_toggle](auto&& range) {
-            const auto tag = WI_EnumValue(range.axisTag);
-            return AxisRange{tag, range.minValue, range.maxValue, calculate_is_toggle(tag)};
-        }) | ranges::to<std::vector>;
-
-        families.emplace_back(std::move(family), std::move(wss_family_name), std::move(typographic_family_name),
-            is_symbol_font, axis_ranges_view);
+        families.emplace_back(
+            std::move(family), std::move(family_name), static_cast<bool>(typographic_font_collection), is_symbol_font);
     }
 
     mmh::in_place_sort(
-        families,
-        [](auto&& left, auto&& right) {
-            return StrCmpLogicalW(left.display_name().c_str(), right.display_name().c_str());
-        },
+        families, [](auto&& left, auto&& right) { return StrCmpLogicalW(left.name.c_str(), right.name.c_str()); },
         false);
 
     return families;

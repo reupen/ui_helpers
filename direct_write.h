@@ -175,13 +175,14 @@ struct AxisRange {
 
 struct FontFamily {
     wil::com_ptr<IDWriteFontFamily> family;
-    std::wstring wss_name;
-    std::wstring typographic_name;
+    std::wstring name;
+    bool is_typographic_model;
     bool is_symbol_font{};
-    std::vector<AxisRange> axes;
 
     std::vector<Font> fonts() const;
-    const std::wstring& display_name() const { return typographic_name.empty() ? wss_name : typographic_name; }
+    std::wstring_view typographic_name() const;
+    std::wstring wss_name(const Font& font) const;
+    std::vector<AxisRange> axes() const;
 };
 
 struct WeightStretchStyle {
