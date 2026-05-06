@@ -31,8 +31,6 @@ inline KeyboardLParam& GetKeyboardLParam(LPARAM& lp)
 bool are_keyboard_cues_enabled();
 bool is_high_contrast_active();
 
-BOOL set_process_dpi_aware();
-
 // This is cached as system-DPI changes take effect at next log on.
 // Per monitor-DPI changes can occur more frequently for per monitor-DPI aware applications.
 // At present, though, per-monitor DPI support is not declared by the foobar2000.exe manifest.
@@ -64,17 +62,10 @@ int combo_box_find_item_by_data(HWND wnd, size_t id);
 
 void rebar_show_all_bands(HWND wnd);
 
-BOOL shell_notify_icon(DWORD action, HWND wnd, UINT id, UINT version, UINT callbackmsg, HICON icon, const char* tip);
-BOOL shell_notify_icon_ex(DWORD action, HWND wnd, UINT id, UINT callbackmsg, HICON icon, const char* tip,
-    const char* balloon_title, const char* balloon_msg);
-
 BOOL tooltip_add_tool(HWND wnd, const LPTOOLINFO pti);
 BOOL tooltip_update_tip_text(HWND wnd, const LPTOOLINFO pti);
 
-BOOL header_set_item_text(HWND wnd, int n, const wchar_t* text);
 BOOL header_set_item_width(HWND wnd, int n, UINT cx);
-
-void format_date(uint64_t time, std::basic_string<TCHAR>& str, bool b_convert_to_local = false);
 
 void handle_modern_background_paint(HWND wnd, HWND wnd_button,
     HBRUSH top_background_brush = GetSysColorBrush(COLOR_WINDOW),
