@@ -153,41 +153,6 @@ FILETIME filetimestamp_to_FileTime(uint64_t time)
     ret.dwHighDateTime = (DWORD)(time >> 32);
     return ret;
 }
-void format_date(uint64_t time, std::basic_string<TCHAR>& str, bool b_convert_to_local)
-{
-    FILETIME ft1 = filetimestamp_to_FileTime(time);
-    FILETIME ft2 = ft1;
-    if (b_convert_to_local)
-        FileTimeToLocalFileTime2(&ft1, &ft2);
-    SYSTEMTIME st;
-    FileTimeToSystemTime(&ft2, &st);
-    int size = GetDateFormat(LOCALE_USER_DEFAULT, 0, &st, nullptr, nullptr, NULL);
-    int size2 = GetTimeFormat(LOCALE_USER_DEFAULT, 0, &st, nullptr, nullptr, NULL);
-    pfc::array_t<TCHAR> buf, buf2;
-    buf.set_size(size);
-    buf2.set_size(size2);
-    GetDateFormat(LOCALE_USER_DEFAULT, 0, &st, nullptr, buf.get_ptr(), size);
-    GetTimeFormat(LOCALE_USER_DEFAULT, 0, &st, nullptr, buf2.get_ptr(), size2);
-    str = _T("");
-    str += buf.get_ptr();
-    str += _T(" ");
-    str += buf2.get_ptr();
-}
-BOOL set_process_dpi_aware()
-{
-    using SETPROCESSDPIAWAREPROC = BOOL(WINAPI*)();
-    HINSTANCE hinstDll = LoadLibrary(_T("user32.dll"));
-
-    if (hinstDll) {
-        auto pSetProcessDPIAware = (SETPROCESSDPIAWAREPROC)GetProcAddress(hinstDll, "SetProcessDPIAware");
-
-        if (pSetProcessDPIAware) {
-            return pSetProcessDPIAware();
-        }
-    }
-
-    return FALSE;
-}
 
 SIZE get_system_dpi()
 {
@@ -251,76 +216,6 @@ int get_pointer_height()
     return 0;
 }
 
-BOOL run_action(DWORD action, NOTIFYICONDATA* data)
-{
-    if (Shell_NotifyIcon(action, data))
-        return TRUE;
-    if (action == NIM_MODIFY) {
-        if (Shell_NotifyIcon(NIM_ADD, data))
-            return TRUE;
-    }
-    return FALSE;
-}
-
-BOOL shell_notify_icon(DWORD action, HWND wnd, UINT id, UINT version, UINT callbackmsg, HICON icon, const char* tip)
-{
-    NOTIFYICONDATA nid;
-    memset(&nid, 0, sizeof(nid));
-    nid.cbSize = NOTIFYICONDATA_V2_SIZE;
-    nid.hWnd = wnd;
-    nid.uID = id;
-    nid.uFlags = 0;
-    if (action & NIM_SETVERSION)
-        nid.uVersion = version;
-    if (callbackmsg) {
-        nid.uFlags |= NIF_MESSAGE;
-        nid.uCallbackMessage = callbackmsg;
-    }
-    if (icon) {
-        nid.uFlags |= NIF_ICON;
-        nid.hIcon = icon;
-    }
-    if (tip) {
-        nid.uFlags |= NIF_TIP;
-        _tcsncpy_s(nid.szTip, pfc::stringcvt::string_os_from_utf8(tip), tabsize(nid.szTip) - 1);
-    }
-
-    return run_action(action, &nid);
-}
-
-BOOL shell_notify_icon_ex(DWORD action, HWND wnd, UINT id, UINT callbackmsg, HICON icon, const char* tip,
-    const char* balloon_title, const char* balloon_msg)
-{
-    NOTIFYICONDATA nid;
-    memset(&nid, 0, sizeof(nid));
-    nid.cbSize = NOTIFYICONDATA_V2_SIZE;
-    nid.hWnd = wnd;
-    nid.uID = id;
-    if (callbackmsg) {
-        nid.uFlags |= NIF_MESSAGE;
-        nid.uCallbackMessage = callbackmsg;
-    }
-    if (icon) {
-        nid.uFlags |= NIF_ICON;
-        nid.hIcon = icon;
-    }
-    if (tip) {
-        nid.uFlags |= NIF_TIP;
-        _tcsncpy_s(nid.szTip, pfc::stringcvt::string_os_from_utf8(tip), tabsize(nid.szTip) - 1);
-    }
-
-    nid.dwInfoFlags = NIIF_INFO | NIIF_NOSOUND;
-    // if (balloon_title || balloon_msg)
-    {
-        nid.uFlags |= NIF_INFO;
-        if (balloon_title)
-            _tcsncpy_s(
-                nid.szInfoTitle, pfc::stringcvt::string_os_from_utf8(balloon_title), tabsize(nid.szInfoTitle) - 1);
-        if (balloon_msg)
-            _tcsncpy_s(nid.szInfo, pfc::stringcvt::string_os_from_utf8(balloon_msg), tabsize(nid.szInfo) - 1);
-    }
-    return run_action(action, reinterpret_cast<NOTIFYICONDATA*>(&nid));
-}
 int combo_box_add_string_data(HWND wnd, const TCHAR* str, LPARAM data)
 {
     int index = ComboBox_AddString(wnd, str);
@@ -494,16 +389,6 @@ BOOL tooltip_update_tip_text(HWND wnd, const LPTOOLINFO pti)
     return static_cast<BOOL>(SendMessage(wnd, TTM_UPDATETIPTEXT, 0, reinterpret_cast<LPARAM>(pti)));
 }
 
-BOOL header_set_item_text(HWND wnd, int n, const wchar_t* text)
-{
-    HDITEM hdi;
-    memset(&hdi, 0, sizeof(hdi));
-    hdi.mask = HDI_TEXT;
-    hdi.cchTextMax = NULL;
-    hdi.pszText = const_cast<wchar_t*>(text);
-    return Header_SetItem(wnd, n, &hdi);
-}
-
 BOOL header_set_item_width(HWND wnd, int n, UINT cx)
 {
     HDITEM hdi;
@@ -659,6 +544,34 @@ void enhance_edit_control(HWND wnd)
 void enhance_edit_control(HWND wnd, int id)
 {
     enhance_edit_control(GetDlgItem(wnd, id));
+}
+
+namespace {
+
+bool should_show_focus_indicator_on_keydown(WPARAM wp)
+{
+    if (wp < VK_BACK || wp == VK_LWIN || wp == VK_RWIN)
+        return false;
+
+    if (wp >= VK_VOLUME_MUTE && wp <= VK_LAUNCH_APP2)
+        return false;
+
+    return true;
+}
+
+} // namespace
+
+void show_focus_indicator(HWND wnd)
+{
+    SendMessage(wnd, WM_CHANGEUISTATE, MAKEWPARAM(UIS_CLEAR, UISF_HIDEFOCUS), NULL);
+}
+
+void show_focus_indicator_on_keydown(HWND wnd, WPARAM wp)
+{
+    if (!should_show_focus_indicator_on_keydown(wp))
+        return;
+
+    show_focus_indicator(wnd);
 }
 
 } // namespace uih
