@@ -6,7 +6,7 @@ namespace uih {
 
 bool ListView::on_wm_keydown(WPARAM wp, LPARAM lp)
 {
-    SendMessage(get_wnd(), WM_CHANGEUISTATE, MAKEWPARAM(UIS_CLEAR, UISF_HIDEFOCUS), NULL);
+    show_focus_indicator_on_keydown(get_wnd(), wp);
 
     if (notify_on_keyboard_keydown_filter(WM_KEYDOWN, wp, lp))
         return true;

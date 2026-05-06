@@ -546,4 +546,32 @@ void enhance_edit_control(HWND wnd, int id)
     enhance_edit_control(GetDlgItem(wnd, id));
 }
 
+namespace {
+
+bool should_show_focus_indicator_on_keydown(WPARAM wp)
+{
+    if (wp < VK_BACK || wp == VK_LWIN || wp == VK_RWIN)
+        return false;
+
+    if (wp >= VK_VOLUME_MUTE && wp <= VK_LAUNCH_APP2)
+        return false;
+
+    return true;
+}
+
+} // namespace
+
+void show_focus_indicator(HWND wnd)
+{
+    SendMessage(wnd, WM_CHANGEUISTATE, MAKEWPARAM(UIS_CLEAR, UISF_HIDEFOCUS), NULL);
+}
+
+void show_focus_indicator_on_keydown(HWND wnd, WPARAM wp)
+{
+    if (!should_show_focus_indicator_on_keydown(wp))
+        return;
+
+    show_focus_indicator(wnd);
+}
+
 } // namespace uih

@@ -146,4 +146,7 @@ public:
 void enhance_edit_control(HWND wnd);
 void enhance_edit_control(HWND wnd, int id);
 
+void show_focus_indicator(HWND wnd);
+void show_focus_indicator_on_keydown(HWND wnd, WPARAM wp);
+
 } // namespace uih
