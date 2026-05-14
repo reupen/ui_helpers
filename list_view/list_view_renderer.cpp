@@ -80,8 +80,7 @@ void ListView::render_items(HDC dc, const RECT& paint_rect)
     RECT items_paint_rect{};
 
     if (m_search_bar) {
-        const auto search_area_rect
-            = m_search_bar.render(dc, rc_items.right, rc_items.bottom, context.colours, m_items_text_format);
+        const auto search_area_rect = m_search_bar.render(dc, rc_items.right, rc_items.bottom, context.colours);
 
         SubtractRect(&items_paint_rect, &paint_rect, &search_area_rect);
         ExcludeClipRect(

@@ -292,6 +292,7 @@ public:
     void set_font(std::optional<direct_write::TextFormat> text_format, const LOGFONT& log_font);
     void set_group_font(std::optional<direct_write::TextFormat> text_format);
     void set_header_font(std::optional<direct_write::TextFormat> text_format, const LOGFONT& log_font);
+    void set_search_bar_font(std::optional<direct_write::TextFormat> text_format, const LOGFONT& log_font);
 
     std::optional<float> get_group_font_size_pt() const;
     std::optional<float> get_items_font_size_pt() const;

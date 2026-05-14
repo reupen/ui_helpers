@@ -91,18 +91,21 @@ public:
     void on_string_change();
 
     void set_use_dark_mode(bool is_dark);
-    void set_font(HFONT font);
+    void set_font(std::optional<direct_write::TextFormat> text_format, const LOGFONT& log_font);
 
     void set_results_text(std::wstring_view new_text);
     void invalidate() const;
-    RECT render(HDC dc, int items_width, int items_bottom, const ColourData& colours,
-        const std::optional<direct_write::TextFormat>& text_format);
+    RECT render(HDC dc, int items_width, int items_bottom, const ColourData& colours) const;
 
 private:
     static int get_horizontal_padding();
     static int get_vertical_padding();
+    void update_edit_control_font();
 
     bool m_is_initialising{};
+    std::optional<LOGFONT> m_log_font{};
+    wil::unique_hfont m_hfont;
+    std::optional<direct_write::TextFormat> m_text_format;
     wil::unique_hwnd m_edit_control;
     bool m_ignore_next_wm_char_message{};
     bool m_ignore_next_wm_syschar_message{};
