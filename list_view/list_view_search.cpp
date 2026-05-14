@@ -218,7 +218,7 @@ void SearchBar::create(HWND parent_wnd, const char* label, HFONT font, int item_
             return {};
         });
 
-    set_font(font);
+    update_edit_control_font();
     SetWindowTheme(m_edit_control.get(), is_dark ? L"DarkMode_Explorer" : nullptr, nullptr);
 
     Edit_SetCueBannerTextFocused(m_edit_control.get(), mmh::to_utf16(label).c_str(), true);
@@ -387,13 +387,20 @@ void SearchBar::set_use_dark_mode(bool is_dark)
         set_toolbar_dark_mode(m_right_toolbar, right_commands);
 }
 
-void SearchBar::set_font(HFONT font)
+void SearchBar::set_font(std::optional<direct_write::TextFormat> text_format, const LOGFONT& log_font)
 {
+    m_log_font = log_font;
+    m_text_format = std::move(text_format);
+
     if (!m_edit_control.get())
         return;
 
-    m_edit_height = get_font_height(font) + 2 * 3_spx;
-    SetWindowFont(m_edit_control.get(), font, FALSE);
+    invalidate();
+
+    update_edit_control_font();
+    RedrawWindow(m_edit_control.get(), nullptr, nullptr, RDW_INVALIDATE);
+
+    reposition();
 }
 
 void SearchBar::set_results_text(std::wstring_view new_text)
@@ -411,8 +418,7 @@ void SearchBar::invalidate() const
     RedrawWindow(m_parent_wnd, &invalidate_rect, nullptr, RDW_INVALIDATE);
 }
 
-RECT SearchBar::render(HDC dc, int items_width, int items_bottom, const ColourData& colours,
-    const std::optional<direct_write::TextFormat>& text_format)
+RECT SearchBar::render(HDC dc, int items_width, int items_bottom, const ColourData& colours) const
 {
     const auto metrics = get_metrics();
 
@@ -425,7 +431,7 @@ RECT SearchBar::render(HDC dc, int items_width, int items_bottom, const ColourDa
     PatBlt(dc, search_area_rect.left, search_area_rect.top, wil::rect_width(search_area_rect), metrics.total_height,
         PATCOPY);
 
-    if (!text_format)
+    if (!m_text_format)
         return search_area_rect;
 
     const auto horizontal_padding = get_horizontal_padding();
@@ -436,7 +442,7 @@ RECT SearchBar::render(HDC dc, int items_width, int items_bottom, const ColourDa
     if (text_available_width <= 0)
         return search_area_rect;
 
-    const auto text_layout = text_format->create_text_layout(m_results_text,
+    const auto text_layout = m_text_format->create_text_layout(m_results_text,
         direct_write::px_to_dip(static_cast<float>(text_available_width)),
         direct_write::px_to_dip(static_cast<float>(metrics.total_height)), true);
 
@@ -458,6 +464,17 @@ int SearchBar::get_horizontal_padding()
 int SearchBar::get_vertical_padding()
 {
     return 2_spx;
+}
+
+void SearchBar::update_edit_control_font()
+{
+    const auto _old_font = std::move(m_hfont);
+
+    if (m_log_font)
+        m_hfont.reset(CreateFontIndirect(&*m_log_font));
+
+    m_edit_height = get_font_height(m_hfont.get()) + 2 * 3_spx;
+    SetWindowFont(m_edit_control.get(), m_hfont.get(), FALSE);
 }
 
 } // namespace uih::lv

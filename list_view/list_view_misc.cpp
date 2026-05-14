@@ -898,12 +898,6 @@ void ListView::set_font(std::optional<direct_write::TextFormat> text_format, con
             update_header();
         }
 
-        if (m_search_bar) {
-            m_search_bar.invalidate();
-            m_search_bar.set_font(m_items_font.get());
-            m_search_bar.reposition();
-        }
-
         refresh_item_positions();
     }
 }
@@ -920,6 +914,15 @@ void ListView::set_header_font(std::optional<direct_write::TextFormat> text_form
         on_size();
     }
 }
+
+void ListView::set_search_bar_font(std::optional<direct_write::TextFormat> text_format, const LOGFONT& log_font)
+{
+    m_search_bar.set_font(std::move(text_format), log_font);
+
+    if (m_search_bar)
+        update_scroll_info();
+}
+
 std::optional<float> ListView::get_group_font_size_pt() const
 {
     if (!m_group_text_format)
