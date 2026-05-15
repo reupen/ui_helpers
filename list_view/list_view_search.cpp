@@ -176,6 +176,11 @@ void SearchBar::create(HWND parent_wnd, const char* label, HFONT font, int item_
                     m_search_bar_host->on_return();
                     return 0;
                 case 'F': {
+                    if (m_search_bar_host->on_keydown(wp)) {
+                        m_ignore_next_wm_char_message = true;
+                        return 0;
+                    }
+
                     const auto is_alt_down = (HIWORD(lp) & KF_ALTDOWN) != 0;
                     const auto is_ctrl_down = (GetKeyState(VK_CONTROL) & KF_UP) != 0;
                     const auto is_shift_down = (GetKeyState(VK_SHIFT) & KF_UP) != 0;
