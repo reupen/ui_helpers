@@ -119,6 +119,8 @@ public:
             m_commands[index - 1]();
     }
 
+    auto size() const { return m_commands.size(); }
+
 private:
     std::vector<std::function<void()>> m_commands;
 };
