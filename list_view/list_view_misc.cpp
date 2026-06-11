@@ -424,6 +424,7 @@ void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
             m_shift_start.reset();
         } else if ((GetKeyState(VK_CONTROL) & KF_UP)) {
             set_focus_item(target_item);
+            m_shift_start.reset();
         } else if (m_selection_mode == SelectionMode::Multiple && (GetKeyState(VK_SHIFT) & KF_UP)) {
             if (!m_shift_start)
                 m_shift_start = focus;
