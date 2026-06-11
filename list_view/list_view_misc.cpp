@@ -421,10 +421,13 @@ void ListView::process_navigation_keydown(WPARAM wp, bool alt_down, bool repeat)
         if ((GetKeyState(VK_SHIFT) & KF_UP) && (GetKeyState(VK_CONTROL) & KF_UP)) {
             // if (!repeat) playlist_api->activeplaylist_undo_backup();
             move_selection(target_item - focus);
+            m_shift_start.reset();
         } else if ((GetKeyState(VK_CONTROL) & KF_UP)) {
             set_focus_item(target_item);
         } else if (m_selection_mode == SelectionMode::Multiple && (GetKeyState(VK_SHIFT) & KF_UP)) {
-            const size_t start = m_alternate_selection ? focus : m_shift_start;
+            if (!m_shift_start)
+                m_shift_start = focus;
+            const size_t start = m_alternate_selection ? focus : *m_shift_start;
             const pfc::bit_array_range array_select(
                 std::min(start, size_t(target_item)), abs(int(start - (target_item))) + 1);
             if (m_alternate_selection && !is_focus_selected)

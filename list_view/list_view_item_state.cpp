@@ -28,6 +28,14 @@ size_t ListView::get_focus_item()
     return ret;
 }
 
+std::optional<size_t> ListView::get_focus_item_optional()
+{
+    if (size_t index = storage_get_focus_item(); index < get_item_count())
+        return index;
+
+    return {};
+}
+
 void ListView::set_focus_item(size_t index, bool b_notify)
 {
     size_t old = storage_get_focus_item();
@@ -70,13 +78,16 @@ void ListView::set_item_selected(size_t index, bool b_state)
         set_selection_state(pfc::bit_array_one(index), pfc::bit_array_one(index));
     else
         set_selection_state(pfc::bit_array_one(index), pfc::bit_array_false());
+
+    m_shift_start.reset();
 }
+
 void ListView::set_item_selected_single(size_t index, bool b_notify, notification_source_t p_notification_source)
 {
     if (index < m_items.size()) {
         set_selection_state(pfc::bit_array_true(), pfc::bit_array_one(index), b_notify, p_notification_source);
         set_focus_item(index, b_notify);
-        // ensure_visible(index);
+        m_shift_start.reset();
     }
 }
 
