@@ -184,6 +184,8 @@ void ListView::remove_all_items()
 
 bool ListView::replace_items_in_internal_state(size_t index_start, size_t replace_count, const InsertItem* items)
 {
+    m_shift_start.reset();
+
     std::vector items_prev(m_items);
 
     const size_t total_items = m_items.size();
@@ -313,6 +315,8 @@ bool ListView::replace_items_in_internal_state(size_t index_start, size_t replac
 
 void ListView::insert_items_in_internal_state(size_t index_start, size_t insert_count, const InsertItem* items)
 {
+    m_shift_start.reset();
+
     const auto total_items = m_items.size();
     const auto old_group_display_count = index_start < total_items ? get_item_display_group_count(index_start) : 0;
 
@@ -565,6 +569,8 @@ void ListView::remove_items_in_internal_state(const pfc::bit_array& mask)
 
 void ListView::remove_item_in_internal_state(size_t remove_index)
 {
+    m_shift_start.reset();
+
     const size_t total_items = m_items.size();
     size_t old_group_display_count{};
 

@@ -209,13 +209,17 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             }
             else */
             if (b_shift_down && m_selection_mode == SelectionMode::Multiple) {
-                size_t focus = get_focus_item();
-                size_t start = m_alternate_selection ? focus : m_shift_start;
+                const auto focus_index = get_focus_item_optional();
+
+                if (!m_alternate_selection && !m_shift_start)
+                    m_shift_start = focus_index.value_or(0);
+
+                size_t start = m_alternate_selection ? focus_index.value_or(0) : *m_shift_start;
                 pfc::bit_array_range br(std::min(start, hit_result.index), abs(t_ssize(start - hit_result.index)) + 1);
                 if (m_lbutton_down_ctrl && !m_alternate_selection) {
                     set_selection_state(br, br, true);
                 } else {
-                    if (m_alternate_selection && !get_item_selected(focus))
+                    if (m_alternate_selection && (!focus_index || !get_item_selected(*focus_index)))
                         set_selection_state(br, pfc::bit_array_not(br), true);
                     else if (m_alternate_selection)
                         set_selection_state(br, br, true);
@@ -240,6 +244,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
             if (m_selection_mode == SelectionMode::Multiple) {
                 if (!m_lbutton_down_ctrl) {
+                    m_shift_start.reset();
+
                     const auto [index, count] = get_item_group_range(hit_result.index, hit_result.group_level);
 
                     if (!hit_result.is_stuck || b_shift_down)
@@ -252,8 +258,10 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 }
             }
         } else if (hit_result.category != HitTestCategory::BelowViewport) {
-            if (m_selection_mode != SelectionMode::SingleStrict)
+            if (m_selection_mode != SelectionMode::SingleStrict) {
                 set_selection_state(pfc::bit_array_true(), pfc::bit_array_false());
+                m_shift_start.reset();
+            }
         }
     }
         return 0;
@@ -295,6 +303,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                     }
                 } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
                     if (hit_result.index < m_items.size() && hit_result.group_level < m_group_count) {
+                        m_shift_start.reset();
+
                         const auto [index, count] = get_item_group_range(hit_result.index, hit_result.group_level);
 
                         if (count > 0) {
@@ -350,12 +360,15 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             const auto [index, count] = get_item_group_range(hit_result.index, hit_result.group_level);
             const auto is_selected = is_range_selected(index, count);
 
-            if (!is_selected)
+            if (!is_selected) {
+                m_shift_start.reset();
                 set_selection_state(pfc::bit_array_true(), pfc::bit_array_range(index, count));
+            }
 
             set_focus_item(index);
         } else if (hit_result.category != HitTestCategory::BelowViewport
             && m_selection_mode != SelectionMode::SingleStrict) {
+            m_shift_start.reset();
             set_selection_state(pfc::bit_array_true(), pfc::bit_array_false());
         }
         break;
@@ -450,6 +463,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                             set_selection_state(pfc::bit_array_true(),
                                 pfc::bit_array_range(std::min(target_index, m_selecting_start), num_to_select));
                             set_focus_item(target_index);
+                            m_shift_start.reset();
                         }
                     }
                 }

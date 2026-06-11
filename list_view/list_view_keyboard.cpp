@@ -50,9 +50,9 @@ bool ListView::on_wm_keydown(WPARAM wp, LPARAM lp)
         return true;
     }
     case VK_SHIFT:
-        if (!(HIWORD(lp) & KF_REPEAT)) {
-            size_t focus = get_focus_item();
-            m_shift_start = focus != pfc_infinite ? focus : 0;
+        if (!(HIWORD(lp) & KF_REPEAT) && !m_shift_start && get_item_count() > 0) {
+            const auto focus = get_focus_item();
+            m_shift_start = focus != SIZE_MAX ? focus : 0;
         }
         return false;
     case VK_F2:

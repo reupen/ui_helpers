@@ -522,6 +522,7 @@ public:
     void set_selection_state(const pfc::bit_array& p_affected, const pfc::bit_array& p_status, bool b_notify = true,
         notification_source_t p_notification_source = notification_source_unknown);
     size_t get_focus_item();
+    std::optional<size_t> get_focus_item_optional();
     void set_focus_item(size_t index, bool b_notify = true);
     bool get_item_selected(size_t index);
 
@@ -1054,7 +1055,7 @@ private:
     int m_item_height{1};
     int m_group_height{1};
     bool m_are_group_headers_sticky{};
-    size_t m_shift_start{std::numeric_limits<size_t>::max()};
+    std::optional<size_t> m_shift_start;
     bool m_timer_scroll_up{false};
     bool m_timer_scroll_down{false};
     bool m_lbutton_down_ctrl{false};
