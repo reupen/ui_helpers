@@ -176,9 +176,12 @@ void SmoothScrollHelper::abandon_animation(ScrollAxis axis, bool update_scroll_p
 bool SmoothScrollHelper::should_smooth_scroll_mouse_wheel(ScrollAxis axis, int wheel_delta)
 {
     auto& saved_tick_count = axis_state(axis).last_mouse_wheel_tick_count;
+    auto& saved_wheel_delta = axis_state(axis).last_mouse_wheel_delta;
     const auto last_tick_count = saved_tick_count;
+    const auto last_wheel_delta = saved_wheel_delta;
     const auto new_tick_count = GetTickCount64();
     saved_tick_count = new_tick_count;
+    saved_wheel_delta = wheel_delta;
 
     // Windows send high frequency mouse wheel messages for high precision touchpads,
     // effectively scrolling smoothly for us. Unfortunately, what kind of scroll device
@@ -187,8 +190,13 @@ bool SmoothScrollHelper::should_smooth_scroll_mouse_wheel(ScrollAxis axis, int w
     if (abs(wheel_delta) < WHEEL_DELTA)
         return false;
 
+    const auto is_coarse_delta = wheel_delta % WHEEL_DELTA == 0;
+
     if (!last_tick_count || new_tick_count - *last_tick_count >= 2500)
-        return wheel_delta % WHEEL_DELTA == 0;
+        return is_coarse_delta;
+
+    if (is_coarse_delta && (!last_wheel_delta || (*last_wheel_delta % WHEEL_DELTA == 0)))
+        return true;
 
     return new_tick_count - *last_tick_count > 50;
 }
