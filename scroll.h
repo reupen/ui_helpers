@@ -93,6 +93,7 @@ private:
     struct AxisState {
         std::optional<ScrollState> scroll_state;
         std::optional<uint64_t> last_mouse_wheel_tick_count;
+        std::optional<int32_t> last_mouse_wheel_delta;
     };
 
     static constexpr wil::zwstring_view thread_name{L"[UI helpers] Smooth scroll thread"};
