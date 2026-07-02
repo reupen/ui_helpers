@@ -80,16 +80,138 @@ private:
 
 } // namespace
 
+void SmoothScrollTimingThread::start(std::function<void()> on_tick)
+{
+    m_timer_active.store(true, std::memory_order_release);
+
+    if (m_timer_thread)
+        return;
+
+    if (m_shutdown_event)
+        m_shutdown_event.ResetEvent();
+    else
+        m_shutdown_event.create();
+
+    m_timer_thread = std::jthread([this, on_tick{std::move(on_tick)}](std::stop_token stop_token) {
+        mmh::set_thread_description(GetCurrentThread(), thread_name.c_str());
+
+        dcomp::DcompApi dcomp_api;
+        wil::com_ptr<IDXGIOutput> primary_output;
+        FrameTimeAverager frame_time_averager;
+        FrameTimeMinimum vblank_time_minimum;
+
+        if (!dcomp_api.has_wait_for_composition_clock() && mmh::is_windows_8_or_newer()) {
+            try {
+                const auto dxgi_factory = dxgi::create_dxgi_factory();
+                primary_output = dxgi::get_primary_output(dxgi_factory);
+            } catch (const wil::ResultException&) {
+#ifdef _DEBUG
+                LOG_CAUGHT_EXCEPTION();
+#endif
+            }
+        }
+
+        auto last_vblank_time_point = std::chrono::steady_clock::now() - 16ms;
+
+        while (!stop_token.stop_requested()) {
+            double vblank_time_ms{};
+
+            const auto wait_for_vblank = [&] {
+                if (dcomp_api.has_wait_for_composition_clock()) {
+                    const auto event = m_shutdown_event.get();
+                    [[maybe_unused]] const auto dcomp_status
+                        = dcomp_api.wait_for_composition_clock(m_shutdown_event ? 1 : 0, &event, 50);
+
+#ifdef _DEBUG
+                    LOG_IF_NTSTATUS_FAILED(dcomp_status);
+#endif
+                } else if (primary_output) {
+                    [[maybe_unused]] const auto hr = primary_output->WaitForVBlank();
+#ifdef _DEBUG
+                    LOG_IF_FAILED(hr);
+#endif
+                } else {
+                    [[maybe_unused]] const auto hr = DwmFlush();
+#ifdef _DEBUG
+                    LOG_IF_FAILED(hr);
+#endif
+                }
+
+                const auto vblank_time_point = std::chrono::steady_clock::now();
+
+                vblank_time_ms = (vblank_time_point - last_vblank_time_point) / 1.ms;
+
+                if (vblank_time_ms > 1.)
+                    vblank_time_minimum.add_frame_time(vblank_time_ms);
+
+                last_vblank_time_point = vblank_time_point;
+            };
+
+            wait_for_vblank();
+
+            // Possibly this could happen in scenarios like the display being off or RDP being in use
+            const auto need_to_sleep = vblank_time_ms < 1.;
+
+            if (stop_token.stop_requested())
+                return;
+
+            if (m_timer_active.load(std::memory_order_acquire)) {
+                if (!need_to_sleep) {
+                    // Throttle if the average frame time is more than 50% of minimum time between vblanks
+                    const auto num_frames_to_skip = std::max(
+                        0, static_cast<int>(frame_time_averager.get_average() * 2 / vblank_time_minimum.get_minimum()));
+
+                    for (int index{}; index < num_frames_to_skip; ++index) {
+                        wait_for_vblank();
+
+                        if (stop_token.stop_requested())
+                            return;
+                    }
+                }
+
+                const auto frame_start = std::chrono::steady_clock::now();
+                on_tick();
+                const auto frame_time = (std::chrono::steady_clock::now() - frame_start) / 1.ms;
+                frame_time_averager.add_frame(frame_time);
+            }
+
+            if (stop_token.stop_requested())
+                return;
+
+            // Will typically sleep for longer in practice (as the usual Windows timer resolution is 15.6ms)
+            if (need_to_sleep)
+                Sleep(15);
+        }
+    });
+}
+
+void SmoothScrollTimingThread::pause()
+{
+    m_timer_active.store(false, std::memory_order_release);
+}
+
+void SmoothScrollTimingThread::stop()
+{
+    if (m_timer_thread) {
+        m_timer_thread->request_stop();
+
+        if (m_shutdown_event)
+            m_shutdown_event.SetEvent();
+    }
+
+    m_timer_thread.reset();
+}
+
 void SmoothScrollHelper::absolute_scroll(ScrollAxis axis, int target_position, Duration duration)
 {
     const auto current_position = m_current_position(axis);
     const auto now = std::chrono::steady_clock::now();
     update_state(axis, target_position - current_position, false, duration, now);
 
-    const auto has_exiting_timer = m_timer_thread.has_value();
+    const auto has_existing_timer = m_timing_thread.has_thread();
     start_timer_thread();
 
-    if (!has_exiting_timer)
+    if (!has_existing_timer)
         on_message();
 }
 
@@ -98,10 +220,10 @@ void SmoothScrollHelper::delta_scroll(ScrollAxis axis, int delta, Duration durat
     const auto now = std::chrono::steady_clock::now();
     update_state(axis, delta, true, duration, now);
 
-    const auto has_exiting_timer = m_timer_thread.has_value();
+    const auto has_existing_timer = m_timing_thread.has_thread();
     start_timer_thread();
 
-    if (!has_exiting_timer)
+    if (!has_existing_timer)
         on_message();
 }
 
@@ -206,124 +328,20 @@ void SmoothScrollHelper::update_state(ScrollAxis axis, int delta, bool accumulat
 
 void SmoothScrollHelper::start_timer_thread()
 {
-    m_timer_active.store(true, std::memory_order_release);
     stop_thread_shutdown_timer();
 
-    if (m_timer_thread)
-        return;
-
-    if (m_shutdown_event)
-        m_shutdown_event.ResetEvent();
-    else
-        m_shutdown_event.create();
-
-    m_timer_thread = std::jthread([this](std::stop_token stop_token) {
-        mmh::set_thread_description(GetCurrentThread(), thread_name.c_str());
-
-        dcomp::DcompApi dcomp_api;
-        wil::com_ptr<IDXGIOutput> primary_output;
-        FrameTimeAverager frame_time_averager;
-        FrameTimeMinimum vblank_time_minimum;
-
-        if (!dcomp_api.has_wait_for_composition_clock() && mmh::is_windows_8_or_newer()) {
-            try {
-                const auto dxgi_factory = dxgi::create_dxgi_factory();
-                primary_output = dxgi::get_primary_output(dxgi_factory);
-            } catch (const wil::ResultException&) {
-#ifdef _DEBUG
-                LOG_CAUGHT_EXCEPTION();
-#endif
-            }
-        }
-
-        auto last_vblank_time_point = std::chrono::steady_clock::now() - 16ms;
-
-        while (!stop_token.stop_requested()) {
-            double vblank_time_ms{};
-
-            const auto wait_for_vblank = [&] {
-                if (dcomp_api.has_wait_for_composition_clock()) {
-                    const auto event = m_shutdown_event.get();
-                    [[maybe_unused]] const auto dcomp_status
-                        = dcomp_api.wait_for_composition_clock(m_shutdown_event ? 1 : 0, &event, 50);
-
-#ifdef _DEBUG
-                    LOG_IF_NTSTATUS_FAILED(dcomp_status);
-#endif
-                } else if (primary_output) {
-                    [[maybe_unused]] const auto hr = primary_output->WaitForVBlank();
-#ifdef _DEBUG
-                    LOG_IF_FAILED(hr);
-#endif
-                } else {
-                    [[maybe_unused]] const auto hr = DwmFlush();
-#ifdef _DEBUG
-                    LOG_IF_FAILED(hr);
-#endif
-                }
-
-                const auto vblank_time_point = std::chrono::steady_clock::now();
-
-                vblank_time_ms = (vblank_time_point - last_vblank_time_point) / 1.ms;
-
-                if (vblank_time_ms > 1.)
-                    vblank_time_minimum.add_frame_time(vblank_time_ms);
-
-                last_vblank_time_point = vblank_time_point;
-            };
-
-            wait_for_vblank();
-
-            // Possibly this could happen in scenarios like the display being off or RDP being in use
-            const auto need_to_sleep = vblank_time_ms < 1.;
-
-            if (stop_token.stop_requested())
-                return;
-
-            if (m_timer_active.load(std::memory_order_acquire)) {
-                if (!need_to_sleep) {
-                    // Throttle if the average frame time is more than 50% of minimum time between vblanks
-                    const auto num_frames_to_skip = std::max(
-                        0, static_cast<int>(frame_time_averager.get_average() * 2 / vblank_time_minimum.get_minimum()));
-
-                    for (int index{}; index < num_frames_to_skip; ++index) {
-                        wait_for_vblank();
-
-                        if (stop_token.stop_requested())
-                            return;
-                    }
-                }
-
-                const auto frame_start = std::chrono::steady_clock::now();
-                SendMessageTimeout(m_wnd, m_message_id, 0, 0, SMTO_BLOCK, 50, nullptr);
-                const auto frame_time = (std::chrono::steady_clock::now() - frame_start) / 1.ms;
-                frame_time_averager.add_frame(frame_time);
-            }
-
-            if (stop_token.stop_requested())
-                return;
-
-            // Will typically sleep for longer in practice (as the usual Windows timer resolution is 15.6ms)
-            if (need_to_sleep)
-                Sleep(15);
-        }
-    });
+    m_timing_thread.start([this] { SendMessageTimeout(m_wnd, m_message_id, 0, 0, SMTO_BLOCK, 50, nullptr); });
 }
 
 void SmoothScrollHelper::pause_timer_thread()
 {
-    m_timer_active.store(false, std::memory_order_release);
+    m_timing_thread.pause();
     start_thread_shutdown_timer();
 }
 
 void SmoothScrollHelper::stop_timer_thread()
 {
-    if (m_timer_thread) {
-        m_timer_thread->request_stop();
-        m_shutdown_event.SetEvent();
-    }
-
-    m_timer_thread.reset();
+    m_timing_thread.stop();
 }
 
 void SmoothScrollHelper::start_thread_shutdown_timer()

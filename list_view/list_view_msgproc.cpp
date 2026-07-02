@@ -19,6 +19,9 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     }
 #endif
 
+    if (const auto result = m_autoscroll_helper ? m_autoscroll_helper->handle_message(wnd, msg, wp, lp) : std::nullopt)
+        return *result;
+
     switch (msg) {
     case WM_CREATE:
         m_buffered_paint_initialiser.emplace();
@@ -111,6 +114,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         return 0;
     case WM_NCDESTROY:
         m_smooth_scroll_helper.reset();
+        m_autoscroll_helper.reset();
         m_buffered_paint_initialiser.reset();
         break;
     case WM_SIZE:
@@ -122,6 +126,10 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         break;
     case WM_TIMECHANGE:
         notify_on_time_change();
+        break;
+    case WM_SETTINGCHANGE:
+        if (wp == SPI_SET_POINTER_SCALE && m_autoscroll_helper)
+            m_autoscroll_helper->reset();
         break;
     case WM_MENUSELECT:
         notify_on_menu_select(wp, lp);
@@ -492,6 +500,14 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     }
     case WM_MBUTTONDOWN:
         SetFocus(wnd);
+
+        SendMessage(wnd, WM_CANCELMODE, 0, 0);
+
+        [[fallthrough]];
+    case WM_MBUTTONDBLCLK:
+        if (m_autoscroll_helper && (!m_allow_autoscroll_callback || m_allow_autoscroll_callback()))
+            m_autoscroll_helper->start(wnd);
+
         return 0;
     case WM_MBUTTONUP: {
         m_inline_edit_prevent = false;

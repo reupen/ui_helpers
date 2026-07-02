@@ -4,6 +4,24 @@
 
 namespace uih {
 
+class SmoothScrollTimingThread {
+public:
+    void start(std::function<void()> on_tick);
+    void pause();
+    void stop();
+    bool has_thread() const { return static_cast<bool>(m_timer_thread); }
+    bool is_active() const { return m_timer_active.load(std::memory_order_acquire); }
+
+    ~SmoothScrollTimingThread() { m_timer_thread.reset(); }
+
+private:
+    static constexpr wil::zwstring_view thread_name{L"[UI helpers] Smooth scroll thread"};
+
+    std::atomic<bool> m_timer_active{};
+    wil::unique_event_nothrow m_shutdown_event;
+    std::optional<std::jthread> m_timer_thread;
+};
+
 class SmoothScrollHelper {
 public:
     using CurrentPositionFunc = std::function<int(ScrollAxis axis)>;
@@ -44,7 +62,7 @@ public:
 
     void on_message()
     {
-        if (!m_timer_active.load(std::memory_order_acquire))
+        if (!m_timing_thread.is_active())
             return;
 
         assert(m_vertical_state.scroll_state || m_horizontal_state.scroll_state);
@@ -85,8 +103,6 @@ private:
         std::optional<int32_t> last_mouse_wheel_delta;
     };
 
-    static constexpr wil::zwstring_view thread_name{L"[UI helpers] Smooth scroll thread"};
-
     AxisState& axis_state(ScrollAxis axis)
     {
         return axis == ScrollAxis::Vertical ? m_vertical_state : m_horizontal_state;
@@ -122,10 +138,9 @@ private:
     CurrentPositionFunc m_current_position;
     ClampPositionFunc m_clamp_position;
     HandleScrollFunc m_handle_scroll;
-    std::atomic<bool> m_timer_active{};
     bool m_shutdown_timer_active{};
     wil::unique_event_nothrow m_shutdown_event;
-    std::optional<std::jthread> m_timer_thread;
+    SmoothScrollTimingThread m_timing_thread;
 };
 
 } // namespace uih

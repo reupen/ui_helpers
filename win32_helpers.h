@@ -38,6 +38,8 @@ bool is_high_contrast_active();
 SIZE get_system_dpi_cached();
 int scale_dpi_value(int value, unsigned original_dpi = USER_DEFAULT_SCREEN_DPI);
 
+constexpr auto SPI_GET_POINTER_SCALE = 0x2028;
+constexpr auto SPI_SET_POINTER_SCALE = 0x2029;
 int get_pointer_height();
 
 void list_view_set_explorer_theme(HWND wnd);

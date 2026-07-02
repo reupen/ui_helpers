@@ -25,6 +25,7 @@ public:
 
     static constexpr unsigned MSG_KILL_INLINE_EDIT = WM_USER + 3;
     static constexpr unsigned MSG_SMOOTH_SCROLL = WM_USER + 4;
+    static constexpr unsigned MSG_AUTOSCROLL_TICK = WM_USER + 5;
 
     enum {
         TIMER_SCROLL_UP = 1001,
@@ -254,6 +255,13 @@ public:
     void _set_scroll_position(int val) { m_scroll_position = val; }
 
     [[nodiscard]] int _get_scroll_position() const { return m_scroll_position; }
+
+    void configure_autoscroll(AutoscrollCursorInfo cursor_info);
+
+    void set_allow_autoscroll_callback(std::function<bool()> callback)
+    {
+        m_allow_autoscroll_callback = std::move(callback);
+    }
 
     void set_show_header(bool new_value);
     void set_show_tooltips(bool b_val);
@@ -1049,6 +1057,8 @@ private:
     bool m_use_smooth_scroll{};
     bool m_is_smooth_scrolling_suspended{};
     std::optional<SmoothScrollHelper> m_smooth_scroll_helper;
+    std::optional<AutoscrollHelper> m_autoscroll_helper;
+    std::function<bool()> m_allow_autoscroll_callback{};
     bool m_ensure_visible_suspended{};
     size_t m_group_count{};
     size_t m_visible_group_count{};

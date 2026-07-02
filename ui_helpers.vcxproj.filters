@@ -109,6 +109,9 @@
     <ClInclude Include="d2d_bitmap_renderer.h">
       <Filter>D2D, D3D and DXGI</Filter>
     </ClInclude>
+    <ClInclude Include="autoscroll.h">
+      <Filter>Scrolling</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="message_hook.cpp" />
@@ -219,6 +222,9 @@
     </ClCompile>
     <ClCompile Include="d2d_bitmap_renderer.cpp">
       <Filter>D2D, D3D and DXGI</Filter>
+    </ClCompile>
+    <ClCompile Include="autoscroll.cpp">
+      <Filter>Scrolling</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

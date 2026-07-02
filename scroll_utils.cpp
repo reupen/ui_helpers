@@ -57,4 +57,14 @@ int clamp_scroll_position(HWND wnd, ScrollAxis axis, int position)
     return position;
 }
 
+bool is_scrollable(HWND wnd, ScrollAxis axis)
+{
+    SCROLLINFO si{};
+    si.cbSize = sizeof(SCROLLINFO);
+    si.fMask = SIF_PAGE | SIF_RANGE;
+    GetScrollInfo(wnd, scroll_axis_to_win32_type(axis), &si);
+
+    return si.nMax > si.nMin && std::cmp_greater_equal(si.nMax - si.nMin, si.nPage);
+}
+
 } // namespace uih

@@ -154,6 +154,7 @@
     <Lib />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="autoscroll.h" />
     <ClInclude Include="container_window.h" />
     <ClInclude Include="d2d_bitmap_renderer.h" />
     <ClInclude Include="dcomp_utils.h" />
@@ -197,6 +198,7 @@
     <ClInclude Include="window_subclasser.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="autoscroll.cpp" />
     <ClCompile Include="container_window.cpp" />
     <ClCompile Include="d2d_bitmap_renderer.cpp" />
     <ClCompile Include="dcomp_utils.cpp" />
