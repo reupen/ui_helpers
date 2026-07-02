@@ -180,6 +180,8 @@
     <ClInclude Include="message_hook.h" />
     <ClInclude Include="info_box.h" />
     <ClInclude Include="scroll.h" />
+    <ClInclude Include="scroll_utils.h" />
+    <ClInclude Include="smooth_scroll.h" />
     <ClInclude Include="solid_fill.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="text_format_parser.h" />
@@ -229,7 +231,8 @@
     <ClCompile Include="ole\data_object.cpp" />
     <ClCompile Include="ole\enum_format_etc.cpp" />
     <ClCompile Include="message_hook.cpp" />
-    <ClCompile Include="scroll.cpp" />
+    <ClCompile Include="scroll_utils.cpp" />
+    <ClCompile Include="smooth_scroll.cpp" />
     <ClCompile Include="solid_fill.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

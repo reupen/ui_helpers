@@ -13,6 +13,9 @@
     <Filter Include="Text rendering">
       <UniqueIdentifier>{f2d05201-0bdb-4ef5-8f1f-329ff9922b1e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Scrolling">
+      <UniqueIdentifier>{d2550377-83c6-47f2-9a87-1a0c49939e9b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gdi.h" />
@@ -80,11 +83,19 @@
     <ClInclude Include="direct_write_style_utils.h">
       <Filter>Text rendering</Filter>
     </ClInclude>
-    <ClInclude Include="scroll.h" />
     <ClInclude Include="dxgi_utils.h" />
     <ClInclude Include="dcomp_utils.h" />
     <ClInclude Include="list_view\list_view_search.h">
       <Filter>List View</Filter>
+    </ClInclude>
+    <ClInclude Include="scroll_utils.h">
+      <Filter>Scrolling</Filter>
+    </ClInclude>
+    <ClInclude Include="smooth_scroll.h">
+      <Filter>Scrolling</Filter>
+    </ClInclude>
+    <ClInclude Include="scroll.h">
+      <Filter>Scrolling</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -180,9 +191,14 @@
     <ClCompile Include="direct_write_style_utils.cpp">
       <Filter>Text rendering</Filter>
     </ClCompile>
-    <ClCompile Include="scroll.cpp" />
     <ClCompile Include="dxgi_utils.cpp" />
     <ClCompile Include="dcomp_utils.cpp" />
+    <ClCompile Include="scroll_utils.cpp">
+      <Filter>Scrolling</Filter>
+    </ClCompile>
+    <ClCompile Include="smooth_scroll.cpp">
+      <Filter>Scrolling</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
