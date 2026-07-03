@@ -16,6 +16,9 @@
     <Filter Include="Scrolling">
       <UniqueIdentifier>{d2550377-83c6-47f2-9a87-1a0c49939e9b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="D2D, D3D and DXGI">
+      <UniqueIdentifier>{d0b6b603-f258-49eb-8bcd-df2ccf6009ff}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gdi.h" />
@@ -51,10 +54,8 @@
       <Filter>Trackbar</Filter>
     </ClInclude>
     <ClInclude Include="window_subclasser.h" />
-    <ClInclude Include="direct_2d.h" />
     <ClInclude Include="emoji.h" />
     <ClInclude Include="drag_image_d2d.h" />
-    <ClInclude Include="direct_3d.h" />
     <ClInclude Include="direct_write_text_out.h">
       <Filter>Text rendering</Filter>
     </ClInclude>
@@ -83,7 +84,6 @@
     <ClInclude Include="direct_write_style_utils.h">
       <Filter>Text rendering</Filter>
     </ClInclude>
-    <ClInclude Include="dxgi_utils.h" />
     <ClInclude Include="dcomp_utils.h" />
     <ClInclude Include="list_view\list_view_search.h">
       <Filter>List View</Filter>
@@ -96,6 +96,18 @@
     </ClInclude>
     <ClInclude Include="scroll.h">
       <Filter>Scrolling</Filter>
+    </ClInclude>
+    <ClInclude Include="direct_3d.h">
+      <Filter>D2D, D3D and DXGI</Filter>
+    </ClInclude>
+    <ClInclude Include="direct_2d.h">
+      <Filter>D2D, D3D and DXGI</Filter>
+    </ClInclude>
+    <ClInclude Include="dxgi_utils.h">
+      <Filter>D2D, D3D and DXGI</Filter>
+    </ClInclude>
+    <ClInclude Include="d2d_bitmap_renderer.h">
+      <Filter>D2D, D3D and DXGI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -166,10 +178,8 @@
     </ClCompile>
     <ClCompile Include="window_subclasser.cpp" />
     <ClCompile Include="info_box.cpp" />
-    <ClCompile Include="direct_2d.cpp" />
     <ClCompile Include="emoji.cpp" />
     <ClCompile Include="drag_image_d2d.cpp" />
-    <ClCompile Include="direct_3d.cpp" />
     <ClCompile Include="direct_write.cpp">
       <Filter>Text rendering</Filter>
     </ClCompile>
@@ -191,13 +201,24 @@
     <ClCompile Include="direct_write_style_utils.cpp">
       <Filter>Text rendering</Filter>
     </ClCompile>
-    <ClCompile Include="dxgi_utils.cpp" />
     <ClCompile Include="dcomp_utils.cpp" />
     <ClCompile Include="scroll_utils.cpp">
       <Filter>Scrolling</Filter>
     </ClCompile>
     <ClCompile Include="smooth_scroll.cpp">
       <Filter>Scrolling</Filter>
+    </ClCompile>
+    <ClCompile Include="direct_2d.cpp">
+      <Filter>D2D, D3D and DXGI</Filter>
+    </ClCompile>
+    <ClCompile Include="direct_3d.cpp">
+      <Filter>D2D, D3D and DXGI</Filter>
+    </ClCompile>
+    <ClCompile Include="dxgi_utils.cpp">
+      <Filter>D2D, D3D and DXGI</Filter>
+    </ClCompile>
+    <ClCompile Include="d2d_bitmap_renderer.cpp">
+      <Filter>D2D, D3D and DXGI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
