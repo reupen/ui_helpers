@@ -181,6 +181,12 @@ public:
         size_t group_level{};
         size_t column{};
         bool is_stuck{};
+
+        bool is_on_item() const
+        {
+            return category == HitTestCategory::OnUnobscuredItem || category == HitTestCategory::OnItemObscuredAbove
+                || category == HitTestCategory::OnItemObscuredBelow;
+        }
     };
 
     enum class ItemVisibility {
