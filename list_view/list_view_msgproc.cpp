@@ -19,6 +19,9 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     }
 #endif
 
+    if (const auto result = m_autoscroll_helper ? m_autoscroll_helper->handle_message(wnd, msg, wp, lp) : std::nullopt)
+        return *result;
+
     switch (msg) {
     case WM_CREATE:
         m_buffered_paint_initialiser.emplace();
@@ -111,6 +114,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         return 0;
     case WM_NCDESTROY:
         m_smooth_scroll_helper.reset();
+        m_autoscroll_helper.reset();
         m_buffered_paint_initialiser.reset();
         break;
     case WM_SIZE:
@@ -122,6 +126,10 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         break;
     case WM_TIMECHANGE:
         notify_on_time_change();
+        break;
+    case WM_SETTINGCHANGE:
+        if (wp == SPI_SET_POINTER_SCALE && m_autoscroll_helper)
+            m_autoscroll_helper->reset();
         break;
     case WM_MENUSELECT:
         notify_on_menu_select(wp, lp);
@@ -191,23 +199,19 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         bool b_shift_down = (wp & MK_SHIFT) != 0;
         m_lbutton_down_ctrl = (wp & MK_CONTROL) != 0 && m_selection_mode == SelectionMode::Multiple; // Cheat.
 
-        if (hit_result.category == HitTestCategory::OnUnobscuredItem
-            || hit_result.category == HitTestCategory::OnItemObscuredBelow
-            || hit_result.category == HitTestCategory::OnItemObscuredAbove) {
+        if (hit_result.is_on_item()) {
             if (!m_inline_edit_prevent)
                 m_inline_edit_prevent
                     = !((get_item_selected(hit_result.index) && !m_wnd_inline_edit && (get_selection_count(2) == 1)));
+
             if (hit_result.category == HitTestCategory::OnItemObscuredBelow)
-                ensure_visible(hit_result.index);
+                ensure_visible(hit_result.index, EnsureVisibleMode::PreferMinimalScrolling);
+
             if (hit_result.category == HitTestCategory::OnItemObscuredAbove)
-                ensure_visible(hit_result.index);
+                ensure_visible(hit_result.index, EnsureVisibleMode::PreferMinimalScrolling);
 
             m_dragging_initial_point = pt;
-            /*if (b_shift_down && m_lbutton_down_ctrl)
-            {
-                move_selection (hit_result.index-get_focus_item());
-            }
-            else */
+
             if (b_shift_down && m_selection_mode == SelectionMode::Multiple) {
                 const auto focus_index = get_focus_item_optional();
 
@@ -475,14 +479,27 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
         HitTestResult hit_result;
         hit_test_ex(pt, hit_result);
-        if (hit_result.category == HitTestCategory::OnUnobscuredItem) {
+
+        const auto is_shift_down = (wp & MK_SHIFT) != 0;
+        const auto is_ctrl_down = (wp & MK_CONTROL) != 0;
+
+        if (hit_result.is_on_item()) {
             exit_inline_edit();
             m_inline_edit_prevent = true;
-            size_t focus = get_focus_item();
-            if (focus != pfc_infinite)
-                execute_default_action(focus, hit_result.column, false, (wp & MK_CONTROL) != 0);
+
+            const auto is_selected = get_item_selected(hit_result.index);
+
+            if (!is_selected) {
+                if (is_ctrl_down || is_shift_down)
+                    return 0;
+
+                set_item_selected_single(hit_result.index);
+            }
+
+            execute_default_action(hit_result.index, hit_result.column, false, (wp & MK_CONTROL) != 0);
             return 0;
         }
+
         if (hit_result.category == HitTestCategory::RightOfItem
             || hit_result.category == HitTestCategory::RightOfGroupHeader
             || hit_result.category == HitTestCategory::NotOnItem)
@@ -492,6 +509,14 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     }
     case WM_MBUTTONDOWN:
         SetFocus(wnd);
+
+        SendMessage(wnd, WM_CANCELMODE, 0, 0);
+
+        [[fallthrough]];
+    case WM_MBUTTONDBLCLK:
+        if (m_autoscroll_helper && (!m_allow_autoscroll_callback || m_allow_autoscroll_callback()))
+            m_autoscroll_helper->start(wnd);
+
         return 0;
     case WM_MBUTTONUP: {
         m_inline_edit_prevent = false;

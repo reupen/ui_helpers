@@ -176,7 +176,7 @@ int scale_dpi_value(int value, unsigned original_dpi)
 int get_pointer_height()
 {
     int win_10_pointer_size{};
-    if (SystemParametersInfo(0x2028, 0, &win_10_pointer_size, 0) && win_10_pointer_size > 0)
+    if (SystemParametersInfo(SPI_GET_POINTER_SCALE, 0, &win_10_pointer_size, 0) && win_10_pointer_size > 0)
         return win_10_pointer_size;
 
     const auto cursor

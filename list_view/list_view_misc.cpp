@@ -857,6 +857,9 @@ void ListView::set_use_dark_mode(bool use_dark_mode)
     set_tooltip_window_theme();
 
     m_search_bar.set_use_dark_mode(use_dark_mode);
+
+    if (m_autoscroll_helper)
+        m_autoscroll_helper->set_is_dark(m_use_dark_mode);
 }
 
 void ListView::set_vertical_item_padding(int val)

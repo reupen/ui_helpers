@@ -14,5 +14,6 @@ constexpr auto scroll_axis_to_win32_type(ScrollAxis axis)
 
 int set_scroll_position(HWND wnd, ScrollAxis axis, int old_position, int new_position);
 int clamp_scroll_position(HWND wnd, ScrollAxis axis, int position);
+bool is_scrollable(HWND wnd, ScrollAxis axis);
 
 } // namespace uih

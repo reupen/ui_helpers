@@ -391,4 +391,16 @@ void ListView::destroy_timer_scroll_down()
         m_timer_scroll_down = false;
     }
 }
+
+void ListView::configure_autoscroll(AutoscrollCursorInfo cursor_info)
+{
+    m_autoscroll_helper.emplace(cursor_info, MSG_AUTOSCROLL_TICK, m_use_dark_mode, [this](int delta_x, int delta_y) {
+        if (delta_y != 0)
+            delta_scroll(delta_y, ScrollAxis::Vertical, true);
+
+        if (delta_x != 0)
+            delta_scroll(delta_x, ScrollAxis::Horizontal, true);
+    });
+}
+
 } // namespace uih
