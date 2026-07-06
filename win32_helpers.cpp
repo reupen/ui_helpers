@@ -173,47 +173,57 @@ int scale_dpi_value(int value, unsigned original_dpi)
     return MulDiv(value, get_system_dpi_cached().cx, original_dpi);
 }
 
-int get_pointer_height()
+int get_arrow_pointer_height()
 {
-    int win_10_pointer_size{};
-    if (SystemParametersInfo(SPI_GET_POINTER_SCALE, 0, &win_10_pointer_size, 0) && win_10_pointer_size > 0)
-        return win_10_pointer_size;
+    const auto base_pointer_size = GetSystemMetrics(SM_CYCURSOR);
+
+    int pointer_scale{32};
+    SystemParametersInfo(SPI_GET_POINTER_SCALE, 0, &pointer_scale, 0);
+
+    const auto pointer_size = MulDiv(base_pointer_size, pointer_scale, 32);
+
+    BITMAPINFOHEADER bmi{};
+
+    bmi.biSize = sizeof(bmi);
+    bmi.biWidth = pointer_size;
+    bmi.biHeight = -pointer_size;
+    bmi.biPlanes = 1;
+    bmi.biBitCount = 32;
+    bmi.biCompression = BI_RGB;
+    bmi.biClrUsed = 0;
+    bmi.biClrImportant = 0;
+
+    std::array<uint8_t, sizeof(BITMAPINFOHEADER)> bm_data{};
+
+    auto* bi = reinterpret_cast<BITMAPINFO*>(bm_data.data());
+    bi->bmiHeader = bmi;
+
+    void* bitmap_data{};
+    const wil::unique_hbitmap bitmap(CreateDIBSection(nullptr, bi, DIB_RGB_COLORS, &bitmap_data, nullptr, 0));
+
+    if (!bitmap || !bitmap_data)
+        return pointer_size;
+
+    const auto bitmap_data_u32 = static_cast<uint32_t*>(bitmap_data);
+
+    const auto desktop_dc = wil::GetDC(nullptr);
+    wil::unique_hdc memory_dc(CreateCompatibleDC(desktop_dc.get()));
+    const auto _ = wil::SelectObject(memory_dc.get(), bitmap.get());
 
     const auto cursor
         = static_cast<HCURSOR>(LoadImage(nullptr, IDC_ARROW, IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
 
-    ICONINFO icon_info{};
-    if (!GetIconInfo(cursor, &icon_info))
-        return 0;
+    DrawIconEx(memory_dc.get(), 0, 0, cursor, pointer_size, pointer_size, 0, nullptr, DI_NORMAL);
 
-    const wil::unique_hbitmap _colour_bitmap(icon_info.hbmColor);
-    const wil::unique_hbitmap _mask_bitmap(icon_info.hbmMask);
-
-    if (!icon_info.hbmMask)
-        return 0;
-
-    BITMAP bitmap_info{};
-    if (!GetObject(icon_info.hbmMask, sizeof(BITMAP), &bitmap_info))
-        return 0;
-
-    const auto bitmap_height = gsl::narrow<int>(icon_info.hbmColor ? bitmap_info.bmHeight : bitmap_info.bmHeight / 2);
-    const auto bitmap_width = gsl::narrow<int>(bitmap_info.bmWidth);
-
-    const wil::unique_hdc_window desktop_dc(GetDC(nullptr));
-    const wil::unique_hdc memory_dc(CreateCompatibleDC(desktop_dc.get()));
-    auto _ = wil::SelectObject(memory_dc.get(), icon_info.hbmMask);
-
-    for (auto y : ranges::views::iota(0, bitmap_height) | ranges::views::reverse) {
-        const auto any_pixel_set = ranges::any_of(ranges::views::iota(0, bitmap_width), [&memory_dc, y](auto x) {
-            const auto colour = GetPixel(memory_dc.get(), x, y);
-            return colour != 0xFFFFFF;
-        });
+    for (auto y : ranges::views::iota(0, pointer_size) | ranges::views::reverse) {
+        const auto any_pixel_set = ranges::any_of(
+            ranges::views::iota(0, pointer_size), [&](auto x) { return bitmap_data_u32[y * pointer_size + x] != 0; });
 
         if (any_pixel_set)
-            return y + 1 - gsl::narrow<int>(icon_info.yHotspot);
+            return y + 1;
     }
 
-    return 0;
+    return pointer_size;
 }
 
 int combo_box_add_string_data(HWND wnd, const TCHAR* str, LPARAM data)
