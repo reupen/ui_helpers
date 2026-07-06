@@ -2,6 +2,8 @@
 
 namespace uih {
 
+using namespace literals::spx;
+
 BOOL TrackbarBase::create_tooltip(const TCHAR* text, POINT pt)
 {
     destroy_tooltip();
@@ -24,7 +26,7 @@ BOOL TrackbarBase::create_tooltip(const TCHAR* text, POINT pt)
 
     tooltip_add_tool(m_wnd_tooltip, &ti);
 
-    m_cursor_height = get_pointer_height();
+    m_cursor_height = get_arrow_pointer_height() + 3_spx;
 
     SendMessage(m_wnd_tooltip, TTM_TRACKPOSITION, 0, MAKELONG(pt.x, pt.y + m_cursor_height));
     SendMessage(m_wnd_tooltip, TTM_TRACKACTIVATE, TRUE, reinterpret_cast<LPARAM>(&ti));
