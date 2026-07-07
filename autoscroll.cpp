@@ -29,7 +29,7 @@ void update_overlay_window(HWND overlay_wnd, POINT screen_pt, const AutoscrollHe
 
 } // namespace
 
-void AutoscrollHelper::start(HWND wnd)
+void AutoscrollHelper::start(HWND wnd, bool set_focus)
 {
     if (m_active)
         return;
@@ -45,6 +45,7 @@ void AutoscrollHelper::start(HWND wnd)
     m_wnd = wnd;
     m_has_scrolled = false;
     m_active = true;
+    m_previously_focused_wnd = set_focus ? SetFocus(wnd) : nullptr;
 
     // Note: WM_MBUTTONDOWN and WM_MBUTTONUP give the wrong pointer position if a popup menu was open
     const auto message_pos = GetMessagePos();
@@ -337,6 +338,9 @@ void AutoscrollHelper::stop()
         m_overlay_window->destroy();
         m_overlay_window.reset();
     }
+
+    if (m_previously_focused_wnd)
+        SetFocus(IsWindow(m_previously_focused_wnd) ? m_previously_focused_wnd : GetAncestor(m_wnd, GA_ROOT));
 }
 
 } // namespace uih
