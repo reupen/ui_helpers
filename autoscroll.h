@@ -38,7 +38,7 @@ public:
     {
     }
 
-    void start(HWND wnd);
+    void start(HWND wnd, bool set_focus = false);
 
     std::optional<LRESULT> handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp);
 
@@ -61,6 +61,7 @@ private:
     bool m_is_dark{};
     ScrollCallback m_scroll_callback{};
     HWND m_wnd{};
+    HWND m_previously_focused_wnd{};
     bool m_active{};
     bool m_can_scroll_vertically{};
     bool m_can_scroll_horizontally{};
