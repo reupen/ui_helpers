@@ -23,12 +23,6 @@ class AutoscrollHelper {
 public:
     using ScrollCallback = std::function<void(int delta_x, int delta_y)>;
 
-    struct OverlayImage {
-        wil::shared_hbitmap bitmap{};
-        int width{};
-        int height{};
-    };
-
     AutoscrollHelper(
         const AutoscrollCursorInfo& cursor_info, UINT message_id, bool is_dark, ScrollCallback scroll_callback)
         : m_cursor_info(cursor_info)
@@ -50,7 +44,7 @@ public:
 private:
     HCURSOR get_hcursor(UINT resource_id);
 
-    OverlayImage create_overlay_image();
+    SizedHbitmap create_overlay_image();
 
     void set_cursor();
 
@@ -71,7 +65,6 @@ private:
     bool m_has_scrolled{};
     UINT m_current_cursor_id{};
     std::unordered_map<UINT, wil::unique_hcursor> m_cursors{};
-    std::unordered_map<uint8_t, OverlayImage> m_overlays{};
     SmoothScrollTimingThread m_timing_thread{};
     std::chrono::time_point<std::chrono::steady_clock> m_last_tick_time{};
     std::optional<ContainerWindow> m_overlay_window;
