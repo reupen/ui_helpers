@@ -6,7 +6,7 @@ namespace uih {
 
 namespace {
 
-void update_overlay_window(HWND overlay_wnd, POINT screen_pt, const AutoscrollHelper::OverlayImage& overlay_image)
+void update_overlay_window(HWND overlay_wnd, POINT screen_pt, const SizedHbitmap& overlay_image)
 {
     const int x = screen_pt.x - overlay_image.width / 2;
     const int y = screen_pt.y - overlay_image.height / 2;
@@ -166,7 +166,6 @@ std::tuple<float, float> AutoscrollHelper::get_scroll_velocity() const
 
 void AutoscrollHelper::set_is_dark(bool is_dark)
 {
-    m_overlays.clear();
     m_is_dark = is_dark;
 
     if (!m_active || !m_overlay_window)
@@ -181,8 +180,6 @@ void AutoscrollHelper::set_is_dark(bool is_dark)
 void AutoscrollHelper::reset()
 {
     stop();
-    m_cursors.clear();
-    m_overlays.clear();
     m_d2d_bitmap_renderer.reset();
 }
 
@@ -196,12 +193,9 @@ HCURSOR AutoscrollHelper::get_hcursor(UINT resource_id)
     return m_cursors.at(resource_id).get();
 }
 
-AutoscrollHelper::OverlayImage AutoscrollHelper::create_overlay_image()
+SizedHbitmap AutoscrollHelper::create_overlay_image()
 {
     const auto cache_key = (m_can_scroll_horizontally ? 1 : 0) + (m_can_scroll_vertically ? 2 : 0);
-
-    if (m_overlays.contains(cache_key))
-        return OverlayImage{m_overlays.at(cache_key)};
 
     int win_10_pointer_size{32};
     SystemParametersInfo(SPI_GET_POINTER_SCALE, 0, &win_10_pointer_size, 0);
@@ -280,9 +274,7 @@ AutoscrollHelper::OverlayImage AutoscrollHelper::create_overlay_image()
             THROW_IF_FAILED(device_context->EndDraw());
         });
 
-        OverlayImage overlay_image(std::move(rendered_image.bitmap), rendered_image.width, rendered_image.height);
-        m_overlays.insert_or_assign(cache_key, overlay_image);
-        return overlay_image;
+        return rendered_image;
     }
     CATCH_LOG()
 
@@ -328,11 +320,15 @@ void AutoscrollHelper::stop()
     if (!m_active)
         return;
 
+    m_active = false;
+
     if (GetCapture() == m_wnd)
         ReleaseCapture();
 
+    SendMessage(m_wnd, WM_SETCURSOR, reinterpret_cast<WPARAM>(m_wnd), MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
+    m_cursors.clear();
+
     m_timing_thread.stop();
-    m_active = false;
 
     if (m_overlay_window) {
         m_overlay_window->destroy();
