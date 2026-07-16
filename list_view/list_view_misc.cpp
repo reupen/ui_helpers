@@ -16,8 +16,7 @@ void ListView::on_first_show()
 
 int ListView::get_group_items_bottom_margin(size_t index) const
 {
-    if (!get_show_group_info_area() || !m_is_group_info_area_header_spacing_enabled || m_visible_group_count == 0
-        || index + 1 == m_items.size())
+    if (!get_show_group_info_area() || !m_is_group_info_area_header_spacing_enabled || index + 1 == m_items.size())
         return 0;
 
     return m_group_height / 6;
@@ -25,7 +24,7 @@ int ListView::get_group_items_bottom_margin(size_t index) const
 
 int ListView::get_leaf_group_header_bottom_margin(std::optional<size_t> index) const
 {
-    if (!get_show_group_info_area() || !m_is_group_info_area_header_spacing_enabled || m_visible_group_count == 0)
+    if (!get_show_group_info_area() || !m_is_group_info_area_header_spacing_enabled)
         return 0;
 
     if (index && !get_is_new_group(*index))
@@ -44,7 +43,7 @@ int ListView::get_stuck_leaf_group_header_bottom_margin() const
 
 ListView::GroupInfoAreaPadding ListView::get_group_info_area_padding() const
 {
-    if (!get_show_group_info_area() || m_visible_group_count == 0)
+    if (!get_show_group_info_area())
         return {};
 
     const auto min_left_padding = 2_spx + 3_spx;
@@ -522,7 +521,7 @@ void ListView::invalidate_items(size_t index, size_t count) const
         return;
 
     const auto items_rect = get_items_rect();
-    const auto has_group_info_area = get_show_group_info_area() && m_visible_group_count > 0;
+    const auto has_group_info_area = get_show_group_info_area();
 
     const auto items_left
         = has_group_info_area ? get_total_indentation() - m_horizontal_scroll_position : items_rect.left;
@@ -582,7 +581,7 @@ void ListView::set_is_group_info_area_sticky(bool group_info_area_sticky)
     size_t first_item_index{};
     bool is_invalidation_needed{};
 
-    if (m_initialised && get_show_group_info_area() && m_visible_group_count > 0) {
+    if (m_initialised && get_show_group_info_area()) {
         first_item_index = gsl::narrow_cast<size_t>(get_first_or_previous_visible_item());
 
         if (first_item_index < m_items.size()) {
@@ -612,7 +611,7 @@ void ListView::set_is_group_info_area_header_spacing_enabled(bool value)
 RECT ListView::get_item_group_info_area_render_rect(
     size_t index, const std::optional<RECT>& items_rect, std::optional<int> scroll_position)
 {
-    if (!get_show_group_info_area() || m_visible_group_count == 0) {
+    if (!get_show_group_info_area()) {
         assert(false);
         return {};
     }

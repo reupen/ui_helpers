@@ -100,7 +100,7 @@ void ListView::render_items(HDC dc, const RECT& paint_rect)
     const auto item_indentation = get_total_indentation();
     const auto cx = get_columns_display_width() + item_indentation;
 
-    bool b_show_group_info_area = get_show_group_info_area() && m_visible_group_count > 0;
+    bool b_show_group_info_area = get_show_group_info_area();
 
     i = gsl::narrow<size_t>(get_item_at_or_before(
         (items_paint_rect.top > rc_items.top ? items_paint_rect.top - rc_items.top : 0) + m_scroll_position));
