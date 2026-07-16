@@ -147,7 +147,7 @@ void ListView::internal_scroll(int new_position, ScrollAxis axis)
 
     std::vector<RECT> invalidate_after_scroll_window{};
 
-    if (m_visible_group_count > 0 && get_show_group_info_area() && m_is_group_info_area_sticky && dy != 0) {
+    if (get_show_group_info_area() && m_is_group_info_area_sticky && dy != 0) {
         const auto first_items
             = std::unordered_set{gsl::narrow_cast<size_t>(get_first_or_previous_visible_item(original_scroll_position)),
                 gsl::narrow_cast<size_t>(get_first_or_previous_visible_item(m_scroll_position))};

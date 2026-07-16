@@ -169,6 +169,7 @@ public:
         OnItemObscuredBelow,
         LeftOfItem,
         RightOfItem,
+        OnGroupInfoArea,
         OnGroupHeader,
         LeftOfGroupHeader,
         RightOfGroupHeader,
@@ -337,7 +338,9 @@ public:
     void remove_items(const pfc::bit_array& mask);
     void remove_all_items();
 
+    HitTestResult hit_test_ex(POINT pt_client, bool exclude_stuck_headers = false);
     void hit_test_ex(POINT pt_client, HitTestResult& result, bool exclude_stuck_headers = false);
+
     void update_scroll_info(bool b_vertical = true, bool b_horizontal = true, bool redraw = true,
         std::optional<int> new_vertical_position = std::nullopt);
     ItemVisibility get_item_visibility(size_t index, bool use_target_position = true) const;
@@ -487,7 +490,7 @@ public:
 
     int get_group_minimum_inner_height() const
     {
-        return get_show_group_info_area() && m_visible_group_count > 0 ? get_group_info_area_total_height() : 0;
+        return get_show_group_info_area() ? get_group_info_area_total_height() : 0;
     }
     int get_group_items_bottom_margin(size_t index) const;
     int get_leaf_group_header_bottom_margin(std::optional<size_t> index = {}) const;
@@ -509,7 +512,7 @@ public:
 
         int ret = get_item_position(index) + m_item_height - 1;
 
-        if (get_show_group_info_area() && m_visible_group_count > 0) {
+        if (get_show_group_info_area()) {
             int gheight = gsl::narrow<int>(group_size) * m_item_height;
             int group_cy = get_group_info_area_total_height();
             const auto bottom_margin = get_group_items_bottom_margin(index);
@@ -799,7 +802,7 @@ protected:
         return header_item_index - 1;
     }
 
-    bool get_show_group_info_area() const { return m_group_count > 0 ? m_show_group_info_area : false; }
+    bool get_show_group_info_area() const { return m_visible_group_count > 0 ? m_show_group_info_area : false; }
 
     int get_total_indentation() const;
     [[nodiscard]] int get_stuck_group_headers_height(std::optional<int> scroll_position = {}) const;
