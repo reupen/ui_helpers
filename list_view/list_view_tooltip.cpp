@@ -214,8 +214,7 @@ void ListView::handle_mousemove_for_tooltip(POINT pt)
     if (pt.y < get_items_top())
         return;
 
-    HitTestResult hit_result;
-    hit_test_ex(pt, hit_result);
+    const auto hit_result = hit_test_ex(pt);
 
     if (!(hit_result.category == HitTestCategory::OnUnobscuredItem
             || hit_result.category == HitTestCategory::OnItemObscuredBelow

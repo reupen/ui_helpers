@@ -169,6 +169,7 @@ public:
         OnItemObscuredBelow,
         LeftOfItem,
         RightOfItem,
+        OnGroupInfoArea,
         OnGroupHeader,
         LeftOfGroupHeader,
         RightOfGroupHeader,
@@ -337,7 +338,9 @@ public:
     void remove_items(const pfc::bit_array& mask);
     void remove_all_items();
 
+    HitTestResult hit_test_ex(POINT pt_client, bool exclude_stuck_headers = false);
     void hit_test_ex(POINT pt_client, HitTestResult& result, bool exclude_stuck_headers = false);
+
     void update_scroll_info(bool b_vertical = true, bool b_horizontal = true, bool redraw = true,
         std::optional<int> new_vertical_position = std::nullopt);
     ItemVisibility get_item_visibility(size_t index, bool use_target_position = true) const;

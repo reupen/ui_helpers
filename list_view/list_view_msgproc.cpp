@@ -193,8 +193,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         exit_inline_edit();
         SetFocus(wnd);
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
-        HitTestResult hit_result;
-        hit_test_ex(pt, hit_result);
+
+        const auto hit_result = hit_test_ex(pt);
         m_lbutton_down_hittest = hit_result;
         bool b_shift_down = (wp & MK_SHIFT) != 0;
         m_lbutton_down_ctrl = (wp & MK_CONTROL) != 0 && m_selection_mode == SelectionMode::Multiple; // Cheat.
@@ -341,8 +341,8 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         SetFocus(wnd);
 
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
-        HitTestResult hit_result;
-        hit_test_ex(pt, hit_result);
+        const auto hit_result = hit_test_ex(pt);
+
         if (hit_result.category == HitTestCategory::OnUnobscuredItem
             || hit_result.category == HitTestCategory::OnItemObscuredBelow
             || hit_result.category == HitTestCategory::OnItemObscuredAbove) {
@@ -412,20 +412,18 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         if (m_selecting && m_selection_mode == SelectionMode::Multiple) {
             // size_t index;
             if (!m_selecting_move) {
-                HitTestResult hit_result;
-                hit_test_ex(pt, hit_result, true);
+                const auto hit_result = hit_test_ex(pt, true);
                 {
                     if (hit_result.category == HitTestCategory::AboveViewport
                         || hit_result.category == HitTestCategory::BelowViewport
                         || hit_result.category == HitTestCategory::OnUnobscuredItem
-                        //|| hit_result.result == hit_test_obscured_below || hit_result.result ==
-                        // hit_test_obscured_above
                         || hit_result.category == HitTestCategory::RightOfItem
                         || hit_result.category == HitTestCategory::LeftOfItem
                         || hit_result.category == HitTestCategory::RightOfGroupHeader
                         || hit_result.category == HitTestCategory::LeftOfGroupHeader
                         || hit_result.category == HitTestCategory::NotOnItem
-                        || hit_result.category == HitTestCategory::OnGroupHeader) {
+                        || hit_result.category == HitTestCategory::OnGroupHeader
+                        || hit_result.category == HitTestCategory::OnGroupInfoArea) {
                         if (hit_result.category == HitTestCategory::BelowViewport) {
                             create_timer_scroll_down();
                         } else
@@ -477,8 +475,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     }
     case WM_LBUTTONDBLCLK: {
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
-        HitTestResult hit_result;
-        hit_test_ex(pt, hit_result);
+        const auto hit_result = hit_test_ex(pt);
 
         const auto is_shift_down = (wp & MK_SHIFT) != 0;
         const auto is_ctrl_down = (wp & MK_CONTROL) != 0;
@@ -521,8 +518,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_MBUTTONUP: {
         m_inline_edit_prevent = false;
         POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
-        HitTestResult hit_result;
-        hit_test_ex(pt, hit_result);
+        const auto hit_result = hit_test_ex(pt);
 
         if (hit_result.category != HitTestCategory::BelowViewport)
             notify_on_middleclick(hit_result.category == HitTestCategory::OnUnobscuredItem, hit_result.index);

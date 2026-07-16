@@ -4,12 +4,14 @@
 
 namespace uih {
 
-void ListView::hit_test_ex(POINT pt_client, HitTestResult& result, bool exclude_stuck_headers)
+ListView::HitTestResult ListView::hit_test_ex(POINT pt_client, bool exclude_stuck_headers)
 {
     const RECT rc_item_area = get_items_rect();
     const int item_area_height = RECT_CY(rc_item_area);
 
+    HitTestResult result{};
     result.column = pfc_infinite;
+
     const int first_column_left = -m_horizontal_scroll_position + get_total_indentation();
     const size_t column_count = m_columns.size();
     int last_column_right = first_column_left;
@@ -28,21 +30,48 @@ void ListView::hit_test_ex(POINT pt_client, HitTestResult& result, bool exclude_
         result.index = get_first_unobscured_item(false);
         result.insertion_index = result.index;
         result.category = HitTestCategory::AboveViewport;
-        return;
+        return result;
     }
 
     if (pt_client.y >= rc_item_area.bottom) {
         result.index = get_last_unobscured_item(false);
         result.insertion_index = result.index;
         result.category = HitTestCategory::BelowViewport;
-        return;
+        return result;
     }
 
     const int header_height = rc_item_area.top;
     const int y_position = pt_client.y - header_height + m_scroll_position;
     const auto vertical_hit_test_result = visible_items_vertical_hit_test(y_position);
+    const auto vertical_category = vertical_hit_test_result.position_category;
 
-    if (vertical_hit_test_result.position_category == VerticalPositionCategory::OnItem) {
+    if (pt_client.x < first_column_left && get_show_group_info_area()
+        && (vertical_category == VerticalPositionCategory::OnItem
+            || vertical_category == VerticalPositionCategory::BetweenItems)) {
+        const auto group_info_area_rect
+            = get_item_group_info_area_render_rect(vertical_hit_test_result.item_leftmost, rc_item_area);
+
+        if (PtInRect(&group_info_area_rect, pt_client)) {
+            result.category = HitTestCategory::OnGroupInfoArea;
+            result.index = vertical_hit_test_result.item_leftmost;
+
+            result.insertion_index = [&] {
+                if (vertical_category == VerticalPositionCategory::OnItem) {
+                    const int item_top = get_item_position(vertical_hit_test_result.item_leftmost);
+                    const int item_height = get_item_height(vertical_hit_test_result.item_leftmost);
+
+                    if (item_height >= 2 && y_position - item_top >= item_height / 2)
+                        return vertical_hit_test_result.item_leftmost + 1;
+                }
+
+                return vertical_hit_test_result.item_leftmost;
+            }();
+
+            return result;
+        }
+    }
+
+    if (vertical_category == VerticalPositionCategory::OnItem) {
         const int item_top = get_item_position(vertical_hit_test_result.item_leftmost);
         const int item_bottom = get_item_position_bottom(vertical_hit_test_result.item_leftmost);
         const int item_height = get_item_height(result.index);
@@ -64,10 +93,10 @@ void ListView::hit_test_ex(POINT pt_client, HitTestResult& result, bool exclude_
         if (item_height >= 2 && y_position - item_top >= item_height / 2)
             result.insertion_index++;
 
-        return;
+        return result;
     }
 
-    if (vertical_hit_test_result.position_category == VerticalPositionCategory::BetweenGroupHeaderAndItem) {
+    if (vertical_category == VerticalPositionCategory::BetweenGroupHeaderAndItem) {
         assert(m_group_count > 0);
 
         const auto item_index = vertical_hit_test_result.item_leftmost;
@@ -76,10 +105,10 @@ void ListView::hit_test_ex(POINT pt_client, HitTestResult& result, bool exclude_
         result.insertion_index
             = vertical_hit_test_result.is_on_stuck_group_header ? get_first_unobscured_item(false) : item_index;
         result.category = HitTestCategory::NotOnItem;
-        return;
+        return result;
     }
 
-    if (vertical_hit_test_result.position_category == VerticalPositionCategory::OnGroupHeader) {
+    if (vertical_category == VerticalPositionCategory::OnGroupHeader) {
         assert(m_group_count > 0);
 
         result.category = HitTestCategory::OnGroupHeader;
@@ -97,12 +126,19 @@ void ListView::hit_test_ex(POINT pt_client, HitTestResult& result, bool exclude_
 
         result.is_stuck = vertical_hit_test_result.is_on_stuck_group_header;
 
-        return;
+        return result;
     }
 
     result.index = vertical_hit_test_result.item_leftmost;
     result.insertion_index = vertical_hit_test_result.item_rightmost;
     result.category = HitTestCategory::NotOnItem;
+
+    return result;
+}
+
+void ListView::hit_test_ex(POINT pt_client, HitTestResult& result, bool exclude_stuck_headers)
+{
+    result = hit_test_ex(pt_client, exclude_stuck_headers);
 }
 
 ListView::ItemVisibility ListView::get_item_visibility(size_t index, bool use_target_position) const
