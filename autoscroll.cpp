@@ -195,8 +195,6 @@ HCURSOR AutoscrollHelper::get_hcursor(UINT resource_id)
 
 SizedHbitmap AutoscrollHelper::create_overlay_image()
 {
-    const auto cache_key = (m_can_scroll_horizontally ? 1 : 0) + (m_can_scroll_vertically ? 2 : 0);
-
     int win_10_pointer_size{32};
     SystemParametersInfo(SPI_GET_POINTER_SCALE, 0, &win_10_pointer_size, 0);
     const auto pointer_size = static_cast<float>(MulDiv(GetSystemMetrics(SM_CYCURSOR), win_10_pointer_size, 32));
