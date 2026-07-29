@@ -9,15 +9,9 @@ const RECT rect_null = {0, 0, 0, 0};
 
 void list_view_set_explorer_theme(HWND wnd)
 {
-    if (mmh::is_windows_vista_or_newer()) {
-        ListView_SetExtendedListViewStyleEx(wnd, 0x00010000 | LVS_EX_FULLROWSELECT, 0x00010000 | LVS_EX_FULLROWSELECT);
-        if (mmh::is_windows_7_or_newer()) {
-            SetWindowTheme(wnd, L"ItemsView", nullptr);
-            // SetWindowTheme(ListView_GetHeader (wnd), L"ItemsView", NULL);
-        } else {
-            SetWindowTheme(wnd, L"Explorer", nullptr);
-        }
-    }
+    ListView_SetExtendedListViewStyleEx(
+        wnd, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT, LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT);
+    SetWindowTheme(wnd, L"ItemsView", nullptr);
 }
 
 bool are_keyboard_cues_enabled()
@@ -37,17 +31,14 @@ bool is_high_contrast_active()
 
 void tree_view_set_explorer_theme(HWND wnd, bool b_reduce_indent)
 {
-    if (mmh::is_windows_vista_or_newer()) {
-        UINT_PTR stylesex = TVS_EX_DOUBLEBUFFER | TVS_EX_AUTOHSCROLL;
-        UINT_PTR styles = NULL;
+    UINT_PTR stylesex = TVS_EX_DOUBLEBUFFER | TVS_EX_AUTOHSCROLL;
 
-        SendMessage(wnd, TVM_SETEXTENDEDSTYLE, stylesex, stylesex);
-        SetWindowTheme(wnd, L"Explorer", nullptr);
-        SetWindowLongPtr(
-            wnd, GWL_STYLE, (GetWindowLongPtr(wnd, GWL_STYLE) & ~(TVS_HASLINES /*|TVS_NOHSCROLL*/)) | styles);
-        if (b_reduce_indent)
-            TreeView_SetIndent(wnd, 0xa);
-    }
+    SendMessage(wnd, TVM_SETEXTENDEDSTYLE, stylesex, stylesex);
+    SetWindowTheme(wnd, L"Explorer", nullptr);
+    SetWindowLongPtr(wnd, GWL_STYLE, GetWindowLongPtr(wnd, GWL_STYLE) & ~TVS_HASLINES);
+
+    if (b_reduce_indent)
+        TreeView_SetIndent(wnd, 0xa);
 }
 
 int list_view_insert_column_text(HWND wnd_lv, int index, const TCHAR* text, int cx)
