@@ -115,29 +115,22 @@ HRESULT set_blob(IDataObject* pdtobj, CLIPFORMAT cf, const void* pvBlob, UINT cb
 
 HRESULT set_drop_description(IDataObject* pdtobj, DROPIMAGETYPE dit, const char* msg, const char* insert)
 {
-    if (mmh::is_windows_vista_or_newer()) {
-        DROPDESCRIPTION dd_prev;
-        memset(&dd_prev, 0, sizeof(dd_prev));
+    DROPDESCRIPTION dd_prev{};
+    bool dd_prev_valid = SUCCEEDED(GetDataObjectDataSimple(pdtobj, get_clipboard_format_drop_description(), dd_prev));
 
-        bool dd_prev_valid
-            = (SUCCEEDED(GetDataObjectDataSimple(pdtobj, get_clipboard_format_drop_description(), dd_prev)));
+    pfc::stringcvt::string_os_from_utf8 wmsg(msg);
+    pfc::stringcvt::string_os_from_utf8 winsert(insert);
 
-        pfc::stringcvt::string_os_from_utf8 wmsg(msg);
-        pfc::stringcvt::string_os_from_utf8 winsert(insert);
-
-        // Only set the drop description if it has actually changed (otherwise things get a bit crazy near the edge of
-        // the screen).
-        if (!dd_prev_valid || dd_prev.type != dit || wcscmp(dd_prev.szInsert, winsert)
-            || wcscmp(dd_prev.szMessage, wmsg)) {
-            DROPDESCRIPTION dd;
-            dd.type = dit;
-            wcsncpy_s(dd.szMessage, wmsg.get_ptr(), _TRUNCATE);
-            wcsncpy_s(dd.szInsert, winsert.get_ptr(), _TRUNCATE);
-            return set_blob(pdtobj, get_clipboard_format_drop_description(), &dd, sizeof(dd));
-        }
-        return S_OK;
+    // Only set the drop description if it has actually changed (otherwise things get a bit crazy near the edge of
+    // the screen).
+    if (!dd_prev_valid || dd_prev.type != dit || wcscmp(dd_prev.szInsert, winsert) || wcscmp(dd_prev.szMessage, wmsg)) {
+        DROPDESCRIPTION dd;
+        dd.type = dit;
+        wcsncpy_s(dd.szMessage, wmsg.get_ptr(), _TRUNCATE);
+        wcsncpy_s(dd.szInsert, winsert.get_ptr(), _TRUNCATE);
+        return set_blob(pdtobj, get_clipboard_format_drop_description(), &dd, sizeof(dd));
     }
-    return E_NOTIMPL;
+    return S_OK;
 }
 
 HRESULT set_using_default_drag_image(IDataObject* pdtobj, BOOL value)
