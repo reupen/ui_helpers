@@ -8,9 +8,9 @@ namespace uih {
 const std::unordered_map<InfoBoxType, int> icon_map{{InfoBoxType::Neutral, 0},
     {InfoBoxType::Information, OIC_INFORMATION}, {InfoBoxType::Warning, OIC_WARNING}, {InfoBoxType::Error, OIC_ERROR}};
 
-const std::unordered_map<InfoBoxType, INT_PTR> sound_map{{InfoBoxType::Neutral, 0},
-    {InfoBoxType::Information, SND_ALIAS_SYSTEMASTERISK}, {InfoBoxType::Warning, SND_ALIAS_SYSTEMEXCLAMATION},
-    {InfoBoxType::Error, SND_ALIAS_SYSTEMHAND}};
+const std::unordered_map<InfoBoxType, uint32_t> sound_map{{InfoBoxType::Neutral, 0},
+    {InfoBoxType::Information, MB_ICONINFORMATION}, {InfoBoxType::Warning, MB_ICONWARNING},
+    {InfoBoxType::Error, MB_ICONERROR}};
 
 void InfoBox::s_open_modeless(HWND wnd_parent, const char* title, const char* text, InfoBoxType type,
     std::function<std::optional<INT_PTR>(HWND, UINT, WPARAM, LPARAM)> on_before_message, bool no_wrap)
@@ -187,7 +187,7 @@ INT_PTR InfoBox::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         ShowWindow(wnd, SW_SHOWNORMAL);
 
         if (const auto sound = sound_map.at(m_type))
-            PlaySound(reinterpret_cast<LPCWSTR>(sound), nullptr, SND_ALIAS_ID | SND_ASYNC);
+            MessageBeep(sound);
 
         return TRUE;
     }
