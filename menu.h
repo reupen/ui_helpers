@@ -9,6 +9,10 @@ struct MenuItemOptions {
     bool is_radio_checked{};
 };
 
+struct MenuOptions {
+    bool is_right_button{true};
+};
+
 class Menu {
 public:
     Menu() { m_menu.reset(CreatePopupMenu()); }
@@ -93,10 +97,10 @@ public:
 
     void append_separator() const { insert_separator(UINT32_MAX); }
 
-    auto run(HWND wnd, POINT pt) const
+    auto run(HWND wnd, POINT pt, MenuOptions opts = {}) const
     {
-        return gsl::narrow_cast<uint32_t>(
-            TrackPopupMenu(m_menu.get(), TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD, pt.x, pt.y, 0, wnd, nullptr));
+        return gsl::narrow_cast<uint32_t>(TrackPopupMenuEx(m_menu.get(),
+            TPM_NONOTIFY | TPM_RETURNCMD | (opts.is_right_button ? TPM_RIGHTBUTTON : 0), pt.x, pt.y, wnd, nullptr));
     }
 
 private:
