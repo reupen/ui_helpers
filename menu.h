@@ -3,6 +3,7 @@
 namespace uih {
 
 struct MenuItemOptions {
+    std::string_view description;
     bool is_default{};
     bool is_disabled{};
     bool is_checked{};
@@ -12,6 +13,8 @@ struct MenuItemOptions {
 struct MenuOptions {
     bool is_right_button{true};
 };
+
+using MenuItemDescriptionGetter = std::function<wil::zstring_view(uint32_t)>;
 
 class Menu {
 public:
@@ -32,7 +35,7 @@ public:
         return gsl::narrow<uint32_t>(size);
     }
 
-    void insert_command(uint32_t index, uint32_t id, wil::zwstring_view text, MenuItemOptions opts = {}) const
+    void insert_command(uint32_t index, uint32_t id, wil::zwstring_view text, MenuItemOptions opts = {})
     {
         MENUITEMINFO mii{};
         mii.cbSize = sizeof(MENUITEMINFO);
@@ -57,6 +60,9 @@ public:
         mii.wID = id;
 
         LOG_IF_WIN32_BOOL_FALSE(InsertMenuItem(m_menu.get(), index, TRUE, &mii));
+
+        if (!opts.description.empty())
+            m_descriptions.insert_or_assign(id, opts.description);
     }
 
     void insert_submenu(uint32_t index, HMENU submenu, wil::zwstring_view text) const
@@ -86,14 +92,19 @@ public:
         LOG_IF_WIN32_BOOL_FALSE(InsertMenuItem(m_menu.get(), index, TRUE, &mii));
     }
 
-    void append_command(uint32_t id, wil::zwstring_view text, MenuItemOptions opts = {}) const
+    void append_command(uint32_t id, wil::zwstring_view text, MenuItemOptions opts = {})
     {
         insert_command(UINT32_MAX, id, text, opts);
     }
 
     void append_submenu(HMENU submenu, wil::zwstring_view text) const { insert_submenu(UINT32_MAX, submenu, text); }
 
-    void append_submenu(Menu&& submenu, wil::zwstring_view text) const { append_submenu(submenu.detach(), text); }
+    void append_submenu(Menu&& submenu, wil::zwstring_view text)
+    {
+        submenu.m_descriptions.merge(m_descriptions);
+        m_descriptions.swap(submenu.m_descriptions);
+        append_submenu(submenu.detach(), text);
+    }
 
     void append_separator() const { insert_separator(UINT32_MAX); }
 
@@ -103,8 +114,22 @@ public:
             TPM_NONOTIFY | TPM_RETURNCMD | (opts.is_right_button ? TPM_RIGHTBUTTON : 0), pt.x, pt.y, wnd, nullptr));
     }
 
+    wil::zstring_view get_description(uint32_t id) const
+    {
+        if (const auto iter = m_descriptions.find(id); iter != m_descriptions.end())
+            return iter->second;
+
+        return {};
+    }
+
+    MenuItemDescriptionGetter create_description_getter() const
+    {
+        return [this](uint32_t id) { return get_description(id); };
+    }
+
 private:
     wil::unique_hmenu m_menu;
+    std::unordered_map<uint32_t, std::string> m_descriptions;
 };
 
 class MenuCommandCollector {
