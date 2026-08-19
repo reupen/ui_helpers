@@ -89,6 +89,11 @@ bool ListView::is_group_visible(size_t item_index, size_t group_index) const
 
 ListView::ItemTransaction::~ItemTransaction() noexcept
 {
+    commit();
+}
+
+void ListView::ItemTransaction::commit()
+{
     if (!m_start_index)
         return;
 
@@ -98,6 +103,7 @@ ListView::ItemTransaction::~ItemTransaction() noexcept
         m_list_view.update_scroll_info(true, true, false);
 
     m_list_view.invalidate_all(false, true);
+    m_start_index.reset();
 }
 
 void ListView::ItemTransaction::insert_items(size_t index_start, size_t count, const InsertItem* items)
@@ -112,9 +118,25 @@ void ListView::ItemTransaction::remove_items(const pfc::bit_array& mask)
     m_start_index = 0;
 }
 
+void ListView::ItemTransaction::remove_all_items()
+{
+    m_list_view.remove_all_items_in_internal_state();
+    m_start_index = 0;
+}
+
 ListView::ItemTransaction ListView::start_transaction()
 {
     return {*this};
+}
+
+void ListView::set_initial_items(const std::initializer_list<InsertItem> items)
+{
+    assert(!m_initialised);
+
+    if (m_initialised)
+        return;
+
+    insert_items_in_internal_state(0, items.size(), items.begin());
 }
 
 void ListView::insert_items(size_t index_start, size_t count, const InsertItem* items,
@@ -176,7 +198,7 @@ void ListView::remove_all_items()
     if (m_timer_inline_edit)
         exit_inline_edit();
 
-    m_items.clear();
+    remove_all_items_in_internal_state();
     update_scroll_info();
 
     invalidate_all();
@@ -565,6 +587,11 @@ void ListView::remove_items_in_internal_state(const pfc::bit_array& mask)
         if (mask[i - 1])
             remove_item_in_internal_state(i - 1);
     }
+}
+
+void ListView::remove_all_items_in_internal_state()
+{
+    m_items.clear();
 }
 
 void ListView::remove_item_in_internal_state(size_t remove_index)

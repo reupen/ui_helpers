@@ -4,20 +4,28 @@
 
 namespace uih {
 
-void ListView::get_selection_state(pfc::bit_array_var& out)
+void ListView::get_selection_state(pfc::bit_array_var& out) const
 {
     storage_get_selection_state(out);
 }
 
 void ListView::set_selection_state(const pfc::bit_array& p_affected, const pfc::bit_array& p_status, bool b_notify,
-    notification_source_t p_notification_source)
+    lv::notification_source_t p_notification_source)
 {
     pfc::bit_array_bittable p_changed(get_item_count());
-    if (storage_set_selection_state(p_affected, p_status, &p_changed)) {
-        invalidate_items(p_changed);
-        if (b_notify)
-            notify_on_selection_change(p_changed, p_status, p_notification_source);
-    }
+
+    if (!storage_set_selection_state(p_affected, p_status, &p_changed))
+        return;
+
+    invalidate_items(p_changed);
+
+    if (!b_notify)
+        return;
+
+    notify_on_selection_change(p_changed, p_status, p_notification_source);
+
+    if (m_selection_changed_callback)
+        m_selection_changed_callback(p_changed, p_status, p_notification_source);
 }
 
 size_t ListView::get_focus_item()
@@ -47,17 +55,17 @@ void ListView::set_focus_item(size_t index, bool b_notify)
     }
 }
 
-bool ListView::get_item_selected(size_t index)
+bool ListView::get_item_selected(size_t index) const
 {
     return storage_get_item_selected(index);
 }
 
-size_t ListView::get_selection_count(size_t max)
+size_t ListView::get_selection_count(size_t max) const
 {
     return storage_get_selection_count(max);
 }
 
-size_t ListView::storage_get_selection_count(size_t max)
+size_t ListView::storage_get_selection_count(size_t max) const
 {
     size_t i;
     size_t count = m_items.size();
@@ -82,7 +90,7 @@ void ListView::set_item_selected(size_t index, bool b_state)
     m_shift_start.reset();
 }
 
-void ListView::set_item_selected_single(size_t index, bool b_notify, notification_source_t p_notification_source)
+void ListView::set_item_selected_single(size_t index, bool b_notify, lv::notification_source_t p_notification_source)
 {
     if (index < m_items.size()) {
         set_selection_state(pfc::bit_array_true(), pfc::bit_array_one(index), b_notify, p_notification_source);
@@ -92,7 +100,7 @@ void ListView::set_item_selected_single(size_t index, bool b_notify, notificatio
 }
 
 // DEFAULT STORAGE
-size_t ListView::storage_get_focus_item()
+size_t ListView::storage_get_focus_item() const
 {
     return m_focus_index;
 }
@@ -102,7 +110,7 @@ void ListView::storage_set_focus_item(size_t index)
     m_focus_index = index;
 }
 
-void ListView::storage_get_selection_state(pfc::bit_array_var& out) // storage
+void ListView::storage_get_selection_state(pfc::bit_array_var& out) const
 {
     size_t i;
     size_t count = m_items.size();
@@ -127,7 +135,7 @@ bool ListView::storage_set_selection_state(const pfc::bit_array& p_affected, con
     return b_changed;
 }
 
-bool ListView::storage_get_item_selected(size_t index)
+bool ListView::storage_get_item_selected(size_t index) const
 {
     return m_items[index]->m_selected;
 }

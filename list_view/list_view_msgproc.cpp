@@ -23,7 +23,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         return *result;
 
     switch (msg) {
-    case WM_CREATE:
+    case WM_CREATE: {
         m_buffered_paint_initialiser.emplace();
         m_smooth_scroll_helper.emplace(
             wnd, MSG_SMOOTH_SCROLL, SMOOTH_SCROLL_TIMER_ID,
@@ -84,12 +84,22 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             create_header();
 
         m_initialised = true;
+
+        const auto has_initial_items = !m_items.empty();
+
+        if (has_initial_items)
+            update_item_and_group_positioning();
+
         notify_on_create();
         build_header();
+
+        if (has_initial_items)
+            update_scroll_info();
 
         if (m_wnd_header)
             ShowWindow(m_wnd_header, SW_SHOWNORMAL);
         return 0;
+    }
     case WM_DESTROY:
         m_initialised = false;
         m_inline_edit_save = false;
@@ -357,7 +367,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
                 if (m_selection_mode == SelectionMode::SingleStrict) {
                     set_focus_item(hit_result.index);
                 } else
-                    set_item_selected_single(hit_result.index, true, notification_source_rmb);
+                    set_item_selected_single(hit_result.index, true, lv::notification_source_rmb);
             } else if (get_focus_item() != hit_result.index)
                 set_focus_item(hit_result.index);
         } else if (hit_result.category == HitTestCategory::OnGroupHeader) {
