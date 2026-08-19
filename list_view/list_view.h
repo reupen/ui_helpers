@@ -15,10 +15,22 @@ struct SavedScrollPosition {
     double proportional_position{};
 };
 
+enum notification_source_t {
+    notification_source_unknown,
+    notification_source_rmb,
+};
+
+using OnSelectionChangedCallback = std::function<void(
+    const pfc::bit_array& p_affected, const pfc::bit_array& p_status, notification_source_t p_notification_source)>;
+
 } // namespace lv
 
 class ListView {
 public:
+    // For backwards compatibility
+    using notification_source_t = lv::notification_source_t;
+    static constexpr auto notification_source_rmb = lv::notification_source_rmb;
+
     static constexpr short IDC_HEADER = 1001;
     static constexpr short IDC_TOOLTIP = 1002;
     static constexpr short IDC_INLINEEDIT = 667;
@@ -37,6 +49,7 @@ public:
     };
 
     using ColourData = lv::ColourData;
+    using String = pfc::string_simple;
     using string_array = std::vector<pfc::string_simple>;
 
     class Column {
@@ -107,6 +120,9 @@ public:
 
         InsertItem() = default;
 
+        explicit InsertItem(String text) { m_subitems.push_back(std::move(text)); }
+        InsertItem(std::string_view text) { m_subitems.emplace_back(text.data(), text.size()); }
+
         InsertItem(const string_array& text, const string_array& p_groups)
         {
             m_subitems = text;
@@ -123,8 +139,11 @@ public:
     public:
         ~ItemTransaction() noexcept;
 
+        void commit();
+
         void insert_items(size_t index_start, size_t count, const InsertItem* items);
         void remove_items(const pfc::bit_array& mask);
+        void remove_all_items();
 
     private:
         ItemTransaction(ListView& list_view)
@@ -227,9 +246,15 @@ public:
      * \param window_pos    Initial window position
      * \return              Window handle of the created list view
      */
-    HWND create(HWND wnd_parent, WindowPosition window_pos = {}, bool use_dialog_units = false)
+    HWND create(
+        HWND wnd_parent, WindowPosition window_pos = {}, bool use_dialog_units = false, bool show_window = false)
     {
-        return m_container_window->create(wnd_parent, window_pos, nullptr, use_dialog_units);
+        const auto wnd = m_container_window->create(wnd_parent, window_pos, nullptr, use_dialog_units);
+
+        if (show_window && wnd)
+            ShowWindow(wnd, SW_SHOWNORMAL);
+
+        return wnd;
     }
 
     /**
@@ -325,6 +350,8 @@ public:
     void update_column_sizes();
 
     ItemTransaction start_transaction();
+
+    void set_initial_items(std::initializer_list<InsertItem> items);
     void insert_items(size_t index_start, size_t count, const InsertItem* items,
         const std::optional<lv::SavedScrollPosition>& saved_scroll_position = std::nullopt);
 
@@ -528,20 +555,15 @@ public:
 
     void refresh_item_positions();
 
-    enum notification_source_t {
-        notification_source_unknown,
-        notification_source_rmb,
-    };
-
     bool copy_selected_items_as_text(size_t default_single_item_column = pfc_infinite);
 
-    void get_selection_state(pfc::bit_array_var& out);
+    void get_selection_state(pfc::bit_array_var& out) const;
     void set_selection_state(const pfc::bit_array& p_affected, const pfc::bit_array& p_status, bool b_notify = true,
-        notification_source_t p_notification_source = notification_source_unknown);
+        lv::notification_source_t p_notification_source = lv::notification_source_unknown);
     size_t get_focus_item();
     std::optional<size_t> get_focus_item_optional();
     void set_focus_item(size_t index, bool b_notify = true);
-    bool get_item_selected(size_t index);
+    bool get_item_selected(size_t index) const;
 
     bool is_range_selected(size_t index, size_t count)
     {
@@ -552,9 +574,9 @@ public:
         return count != 0;
     }
 
-    size_t get_selection_count(size_t max = pfc_infinite);
+    size_t get_selection_count(size_t max = pfc_infinite) const;
 
-    size_t get_selected_item_single()
+    size_t get_selected_item_single() const
     {
         size_t num_selected = get_selection_count(2);
         size_t index = 0;
@@ -594,8 +616,13 @@ public:
     }
 
     void set_item_selected(size_t index, bool b_state);
-    void set_item_selected_single(
-        size_t index, bool b_notify = true, notification_source_t p_notification_source = notification_source_unknown);
+    void set_item_selected_single(size_t index, bool b_notify = true,
+        lv::notification_source_t p_notification_source = lv::notification_source_unknown);
+
+    void set_selection_changed_callback(lv::OnSelectionChangedCallback callback)
+    {
+        m_selection_changed_callback = std::move(callback);
+    }
 
     bool disable_redrawing();
     void enable_redrawing();
@@ -616,7 +643,7 @@ public:
 
     const char* get_item_text(size_t index, size_t column);
 
-    size_t get_item_count() { return m_items.size(); }
+    size_t get_item_count() const { return m_items.size(); }
 
     void activate_inline_editing(size_t column_start = 0);
     void activate_inline_editing(const pfc::list_base_const_t<size_t>& indices, size_t column);
@@ -657,8 +684,8 @@ protected:
         ListView* m_list_view{};
     };
 
-    virtual void notify_on_selection_change(
-        const pfc::bit_array& p_affected, const pfc::bit_array& p_status, notification_source_t p_notification_source)
+    virtual void notify_on_selection_change(const pfc::bit_array& p_affected, const pfc::bit_array& p_status,
+        lv::notification_source_t p_notification_source)
     {
     }
 
@@ -901,13 +928,13 @@ private:
     virtual void move_selection(int delta) {}
     virtual bool do_drag_drop(WPARAM wp) { return false; }
 
-    virtual size_t storage_get_focus_item();
+    virtual size_t storage_get_focus_item() const;
     virtual void storage_set_focus_item(size_t index);
-    virtual void storage_get_selection_state(pfc::bit_array_var& out);
+    virtual void storage_get_selection_state(pfc::bit_array_var& out) const;
     virtual bool storage_set_selection_state(
         const pfc::bit_array& p_affected, const pfc::bit_array& p_status, pfc::bit_array_var* p_changed = nullptr);
-    virtual bool storage_get_item_selected(size_t index);
-    virtual size_t storage_get_selection_count(size_t max);
+    virtual bool storage_get_item_selected(size_t index) const;
+    virtual size_t storage_get_selection_count(size_t max) const;
 
     virtual Item* storage_create_item() { return new Item; }
     virtual Group* storage_create_group() { return new Group; }
@@ -967,6 +994,7 @@ private:
     bool replace_items_in_internal_state(size_t index_start, size_t count, const InsertItem* items);
     void remove_item_in_internal_state(size_t remove_index);
     void remove_items_in_internal_state(const pfc::bit_array& mask);
+    void remove_all_items_in_internal_state();
     void calculate_item_positions(size_t index_start = 0);
     void calculate_visible_group_count();
     bool update_item_and_group_positioning(size_t index_start = 0);
@@ -1121,6 +1149,7 @@ private:
     EdgeStyle m_edge_style{edge_grey};
     bool m_sizing{false};
 
+    lv::OnSelectionChangedCallback m_selection_changed_callback;
     SelectionMode m_selection_mode{SelectionMode::Multiple};
     bool m_alternate_selection{false};
     bool m_allow_header_rearrange{false};

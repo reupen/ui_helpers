@@ -517,7 +517,7 @@ void ListView::update_all_items()
 
 void ListView::invalidate_items(size_t index, size_t count) const
 {
-    if (count == 0)
+    if (count == 0 || !m_initialised)
         return;
 
     const auto items_rect = get_items_rect();
@@ -539,6 +539,9 @@ void ListView::invalidate_items(size_t index, size_t count) const
 
 void ListView::invalidate_items(const pfc::bit_array& mask)
 {
+    if (!m_initialised)
+        return;
+
     size_t i;
     size_t start;
     size_t count = get_item_count();
