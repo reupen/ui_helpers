@@ -90,6 +90,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         if (has_initial_items)
             update_item_and_group_positioning();
 
+        update_column_sizes();
         notify_on_create();
         build_header();
 
