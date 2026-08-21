@@ -12,8 +12,7 @@ void ContainerWindow::on_size() const
     }
 }
 
-HWND ContainerWindow::create(
-    HWND wnd_parent, WindowPosition window_position, LPVOID create_param, bool use_dialog_units)
+HWND ContainerWindow::create(HWND wnd_parent, WindowPosition window_position, bool use_dialog_units, int id)
 {
     if (use_dialog_units)
         window_position.convert_from_dialog_units_to_pixels(wnd_parent);
@@ -23,10 +22,9 @@ HWND ContainerWindow::create(
         register_class();
     }
 
-    LPVOID createparams[2] = {this, create_param};
     m_wnd = CreateWindowEx(m_config.window_ex_styles, m_config.class_name, m_config.window_title,
         m_config.window_styles, window_position.x, window_position.y, window_position.cx, window_position.cy,
-        wnd_parent, nullptr, wil::GetModuleInstanceHandle(), &createparams);
+        wnd_parent, reinterpret_cast<HMENU>(static_cast<size_t>(id)), wil::GetModuleInstanceHandle(), this);
 
     if (!m_wnd)
         throw exception_win32(GetLastError());
@@ -45,19 +43,20 @@ void ContainerWindow::destroy()
 
 LRESULT ContainerWindow::s_on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcept
 {
-    ContainerWindow* p_this = nullptr;
+    ContainerWindow* self{};
 
     if (msg == WM_NCCREATE) {
-        auto create_params = reinterpret_cast<LPVOID*>(reinterpret_cast<CREATESTRUCT*>(lp)->lpCreateParams);
-        p_this = reinterpret_cast<ContainerWindow*>(create_params[0]);
-        SetWindowLongPtr(wnd, GWLP_USERDATA, reinterpret_cast<LPARAM>(p_this));
-    } else
-        p_this = reinterpret_cast<ContainerWindow*>(GetWindowLongPtr(wnd, GWLP_USERDATA));
+        const auto lpcs = reinterpret_cast<CREATESTRUCT*>(lp);
+        self = static_cast<ContainerWindow*>(lpcs->lpCreateParams);
+        SetWindowLongPtr(wnd, GWLP_USERDATA, reinterpret_cast<LPARAM>(self));
+    } else {
+        self = reinterpret_cast<ContainerWindow*>(GetWindowLongPtr(wnd, GWLP_USERDATA));
+    }
 
     if (msg == WM_NCDESTROY)
         SetWindowLongPtr(wnd, GWLP_USERDATA, reinterpret_cast<LPARAM>(nullptr));
 
-    return p_this ? p_this->on_message(wnd, msg, wp, lp) : DefWindowProc(wnd, msg, wp, lp);
+    return self ? self->on_message(wnd, msg, wp, lp) : DefWindowProc(wnd, msg, wp, lp);
 }
 
 LRESULT ContainerWindow::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)

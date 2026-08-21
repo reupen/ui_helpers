@@ -76,8 +76,7 @@ public:
     ContainerWindow(const ContainerWindow& p_source) = delete;
 
     void on_size() const;
-    HWND create(
-        HWND wnd_parent, WindowPosition window_position, LPVOID create_param = nullptr, bool use_dialog_units = false);
+    HWND create(HWND wnd_parent, WindowPosition window_position, bool use_dialog_units = false, int id = 0);
     void destroy();
     HWND get_wnd() const { return m_wnd; }
 

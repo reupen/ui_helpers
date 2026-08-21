@@ -244,12 +244,13 @@ public:
      * \brief               Creates a new list view window
      * \param wnd_parent    Handle of the parent window
      * \param window_pos    Initial window position
+     * \param id            Child window identifier
      * \return              Window handle of the created list view
      */
-    HWND create(
-        HWND wnd_parent, WindowPosition window_pos = {}, bool use_dialog_units = false, bool show_window = false)
+    HWND create(HWND wnd_parent, WindowPosition window_pos = {}, bool use_dialog_units = false,
+        bool show_window = false, int id = 0)
     {
-        const auto wnd = m_container_window->create(wnd_parent, window_pos, nullptr, use_dialog_units);
+        const auto wnd = m_container_window->create(wnd_parent, window_pos, use_dialog_units, id);
 
         if (show_window && wnd)
             ShowWindow(wnd, SW_SHOWNORMAL);
