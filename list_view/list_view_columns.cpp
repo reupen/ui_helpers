@@ -39,9 +39,8 @@ void ListView::set_columns(std::vector<Column> columns)
 {
     m_columns = std::move(columns);
 
-    update_column_sizes();
-
     if (m_initialised) {
+        update_column_sizes();
         build_header();
         update_horizontal_scroll_info();
     }
@@ -69,6 +68,9 @@ void ListView::set_column_widths(std::vector<int> widths)
 
 void ListView::update_column_sizes()
 {
+    if (m_columns.empty())
+        return;
+
     const auto rc = get_items_rect();
     int display_width = RECT_CX(rc);
     int width = get_columns_width();
