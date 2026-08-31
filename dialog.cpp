@@ -37,7 +37,7 @@ INT_PTR WINAPI on_dialog_box_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) n
 INT_PTR modal_dialog_box(
     UINT resource_id, HWND wnd, std::function<INT_PTR(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
 {
-    const auto data = std ::make_unique<DialogBoxData>(DialogBoxData{std::move(on_message), {}});
+    const auto data = std::make_unique<DialogBoxData>(DialogBoxData{std::move(on_message), {}});
 
     return DialogBoxParam(wil::GetModuleInstanceHandle(), MAKEINTRESOURCE(resource_id), wnd, on_dialog_box_message,
         reinterpret_cast<LPARAM>(data.get()));
@@ -46,7 +46,7 @@ INT_PTR modal_dialog_box(
 INT_PTR modal_dialog_box(
     LPDLGTEMPLATE dlg_template, HWND wnd, std::function<INT_PTR(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
 {
-    const auto data = std ::make_unique<DialogBoxData>(DialogBoxData{std::move(on_message), {}});
+    const auto data = std::make_unique<DialogBoxData>(DialogBoxData{std::move(on_message), {}});
 
     return DialogBoxIndirectParam(
         wil::GetModuleInstanceHandle(), dlg_template, wnd, on_dialog_box_message, reinterpret_cast<LPARAM>(data.get()));
@@ -55,7 +55,7 @@ INT_PTR modal_dialog_box(
 HWND modeless_dialog_box(
     UINT resource_id, HWND wnd, std::function<INT_PTR(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
 {
-    std::shared_ptr<DialogBoxData> data = std ::make_shared<DialogBoxData>(DialogBoxData{std::move(on_message), {}});
+    std::shared_ptr<DialogBoxData> data = std::make_shared<DialogBoxData>(DialogBoxData{std::move(on_message), {}});
     data->self = data;
 
     return CreateDialogParam(wil::GetModuleInstanceHandle(), MAKEINTRESOURCE(resource_id), wnd, on_dialog_box_message,
@@ -65,7 +65,7 @@ HWND modeless_dialog_box(
 HWND modeless_dialog_box(
     LPDLGTEMPLATE dlg_template, HWND wnd, std::function<INT_PTR(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)> on_message)
 {
-    std::shared_ptr<DialogBoxData> data = std ::make_shared<DialogBoxData>(DialogBoxData{std::move(on_message), {}});
+    std::shared_ptr<DialogBoxData> data = std::make_shared<DialogBoxData>(DialogBoxData{std::move(on_message), {}});
     data->self = data;
 
     return CreateDialogIndirectParam(
