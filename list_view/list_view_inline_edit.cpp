@@ -130,10 +130,19 @@ LRESULT ListView::on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
             return 0;
         }
         break;
-    case WM_SYSKEYDOWN:
-        if ((m_ignore_next_inline_edit_wm_syschar_message = notify_inline_edit_keydown(wp)))
+    case WM_SYSKEYDOWN: {
+        const auto is_destroyed = shared_is_destroyed();
+        const auto was_processed = notify_inline_edit_keydown(wp);
+
+        if (*is_destroyed)
+            return 0;
+
+        m_ignore_next_inline_edit_wm_syschar_message = was_processed;
+
+        if (was_processed)
             return 0;
         break;
+    }
     case WM_KEYDOWN:
         m_ignore_next_inline_edit_wm_char_message = false;
 
@@ -218,11 +227,16 @@ LRESULT ListView::on_inline_edit_message(HWND wnd, UINT msg, WPARAM wp, LPARAM l
             // else
             //    return CallWindowProc(m_proc_original_inline_edit,wnd,msg,wp,lp); //cheat
             return 0;
-        default:
+        default: {
+            const auto is_destroyed = shared_is_destroyed();
+
             if (notify_inline_edit_keydown(wp)) {
-                m_ignore_next_inline_edit_wm_char_message = true;
+                if (!*is_destroyed)
+                    m_ignore_next_inline_edit_wm_char_message = true;
+
                 return 0;
             }
+        }
         }
         break;
     }

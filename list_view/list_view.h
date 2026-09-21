@@ -696,6 +696,12 @@ protected:
         return std::make_unique<DefaultListViewSearchContext>(this);
     }
 
+    std::shared_ptr<bool> shared_is_destroyed() const
+    {
+        assert(!*m_is_destroyed);
+        return m_is_destroyed;
+    }
+
     Item* get_item(size_t index) { return m_items[index].get_ptr(); }
 
     string_array& get_item_subitems(size_t index) { return m_items[index]->m_subitems; }
@@ -1116,6 +1122,7 @@ private:
     size_t m_focus_index{std::numeric_limits<size_t>::max()};
     bool m_autosize{false};
     bool m_initialised{false};
+    std::shared_ptr<bool> m_is_destroyed{std::make_shared<bool>()};
     bool m_always_show_focus{false};
     bool m_show_header{true};
     bool m_ignore_column_size_change_notification{false};

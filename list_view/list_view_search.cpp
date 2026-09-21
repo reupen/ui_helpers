@@ -124,6 +124,7 @@ void SearchBar::create(HWND parent_wnd, const char* label, HFONT font, int item_
     if (m_edit_control)
         return;
 
+    *m_is_destroyed = false;
     m_parent_wnd = parent_wnd;
     m_is_dark = is_dark;
 
@@ -195,18 +196,31 @@ void SearchBar::create(HWND parent_wnd, const char* label, HFONT font, int item_
 
                     break;
                 }
-                default:
+                default: {
+                    const auto is_destroyed = m_is_destroyed;
+
                     if (m_search_bar_host->on_keydown(wp)) {
-                        m_ignore_next_wm_char_message = true;
+                        if (!*is_destroyed)
+                            m_ignore_next_wm_char_message = true;
                         return 0;
                     }
                     break;
                 }
+                }
                 break;
-            case WM_SYSKEYDOWN:
-                if ((m_ignore_next_wm_syschar_message = m_search_bar_host->on_keydown(wp)))
+            case WM_SYSKEYDOWN: {
+                const auto is_destroyed = m_is_destroyed;
+                const auto was_processed = m_search_bar_host->on_keydown(wp);
+
+                if (*is_destroyed)
+                    return 0;
+
+                m_ignore_next_wm_syschar_message = was_processed;
+
+                if (was_processed)
                     return 0;
                 break;
+            }
             case WM_CHAR:
                 if (m_ignore_next_wm_char_message) {
                     m_ignore_next_wm_char_message = false;
@@ -262,6 +276,7 @@ void SearchBar::destroy()
 
     invalidate();
 
+    *m_is_destroyed = true;
     m_edit_control.reset();
     m_left_toolbar.wnd.reset();
     m_right_toolbar.wnd.reset();
@@ -272,6 +287,7 @@ void SearchBar::destroy()
 
 void SearchBar::shut_down()
 {
+    *m_is_destroyed = true;
     m_edit_control.reset();
     m_left_toolbar.wnd.reset();
     m_right_toolbar.wnd.reset();

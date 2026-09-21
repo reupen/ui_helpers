@@ -24,6 +24,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
 
     switch (msg) {
     case WM_CREATE: {
+        *m_is_destroyed = false;
         m_buffered_paint_initialiser.emplace();
         m_smooth_scroll_helper.emplace(
             wnd, MSG_SMOOTH_SCROLL, SMOOTH_SCROLL_TIMER_ID,
@@ -103,6 +104,7 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
     }
     case WM_DESTROY:
         m_initialised = false;
+        *m_is_destroyed = true;
         m_inline_edit_save = false;
         destroy_tooltip();
         exit_inline_edit();
@@ -586,8 +588,17 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
         }
         break;
     case WM_KEYDOWN: {
-        if ((m_ignore_next_wm_char_message = on_wm_keydown(wp, lp)))
+        const auto is_destroyed = shared_is_destroyed();
+        const auto was_processed = on_wm_keydown(wp, lp);
+
+        if (*is_destroyed)
             return 0;
+
+        m_ignore_next_wm_char_message = was_processed;
+
+        if (was_processed)
+            return 0;
+
         break;
     }
     case WM_CHAR:
@@ -596,7 +607,15 @@ LRESULT ListView::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp)
             on_search_string_change(LOWORD(wp));
         break;
     case WM_SYSKEYDOWN: {
-        if ((m_ignore_next_wm_syschar_message = notify_on_keyboard_keydown_filter(WM_SYSKEYDOWN, wp, lp)))
+        const auto is_destroyed = shared_is_destroyed();
+        const auto was_processed = notify_on_keyboard_keydown_filter(WM_SYSKEYDOWN, wp, lp);
+
+        if (*is_destroyed)
+            return 0;
+
+        m_ignore_next_wm_syschar_message = was_processed;
+
+        if (was_processed)
             return 0;
         break;
     }
