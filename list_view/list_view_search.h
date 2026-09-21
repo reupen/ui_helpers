@@ -103,6 +103,7 @@ private:
     void update_edit_control_font();
 
     bool m_is_initialising{};
+    std::shared_ptr<bool> m_is_destroyed{std::make_shared<bool>()};
     std::optional<LOGFONT> m_log_font{};
     wil::unique_hfont m_hfont;
     std::optional<direct_write::TextFormat> m_text_format;
