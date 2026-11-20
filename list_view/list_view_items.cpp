@@ -218,7 +218,7 @@ bool ListView::replace_items_in_internal_state(size_t index_start, size_t replac
         old_group_display_count += get_item_display_group_count(item_index);
     }
 
-    for (const auto relative_index : std::views::iota(size_t{}, replace_count)) {
+    for (const auto relative_index : std::views::iota(0uz, replace_count)) {
         const auto absolute_index = relative_index + index_start;
         t_item_ptr item;
         t_item_ptr item_old;
@@ -296,7 +296,7 @@ bool ListView::replace_items_in_internal_state(size_t index_start, size_t replac
             b_self_same_above = b_self_same;
         }
         if (relative_index + 1 == replace_count && absolute_index + 1 < total_items) {
-            for (const auto group_index : std::views::iota(size_t{}, m_group_count)) {
+            for (const auto group_index : std::views::iota(0uz, m_group_count)) {
                 const auto old_item = items_prev[absolute_index];
                 const auto old_next_item = items_prev[absolute_index + 1];
                 const auto next_item = m_items[absolute_index + 1];
@@ -354,7 +354,7 @@ void ListView::insert_items_in_internal_state(size_t index_start, size_t insert_
     {
         t_item_ptr* p_items = m_items.data();
 
-        concurrency::parallel_for(size_t{0}, insert_count, [this, p_items, index_start, items](size_t l) {
+        concurrency::parallel_for(0uz, insert_count, [this, p_items, index_start, items](size_t l) {
             size_t count = m_group_count;
             size_t index = l + index_start;
             Item* item;
@@ -529,13 +529,13 @@ void ListView::calculate_visible_group_count()
 
     m_visible_group_count = 0;
 
-    for (const auto index : std::views::iota(size_t{}, m_items.size())) {
+    for (const auto index : std::views::iota(0uz, m_items.size())) {
         if (!get_is_new_group(index))
             continue;
 
         m_visible_group_count = std::max(m_visible_group_count,
-            ranges::accumulate(m_items[index]->m_groups, size_t{}, std::plus<size_t>(),
-                [](const auto& group) { return group->is_hidden() ? size_t{} : size_t{1}; }));
+            ranges::accumulate(m_items[index]->m_groups, 0uz, std::plus<size_t>(),
+                [](const auto& group) { return group->is_hidden() ? 0uz : 1uz; }));
 
         if (m_visible_group_count == m_group_count)
             return;
@@ -550,7 +550,7 @@ bool ListView::update_item_and_group_positioning(size_t index_start)
     calculate_visible_group_count();
 
     const auto has_vertical_padding_changed
-        = std::min(size_t{2}, old_visible_group_count) != std::min(size_t{2}, m_visible_group_count);
+        = std::min(2uz, old_visible_group_count) != std::min(2uz, m_visible_group_count);
     calculate_item_positions(has_vertical_padding_changed ? 0 : index_start);
 
     if (old_visible_group_count != m_visible_group_count) {

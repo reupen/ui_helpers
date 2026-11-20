@@ -153,7 +153,7 @@ std::optional<ColourPair> parse_colour_code(std::wstring_view text)
         return {};
 
     COLORREF non_selected_colour
-        = mmh::strtoul_n(non_selected_colour_hex.data(), std::min(size_t{6}, non_selected_colour_hex.length()), 0x10);
+        = mmh::strtoul_n(non_selected_colour_hex.data(), std::min(6uz, non_selected_colour_hex.length()), 0x10);
 
     const COLORREF selected_colour = [&] {
         if (bar_index == std::wstring_view::npos)
@@ -161,7 +161,7 @@ std::optional<ColourPair> parse_colour_code(std::wstring_view text)
 
         const auto selected_colour_hex = text.substr(bar_index + 1);
         return mmh::strtoul_n<wchar_t, COLORREF>(
-            selected_colour_hex.data(), std::min(size_t{6}, selected_colour_hex.length()), 0x10);
+            selected_colour_hex.data(), std::min(6uz, selected_colour_hex.length()), 0x10);
     }();
 
     return ColourPair{non_selected_colour, selected_colour};

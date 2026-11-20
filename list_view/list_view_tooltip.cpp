@@ -284,7 +284,7 @@ void ListView::calculate_tooltip_position(size_t item_index, size_t column_index
 {
     int cx = get_total_indentation();
 
-    for (auto index : std::ranges::views::iota(size_t{}, column_index))
+    for (auto index : std::ranges::views::iota(0uz, column_index))
         cx += m_columns[index].m_display_size;
 
     POINT top_left{};

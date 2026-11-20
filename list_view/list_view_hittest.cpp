@@ -296,7 +296,7 @@ ListView::VerticalHitTestResult ListView::visible_items_vertical_hit_test(int y)
         return {};
     };
 
-    for (auto group_index : std::views::iota(size_t{}, m_group_count)) {
+    for (auto group_index : std::views::iota(0uz, m_group_count)) {
         render_info = get_group_header_render_info(first_item, group_index);
 
         if (!render_info.is_stuck)
@@ -316,7 +316,7 @@ ListView::VerticalHitTestResult ListView::visible_items_vertical_hit_test(int y)
 
     const auto next_child_group_item_index_as_int = gsl::narrow<int>(next_child_group_item_index);
 
-    for (auto group_index : std::views::iota(size_t{1}, m_group_count)) {
+    for (auto group_index : std::views::iota(1uz, m_group_count)) {
         const auto next_render_info = get_group_header_render_info(first_item, group_index);
 
         if (!next_render_info.is_stuck)
