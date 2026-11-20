@@ -671,7 +671,7 @@ void ListView::invalidate_item_group_info_area(size_t index)
 std::tuple<size_t, size_t> ListView::get_item_group_range(size_t index, size_t level) const
 {
     if (m_group_count == 0)
-        return {size_t{}, m_items.size()};
+        return {0uz, m_items.size()};
 
     const auto& group = m_items[index]->m_groups[level];
     size_t start{index};
@@ -793,7 +793,7 @@ void ListView::on_search_string_change(WCHAR new_char)
 
     std::wstring item_text_utf16;
 
-    for (auto offset : std::views::iota(size_t{}, count)) {
+    for (auto offset : std::views::iota(0uz, count)) {
         size_t item_index = (offset + focus) % count;
         t_item_ptr item = m_items[item_index];
 
