@@ -11,6 +11,7 @@ struct MenuItemOptions {
 };
 
 struct MenuOptions {
+    bool enable_notifications{false};
     bool is_right_button{true};
 };
 
@@ -111,7 +112,9 @@ public:
     auto run(HWND wnd, POINT pt, MenuOptions opts = {}) const
     {
         return gsl::narrow_cast<uint32_t>(TrackPopupMenuEx(m_menu.get(),
-            TPM_NONOTIFY | TPM_RETURNCMD | (opts.is_right_button ? TPM_RIGHTBUTTON : 0), pt.x, pt.y, wnd, nullptr));
+            TPM_RETURNCMD | (opts.enable_notifications ? 0 : TPM_NONOTIFY)
+                | (opts.is_right_button ? TPM_RIGHTBUTTON : 0),
+            pt.x, pt.y, wnd, nullptr));
     }
 
     wil::zstring_view get_description(uint32_t id) const
